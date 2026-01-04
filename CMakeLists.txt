@@ -103,7 +103,6 @@ add_executable(hlcsg
     ${SRC_DIR}/hlcsg/qcsg.cpp
     ${SRC_DIR}/hlcsg/textures.cpp
     ${SRC_DIR}/hlcsg/wadcfg.cpp
-    ${SRC_DIR}/hlcsg/wadinclude.cpp
     ${SRC_DIR}/hlcsg/wadpath.cpp
 )
 
