@@ -34,11 +34,9 @@ endif()
 
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(COMMON_DIR ${SRC_DIR}/common)
-set(TEMPLATE_DIR ${SRC_DIR}/template)
 
 include_directories(
     ${COMMON_DIR}
-    ${TEMPLATE_DIR}
 )
 
 # ================================
