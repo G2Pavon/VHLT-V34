@@ -55,9 +55,7 @@
 
 //=====================================================================
 
-#if _MSC_VER >= 1400
 #pragma warning(disable : 4996)
-#endif
 
 #ifdef __MINGW32__
 #include <io.h>
