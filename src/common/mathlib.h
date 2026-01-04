@@ -1,10 +1,6 @@
-#ifndef MATHLIB_H__
-#define MATHLIB_H__
-#include "cmdlib.h" //--vluzacn
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
+
+#include "cmdlib.h" //--vluzacn
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -292,5 +288,3 @@ inline planetypes PlaneTypeForNormal(vec3_t normal)
     }
     return plane_anyz;
 }
-
-#endif //MATHLIB_H__

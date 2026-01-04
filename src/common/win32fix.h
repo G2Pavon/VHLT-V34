@@ -1,10 +1,6 @@
-#ifndef WIN32FIX_H__
-#define WIN32FIX_H__
-#include "cmdlib.h" //--vluzacn
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
+
+#include "cmdlib.h" //--vluzacn
 
 #include <malloc.h>
 
@@ -69,5 +65,3 @@
 
 #endif
 /////////////////////////////
-
-#endif ///////////////////////////// WIN32FIX_H__

@@ -1,10 +1,6 @@
-#ifndef BSPFILE_H__
-#define BSPFILE_H__
-#include "cmdlib.h" //--vluzacn
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
+
+#include "cmdlib.h" //--vluzacn
 
 // upper design bounds
 
@@ -393,5 +389,3 @@ extern void dtexdata_init();
 extern void CDECL dtexdata_free();
 
 extern char *GetTextureByNumber(int texturenumber);
-
-#endif //BSPFILE_H__

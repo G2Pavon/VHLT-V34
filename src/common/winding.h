@@ -1,11 +1,6 @@
-#ifndef WINDING_H__
-#define WINDING_H__
-#include "cmdlib.h" //--vluzacn
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
 
+#include "cmdlib.h" //--vluzacn
 #include "basictypes.h"
 #include "mathtypes.h"
 #include "win32fix.h"
@@ -97,5 +92,3 @@ class Winding
   protected:
     UINT32 m_MaxPoints;
 };
-
-#endif
