@@ -546,26 +546,7 @@ void Winding::Clip(const vec3_t normal, const vec_t dist, Winding **front, Windi
         }
         vec_t *p2 = m_Points[tmp];
         dot = dists[i] / (dists[i] - dists[i + 1]);
-#if 0
-        for (j = 0; j < 3; j++)
-        {                                                  // avoid round off error when possible
-            if (normal[j] < 1.0 - NORMAL_EPSILON)
-            {
-                if (normal[j] > -1.0 + NORMAL_EPSILON)
-                {
-                    mid[j] = p1[j] + dot * (p2[j] - p1[j]);
-                }
-                else
-                {
-                    mid[j] = -dist;
-                }
-            }
-            else
-            {
-                mid[j] = dist;
-            }
-        }
-#else
+
         for (j = 0; j < 3; j++)
         { // avoid round off error when possible
             if (normal[j] == 1)
@@ -575,7 +556,6 @@ void Winding::Clip(const vec3_t normal, const vec_t dist, Winding **front, Windi
             else
                 mid[j] = p1[j] + dot * (p2[j] - p1[j]);
         }
-#endif
 
         VectorCopy(mid, f->m_Points[f->m_NumPoints]);
         VectorCopy(mid, b->m_Points[b->m_NumPoints]);

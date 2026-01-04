@@ -2323,15 +2323,6 @@ void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int numedges
     {
         g_skynormalsizes[skylevel][j] /= totalsize;
     }
-#if 0
-	printf ("g_numskynormals[%i]=%i\n", skylevel, g_numskynormals[skylevel]);
-	for (j = 0; j < numpoints; j += (numpoints / 20 + 1))
-	{
-		printf ("g_skynormals[%i][%i]=%1.3f,%1.3f,%1.3f g_skynormalsizes[%i][%i]=%f\n",
-			skylevel, j, g_skynormals[skylevel][j][0], g_skynormals[skylevel][j][1], g_skynormals[skylevel][j][2],
-			skylevel, j, g_skynormalsizes[skylevel][j]);
-	}
-#endif
 }
 void BuildDiffuseNormals()
 {
@@ -4250,40 +4241,7 @@ void ReduceLightmap()
             }
             continue;
         }
-#if 0 //debug. --vluzacn
-		const char *lightmapcolor = ValueForKey (g_face_entity[facenum], "zhlt_rad");
-		if (*lightmapcolor)
-		{
-			hlassume (MAXLIGHTMAPS == 4, assume_first);
-			int styles[4], values[4][3];
-			if (sscanf (lightmapcolor, "%d=%d,%d,%d %d=%d,%d,%d %d=%d,%d,%d %d=%d,%d,%d"
-					, &styles[0], &values[0][0], &values[0][1], &values[0][2]
-					, &styles[1], &values[1][0], &values[1][1], &values[1][2]
-					, &styles[2], &values[2][0], &values[2][1], &values[2][2]
-					, &styles[3], &values[3][0], &values[3][1], &values[3][2]
-				) != 16)
-			{
-				Error ("Bad value for 'zhlt_rad'.");
-			}
-			f->lightofs = g_lightdatasize;
-			int i, k;
-			for (k = 0; k < 4; k++)
-			{
-				f->styles[k] = 255;
-			}
-			for (k = 0; k < 4 && styles[k] != 255; k++)
-			{
-				f->styles[k] = styles[k];
-				hlassume (g_lightdatasize + fl->numsamples * 3 <= g_max_map_lightdata, assume_MAX_MAP_LIGHTING);
-				for (i = 0; i < fl->numsamples; i++)
-				{
-					VectorCopy (values[k], (byte *)&g_dlightdata[g_lightdatasize + i * 3]);
-				}
-				g_lightdatasize += fl->numsamples * 3;
-			}
-			continue;
-		}
-#endif
+
         if (f->lightofs == -1)
         {
             continue;

@@ -71,14 +71,6 @@
 #include "config.h"
 #endif
 
-#if 0 //--vluzacn
-// AJM: gnu compiler fix
-#ifdef __GNUC__
-#define _alloca __builtin_alloca
-#define alloca __builtin_alloca
-#endif
-#endif
-
 #include "win32fix.h"
 #include "mathtypes.h"
 

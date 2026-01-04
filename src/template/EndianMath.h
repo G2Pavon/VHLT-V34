@@ -50,35 +50,7 @@ class Endian
         INT32 rval = (a | b | c | d);
         return rval;
     }
-#if 0
-    inline static INT64 FASTCALL Flip(const INT64 x)
-    {
-        INT64 a = (x >> 56) & 0x000000000000000FF;
-        INT64 b = (x >> 40) & 0x0000000000000FF00;
-        INT64 c = (x >> 24) & 0x00000000000FF0000;
-        INT64 d = (x >> 8 ) & 0x000000000FF000000;
-        INT64 e = (x << 8 ) & 0x0000000FF00000000;
-        INT64 f = (x << 24) & 0x00000FF0000000000;
-        INT64 g = (x << 40) & 0x000FF000000000000;
-        INT64 h = (x << 56) & 0x0FF00000000000000;
-        INT64 rval = (a | b | c | d | e | f | g | h);
-        return rval;
-    }
 
-    inline static UINT64 FASTCALL Flip(const UINT64 x)
-    {
-        UINT64 a = (x >> 56) & 0x000000000000000FF;
-        UINT64 b = (x >> 40) & 0x0000000000000FF00;
-        UINT64 c = (x >> 24) & 0x00000000000FF0000;
-        UINT64 d = (x >> 8 ) & 0x000000000FF000000;
-        UINT64 e = (x << 8 ) & 0x0000000FF00000000;
-        UINT64 f = (x << 24) & 0x00000FF0000000000;
-        UINT64 g = (x << 40) & 0x000FF000000000000;
-        UINT64 h = (x << 56) & 0x0FF00000000000000;
-        UINT64 rval = (a | b | c | d | e | f | g | h);
-        return rval;
-    }
-#endif
     inline static float FASTCALL Flip(const float x)
     {
         union floatflipper
@@ -148,22 +120,6 @@ class Endian
             *x = Flip(*x);
         }
     }
-#if 0
-    inline static void FlipArray(unsigned size, INT64* x)
-    {
-        for (unsigned i=0 ; i<size ; i++, x++)
-        {
-            *x = Flip(*x);
-        }
-    }
-    inline static void FlipArray(unsigned size, UINT64* x)
-    {
-        for (unsigned i=0 ; i<size ; i++, x++)
-        {
-            *x = Flip(*x);
-        }
-    }
-#endif
 
     inline static void FlipArray(unsigned size, float *x)
     {

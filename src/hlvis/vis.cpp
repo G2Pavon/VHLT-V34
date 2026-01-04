@@ -452,19 +452,6 @@ static void LeafThread(int unused)
     }
     else if (g_vismode == VIS_MODE_SERVER)
     {
-#if 0
-        // Server does zero work in ZHLT netvis
-        g_visstate = VIS_WAIT_CLIENTS;
-        while (!g_NetvisAbort)
-        {
-            NetvisSleep(1000);
-            if (AllPortalsDone())
-            {
-                g_visstate = VIS_POST;
-                return;
-            }
-        }
-#else
         portal_t *p;
 
         g_visstate = VIS_WAIT_CLIENTS;
@@ -483,7 +470,6 @@ static void LeafThread(int unused)
             PortalFlow(p);
             g_vislocalportal++;
         }
-#endif
     }
     else
     {

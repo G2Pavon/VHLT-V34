@@ -2330,29 +2330,6 @@ int main(const int argc, char **argv)
 
             WriteBSP(g_Mapname);
 
-            // AJM: debug
-#if 0
-    Log("\n---------------------------------------\n"
-        "Map Plane Usage:\n"
-        "  #  normal             origin             dist   type\n"
-        "    (   x,    y,    z) (   x,    y,    z) (     )\n"
-        );
-    for (i = 0; i < g_nummapplanes; i++)
-    {
-        plane_t* p = &g_mapplanes[i];
-
-        Log(
-        "%3i (%4.0f, %4.0f, %4.0f) (%4.0f, %4.0f, %4.0f) (%5.0f) %i\n",
-        i,     
-        p->normal[1], p->normal[2], p->normal[3],
-        p->origin[1], p->origin[2], p->origin[3],
-        p->dist,
-        p->type
-        );
-    }
-    Log("---------------------------------------\n\n");
-#endif
-
             // elapsed time
             end = I_FloatTime();
             LogTimeElapsed(end - start);

@@ -166,47 +166,6 @@ void CreateFinalTransparencyArrays(const char *print_name)
     else
         Log("%-20s: %5.1f bytes\n", print_name, (double)size);                                                    //--vluzacn
     Developer(DEVELOPER_LEVEL_MESSAGE, "\ts_trans_count=%d\ts_sorted_count=%d\n", s_trans_count, s_sorted_count); //--vluzacn
-
-#if 0
-        int total_1 = 0;
-        for(int i = 0; i < s_sorted_count; i++)
-        {
-        	Log("a: %7i b: %7i di: %10i r: %3.1f g: %3.1f b: %3.1f\n", 
-        		s_sorted_list[i].p1, 
-        		s_sorted_list[i].p2, 
-        		s_sorted_list[i].data_index,
-        		s_trans_list[s_sorted_list[i].data_index][0],
-        		s_trans_list[s_sorted_list[i].data_index][1],
-        		s_trans_list[s_sorted_list[i].data_index][2]
-        	);
-        	total_1++;
-        }
-        
-        vec3_t rgb;
-        int total_2 = 0;
-        for(unsigned int next_index = 0, a = 0; a < g_num_patches; a++)
-        {
-        	for(unsigned int b = 0; b < g_num_patches; b++)
-        	{
-        		GetTransparency(a, b, rgb, next_index);
-        		
-        		if(!VectorCompare(rgb,vec3_one))
-        		{
-        			Log("a: %7i b: %7i ni: %10i r: %3.1f g: %3.1f b: %3.1f\n", 
-        				a, 
-        				b, 
-        				next_index,
-        				rgb[0],
-        				rgb[1],
-        				rgb[2]
-        			);
-        			total_2++;
-        		}
-        	}
-        }
-        
-        Log("total1: %i\ntotal2: %i\n",total_1,total_2);
-#endif
 }
 
 //===============================================

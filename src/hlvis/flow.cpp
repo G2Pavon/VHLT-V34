@@ -581,12 +581,6 @@ inline static void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
     }
 
 #ifdef RVIS_LEVEL_2
-#if 0
-    if (stack.clipPlane != NULL)
-    {
-        free(stack.clipPlane);
-    }
-#endif
 #endif
 }
 

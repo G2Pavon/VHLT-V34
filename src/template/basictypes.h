@@ -2,13 +2,6 @@
 // This file is licensed under the terms of the Lesser GNU Public License
 // (see LPGL.txt, or http://www.gnu.org/copyleft/lesser.txt)
 
-#if 0 // linux fix --vluzacn
-// AJM GNU
-#ifdef __GNUC__
-#define __int64 long long
-#endif
-#endif
-
 #ifndef BASICTYPES_H__
 #define BASICTYPES_H__
 

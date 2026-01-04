@@ -223,30 +223,6 @@ void ThreadSetPriority(q_threadpriority type)
     SetPriorityClass(GetCurrentProcess(), val);
 }
 
-#if 0
-static void     AdjustPriority(HANDLE hThread)
-{
-    int             val;
-
-    switch (g_threadpriority)
-    {
-    case eThreadPriorityLow:
-        val = THREAD_PRIORITY_HIGHEST;
-        break;
-
-    case eThreadPriorityHigh:
-        val = THREAD_PRIORITY_LOWEST;
-        break;
-
-    case eThreadPriorityNormal:
-    default:
-        val = THREAD_PRIORITY_NORMAL;
-        break;
-    }
-    SetThreadPriority(hThread, val);
-}
-#endif
-
 void ThreadSetDefault()
 {
     SYSTEM_INFO info;

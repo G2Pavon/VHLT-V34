@@ -707,11 +707,6 @@ void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int 
                 {
                     tp->tmp_side = SIDE_ON;
                 }
-#if 0
-				// let's mess up something and see whether the code is fragile or robust
-				static int randcounter = 0;
-				if (randcounter++ % 8 == 0) tp->tmp_side = randcounter % 3;
-#endif
             }
         }
     }
