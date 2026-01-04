@@ -1,13 +1,7 @@
 // Copyright (C) 2000  Sean Cavanaugh
 // This file is licensed under the terms of the Lesser GNU Public License
 // (see LPGL.txt, or http://www.gnu.org/copyleft/lesser.txt)
-
-#ifndef ZONING_H__
-#define ZONING_H__
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
 
 #include "basictypes.h"
 #include "winding.h"
@@ -70,5 +64,3 @@ class Zones
 };
 
 Zones *MakeZones();
-
-#endif
