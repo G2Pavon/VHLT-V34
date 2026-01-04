@@ -12,11 +12,6 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
-#if _MSC_VER < 1400 // AdamR: Ignore this definition in Visual Studio 2005 and later
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#endif
-
 #define finite _finite
 
 #define rotl _rotl
