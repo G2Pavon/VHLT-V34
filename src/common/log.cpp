@@ -1,11 +1,3 @@
-
-#ifdef ZHLT_NETVIS
-#ifdef SYSTEM_WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-#endif
-
 #ifdef STDC_HEADERS
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,10 +6,6 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifdef ZHLT_NETVIS
-#include "../netvis/c2cpp.h"
 #endif
 
 #include "cmdlib.h"
@@ -191,36 +179,6 @@ void CDECL OpenLog(const int clientid)
     if (g_log)
     {
         char logfilename[_MAX_PATH];
-
-#ifdef ZHLT_NETVIS
-#ifdef SYSTEM_WIN32
-        if (clientid)
-        {
-            char computername[MAX_COMPUTERNAME_LENGTH + 1];
-            unsigned long size = sizeof(computername);
-
-            if (!GetComputerName(computername, &size))
-            {
-                safe_strncpy(computername, "unknown", sizeof(computername));
-            }
-            safe_snprintf(logfilename, _MAX_PATH, "%s-%s-%d.log", g_Mapname, computername, clientid);
-        }
-        else
-#endif
-#ifdef SYSTEM_POSIX
-            if (clientid)
-        {
-            char computername[_MAX_PATH];
-            unsigned long size = sizeof(computername);
-
-            if (gethostname(computername, size))
-            {
-                safe_strncpy(computername, "unknown", sizeof(computername));
-            }
-            safe_snprintf(logfilename, _MAX_PATH, "%s-%s-%d.log", g_Mapname, computername, clientid);
-        }
-#endif
-#endif
         {
             safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
         }
