@@ -2,10 +2,6 @@
 
 #include "cmdlib.h" //--vluzacn
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #ifdef STDC_HEADERS
 #include <math.h>
 #include <float.h>

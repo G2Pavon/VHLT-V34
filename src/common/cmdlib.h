@@ -61,10 +61,6 @@
 #include <io.h>
 #endif
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "win32fix.h"
 #include "mathtypes.h"
 
