@@ -1,9 +1,4 @@
-#ifndef HLRAD_H__
-#define HLRAD_H__
-
-#if _MSC_VER >= 1000
 #pragma once
-#endif
 
 #include "cmdlib.h"
 #include "messages.h"
@@ -573,5 +568,3 @@ extern void SnapToPlane(const dplane_t *const plane, vec_t *const point, vec_t o
 extern vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, const Winding *emitter_winding, int skylevel, vec_t lighting_power, vec_t lighting_scale);
 extern vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receiver_normal, const Winding *emitter_winding, const vec3_t emitter_normal, vec_t emitter_stopdot, vec_t emitter_stopdot2, int skylevel, vec_t lighting_power, vec_t lighting_scale);
 extern void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *patch, vec3_t &origin);
-
-#endif //HLRAD_H__
