@@ -9,7 +9,7 @@
 
 class TimeCounter
 {
-public:
+  public:
     void start()
     {
         start = I_FloatTime();
@@ -31,8 +31,8 @@ public:
         memset(this, 0, sizeof(*this));
     }
 
-// Construction
-public:
+    // Construction
+  public:
     TimeCounter()
     {
         reset();
@@ -41,7 +41,7 @@ public:
     // Default Copy Constructor ok
     // Default Copy Operator ok
 
-protected:
+  protected:
     double start;
     double accum;
 };

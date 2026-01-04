@@ -35,10 +35,10 @@
  * ==============
  */
 
-time_t          getfiletime(const char* const filename)
+time_t getfiletime(const char *const filename)
 {
-    time_t          filetime = 0;
-    struct stat     filestat;
+    time_t filetime = 0;
+    struct stat filestat;
 
     if (stat(filename, &filestat) == 0)
         filetime = qmax(filestat.st_mtime, filestat.st_ctime);
@@ -51,10 +51,10 @@ time_t          getfiletime(const char* const filename)
  * getfilesize
  * ==============
  */
-long            getfilesize(const char* const filename)
+long getfilesize(const char *const filename)
 {
-    long            size = 0;
-    struct stat     filestat;
+    long size = 0;
+    struct stat filestat;
 
     if (stat(filename, &filestat) == 0)
         size = filestat.st_size;
@@ -67,17 +67,17 @@ long            getfilesize(const char* const filename)
  * getfiledata
  * ==============
  */
-long            getfiledata(const char* const filename, char* buffer, const int buffersize)
+long getfiledata(const char *const filename, char *buffer, const int buffersize)
 {
-    long            size = 0;
-    int             handle;
-    time_t            start, end;
+    long size = 0;
+    int handle;
+    time_t start, end;
 
     time(&start);
 
     if ((handle = _open(filename, O_RDONLY)) != -1)
     {
-        int             bytesread;
+        int bytesread;
 
         Log("%-20s Restoring [%-13s - ", "BuildVisMatrix:", filename);
         while ((bytesread = _read(handle, buffer, qmin(32 * 1024, buffersize - size))) > 0)
@@ -104,10 +104,10 @@ long            getfiledata(const char* const filename, char* buffer, const int 
  * filelength
  * ================
  */
-int             q_filelength(FILE* f)
+int q_filelength(FILE *f)
 {
-    int             pos;
-    int             end;
+    int pos;
+    int end;
 
     pos = ftell(f);
     fseek(f, 0, SEEK_END);
@@ -122,9 +122,9 @@ int             q_filelength(FILE* f)
  * exists
  * ================
  */
-bool            q_exists(const char* const filename)
+bool q_exists(const char *const filename)
 {
-    FILE*           f;
+    FILE *f;
 
     f = fopen(filename, "rb");
 
@@ -141,12 +141,9 @@ bool            q_exists(const char* const filename)
     }
 }
 
-
-
-
-FILE*           SafeOpenWrite(const char* const filename)
+FILE *SafeOpenWrite(const char *const filename)
 {
-    FILE*           f;
+    FILE *f;
 
     f = fopen(filename, "wb");
 
@@ -156,9 +153,9 @@ FILE*           SafeOpenWrite(const char* const filename)
     return f;
 }
 
-FILE*           SafeOpenRead(const char* const filename)
+FILE *SafeOpenRead(const char *const filename)
 {
-    FILE*           f;
+    FILE *f;
 
     f = fopen(filename, "rb");
 
@@ -168,15 +165,15 @@ FILE*           SafeOpenRead(const char* const filename)
     return f;
 }
 
-void            SafeRead(FILE* f, void* buffer, int count)
+void SafeRead(FILE *f, void *buffer, int count)
 {
-    if (fread(buffer, 1, count, f) != (size_t) count)
+    if (fread(buffer, 1, count, f) != (size_t)count)
         Error("File read failure");
 }
 
-void            SafeWrite(FILE* f, const void* const buffer, int count)
+void SafeWrite(FILE *f, const void *const buffer, int count)
 {
-    if (fwrite(buffer, 1, count, f) != (size_t) count)
+    if (fwrite(buffer, 1, count, f) != (size_t)count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
 }
 
@@ -185,15 +182,15 @@ void            SafeWrite(FILE* f, const void* const buffer, int count)
  * LoadFile
  * ==============
  */
-int             LoadFile(const char* const filename, char** bufferptr)
+int LoadFile(const char *const filename, char **bufferptr)
 {
-    FILE*           f;
-    int             length;
-    char*           buffer;
+    FILE *f;
+    int length;
+    char *buffer;
 
     f = SafeOpenRead(filename);
     length = q_filelength(f);
-    buffer = (char*)Alloc(length + 1);
+    buffer = (char *)Alloc(length + 1);
     SafeRead(f, buffer, length);
     fclose(f);
 
@@ -206,12 +203,11 @@ int             LoadFile(const char* const filename, char** bufferptr)
  * SaveFile
  * ==============
  */
-void            SaveFile(const char* const filename, const void* const buffer, int count)
+void SaveFile(const char *const filename, const void *const buffer, int count)
 {
-    FILE*           f;
+    FILE *f;
 
     f = SafeOpenWrite(filename);
     SafeWrite(f, buffer, count);
     fclose(f);
 }
-

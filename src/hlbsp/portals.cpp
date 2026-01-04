@@ -2,7 +2,7 @@
 
 #include "bsp5.h"
 
-node_t          g_outside_node;                            // portals outside the world face this
+node_t g_outside_node; // portals outside the world face this
 
 //=============================================================================
 
@@ -11,7 +11,7 @@ node_t          g_outside_node;                            // portals outside th
  * AddPortalToNodes
  * =============
  */
-void            AddPortalToNodes(portal_t* p, node_t* front, node_t* back)
+void AddPortalToNodes(portal_t *p, node_t *front, node_t *back)
 {
     if (p->nodes[0] || p->nodes[1])
     {
@@ -32,10 +32,10 @@ void            AddPortalToNodes(portal_t* p, node_t* front, node_t* back)
  * RemovePortalFromNode
  * =============
  */
-void            RemovePortalFromNode(portal_t* portal, node_t* l)
+void RemovePortalFromNode(portal_t *portal, node_t *l)
 {
-    portal_t**      pp;
-    portal_t*       t;
+    portal_t **pp;
+    portal_t *t;
 
     // remove reference to the current portal
     pp = &l->portals;
@@ -87,14 +87,14 @@ void            RemovePortalFromNode(portal_t* portal, node_t* l)
  * The created portals will face the global g_outside_node
  * ================
  */
-void            MakeHeadnodePortals(node_t* node, const vec3_t mins, const vec3_t maxs)
+void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
 {
-    vec3_t          bounds[2];
-    int             i, j, n;
-    portal_t*       p;
-    portal_t*       portals[6];
-    dplane_t        bplanes[6];
-    dplane_t*       pl;
+    vec3_t bounds[2];
+    int i, j, n;
+    portal_t *p;
+    portal_t *portals[6];
+    dplane_t bplanes[6];
+    dplane_t *pl;
 
     // pad with some space so there will never be null volume leafs
     for (i = 0; i < 3; i++)
@@ -155,20 +155,20 @@ void            MakeHeadnodePortals(node_t* node, const vec3_t mins, const vec3_
  * ==============================================================================
  */
 
-static FILE*    pf;
+static FILE *pf;
 static FILE *pf_view;
 extern bool g_viewportal;
-static int      num_visleafs;                              // leafs the player can be in
-static int      num_visportals;
+static int num_visleafs; // leafs the player can be in
+static int num_visportals;
 
-static void     WritePortalFile_r(const node_t* const node)
+static void WritePortalFile_r(const node_t *const node)
 {
-    int             i;
-    portal_t*       p;
-    Winding*        w;
-    dplane_t        plane2;
+    int i;
+    portal_t *p;
+    Winding *w;
+    dplane_t plane2;
 
-	if (!node->isportalleaf)
+    if (!node->isportalleaf)
     {
         WritePortalFile_r(node->children[0]);
         WritePortalFile_r(node->children[1]);
@@ -194,17 +194,17 @@ static void     WritePortalFile_r(const node_t* const node)
                 // plane the same way vis will, and flip the side orders if needed
                 w->getPlane(plane2);
                 if (DotProduct(p->plane.normal, plane2.normal) < 1.0 - ON_EPSILON)
-                {                                          // backwards...
-					if (DotProduct(p->plane.normal, plane2.normal) > -1.0 + ON_EPSILON)
-					{
-						Warning ("Colinear portal @");
-						w->Print ();
-					}
-					else
-					{
-						Warning ("Backward portal @");
-						w->Print ();
-					}
+                { // backwards...
+                    if (DotProduct(p->plane.normal, plane2.normal) > -1.0 + ON_EPSILON)
+                    {
+                        Warning("Colinear portal @");
+                        w->Print();
+                    }
+                    else
+                    {
+                        Warning("Backward portal @");
+                        w->Print();
+                    }
                     fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
                 }
                 else
@@ -217,26 +217,26 @@ static void     WritePortalFile_r(const node_t* const node)
                     fprintf(pf, "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
                 }
                 fprintf(pf, "\n");
-				if (g_viewportal)
-				{
-					vec3_t center, center1, center2;
-					vec3_t from = {0.0, 0.0, -65536};
-					w->getCenter (center);
-					VectorMA (center, 0.5, p->plane.normal, center1);
-					VectorMA (center, -0.5, p->plane.normal, center2);
-					fprintf (pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
-					fprintf (pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
-					for (i = 0; i < w->m_NumPoints; i++)
-					{
-						vec_t *p1, *p2;
-						p1 = w->m_Points[i];
-						p2 = w->m_Points[(i+1)%w->m_NumPoints];
-						fprintf (pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
-						fprintf (pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
-						fprintf (pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
-						fprintf (pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
-					}
-				}
+                if (g_viewportal)
+                {
+                    vec3_t center, center1, center2;
+                    vec3_t from = {0.0, 0.0, -65536};
+                    w->getCenter(center);
+                    VectorMA(center, 0.5, p->plane.normal, center1);
+                    VectorMA(center, -0.5, p->plane.normal, center2);
+                    fprintf(pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
+                    fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                    for (i = 0; i < w->m_NumPoints; i++)
+                    {
+                        vec_t *p1, *p2;
+                        p1 = w->m_Points[i];
+                        p2 = w->m_Points[(i + 1) % w->m_NumPoints];
+                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
+                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
+                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
+                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                    }
+                }
             }
         }
 
@@ -249,7 +249,6 @@ static void     WritePortalFile_r(const node_t* const node)
             p = p->next[1];
         }
     }
-
 }
 
 /*
@@ -257,12 +256,12 @@ static void     WritePortalFile_r(const node_t* const node)
  * NumberLeafs_r
  * ================
  */
-static void     NumberLeafs_r(node_t* node)
+static void NumberLeafs_r(node_t *node)
 {
-    portal_t*       p;
+    portal_t *p;
 
-	if (!node->isportalleaf)
-    {                                                      // decision node
+    if (!node->isportalleaf)
+    { // decision node
         node->visleafnum = -99;
         NumberLeafs_r(node->children[0]);
         NumberLeafs_r(node->children[1]);
@@ -270,7 +269,7 @@ static void     NumberLeafs_r(node_t* node)
     }
 
     if (node->contents == CONTENTS_SOLID)
-    {                                                      // solid block, viewpoint never inside
+    { // solid block, viewpoint never inside
         node->visleafnum = -1;
         return;
     }
@@ -279,7 +278,7 @@ static void     NumberLeafs_r(node_t* node)
 
     for (p = node->portals; p;)
     {
-        if (p->nodes[0] == node)                           // only write out from first leaf
+        if (p->nodes[0] == node) // only write out from first leaf
         {
             if (p->nodes[0]->contents == p->nodes[1]->contents)
             {
@@ -294,50 +293,50 @@ static void     NumberLeafs_r(node_t* node)
     }
 }
 
-static int CountChildLeafs_r (node_t *node)
+static int CountChildLeafs_r(node_t *node)
 {
-	if (node->planenum == -1)
-	{ // dleaf
-		if (node->iscontentsdetail)
-		{ // solid
-			return 0;
-		}
-		else
-		{
-			return 1;
-		}
-	}
-	else
-	{ // node
-		int count = 0;
-		count += CountChildLeafs_r (node->children[0]);
-		count += CountChildLeafs_r (node->children[1]);
-		return count;
-	}
+    if (node->planenum == -1)
+    { // dleaf
+        if (node->iscontentsdetail)
+        { // solid
+            return 0;
+        }
+        else
+        {
+            return 1;
+        }
+    }
+    else
+    { // node
+        int count = 0;
+        count += CountChildLeafs_r(node->children[0]);
+        count += CountChildLeafs_r(node->children[1]);
+        return count;
+    }
 }
-static void WriteLeafCount_r (node_t *node)
+static void WriteLeafCount_r(node_t *node)
 {
-	if (!node->isportalleaf)
-	{
-		WriteLeafCount_r (node->children[0]);
-		WriteLeafCount_r (node->children[1]);
-	}
-	else
-	{
-		if (node->contents == CONTENTS_SOLID)
-		{
-			return;
-		}
-		int count = CountChildLeafs_r (node);
-		fprintf (pf, "%i\n", count);
-	}
+    if (!node->isportalleaf)
+    {
+        WriteLeafCount_r(node->children[0]);
+        WriteLeafCount_r(node->children[1]);
+    }
+    else
+    {
+        if (node->contents == CONTENTS_SOLID)
+        {
+            return;
+        }
+        int count = CountChildLeafs_r(node);
+        fprintf(pf, "%i\n", count);
+    }
 }
 /*
  * ================
  * WritePortalfile
  * ================
  */
-void            WritePortalfile(node_t* headnode)
+void WritePortalfile(node_t *headnode)
 {
     // set the visleafnum field in every leaf and count the total number of portals
     num_visleafs = 0;
@@ -350,39 +349,39 @@ void            WritePortalfile(node_t* headnode)
     {
         Error("Error writing portal file %s", g_portfilename);
     }
-	if (g_viewportal)
-	{
-		char filename[_MAX_PATH];
-		safe_snprintf(filename, _MAX_PATH, "%s_portal.pts", g_Mapname);
-		pf_view = fopen (filename, "w");
-		if (!pf_view)
-		{
-			Error ("Couldn't open %s", filename);
-		}
-		Log ("Writing '%s' ...\n", filename);
-	}
+    if (g_viewportal)
+    {
+        char filename[_MAX_PATH];
+        safe_snprintf(filename, _MAX_PATH, "%s_portal.pts", g_Mapname);
+        pf_view = fopen(filename, "w");
+        if (!pf_view)
+        {
+            Error("Couldn't open %s", filename);
+        }
+        Log("Writing '%s' ...\n", filename);
+    }
 
     fprintf(pf, "%i\n", num_visleafs);
     fprintf(pf, "%i\n", num_visportals);
 
-	WriteLeafCount_r (headnode);
+    WriteLeafCount_r(headnode);
     WritePortalFile_r(headnode);
     fclose(pf);
-	if (g_viewportal)
-	{
-		fclose (pf_view);
-	}
+    if (g_viewportal)
+    {
+        fclose(pf_view);
+    }
     Log("BSP generation successful, writing portal file '%s'\n", g_portfilename);
 }
 
 //===================================================
 
-void            FreePortals(node_t* node)
+void FreePortals(node_t *node)
 {
-    portal_t*       p;
-    portal_t*       nextp;
+    portal_t *p;
+    portal_t *nextp;
 
-	if (!node->isportalleaf)
+    if (!node->isportalleaf)
     {
         FreePortals(node->children[0]);
         FreePortals(node->children[1]);

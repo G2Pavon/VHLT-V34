@@ -4,29 +4,25 @@
 #include "log.h"
 #include "scriplib.h"
 
-char            g_token[MAXTOKEN];
-char            g_TXcommand;
+char g_token[MAXTOKEN];
+char g_TXcommand;
 
 typedef struct
 {
-    char            filename[_MAX_PATH];
-    char*           buffer;
-    char*           script_p;
-    char*           end_p;
-    int             line;
-}
-script_t;
+    char filename[_MAX_PATH];
+    char *buffer;
+    char *script_p;
+    char *end_p;
+    int line;
+} script_t;
 
-
-#define	MAX_INCLUDES	8
-
+#define MAX_INCLUDES 8
 
 static script_t s_scriptstack[MAX_INCLUDES];
-script_t*       s_script;
-int             s_scriptline;
-bool            s_endofscript;
-bool            s_tokenready;                                // only true if UnGetToken was just called
-
+script_t *s_script;
+int s_scriptline;
+bool s_endofscript;
+bool s_tokenready; // only true if UnGetToken was just called
 
 //  AddScriptToStack
 //  LoadScriptFile
@@ -39,18 +35,18 @@ bool            s_tokenready;                                // only true if UnG
 // =====================================================================================
 //  AddScriptToStack
 // =====================================================================================
-static void     AddScriptToStack(const char* const filename)
+static void AddScriptToStack(const char *const filename)
 {
-    int             size;
+    int size;
 
     s_script++;
 
     if (s_script == &s_scriptstack[MAX_INCLUDES])
         Error("s_script file exceeded MAX_INCLUDES");
 
-	strcpy_s(s_script->filename, filename);
+    strcpy_s(s_script->filename, filename);
 
-    size = LoadFile(s_script->filename, (char**)&s_script->buffer);
+    size = LoadFile(s_script->filename, (char **)&s_script->buffer);
 
     Log("Entering %s\n", s_script->filename);
 
@@ -62,7 +58,7 @@ static void     AddScriptToStack(const char* const filename)
 // =====================================================================================
 //  LoadScriptFile
 // =====================================================================================
-void            LoadScriptFile(const char* const filename)
+void LoadScriptFile(const char *const filename)
 {
     s_script = s_scriptstack;
     AddScriptToStack(filename);
@@ -74,7 +70,7 @@ void            LoadScriptFile(const char* const filename)
 // =====================================================================================
 //  ParseFromMemory
 // =====================================================================================
-void            ParseFromMemory(char* buffer, const int size)
+void ParseFromMemory(char *buffer, const int size)
 {
     s_script = s_scriptstack;
     s_script++;
@@ -82,7 +78,7 @@ void            ParseFromMemory(char* buffer, const int size)
     if (s_script == &s_scriptstack[MAX_INCLUDES])
         Error("s_script file exceeded MAX_INCLUDES");
 
-	strcpy_s(s_script->filename, "memory buffer");
+    strcpy_s(s_script->filename, "memory buffer");
 
     s_script->buffer = buffer;
     s_script->line = 1;
@@ -106,7 +102,7 @@ void            ParseFromMemory(char* buffer, const int size)
  * could cross a line boundary.
  */
 // =====================================================================================
-void            UnGetToken()
+void UnGetToken()
 {
     s_tokenready = true;
 }
@@ -114,7 +110,7 @@ void            UnGetToken()
 // =====================================================================================
 //  EndOfScript
 // =====================================================================================
-bool            EndOfScript(const bool crossline)
+bool EndOfScript(const bool crossline)
 {
     if (!crossline)
         Error("Line %i is incomplete (did you place a \" inside an entity string?) \n", s_scriptline);
@@ -144,11 +140,11 @@ bool            EndOfScript(const bool crossline)
 // =====================================================================================
 //  GetToken
 // =====================================================================================
-bool            GetToken(const bool crossline)
+bool GetToken(const bool crossline)
 {
-    char           *token_p;
+    char *token_p;
 
-    if (s_tokenready)                                        // is a g_token allready waiting?
+    if (s_tokenready) // is a g_token allready waiting?
     {
         s_tokenready = false;
         return true;
@@ -159,7 +155,7 @@ bool            GetToken(const bool crossline)
 
     // skip space
 skipspace:
-	while (*s_script->script_p <= 32 && *s_script->script_p >= 0)
+    while (*s_script->script_p <= 32 && *s_script->script_p >= 0)
     {
         if (s_script->script_p >= s_script->end_p)
             return EndOfScript(crossline);
@@ -176,7 +172,7 @@ skipspace:
         return EndOfScript(crossline);
 
     // comment fields
-    if (*s_script->script_p == ';' || *s_script->script_p == '#' || // semicolon and # is comment field
+    if (*s_script->script_p == ';' || *s_script->script_p == '#' ||         // semicolon and # is comment field
         (*s_script->script_p == '/' && *((s_script->script_p) + 1) == '/')) // also make // a comment field
     {
         if (!crossline)
@@ -186,7 +182,7 @@ skipspace:
         if (*s_script->script_p == '/')
             s_script->script_p++;
         if (s_script->script_p[1] == 'T' && s_script->script_p[2] == 'X')
-            g_TXcommand = s_script->script_p[3];             // AR: "//TX#"-style comment
+            g_TXcommand = s_script->script_p[3]; // AR: "//TX#"-style comment
 
         //ets---
         while (*s_script->script_p++ != '\n')
@@ -195,7 +191,7 @@ skipspace:
                 return EndOfScript(crossline);
         }
         //ets+++
-        s_scriptline = s_script->line++;                       // AR: this line was missing
+        s_scriptline = s_script->line++; // AR: this line was missing
         //ets---
         goto skipspace;
     }
@@ -222,7 +218,7 @@ skipspace:
     else
     {
         // regular token
-		while ((*s_script->script_p > 32 || *s_script->script_p < 0) && *s_script->script_p != ';')
+        while ((*s_script->script_p > 32 || *s_script->script_p < 0) && *s_script->script_p != ';')
         {
             *token_p++ = *s_script->script_p++;
 
@@ -335,9 +331,9 @@ void            ParseWadToken(const bool crossline)
 //  TokenAvailable
 //      returns true if there is another token on the line
 // =====================================================================================
-bool            TokenAvailable()
+bool TokenAvailable()
 {
-    char           *search_p;
+    char *search_p;
 
     search_p = s_script->script_p;
 

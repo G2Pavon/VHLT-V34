@@ -1,33 +1,32 @@
 #include "messages.h"
 
-// AJM: because these are repeated, they use up redundant memory. 
+// AJM: because these are repeated, they use up redundant memory.
 //  consequently ive made them into const strings which each occurance can point to.
 
 // Common descriptions
-const char* const internallimit = "The compiler tool hit an internal limit";
-const char* const internalerror = "The compiler tool had an internal error";
-const char* const maperror      = "The map has a problem which must be fixed";
+const char *const internallimit = "The compiler tool hit an internal limit";
+const char *const internalerror = "The compiler tool had an internal error";
+const char *const maperror = "The map has a problem which must be fixed";
 
 // Common explanations
 #define contact contactvluzacn //"contact zoner@gearboxsoftware.com immidiately"
-const char* const selfexplanitory = "self explanitory";
-const char* const reference       = "Check the file http://www.zhlt.info/common-mapping-problems.html for a detailed explanation of this problem";
-const char* const simplify        = "The map is too complex for the game engine/compile tools to handle.  Simplify";
-const char* const contactmerl     = "contact amckern@yahoo.com concerning this issue.";
-const char* const contactvluzacn  = "contact vluzacn@163.com concerning this issue.";
+const char *const selfexplanitory = "self explanitory";
+const char *const reference = "Check the file http://www.zhlt.info/common-mapping-problems.html for a detailed explanation of this problem";
+const char *const simplify = "The map is too complex for the game engine/compile tools to handle.  Simplify";
+const char *const contactmerl = "contact amckern@yahoo.com concerning this issue.";
+const char *const contactvluzacn = "contact vluzacn@163.com concerning this issue.";
 
 static const MessageTable_t assumes[assume_last] = {
     {"invalid assume message", "This is a message should never be printed.", contact},
 
     // generic
     {"Memory allocation failure", "The program failled to allocate a block of memory.",
-	#ifdef HLRAD
-	 sizeof (intptr_t) <= 4? "The map is too complex for the compile tools to handle. Switch to the 64-bit version of hlrad if possible." :
-     "Likely causes are (in order of likeliness) : the partition holding the swapfile is full; swapfile size is smaller than required; memory fragmentation; heap corruption"
-	#else
-	 contact
-	#endif
-	},
+#ifdef HLRAD
+     sizeof(intptr_t) <= 4 ? "The map is too complex for the compile tools to handle. Switch to the 64-bit version of hlrad if possible." : "Likely causes are (in order of likeliness) : the partition holding the swapfile is full; swapfile size is smaller than required; memory fragmentation; heap corruption"
+#else
+     contact
+#endif
+    },
     {"NULL Pointer", internalerror, contact},
     {"Bad Thread Workcount", internalerror, contact},
 
@@ -53,7 +52,7 @@ static const MessageTable_t assumes[assume_last] = {
     {"Exceeded MAX_WEDGES", internallimit, contact},
     {"Exceeded MAX_WVERTS", internallimit, contact},
     {"Exceeded MAX_SUPERFACEEDGES", internallimit, contact},
-    {"Empty Solid Entity", "A solid entity in the map (func_wall for example) has no brushes.",  "If using Worldcraft, do a check for problems and fix any occurences of 'Empty solid'"},
+    {"Empty Solid Entity", "A solid entity in the map (func_wall for example) has no brushes.", "If using Worldcraft, do a check for problems and fix any occurences of 'Empty solid'"},
 
     // vis
     {"Leaf portal saw into leaf", maperror, reference},
@@ -97,25 +96,22 @@ static const MessageTable_t assumes[assume_last] = {
     {"Exceeded MAX_MAP_NODES", "The maximum number of nodes for a map has been reached", simplify},
     {"CompressVis Overflow", internalerror, contact},
     {"DecompressVis Overflow", internalerror, contact},
-	{"Exceeded MAX_MAP_LEAFS", "The maximum number of leaves for a map has been reached", simplify},
+    {"Exceeded MAX_MAP_LEAFS", "The maximum number of leaves for a map has been reached", simplify},
     {"Execution Cancelled", "Tool execution was cancelled either by the user or due to a fatal compile setting", selfexplanitory},
     {"Internal Error", internalerror, contact},
-	//KGP added
-	{"Exceeded MAX_MAP_LIGHTING","You have run out of light data memory" ,"Use the -lightdata <#> command line option to increase your maximum light memory.  The default is 32768 (KB)."}, // 6144 (KB) //--vluzacn
+    //KGP added
+    {"Exceeded MAX_MAP_LIGHTING", "You have run out of light data memory", "Use the -lightdata <#> command line option to increase your maximum light memory.  The default is 32768 (KB)."}, // 6144 (KB) //--vluzacn
     {"Exceeded MAX_INTERNAL_MAP_PLANES", "The maximum number of plane definitions has been reached", "The map has grown too complex"},
-	{"Could not locate WAD file", "The compile tools could not locate a wad file that the map was referencing.",
-	"Make sure the file '<mapname>.wa_' exists. This is a file generated by hlcsg and you should not delete it. If you have to run hlrad without this file, use '-waddir' to specify folders where hlrad can find all the wad files."
-	},
-	{"Couldn't open extent file", "<mapname>.ext doesn't exist. This file is required by the " PLATFORM_VERSIONSTRING " version of hlrad.", "Make sure hlbsp has run correctly. Alternatively, run 'ripent.exe -writeextentfile <mapname>' to create the extent file."},
-}; 
+    {"Could not locate WAD file", "The compile tools could not locate a wad file that the map was referencing.",
+     "Make sure the file '<mapname>.wa_' exists. This is a file generated by hlcsg and you should not delete it. If you have to run hlrad without this file, use '-waddir' to specify folders where hlrad can find all the wad files."},
+    {"Couldn't open extent file", "<mapname>.ext doesn't exist. This file is required by the " PLATFORM_VERSIONSTRING " version of hlrad.", "Make sure hlbsp has run correctly. Alternatively, run 'ripent.exe -writeextentfile <mapname>' to create the extent file."},
+};
 
-const MessageTable_t* GetAssume(assume_msgs id)
+const MessageTable_t *GetAssume(assume_msgs id)
 {
-    if (!(id > assume_first && id < assume_last))//(!(id > assume_first) && (id < assume_last)) --vluzacn
+    if (!(id > assume_first && id < assume_last)) //(!(id > assume_first) && (id < assume_last)) --vluzacn
     {
         id = assume_first;
     }
     return &assumes[id];
 }
-
-

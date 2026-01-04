@@ -35,63 +35,70 @@
 
 class ReferenceCounter
 {
-// Construction
-public:
-	ReferenceCounter();
-	ReferenceCounter(int InitialValue);
+    // Construction
+  public:
+    ReferenceCounter();
+    ReferenceCounter(int InitialValue);
     virtual ~ReferenceCounter() {} // Should optimize to nothing except in the derived-class case
-	ReferenceCounter(const ReferenceCounter& other) {copy(other);}
-	ReferenceCounter& operator=(const ReferenceCounter& other) {copy(other); return *this;}
+    ReferenceCounter(const ReferenceCounter &other) { copy(other); }
+    ReferenceCounter &operator=(const ReferenceCounter &other)
+    {
+        copy(other);
+        return *this;
+    }
 
-public:
-    // User functions 
-	inline int add(int amt);// increment the value by amt, returns the ORIGINAL value
-	inline int sub(int amt);// increment the value by amt, returns the ORIGINAL value
-	inline int inc();// increment the value, returns the NEW value
-	inline int dec();// decrement the value, returns the NEW value
-	inline int read() const;// read the current value
-	inline void write(int newvalue);// change the counter to a new value blindly
-	inline int swap(int newvalue);// change the counter to a new value, and return the ORIGINAL value
+  public:
+    // User functions
+    inline int add(int amt);         // increment the value by amt, returns the ORIGINAL value
+    inline int sub(int amt);         // increment the value by amt, returns the ORIGINAL value
+    inline int inc();                // increment the value, returns the NEW value
+    inline int dec();                // decrement the value, returns the NEW value
+    inline int read() const;         // read the current value
+    inline void write(int newvalue); // change the counter to a new value blindly
+    inline int swap(int newvalue);   // change the counter to a new value, and return the ORIGINAL value
 
     // Convenient Operators
-	int operator++() {return inc();}
-	int operator--() {return dec();}
-	int operator++(int) {return inc() - 1;}
-	int operator--(int) {return dec() + 1;}
-	int operator+=(int amt) {return add(amt) + amt;}
-	int operator-=(int amt) {return sub(amt) - amt;}
-	int operator=(int value) {write(value); return value;}
-	operator int() const {return read();}
+    int operator++() { return inc(); }
+    int operator--() { return dec(); }
+    int operator++(int) { return inc() - 1; }
+    int operator--(int) { return dec() + 1; }
+    int operator+=(int amt) { return add(amt) + amt; }
+    int operator-=(int amt) { return sub(amt) - amt; }
+    int operator=(int value)
+    {
+        write(value);
+        return value;
+    }
+    operator int() const { return read(); }
 
-// Internal Methods
-protected:
-	inline void copy(const ReferenceCounter& other);
+    // Internal Methods
+  protected:
+    inline void copy(const ReferenceCounter &other);
 
-// Data
-protected:
-#ifdef  SINGLE_THREADED
+    // Data
+  protected:
+#ifdef SINGLE_THREADED
     int m_atom;
 #else //SINGLE_THREADED
 
 #ifdef _WIN32
-	long m_atom;
+    long m_atom;
 #endif
 #ifdef HAVE_ATOMIC
-	atomic_t m_atom;
+    atomic_t m_atom;
 #endif
 
-#endif//SINGLE_THREADED
+#endif //SINGLE_THREADED
 };
-
 
 #ifdef SINGLE_THREADED
 inline ReferenceCounter::ReferenceCounter()
 {
-	m_atom = 0;
+    m_atom = 0;
 }
 inline ReferenceCounter::ReferenceCounter(int InitialValue)
 {
-	m_atom = InitialValue;
+    m_atom = InitialValue;
 }
 inline int ReferenceCounter::add(int amt)
 {
@@ -125,56 +132,56 @@ inline void ReferenceCounter::write(int newvalue)
 }
 inline int ReferenceCounter::read() const
 {
-	return m_atom;
+    return m_atom;
 }
-inline void ReferenceCounter::copy(const ReferenceCounter& other)
+inline void ReferenceCounter::copy(const ReferenceCounter &other)
 {
-	m_atom = other.m_atom;
+    m_atom = other.m_atom;
 }
 #else // SINGLE_THREADED
 
 #ifdef _WIN32
 inline ReferenceCounter::ReferenceCounter()
 {
-	m_atom = 0;
+    m_atom = 0;
 }
 inline ReferenceCounter::ReferenceCounter(int InitialValue)
 {
-	m_atom = InitialValue;
+    m_atom = InitialValue;
 }
 inline int ReferenceCounter::add(int amt)
 {
-	return InterlockedExchangeAdd(&m_atom, amt);
+    return InterlockedExchangeAdd(&m_atom, amt);
 }
 inline int ReferenceCounter::sub(int amt)
 {
-	return InterlockedExchangeAdd(&m_atom, -amt);
+    return InterlockedExchangeAdd(&m_atom, -amt);
 }
 inline int ReferenceCounter::inc()
 {
-	return InterlockedIncrement(&m_atom);
+    return InterlockedIncrement(&m_atom);
 }
 inline int ReferenceCounter::dec()
 {
-	return InterlockedDecrement(&m_atom);
+    return InterlockedDecrement(&m_atom);
 }
 inline int ReferenceCounter::swap(int newvalue)
 {
-	return InterlockedExchange(&m_atom, newvalue);
+    return InterlockedExchange(&m_atom, newvalue);
 }
 inline void ReferenceCounter::write(int newvalue)
 {
-	InterlockedExchange(&m_atom, newvalue);
+    InterlockedExchange(&m_atom, newvalue);
 }
 inline int ReferenceCounter::read() const
 {
-	return m_atom;
+    return m_atom;
 }
-inline void ReferenceCounter::copy(const ReferenceCounter& other)
+inline void ReferenceCounter::copy(const ReferenceCounter &other)
 {
-	m_atom = other.m_atom;
+    m_atom = other.m_atom;
 }
-#endif//_WIN32
+#endif //_WIN32
 
 #ifdef HAVE_ATOMIC
 inline ReferenceCounter::ReferenceCounter()
@@ -200,34 +207,34 @@ inline int ReferenceCounter::sub(int amt)
 inline int ReferenceCounter::inc()
 {
     int rval = atomic_read(&m_atom);
-	atomic_inc(&m_atom);
+    atomic_inc(&m_atom);
     return rval + 1;
 }
 inline int ReferenceCounter::dec()
 {
     int rval = atomic_read(&m_atom);
-	atomic_dec(&m_atom);
+    atomic_dec(&m_atom);
     return rval - 1;
 }
 inline int ReferenceCounter::swap(int newvalue)
 {
-	int rval = atomic_read(&m_atom);
-	atomic_set(&m_atom, newvalue);
-	return rval;
+    int rval = atomic_read(&m_atom);
+    atomic_set(&m_atom, newvalue);
+    return rval;
 }
 inline void ReferenceCounter::write(int newvalue)
 {
-	atomic_set(&m_atom, newvalue);
+    atomic_set(&m_atom, newvalue);
 }
 inline int ReferenceCounter::read() const
 {
-	return atomic_read(&m_atom);
+    return atomic_read(&m_atom);
 }
-inline void ReferenceCounter::copy(const ReferenceCounter& other)
+inline void ReferenceCounter::copy(const ReferenceCounter &other)
 {
-	m_atom.counter = other.read();
-}     
-#endif//HAVE_ATOMIC
-#endif//SINGLE_THREADED
+    m_atom.counter = other.read();
+}
+#endif //HAVE_ATOMIC
+#endif //SINGLE_THREADED
 
-#endif//ReferenceCounter_H__
+#endif //ReferenceCounter_H__

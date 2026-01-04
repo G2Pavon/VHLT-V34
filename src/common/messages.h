@@ -8,11 +8,10 @@
 
 typedef struct
 {
-    const char*     title;
-    const char*     text;
-    const char*     howto;
-}
-MessageTable_t;
+    const char *title;
+    const char *text;
+    const char *howto;
+} MessageTable_t;
 
 typedef enum
 {
@@ -81,20 +80,19 @@ typedef enum
     assume_MAX_MAP_NODES,
     assume_COMPRESSVIS_OVERFLOW,
     assume_DECOMPRESSVIS_OVERFLOW,
-	assume_MAX_MAP_LEAFS,
+    assume_MAX_MAP_LEAFS,
     // AJM: added in
     assume_TOOL_CANCEL,
     assume_GENERIC,
-	// KGP: added
-	assume_MAX_MAP_LIGHTING,
-	assume_MAX_INTERNAL_MAP_PLANES,
-	assume_COULD_NOT_LOCATE_WAD,
-	assume_NO_EXTENT_FILE,
+    // KGP: added
+    assume_MAX_MAP_LIGHTING,
+    assume_MAX_INTERNAL_MAP_PLANES,
+    assume_COULD_NOT_LOCATE_WAD,
+    assume_NO_EXTENT_FILE,
 
     assume_last
-}
-assume_msgs;
+} assume_msgs;
 
-extern const MessageTable_t* GetAssume(assume_msgs id);
+extern const MessageTable_t *GetAssume(assume_msgs id);
 
 #endif // commonc MESSAGES_H__

@@ -4,9 +4,9 @@
 //  CheckStack
 // =====================================================================================
 #ifdef USE_CHECK_STACK
-static void     CheckStack(const leaf_t* const leaf, const threaddata_t* const thread)
+static void CheckStack(const leaf_t *const leaf, const threaddata_t *const thread)
 {
-    pstack_t*       p;
+    pstack_t *p;
 
     for (p = thread->pstack_head.next; p; p = p->next)
     {
@@ -19,9 +19,9 @@ static void     CheckStack(const leaf_t* const leaf, const threaddata_t* const t
 // =====================================================================================
 //  AllocStackWinding
 // =====================================================================================
-inline static winding_t* AllocStackWinding(pstack_t* const stack)
+inline static winding_t *AllocStackWinding(pstack_t *const stack)
 {
-    int             i;
+    int i;
 
     for (i = 0; i < 3; i++)
     {
@@ -40,14 +40,14 @@ inline static winding_t* AllocStackWinding(pstack_t* const stack)
 // =====================================================================================
 //  FreeStackWinding
 // =====================================================================================
-inline static void     FreeStackWinding(const winding_t* const w, pstack_t* const stack)
+inline static void FreeStackWinding(const winding_t *const w, pstack_t *const stack)
 {
-    int             i;
+    int i;
 
     i = w - stack->windings;
 
     if (i < 0 || i > 2)
-        return;                                            // not from local
+        return; // not from local
 
     if (stack->freewindings[i])
         Error("FreeStackWinding: allready free");
@@ -57,15 +57,15 @@ inline static void     FreeStackWinding(const winding_t* const w, pstack_t* cons
 // =====================================================================================
 //  ChopWinding
 // =====================================================================================
-inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, const plane_t* const split)
+inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const plane_t *const split)
 {
-    vec_t           dists[128];
-    int             sides[128];
-    int             counts[3];
-    vec_t           dot;
-    int             i;
-    vec3_t          mid;
-    winding_t*      neww;
+    vec_t dists[128];
+    int sides[128];
+    int counts[3];
+    vec_t dot;
+    int i;
+    vec3_t mid;
+    winding_t *neww;
 
     counts[0] = counts[1] = counts[2] = 0;
 
@@ -97,7 +97,7 @@ inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, c
 
     if (!counts[1])
     {
-        return in;                                         // completely on front side
+        return in; // completely on front side
     }
 
     if (!counts[0])
@@ -115,13 +115,13 @@ inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, c
 
     for (i = 0; i < in->numpoints; i++)
     {
-        vec_t* p1 = in->points[i];
+        vec_t *p1 = in->points[i];
 
         if (neww->numpoints == MAX_POINTS_ON_FIXED_WINDING)
         {
             Warning("ChopWinding : rejected(1) due to too many points\n");
             FreeStackWinding(neww, stack);
-            return in;                                     // can't chop -- fall back to original
+            return in; // can't chop -- fall back to original
         }
 
         if (sides[i] == SIDE_ON)
@@ -145,7 +145,7 @@ inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, c
         {
             Warning("ChopWinding : rejected(2) due to too many points\n");
             FreeStackWinding(neww, stack);
-            return in;                                     // can't chop -- fall back to original
+            return in; // can't chop -- fall back to original
         }
 
         // generate a split point
@@ -155,15 +155,15 @@ inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, c
             {
                 tmp = 0;
             }
-            const vec_t* p2 = in->points[tmp];
+            const vec_t *p2 = in->points[tmp];
 
             dot = dists[i] / (dists[i] - dists[i + 1]);
 
-            const vec_t* normal = split->normal;
+            const vec_t *normal = split->normal;
             const vec_t dist = split->dist;
             unsigned int j;
             for (j = 0; j < 3; j++)
-            {                                                  // avoid round off error when possible
+            { // avoid round off error when possible
                 if (normal[j] < (1.0 - NORMAL_EPSILON))
                 {
                     if (normal[j] > (-1.0 + NORMAL_EPSILON))
@@ -196,10 +196,10 @@ inline winding_t*      ChopWinding(winding_t* const in, pstack_t* const stack, c
 //  AddPlane
 // =====================================================================================
 #ifdef RVIS_LEVEL_2
-inline static void AddPlane(pstack_t* const stack, const plane_t* const split)
+inline static void AddPlane(pstack_t *const stack, const plane_t *const split)
 {
-    int     j;
-    
+    int j;
+
     if (stack->clipPlaneCount)
     {
         for (j = 0; j < stack->clipPlaneCount; j++)
@@ -228,25 +228,25 @@ inline static void AddPlane(pstack_t* const stack, const plane_t* const split)
 //      order goes source, pass, target.  If the order goes pass, source, target then
 //      flipclip should be set.
 // =====================================================================================
-inline static winding_t* ClipToSeperators(
-    const winding_t* const source,
-    const winding_t* const pass, 
-    winding_t* const a_target,
-    const bool flipclip, 
-    pstack_t* const stack)
+inline static winding_t *ClipToSeperators(
+    const winding_t *const source,
+    const winding_t *const pass,
+    winding_t *const a_target,
+    const bool flipclip,
+    pstack_t *const stack)
 {
-    int             i, j, k, l;
-    plane_t         plane;
-    vec3_t          v1, v2;
-    float           d;
-    int             counts[3];
-    bool            fliptest;
-    winding_t*      target = a_target;
+    int i, j, k, l;
+    plane_t plane;
+    vec3_t v1, v2;
+    float d;
+    int counts[3];
+    bool fliptest;
+    winding_t *target = a_target;
 
     const unsigned int numpoints = source->numpoints;
 
-    // check all combinations       
-    for (i=0, l=1; i < numpoints; i++, l++)
+    // check all combinations
+    for (i = 0, l = 1; i < numpoints; i++, l++)
     {
         if (l == numpoints)
         {
@@ -279,13 +279,13 @@ inline static winding_t* ClipToSeperators(
                 }
                 d = DotProduct(source->points[k], plane.normal) - plane.dist;
                 if (d < -ON_EPSILON)
-                {                                          // source is on the negative side, so we want all
+                { // source is on the negative side, so we want all
                     // pass and target on the positive side
                     fliptest = false;
                     break;
                 }
                 else if (d > ON_EPSILON)
-                {                                          // source is on the positive side, so we want all
+                { // source is on the positive side, so we want all
                     // pass and target on the negative side
                     fliptest = true;
                     break;
@@ -293,7 +293,7 @@ inline static winding_t* ClipToSeperators(
             }
             if (k == numpoints)
             {
-                continue;                                  // planar with source portal
+                continue; // planar with source portal
             }
 
             // flip the normal if the source portal is backwards
@@ -328,12 +328,12 @@ inline static winding_t* ClipToSeperators(
             }
             if (k != pass->numpoints)
             {
-                continue;                                  // points on negative side, not a seperating plane
+                continue; // points on negative side, not a seperating plane
             }
 
             if (!counts[0])
             {
-                continue;                                  // planar with seperating plane
+                continue; // planar with seperating plane
             }
 
             // flip the normal if we want the back side
@@ -343,19 +343,19 @@ inline static winding_t* ClipToSeperators(
                 plane.dist = -plane.dist;
             }
 
-	    if (target != NULL)
-	    {
-            // clip target by the seperating plane
-            target = ChopWinding(target, stack, &plane);
-            if (!target)
+            if (target != NULL)
             {
-                return NULL;                               // target is not visible
+                // clip target by the seperating plane
+                target = ChopWinding(target, stack, &plane);
+                if (!target)
+                {
+                    return NULL; // target is not visible
+                }
             }
-	    }
-	    else
-	    {
-        	AddPlane(stack, &plane);
-	    }
+            else
+            {
+                AddPlane(stack, &plane);
+            }
 
 #ifdef RVIS_LEVEL_1
             break; /* Antony was here */
@@ -371,10 +371,10 @@ inline static winding_t* ClipToSeperators(
 //      Flood fill through the leafs
 //      If src_portal is NULL, this is the originating leaf
 // =====================================================================================
-inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* const thread, const pstack_t* const prevstack)
+inline static void RecursiveLeafFlow(const int leafnum, const threaddata_t *const thread, const pstack_t *const prevstack)
 {
-    pstack_t        stack;
-    leaf_t*         leaf;
+    pstack_t stack;
+    leaf_t *leaf;
 
     leaf = &g_leafs[leafnum];
 #ifdef USE_CHECK_STACK
@@ -384,7 +384,7 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
     {
         const unsigned offset = leafnum >> 3;
         const unsigned bit = (1 << (leafnum & 7));
-    
+
         // mark the leaf as visible
         if (!(thread->leafvis[offset] & bit))
         {
@@ -405,16 +405,16 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
     stack.clipPlane = NULL;
 #endif
 
-    // check all portals for flowing into other leafs       
+    // check all portals for flowing into other leafs
     unsigned i;
-    portal_t** plist = leaf->portals;
+    portal_t **plist = leaf->portals;
 
     for (i = 0; i < leaf->numportals; i++, plist++)
     {
-        portal_t* p = *plist;
+        portal_t *p = *plist;
 
 #if ZHLT_ZONES
-        portal_t * head_p = stack.head->portal;
+        portal_t *head_p = stack.head->portal;
         if (g_Zones->check(head_p->zone, p->zone))
         {
             continue;
@@ -427,44 +427,44 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
 
             if (!(stack.head->mightsee[offset] & bit))
             {
-                continue;                                      // can't possibly see it
+                continue; // can't possibly see it
             }
             if (!(prevstack->mightsee[offset] & bit))
             {
-                continue;                                      // can't possibly see it
+                continue; // can't possibly see it
             }
         }
 
         // if the portal can't see anything we haven't allready seen, skip it
         {
-            long* test;
+            long *test;
 
             if (p->status == stat_done)
             {
-                test = (long*)p->visbits;
+                test = (long *)p->visbits;
             }
             else
             {
-                test = (long*)p->mightsee;
+                test = (long *)p->mightsee;
             }
-    
+
             {
                 const int bitlongs = g_bitlongs;
 
                 {
-                    long* prevmight = (long*)prevstack->mightsee;
-                    long* might = (long*)stack.mightsee;
-                
+                    long *prevmight = (long *)prevstack->mightsee;
+                    long *might = (long *)stack.mightsee;
+
                     unsigned j;
                     for (j = 0; j < bitlongs; j++, test++, might++, prevmight++)
                     {
                         (*might) = (*prevmight) & (*test);
                     }
                 }
-        
+
                 {
-                    long* might = (long*)stack.mightsee;
-                    long* vis = (long*)thread->leafvis;
+                    long *might = (long *)stack.mightsee;
+                    long *vis = (long *)thread->leafvis;
                     unsigned j;
                     for (j = 0; j < bitlongs; j++, might++, vis++)
                     {
@@ -473,9 +473,9 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
                             break;
                         }
                     }
-            
+
                     if (j == g_bitlongs)
-                    {                                                  // can't see anything new
+                    { // can't see anything new
                         continue;
                     }
                 }
@@ -484,13 +484,13 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
 
         // get plane of portal, point normal into the neighbor leaf
         stack.portalplane = &p->plane;
-        plane_t             backplane;
+        plane_t backplane;
         VectorSubtract(vec3_origin, p->plane.normal, backplane.normal);
         backplane.dist = -p->plane.dist;
 
         if (VectorCompare(prevstack->portalplane->normal, backplane.normal))
         {
-            continue;                                      // can't go out a coplanar face
+            continue; // can't go out a coplanar face
         }
 
         stack.portal = p;
@@ -514,7 +514,7 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
         }
 
         if (!prevstack->pass)
-        {                                                  // the second leaf can only be blocked if coplanar
+        { // the second leaf can only be blocked if coplanar
             RecursiveLeafFlow(p->leaf, thread, &stack);
             continue;
         }
@@ -529,7 +529,7 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
         if (stack.clipPlaneCount == -1)
         {
             stack.clipPlaneCount = 0;
-            stack.clipPlane = (plane_t*)alloca(sizeof(plane_t) * prevstack->source->numpoints * prevstack->pass->numpoints);
+            stack.clipPlane = (plane_t *)alloca(sizeof(plane_t) * prevstack->source->numpoints * prevstack->pass->numpoints);
 
             ClipToSeperators(prevstack->source, prevstack->pass, NULL, false, &stack);
             ClipToSeperators(prevstack->pass, prevstack->source, NULL, true, &stack);
@@ -544,7 +544,7 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
             }
 
             if (stack.pass == NULL)
-            continue;
+                continue;
         }
 #else
 
@@ -593,15 +593,15 @@ inline static void     RecursiveLeafFlow(const int leafnum, const threaddata_t* 
 // =====================================================================================
 //  PortalFlow
 // =====================================================================================
-void            PortalFlow(portal_t* p)
+void PortalFlow(portal_t *p)
 {
-    threaddata_t    data;
-    unsigned        i;
+    threaddata_t data;
+    unsigned i;
 
     if (p->status != stat_working)
         Error("PortalFlow: reflowed");
 
-    p->visbits = (byte*)calloc(1, g_bitbytes);
+    p->visbits = (byte *)calloc(1, g_bitbytes);
 
     memset(&data, 0, sizeof(data));
     data.leafvis = p->visbits;
@@ -613,7 +613,7 @@ void            PortalFlow(portal_t* p)
     data.pstack_head.portalplane = &p->plane;
     for (i = 0; i < g_bitlongs; i++)
     {
-        ((long*)data.pstack_head.mightsee)[i] = ((long*)p->mightsee)[i];
+        ((long *)data.pstack_head.mightsee)[i] = ((long *)p->mightsee)[i];
     }
     RecursiveLeafFlow(p->leaf, &data, &data.pstack_head);
 
@@ -631,16 +631,16 @@ void            PortalFlow(portal_t* p)
 //      This is a rough first-order aproximation that is used to trivially reject some
 //      of the final calculations.
 // =====================================================================================
-static void     SimpleFlood(byte* const srcmightsee, const int leafnum, byte* const portalsee, unsigned int* const c_leafsee)
+static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const portalsee, unsigned int *const c_leafsee)
 {
-    unsigned        i;
-    leaf_t*         leaf;
-    portal_t*       p;
+    unsigned i;
+    leaf_t *leaf;
+    portal_t *p;
 
     {
-        const unsigned  offset = leafnum >> 3;
-        const unsigned  bit = (1 << (leafnum & 7));
-    
+        const unsigned offset = leafnum >> 3;
+        const unsigned bit = (1 << (leafnum & 7));
+
         if (srcmightsee[offset] & bit)
         {
             return;
@@ -665,25 +665,24 @@ static void     SimpleFlood(byte* const srcmightsee, const int leafnum, byte* co
     }
 }
 
-#define PORTALSEE_SIZE (MAX_PORTALS*2)
+#define PORTALSEE_SIZE (MAX_PORTALS * 2)
 #ifdef SYSTEM_WIN32
 #pragma warning(push)
-#pragma warning(disable: 4100)                             // unreferenced formal parameter
+#pragma warning(disable : 4100) // unreferenced formal parameter
 #endif
-
 
 // =====================================================================================
 //  BasePortalVis
 // =====================================================================================
-void            BasePortalVis(int unused)
+void BasePortalVis(int unused)
 {
-    int             i, j, k;
-    portal_t*       tp;
-    portal_t*       p;
-    float           d;
-    winding_t*      w;
-    byte            portalsee[PORTALSEE_SIZE];
-    const int       portalsize = (g_numportals * 2);
+    int i, j, k;
+    portal_t *tp;
+    portal_t *p;
+    float d;
+    winding_t *w;
+    byte portalsee[PORTALSEE_SIZE];
+    const int portalsize = (g_numportals * 2);
 
 #ifdef ZHLT_NETVIS
     {
@@ -697,7 +696,7 @@ void            BasePortalVis(int unused)
 #endif
         p = g_portals + i;
 
-        p->mightsee = (byte*)calloc(1, g_bitbytes);
+        p->mightsee = (byte *)calloc(1, g_bitbytes);
 
         memset(portalsee, 0, portalsize);
 
@@ -729,9 +728,8 @@ void            BasePortalVis(int unused)
             }
             if (k == w->numpoints)
             {
-                continue;                                  // no points on front
+                continue; // no points on front
             }
-
 
             w = p->winding;
             for (k = 0; k < w->numpoints; k++)
@@ -744,9 +742,8 @@ void            BasePortalVis(int unused)
             }
             if (k == w->numpoints)
             {
-                continue;                                  // no points on front
+                continue; // no points on front
             }
-
 
             portalsee[j] = 1;
         }
@@ -756,410 +753,410 @@ void            BasePortalVis(int unused)
     }
 }
 
-bool BestNormalFromWinding (const vec3_t *points, int numpoints, vec3_t &normal_out)
+bool BestNormalFromWinding(const vec3_t *points, int numpoints, vec3_t &normal_out)
 {
-	const vec3_t *pt1, *pt2, *pt3;
-	int k;
-	vec3_t d, normal, edge;
-	vec_t dist, maxdist;
-	if (numpoints < 3)
-	{
-		return false;
-	}
-	pt1 = &points[0];
-	maxdist = -1;
-	for (k = 0; k < numpoints; k++)
-	{
-		if (&points[k] == pt1)
-		{
-			continue;
-		}
-		VectorSubtract (points[k], *pt1, edge);
-		dist = DotProduct (edge, edge);
-		if (dist > maxdist)
-		{
-			maxdist = dist;
-			pt2 = &points[k];
-		}
-	}
-	if (maxdist <= ON_EPSILON * ON_EPSILON)
-	{
-		return false;
-	}
-	maxdist = -1;
-	VectorSubtract (*pt2, *pt1, edge);
-	VectorNormalize (edge);
-	for (k = 0; k < numpoints; k++)
-	{
-		if (&points[k] == pt1 || &points[k] == pt2)
-		{
-			continue;
-		}
-		VectorSubtract (points[k], *pt1, d);
-		CrossProduct (edge, d, normal);
-		dist = DotProduct (normal, normal);
-		if (dist > maxdist)
-		{
-			maxdist = dist;
-			pt3 = &points[k];
-		}
-	}
-	if (maxdist <= ON_EPSILON * ON_EPSILON)
-	{
-		return false;
-	}
-	VectorSubtract (*pt3, *pt1, d);
-	CrossProduct (edge, d, normal);
-	VectorNormalize (normal);
-	if (pt3 < pt2)
-	{
-		VectorScale (normal, -1, normal);
-	}
-	VectorCopy (normal, normal_out);
-	return true;
+    const vec3_t *pt1, *pt2, *pt3;
+    int k;
+    vec3_t d, normal, edge;
+    vec_t dist, maxdist;
+    if (numpoints < 3)
+    {
+        return false;
+    }
+    pt1 = &points[0];
+    maxdist = -1;
+    for (k = 0; k < numpoints; k++)
+    {
+        if (&points[k] == pt1)
+        {
+            continue;
+        }
+        VectorSubtract(points[k], *pt1, edge);
+        dist = DotProduct(edge, edge);
+        if (dist > maxdist)
+        {
+            maxdist = dist;
+            pt2 = &points[k];
+        }
+    }
+    if (maxdist <= ON_EPSILON * ON_EPSILON)
+    {
+        return false;
+    }
+    maxdist = -1;
+    VectorSubtract(*pt2, *pt1, edge);
+    VectorNormalize(edge);
+    for (k = 0; k < numpoints; k++)
+    {
+        if (&points[k] == pt1 || &points[k] == pt2)
+        {
+            continue;
+        }
+        VectorSubtract(points[k], *pt1, d);
+        CrossProduct(edge, d, normal);
+        dist = DotProduct(normal, normal);
+        if (dist > maxdist)
+        {
+            maxdist = dist;
+            pt3 = &points[k];
+        }
+    }
+    if (maxdist <= ON_EPSILON * ON_EPSILON)
+    {
+        return false;
+    }
+    VectorSubtract(*pt3, *pt1, d);
+    CrossProduct(edge, d, normal);
+    VectorNormalize(normal);
+    if (pt3 < pt2)
+    {
+        VectorScale(normal, -1, normal);
+    }
+    VectorCopy(normal, normal_out);
+    return true;
 }
 
-vec_t WindingDist (const winding_t *w[2])
+vec_t WindingDist(const winding_t *w[2])
 {
-	vec_t minsqrdist = 99999999.0 * 99999999.0;
-	vec_t sqrdist;
-	int a, b;
-	// point to point
-	for (a = 0; a < w[0]->numpoints; a++)
-	{
-		for (b = 0; b < w[1]->numpoints; b++)
-		{
-			vec3_t v;
-			VectorSubtract (w[0]->points[a], w[1]->points[b], v);
-			sqrdist = DotProduct (v, v);
-			if (sqrdist < minsqrdist)
-			{
-				minsqrdist = sqrdist;
-			}
-		}
-	}
-	// point to edge
-	for (int side = 0; side < 2; side++)
-	{
-		for (a = 0; a < w[side]->numpoints; a++)
-		{
-			for (b = 0; b < w[!side]->numpoints; b++)
-			{
-				const vec3_t &p = w[side]->points[a];
-				const vec3_t &p1 = w[!side]->points[b];
-				const vec3_t &p2 = w[!side]->points[(b + 1) % w[!side]->numpoints];
-				vec3_t delta;
-				vec_t frac;
-				vec3_t v;
-				VectorSubtract (p2, p1, delta);
-				if (VectorNormalize (delta) <= ON_EPSILON)
-				{
-					continue;
-				}
-				frac = DotProduct (p, delta) - DotProduct (p1, delta);
-				if (frac <= ON_EPSILON || frac >= (DotProduct (p2, delta) - DotProduct (p1, delta)) - ON_EPSILON)
-				{
-					// p1 or p2 is closest to p
-					continue;
-				}
-				VectorMA (p1, frac, delta, v);
-				VectorSubtract (p, v, v);
-				sqrdist = DotProduct (v, v);
-				if (sqrdist < minsqrdist)
-				{
-					minsqrdist = sqrdist;
-				}
-			}
-		}
-	}
-	// edge to edge
-	for (a = 0; a < w[0]->numpoints; a++)
-	{
-		for (b = 0; b < w[1]->numpoints; b++)
-		{
-			const vec3_t &p1 = w[0]->points[a];
-			const vec3_t &p2 = w[0]->points[(a + 1) % w[0]->numpoints];
-			const vec3_t &p3 = w[1]->points[b];
-			const vec3_t &p4 = w[1]->points[(b + 1) % w[1]->numpoints];
-			vec3_t delta1;
-			vec3_t delta2;
-			vec3_t normal;
-			vec3_t normal1;
-			vec3_t normal2;
-			VectorSubtract (p2, p1, delta1);
-			VectorSubtract (p4, p3, delta2);
-			CrossProduct (delta1, delta2, normal);
-			if (!VectorNormalize (normal))
-			{
-				continue;
-			}
-			CrossProduct (normal, delta1, normal1); // same direction as delta2
-			CrossProduct (delta2, normal, normal2); // same direction as delta1
-			if (VectorNormalize (normal1) <= ON_EPSILON || VectorNormalize (normal2) <= ON_EPSILON)
-			{
-				continue;
-			}
-			if (DotProduct (p3, normal1) >= DotProduct (p1, normal1) - ON_EPSILON ||
-				DotProduct (p4, normal1) <= DotProduct (p1, normal1) + ON_EPSILON ||
-				DotProduct (p1, normal2) >= DotProduct (p3, normal2) - ON_EPSILON ||
-				DotProduct (p2, normal2) <= DotProduct (p3, normal2) + ON_EPSILON )
-			{
-				// the edges are not crossing when viewed along normal
-				continue;
-			}
-			sqrdist = DotProduct (p3, normal) - DotProduct (p1, normal);
-			sqrdist = sqrdist * sqrdist;
-			if (sqrdist < minsqrdist)
-			{
-				minsqrdist = sqrdist;
-			}
-		}
-	}
-	// point to face and edge to face
-	for (int side = 0; side < 2; side++)
-	{
-		vec3_t planenormal;
-		vec_t planedist;
-		vec3_t *boundnormals;
-		vec_t *bounddists;
-		if (!BestNormalFromWinding (w[!side]->points, w[!side]->numpoints, planenormal))
-		{
-			continue;
-		}
-		planedist = DotProduct (planenormal, w[!side]->points[0]);
-		hlassume (boundnormals = (vec3_t *)malloc (w[!side]->numpoints * sizeof (vec3_t)), assume_NoMemory);
-		hlassume (bounddists = (vec_t *)malloc (w[!side]->numpoints * sizeof (vec_t)), assume_NoMemory);
-		// build boundaries
-		for (b = 0; b < w[!side]->numpoints; b++)
-		{
-			vec3_t v;
-			const vec3_t &p1 = w[!side]->points[b];
-			const vec3_t &p2 = w[!side]->points[(b + 1) % w[!side]->numpoints];
-			VectorSubtract (p2, p1, v);
-			CrossProduct (v, planenormal, boundnormals[b]);
-			if (!VectorNormalize (boundnormals[b]))
-			{
-				bounddists[b] = 1.0;
-			}
-			else
-			{
-				bounddists[b] = DotProduct (p1, boundnormals[b]);
-			}
-		}
-		for (a = 0; a < w[side]->numpoints; a++)
-		{
-			const vec3_t &p = w[side]->points[a];
-			for (b = 0; b < w[!side]->numpoints; b++)
-			{
-				if (DotProduct (p, boundnormals[b]) - bounddists[b] >= -ON_EPSILON)
-				{
-					break;
-				}
-			}
-			if (b < w[!side]->numpoints)
-			{
-				continue;
-			}
-			sqrdist = DotProduct (p, planenormal) - planedist;
-			sqrdist = sqrdist * sqrdist;
-			if (sqrdist < minsqrdist)
-			{
-				minsqrdist = sqrdist;
-			}
-		}
-		for (a = 0; a < w[side]->numpoints; a++)
-		{
-			const vec3_t &p1 = w[side]->points[a];
-			const vec3_t &p2 = w[side]->points[(a + 1) % w[side]->numpoints];
-			vec_t dist1 = DotProduct (p1, planenormal) - planedist;
-			vec_t dist2 = DotProduct (p2, planenormal) - planedist;
-			vec3_t delta;
-			vec_t frac;
-			vec3_t v;
-			if (dist1 > ON_EPSILON && dist2 < -ON_EPSILON || dist1 < -ON_EPSILON && dist2 > ON_EPSILON)
-			{
-				frac = dist1 / (dist1 - dist2);
-				VectorSubtract (p2, p1, delta);
-				VectorMA (p1, frac, delta, v);
-				for (b = 0; b < w[!side]->numpoints; b++)
-				{
-					if (DotProduct (v, boundnormals[b]) - bounddists[b] >= -ON_EPSILON)
-					{
-						break;
-					}
-				}
-				if (b < w[!side]->numpoints)
-				{
-					continue;
-				}
-				minsqrdist = 0;
-			}
-		}
-		free (boundnormals);
-		free (bounddists);
-	}
-	return (sqrt (minsqrdist));
+    vec_t minsqrdist = 99999999.0 * 99999999.0;
+    vec_t sqrdist;
+    int a, b;
+    // point to point
+    for (a = 0; a < w[0]->numpoints; a++)
+    {
+        for (b = 0; b < w[1]->numpoints; b++)
+        {
+            vec3_t v;
+            VectorSubtract(w[0]->points[a], w[1]->points[b], v);
+            sqrdist = DotProduct(v, v);
+            if (sqrdist < minsqrdist)
+            {
+                minsqrdist = sqrdist;
+            }
+        }
+    }
+    // point to edge
+    for (int side = 0; side < 2; side++)
+    {
+        for (a = 0; a < w[side]->numpoints; a++)
+        {
+            for (b = 0; b < w[!side]->numpoints; b++)
+            {
+                const vec3_t &p = w[side]->points[a];
+                const vec3_t &p1 = w[!side]->points[b];
+                const vec3_t &p2 = w[!side]->points[(b + 1) % w[!side]->numpoints];
+                vec3_t delta;
+                vec_t frac;
+                vec3_t v;
+                VectorSubtract(p2, p1, delta);
+                if (VectorNormalize(delta) <= ON_EPSILON)
+                {
+                    continue;
+                }
+                frac = DotProduct(p, delta) - DotProduct(p1, delta);
+                if (frac <= ON_EPSILON || frac >= (DotProduct(p2, delta) - DotProduct(p1, delta)) - ON_EPSILON)
+                {
+                    // p1 or p2 is closest to p
+                    continue;
+                }
+                VectorMA(p1, frac, delta, v);
+                VectorSubtract(p, v, v);
+                sqrdist = DotProduct(v, v);
+                if (sqrdist < minsqrdist)
+                {
+                    minsqrdist = sqrdist;
+                }
+            }
+        }
+    }
+    // edge to edge
+    for (a = 0; a < w[0]->numpoints; a++)
+    {
+        for (b = 0; b < w[1]->numpoints; b++)
+        {
+            const vec3_t &p1 = w[0]->points[a];
+            const vec3_t &p2 = w[0]->points[(a + 1) % w[0]->numpoints];
+            const vec3_t &p3 = w[1]->points[b];
+            const vec3_t &p4 = w[1]->points[(b + 1) % w[1]->numpoints];
+            vec3_t delta1;
+            vec3_t delta2;
+            vec3_t normal;
+            vec3_t normal1;
+            vec3_t normal2;
+            VectorSubtract(p2, p1, delta1);
+            VectorSubtract(p4, p3, delta2);
+            CrossProduct(delta1, delta2, normal);
+            if (!VectorNormalize(normal))
+            {
+                continue;
+            }
+            CrossProduct(normal, delta1, normal1); // same direction as delta2
+            CrossProduct(delta2, normal, normal2); // same direction as delta1
+            if (VectorNormalize(normal1) <= ON_EPSILON || VectorNormalize(normal2) <= ON_EPSILON)
+            {
+                continue;
+            }
+            if (DotProduct(p3, normal1) >= DotProduct(p1, normal1) - ON_EPSILON ||
+                DotProduct(p4, normal1) <= DotProduct(p1, normal1) + ON_EPSILON ||
+                DotProduct(p1, normal2) >= DotProduct(p3, normal2) - ON_EPSILON ||
+                DotProduct(p2, normal2) <= DotProduct(p3, normal2) + ON_EPSILON)
+            {
+                // the edges are not crossing when viewed along normal
+                continue;
+            }
+            sqrdist = DotProduct(p3, normal) - DotProduct(p1, normal);
+            sqrdist = sqrdist * sqrdist;
+            if (sqrdist < minsqrdist)
+            {
+                minsqrdist = sqrdist;
+            }
+        }
+    }
+    // point to face and edge to face
+    for (int side = 0; side < 2; side++)
+    {
+        vec3_t planenormal;
+        vec_t planedist;
+        vec3_t *boundnormals;
+        vec_t *bounddists;
+        if (!BestNormalFromWinding(w[!side]->points, w[!side]->numpoints, planenormal))
+        {
+            continue;
+        }
+        planedist = DotProduct(planenormal, w[!side]->points[0]);
+        hlassume(boundnormals = (vec3_t *)malloc(w[!side]->numpoints * sizeof(vec3_t)), assume_NoMemory);
+        hlassume(bounddists = (vec_t *)malloc(w[!side]->numpoints * sizeof(vec_t)), assume_NoMemory);
+        // build boundaries
+        for (b = 0; b < w[!side]->numpoints; b++)
+        {
+            vec3_t v;
+            const vec3_t &p1 = w[!side]->points[b];
+            const vec3_t &p2 = w[!side]->points[(b + 1) % w[!side]->numpoints];
+            VectorSubtract(p2, p1, v);
+            CrossProduct(v, planenormal, boundnormals[b]);
+            if (!VectorNormalize(boundnormals[b]))
+            {
+                bounddists[b] = 1.0;
+            }
+            else
+            {
+                bounddists[b] = DotProduct(p1, boundnormals[b]);
+            }
+        }
+        for (a = 0; a < w[side]->numpoints; a++)
+        {
+            const vec3_t &p = w[side]->points[a];
+            for (b = 0; b < w[!side]->numpoints; b++)
+            {
+                if (DotProduct(p, boundnormals[b]) - bounddists[b] >= -ON_EPSILON)
+                {
+                    break;
+                }
+            }
+            if (b < w[!side]->numpoints)
+            {
+                continue;
+            }
+            sqrdist = DotProduct(p, planenormal) - planedist;
+            sqrdist = sqrdist * sqrdist;
+            if (sqrdist < minsqrdist)
+            {
+                minsqrdist = sqrdist;
+            }
+        }
+        for (a = 0; a < w[side]->numpoints; a++)
+        {
+            const vec3_t &p1 = w[side]->points[a];
+            const vec3_t &p2 = w[side]->points[(a + 1) % w[side]->numpoints];
+            vec_t dist1 = DotProduct(p1, planenormal) - planedist;
+            vec_t dist2 = DotProduct(p2, planenormal) - planedist;
+            vec3_t delta;
+            vec_t frac;
+            vec3_t v;
+            if (dist1 > ON_EPSILON && dist2 < -ON_EPSILON || dist1 < -ON_EPSILON && dist2 > ON_EPSILON)
+            {
+                frac = dist1 / (dist1 - dist2);
+                VectorSubtract(p2, p1, delta);
+                VectorMA(p1, frac, delta, v);
+                for (b = 0; b < w[!side]->numpoints; b++)
+                {
+                    if (DotProduct(v, boundnormals[b]) - bounddists[b] >= -ON_EPSILON)
+                    {
+                        break;
+                    }
+                }
+                if (b < w[!side]->numpoints)
+                {
+                    continue;
+                }
+                minsqrdist = 0;
+            }
+        }
+        free(boundnormals);
+        free(bounddists);
+    }
+    return (sqrt(minsqrdist));
 }
 // AJM: MVD
 // =====================================================================================
 //  MaxDistVis
 // =====================================================================================
-void	MaxDistVis(int unused)
+void MaxDistVis(int unused)
 {
-	int i, j, k, m;
-	int a, b, c, d;
-	leaf_t	*l;
-	leaf_t	*tl;
-	plane_t	*boundary = NULL;
-	vec3_t delta;
+    int i, j, k, m;
+    int a, b, c, d;
+    leaf_t *l;
+    leaf_t *tl;
+    plane_t *boundary = NULL;
+    vec3_t delta;
 
-	float new_dist;
+    float new_dist;
 
-	unsigned offset_l;
-	unsigned bit_l;
+    unsigned offset_l;
+    unsigned bit_l;
 
-	unsigned offset_tl;
-	unsigned bit_tl;
-	
-	while(1)
-	{
-		i = GetThreadWork();
-		if (i == -1)
-			break;
+    unsigned offset_tl;
+    unsigned bit_tl;
 
-		l = &g_leafs[i];
+    while (1)
+    {
+        i = GetThreadWork();
+        if (i == -1)
+            break;
 
-		for(j = i + 1, tl = g_leafs + j; j < g_portalleafs; j++, tl++)
-		{
+        l = &g_leafs[i];
 
-			offset_l = i >> 3;
-			bit_l = (1 << (i & 7));
+        for (j = i + 1, tl = g_leafs + j; j < g_portalleafs; j++, tl++)
+        {
 
-			offset_tl = j >> 3;
-			bit_tl = (1 << (j & 7));
+            offset_l = i >> 3;
+            bit_l = (1 << (i & 7));
 
-			{
-				bool visible = false;
-				for (k = 0; k < l->numportals; k++)
-				{
-					if (l->portals[k]->visbits[offset_tl] & bit_tl)
-					{
-						visible = true;
-					}
-				}
-				for (m = 0; m < tl->numportals; m++)
-				{	
-					if (tl->portals[m]->visbits[offset_l] & bit_l)
-					{
-						visible = true;
-					}
-				}
-				if (!visible)
-				{
-					goto NoWork;
-				}
-			}
-			
-			// rough check
-			{
-				vec3_t v;
-				vec_t dist;
-				const winding_t *w;
-				const leaf_t *leaf[2] = {l, tl};
-				vec3_t center[2];
-				vec_t radius[2];
-				int count[2];
-				for (int side = 0; side < 2; side++)
-				{
-					count[side] = 0;
-					VectorClear (center[side]);
-					for (a = 0; a < leaf[side]->numportals; a++)
-					{
-						w = leaf[side]->portals[a]->winding;
-						for (b = 0; b < w->numpoints; b++)
-						{
-							VectorAdd (w->points[b], center[side], center[side]);
-							count[side]++;
-						}
-					}
-				}
-				if (!count[0] && !count[1])
-				{
-					goto Work;
-				}
-				for (int side = 0; side < 2; side++)
-				{
-					VectorScale (center[side], 1.0 / (vec_t)count[side], center[side]);
-					radius[side] = 0;
-					for (a = 0; a < leaf[side]->numportals; a++)
-					{
-						w = leaf[side]->portals[a]->winding;
-						for (b = 0; b < w->numpoints; b++)
-						{
-							VectorSubtract (w->points[b], center[side], v);
-							dist = DotProduct (v, v);
-							radius[side] = qmax (radius[side], dist);
-						}
-					}
-					radius[side] = sqrt (radius[side]);
-				}
-				VectorSubtract (center[0], center[1], v);
-				dist = VectorLength (v);
-				if (qmax (dist - radius[0] - radius[1], 0) >= g_maxdistance - ON_EPSILON)
-				{
-					goto Work;
-				}
-				if (dist + radius[0] + radius[1] < g_maxdistance - ON_EPSILON)
-				{
-					goto NoWork;
-				}
-			}
+            offset_tl = j >> 3;
+            bit_tl = (1 << (j & 7));
 
-			// exact check
-			{
-				vec_t mindist = 9999999999;
-				vec_t dist;
-				for (k = 0; k < l->numportals; k++)
-				{
-					for (m = 0; m < tl->numportals; m++)
-					{
-						const winding_t *w[2];
-						w[0] = l->portals[k]->winding;
-						w[1] = tl->portals[m]->winding;
-						dist = WindingDist (w);
-						mindist = qmin (dist, mindist);
-					}
-				}
-				if (mindist >= g_maxdistance - ON_EPSILON)
-				{
-					goto Work;
-				}
-				else
-				{
-					goto NoWork;
-				}
-			}
+            {
+                bool visible = false;
+                for (k = 0; k < l->numportals; k++)
+                {
+                    if (l->portals[k]->visbits[offset_tl] & bit_tl)
+                    {
+                        visible = true;
+                    }
+                }
+                for (m = 0; m < tl->numportals; m++)
+                {
+                    if (tl->portals[m]->visbits[offset_l] & bit_l)
+                    {
+                        visible = true;
+                    }
+                }
+                if (!visible)
+                {
+                    goto NoWork;
+                }
+            }
 
-Work:
-			ThreadLock ();
-			for (k = 0; k < l->numportals; k++)
-			{
-				l->portals[k]->visbits[offset_tl] &= ~bit_tl;
-			}
-			for (m = 0; m < tl->numportals; m++)
-			{
-				tl->portals[m]->visbits[offset_l] &= ~bit_l;
-			}
-			ThreadUnlock ();
-			
-NoWork:
-			continue;	// Hack to keep label from causing compile error
-		}
-	}
+            // rough check
+            {
+                vec3_t v;
+                vec_t dist;
+                const winding_t *w;
+                const leaf_t *leaf[2] = {l, tl};
+                vec3_t center[2];
+                vec_t radius[2];
+                int count[2];
+                for (int side = 0; side < 2; side++)
+                {
+                    count[side] = 0;
+                    VectorClear(center[side]);
+                    for (a = 0; a < leaf[side]->numportals; a++)
+                    {
+                        w = leaf[side]->portals[a]->winding;
+                        for (b = 0; b < w->numpoints; b++)
+                        {
+                            VectorAdd(w->points[b], center[side], center[side]);
+                            count[side]++;
+                        }
+                    }
+                }
+                if (!count[0] && !count[1])
+                {
+                    goto Work;
+                }
+                for (int side = 0; side < 2; side++)
+                {
+                    VectorScale(center[side], 1.0 / (vec_t)count[side], center[side]);
+                    radius[side] = 0;
+                    for (a = 0; a < leaf[side]->numportals; a++)
+                    {
+                        w = leaf[side]->portals[a]->winding;
+                        for (b = 0; b < w->numpoints; b++)
+                        {
+                            VectorSubtract(w->points[b], center[side], v);
+                            dist = DotProduct(v, v);
+                            radius[side] = qmax(radius[side], dist);
+                        }
+                    }
+                    radius[side] = sqrt(radius[side]);
+                }
+                VectorSubtract(center[0], center[1], v);
+                dist = VectorLength(v);
+                if (qmax(dist - radius[0] - radius[1], 0) >= g_maxdistance - ON_EPSILON)
+                {
+                    goto Work;
+                }
+                if (dist + radius[0] + radius[1] < g_maxdistance - ON_EPSILON)
+                {
+                    goto NoWork;
+                }
+            }
 
-	// Release potential memory
-	if(boundary)
-		delete [] boundary;
+            // exact check
+            {
+                vec_t mindist = 9999999999;
+                vec_t dist;
+                for (k = 0; k < l->numportals; k++)
+                {
+                    for (m = 0; m < tl->numportals; m++)
+                    {
+                        const winding_t *w[2];
+                        w[0] = l->portals[k]->winding;
+                        w[1] = tl->portals[m]->winding;
+                        dist = WindingDist(w);
+                        mindist = qmin(dist, mindist);
+                    }
+                }
+                if (mindist >= g_maxdistance - ON_EPSILON)
+                {
+                    goto Work;
+                }
+                else
+                {
+                    goto NoWork;
+                }
+            }
+
+        Work:
+            ThreadLock();
+            for (k = 0; k < l->numportals; k++)
+            {
+                l->portals[k]->visbits[offset_tl] &= ~bit_tl;
+            }
+            for (m = 0; m < tl->numportals; m++)
+            {
+                tl->portals[m]->visbits[offset_l] &= ~bit_l;
+            }
+            ThreadUnlock();
+
+        NoWork:
+            continue; // Hack to keep label from causing compile error
+        }
+    }
+
+    // Release potential memory
+    if (boundary)
+        delete[] boundary;
 }
 
 #ifdef SYSTEM_WIN32

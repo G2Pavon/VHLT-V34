@@ -2,136 +2,134 @@
 
 typedef struct wvert_s
 {
-    vec_t           t;
-    struct wvert_s* prev;
-    struct wvert_s* next;
-}
-wvert_t;
+    vec_t t;
+    struct wvert_s *prev;
+    struct wvert_s *next;
+} wvert_t;
 
 typedef struct wedge_s
 {
-    struct wedge_s* next;
-    vec3_t          dir;
-    vec3_t          origin;
-    wvert_t         head;
-}
-wedge_t;
+    struct wedge_s *next;
+    vec3_t dir;
+    vec3_t origin;
+    wvert_t head;
+} wedge_t;
 
-static int      numwedges;
-static int      numwverts;
-static int      tjuncs;
-static int      tjuncfaces;
+static int numwedges;
+static int numwverts;
+static int tjuncs;
+static int tjuncfaces;
 
-#define MAX_WVERTS   0x40000
-#define MAX_WEDGES   0x20000
+#define MAX_WVERTS 0x40000
+#define MAX_WEDGES 0x20000
 
-static wvert_t  wverts[MAX_WVERTS];
-static wedge_t  wedges[MAX_WEDGES];
+static wvert_t wverts[MAX_WVERTS];
+static wedge_t wedges[MAX_WEDGES];
 
 //============================================================================
 
-#define NUM_HASH	4096
+#define NUM_HASH 4096
 
-wedge_t*        wedge_hash[NUM_HASH];
+wedge_t *wedge_hash[NUM_HASH];
 
-static vec3_t   hash_min;
-static vec3_t   hash_scale;
+static vec3_t hash_min;
+static vec3_t hash_scale;
 // It's okay if the coordinates go under hash_min, because they are hashed in a cyclic way (modulus by hash_numslots)
 // So please don't change the hardcoded hash_min and scale
-static int		hash_numslots[3];
-#define MAX_HASH_NEIGHBORS	4
+static int hash_numslots[3];
+#define MAX_HASH_NEIGHBORS 4
 
-static void     InitHash(const vec3_t mins, const vec3_t maxs)
+static void InitHash(const vec3_t mins, const vec3_t maxs)
 {
-    vec3_t          size;
-    vec_t           volume;
-    vec_t           scale;
-    int             newsize[2];
+    vec3_t size;
+    vec_t volume;
+    vec_t scale;
+    int newsize[2];
 
-	// Let's ignore the parameters and make things more predictable, so there won't be strange cases such as division by 0 or extreme scaling values.
-	VectorFill(hash_min, -8000);
-	VectorFill(size, 16000);
+    // Let's ignore the parameters and make things more predictable, so there won't be strange cases such as division by 0 or extreme scaling values.
+    VectorFill(hash_min, -8000);
+    VectorFill(size, 16000);
     memset(wedge_hash, 0, sizeof(wedge_hash));
 
     volume = size[0] * size[1];
 
     scale = sqrt(volume / NUM_HASH);
 
-	hash_numslots[0] = (int)floor (size[0] / scale);
-	hash_numslots[1] = (int)floor (size[1] / scale);
-	while (hash_numslots[0] * hash_numslots[1] > NUM_HASH)
-	{
-		Developer (DEVELOPER_LEVEL_WARNING, "hash_numslots[0] * hash_numslots[1] > NUM_HASH");
-		hash_numslots[0]--;
-		hash_numslots[1]--;
-	}
+    hash_numslots[0] = (int)floor(size[0] / scale);
+    hash_numslots[1] = (int)floor(size[1] / scale);
+    while (hash_numslots[0] * hash_numslots[1] > NUM_HASH)
+    {
+        Developer(DEVELOPER_LEVEL_WARNING, "hash_numslots[0] * hash_numslots[1] > NUM_HASH");
+        hash_numslots[0]--;
+        hash_numslots[1]--;
+    }
 
-	hash_scale[0] = hash_numslots[0] / size[0];
-	hash_scale[1] = hash_numslots[1] / size[1];
+    hash_scale[0] = hash_numslots[0] / size[0];
+    hash_scale[1] = hash_numslots[1] / size[1];
 }
 
-static int HashVec (const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
+static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
 {
-	int h;
-	int i;
-	int x;
-	int y;
-	int slot[2];
-	vec_t normalized[2];
-	vec_t slotdiff[2];
+    int h;
+    int i;
+    int x;
+    int y;
+    int slot[2];
+    vec_t normalized[2];
+    vec_t slotdiff[2];
 
-	for (i = 0; i < 2; i++)
-	{
-		normalized[i] = hash_scale[i] * (vec[i] - hash_min[i]);
-		slot[i] = (int)floor (normalized[i]);
-		slotdiff[i] = normalized[i] - (vec_t)slot[i];
+    for (i = 0; i < 2; i++)
+    {
+        normalized[i] = hash_scale[i] * (vec[i] - hash_min[i]);
+        slot[i] = (int)floor(normalized[i]);
+        slotdiff[i] = normalized[i] - (vec_t)slot[i];
 
-		slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i];
-		slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i]; // do it twice to handle negative values
-	}
+        slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i];
+        slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i]; // do it twice to handle negative values
+    }
 
-	h = slot[0] * hash_numslots[1] + slot[1];
+    h = slot[0] * hash_numslots[1] + slot[1];
 
-	*num_hashneighbors = 0;
-	for (x = -1; x <= 1; x++)
-	{
-		if (x == -1 && slotdiff[0] > hash_scale[0] * (2 * ON_EPSILON) ||
-			x == 1 && slotdiff[0] < 1 - hash_scale[0] * (2 * ON_EPSILON))
-		{
-			continue;
-		}
-		for (y = -1; y <= 1; y++)
-		{
-			if (y == -1 && slotdiff[1] > hash_scale[1] * (2 * ON_EPSILON) ||
-				y == 1 && slotdiff[1] < 1 - hash_scale[1] * (2 * ON_EPSILON))
-			{
-				continue;
-			}
-			if (*num_hashneighbors >= MAX_HASH_NEIGHBORS)
-			{
-				Error ("HashVec: internal error.");
-			}
-			hashneighbors[*num_hashneighbors] =
-				((slot[0] + x + hash_numslots[0]) % hash_numslots[0]) * hash_numslots[1] +
-				(slot[1] + y + hash_numslots[1]) % hash_numslots[1];
-			(*num_hashneighbors)++;
-		}
-	}
+    *num_hashneighbors = 0;
+    for (x = -1; x <= 1; x++)
+    {
+        if (x == -1 && slotdiff[0] > hash_scale[0] * (2 * ON_EPSILON) ||
+            x == 1 && slotdiff[0] < 1 - hash_scale[0] * (2 * ON_EPSILON))
+        {
+            continue;
+        }
+        for (y = -1; y <= 1; y++)
+        {
+            if (y == -1 && slotdiff[1] > hash_scale[1] * (2 * ON_EPSILON) ||
+                y == 1 && slotdiff[1] < 1 - hash_scale[1] * (2 * ON_EPSILON))
+            {
+                continue;
+            }
+            if (*num_hashneighbors >= MAX_HASH_NEIGHBORS)
+            {
+                Error("HashVec: internal error.");
+            }
+            hashneighbors[*num_hashneighbors] =
+                ((slot[0] + x + hash_numslots[0]) % hash_numslots[0]) * hash_numslots[1] +
+                (slot[1] + y + hash_numslots[1]) % hash_numslots[1];
+            (*num_hashneighbors)++;
+        }
+    }
 
-	return h;
+    return h;
 }
 
 //============================================================================
 
-static bool     CanonicalVector(vec3_t vec)
+static bool CanonicalVector(vec3_t vec)
 {
     if (VectorNormalize(vec))
     {
-        if (vec[0] > NORMAL_EPSILON )
+        if (vec[0] > NORMAL_EPSILON)
         {
             return true;
         }
-        else if (vec[0] < -NORMAL_EPSILON )
+        else if (vec[0] < -NORMAL_EPSILON)
         {
             VectorSubtract(vec3_origin, vec, vec);
             return true;
@@ -140,12 +138,12 @@ static bool     CanonicalVector(vec3_t vec)
         {
             vec[0] = 0;
         }
-    
-        if (vec[1] > NORMAL_EPSILON )
+
+        if (vec[1] > NORMAL_EPSILON)
         {
             return true;
         }
-        else if (vec[1] < -NORMAL_EPSILON )
+        else if (vec[1] < -NORMAL_EPSILON)
         {
             VectorSubtract(vec3_origin, vec, vec);
             return true;
@@ -155,11 +153,11 @@ static bool     CanonicalVector(vec3_t vec)
             vec[1] = 0;
         }
 
-        if (vec[2] > NORMAL_EPSILON )
+        if (vec[2] > NORMAL_EPSILON)
         {
             return true;
         }
-        else if (vec[2] < -NORMAL_EPSILON )
+        else if (vec[2] < -NORMAL_EPSILON)
         {
             VectorSubtract(vec3_origin, vec, vec);
             return true;
@@ -168,22 +166,22 @@ static bool     CanonicalVector(vec3_t vec)
         {
             vec[2] = 0;
         }
-//        hlassert(false);
+        //        hlassert(false);
         return false;
     }
-//    hlassert(false);
+    //    hlassert(false);
     return false;
 }
 
-static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t* t1, vec_t* t2)
+static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
 {
-    vec3_t          origin;
-    vec3_t          dir;
-    wedge_t*        w;
-    vec_t           temp;
-    int             h;
-	int				num_hashneighbors;
-	int				hashneighbors[MAX_HASH_NEIGHBORS];
+    vec3_t origin;
+    vec3_t dir;
+    wedge_t *w;
+    vec_t temp;
+    int h;
+    int num_hashneighbors;
+    int hashneighbors[MAX_HASH_NEIGHBORS];
 
     VectorSubtract(p2, p1, dir);
     if (!CanonicalVector(dir))
@@ -205,26 +203,26 @@ static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t* t1, vec_t* t2)
         *t2 = temp;
     }
 
-	h = HashVec(origin, &num_hashneighbors, hashneighbors);
+    h = HashVec(origin, &num_hashneighbors, hashneighbors);
 
-  for (int i = 0; i < num_hashneighbors; ++i)
-	for (w = wedge_hash[hashneighbors[i]]; w; w = w->next)
-    {
-		if (fabs (w->origin[0] - origin[0]) > EQUAL_EPSILON ||
-			fabs (w->origin[1] - origin[1]) > EQUAL_EPSILON ||
-			fabs (w->origin[2] - origin[2]) > EQUAL_EPSILON )
-		{
-			continue;
-		}
-		if (fabs (w->dir[0] - dir[0]) > NORMAL_EPSILON ||
-			fabs (w->dir[1] - dir[1]) > NORMAL_EPSILON ||
-			fabs (w->dir[2] - dir[2]) > NORMAL_EPSILON )
-		{
-			continue;
-		}
+    for (int i = 0; i < num_hashneighbors; ++i)
+        for (w = wedge_hash[hashneighbors[i]]; w; w = w->next)
+        {
+            if (fabs(w->origin[0] - origin[0]) > EQUAL_EPSILON ||
+                fabs(w->origin[1] - origin[1]) > EQUAL_EPSILON ||
+                fabs(w->origin[2] - origin[2]) > EQUAL_EPSILON)
+            {
+                continue;
+            }
+            if (fabs(w->dir[0] - dir[0]) > NORMAL_EPSILON ||
+                fabs(w->dir[1] - dir[1]) > NORMAL_EPSILON ||
+                fabs(w->dir[2] - dir[2]) > NORMAL_EPSILON)
+            {
+                continue;
+            }
 
-        return w;
-    }
+            return w;
+        }
 
     hlassume(numwedges < MAX_WEDGES, assume_MAX_WEDGES);
     w = &wedges[numwedges];
@@ -246,12 +244,12 @@ static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t* t1, vec_t* t2)
  * 
  * ===============
  */
-#define T_EPSILON	ON_EPSILON
+#define T_EPSILON ON_EPSILON
 
-static void     AddVert(const wedge_t* const w, const vec_t t)
+static void AddVert(const wedge_t *const w, const vec_t t)
 {
-    wvert_t*        v;
-    wvert_t*        newv;
+    wvert_t *v;
+    wvert_t *newv;
 
     v = w->head.next;
     do
@@ -265,8 +263,7 @@ static void     AddVert(const wedge_t* const w, const vec_t t)
             break;
         }
         v = v->next;
-    }
-    while (1);
+    } while (1);
 
     // insert a new wvert before v
     hlassume(numwverts < MAX_WVERTS, assume_MAX_WVERTS);
@@ -286,11 +283,11 @@ static void     AddVert(const wedge_t* const w, const vec_t t)
  * AddEdge
  * ===============
  */
-static void     AddEdge(const vec3_t p1, const vec3_t p2)
+static void AddEdge(const vec3_t p1, const vec3_t p2)
 {
-    wedge_t*        w;
-    vec_t           t1;
-    vec_t           t2;
+    wedge_t *w;
+    vec_t t1;
+    vec_t t2;
 
     w = FindEdge(p1, p2, &t1, &t2);
     AddVert(w, t1);
@@ -303,9 +300,9 @@ static void     AddEdge(const vec3_t p1, const vec3_t p2)
  * 
  * ===============
  */
-static void     AddFaceEdges(const face_t* const f)
+static void AddFaceEdges(const face_t *const f)
 {
-    int             i, j;
+    int i, j;
 
     for (i = 0; i < f->numpoints; i++)
     {
@@ -316,22 +313,22 @@ static void     AddFaceEdges(const face_t* const f)
 
 //============================================================================
 
-static byte     superfacebuf[1024 * 16];
-static face_t*  superface = (face_t*)superfacebuf;
-static int      MAX_SUPERFACEEDGES = (sizeof(superfacebuf) - sizeof(face_t) + sizeof(superface->pts)) / sizeof(vec3_t);
-static face_t*  newlist;
+static byte superfacebuf[1024 * 16];
+static face_t *superface = (face_t *)superfacebuf;
+static int MAX_SUPERFACEEDGES = (sizeof(superfacebuf) - sizeof(face_t) + sizeof(superface->pts)) / sizeof(vec3_t);
+static face_t *newlist;
 
-static void     SplitFaceForTjunc(face_t* f, face_t* original)
+static void SplitFaceForTjunc(face_t *f, face_t *original)
 {
-    int             i;
-    face_t*         newface;
-    face_t*         chain;
-    vec3_t          dir, test;
-    vec_t           v;
-    int             firstcorner, lastcorner;
+    int i;
+    face_t *newface;
+    face_t *chain;
+    vec3_t dir, test;
+    vec_t v;
+    int firstcorner, lastcorner;
 
 #ifdef _DEBUG
-    static int      counter = 0;
+    static int counter = 0;
 
     Log("SplitFaceForTjunc %d\n", counter++);
 #endif
@@ -339,10 +336,10 @@ static void     SplitFaceForTjunc(face_t* f, face_t* original)
     chain = NULL;
     do
     {
-        hlassume(f->original == NULL, assume_ValidPointer);     // "SplitFaceForTjunc: f->original"
+        hlassume(f->original == NULL, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
 
         if (f->numpoints <= MAXPOINTS)
-        {                                                  // the face is now small enough without more cutting
+        { // the face is now small enough without more cutting
             // so copy it back to the original
             *original = *f;
             original->original = chain;
@@ -353,8 +350,8 @@ static void     SplitFaceForTjunc(face_t* f, face_t* original)
 
         tjuncfaces++;
 
-restart:
-        // find the last corner 
+    restart:
+        // find the last corner
         VectorSubtract(f->pts[f->numpoints - 1], f->pts[0], dir);
         VectorNormalize(dir);
         for (lastcorner = f->numpoints - 1; lastcorner > 0; lastcorner--)
@@ -368,7 +365,7 @@ restart:
             }
         }
 
-        // find the first corner        
+        // find the first corner
         VectorSubtract(f->pts[1], f->pts[0], dir);
         VectorNormalize(dir);
         for (firstcorner = 1; firstcorner < f->numpoints - 1; firstcorner++)
@@ -399,7 +396,7 @@ restart:
 
         newface = NewFaceFromFace(f);
 
-        hlassume(f->original == NULL, assume_ValidPointer);     // "SplitFaceForTjunc: f->original"
+        hlassume(f->original == NULL, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
 
         newface->original = chain;
         chain = newface;
@@ -428,9 +425,7 @@ restart:
             VectorCopy(f->pts[i], f->pts[i - (newface->numpoints - 2)]);
         }
         f->numpoints -= (newface->numpoints - 2);
-    }
-    while (1);
-
+    } while (1);
 }
 
 /*
@@ -439,15 +434,15 @@ restart:
  * 
  * ===============
  */
-static void     FixFaceEdges(face_t* f)
+static void FixFaceEdges(face_t *f)
 {
-    int             i;
-    int             j;
-    int             k;
-    wedge_t*        w;
-    wvert_t*        v;
-    vec_t           t1;
-    vec_t           t2;
+    int i;
+    int j;
+    int k;
+    wedge_t *w;
+    wvert_t *v;
+    vec_t t1;
+    vec_t t2;
 
     *superface = *f;
 
@@ -488,14 +483,13 @@ restart:
     // the face needs to be split into multiple faces because of too many edges
 
     SplitFaceForTjunc(superface, f);
-
 }
 
 //============================================================================
 
-static void     tjunc_find_r(node_t* node)
+static void tjunc_find_r(node_t *node)
 {
-    face_t*         f;
+    face_t *f;
 
     if (node->planenum == PLANENUM_LEAF)
     {
@@ -511,10 +505,10 @@ static void     tjunc_find_r(node_t* node)
     tjunc_find_r(node->children[1]);
 }
 
-static void     tjunc_fix_r(node_t* node)
+static void tjunc_fix_r(node_t *node)
 {
-    face_t*         f;
-    face_t*         next;
+    face_t *f;
+    face_t *next;
 
     if (node->planenum == PLANENUM_LEAF)
     {
@@ -541,10 +535,10 @@ static void     tjunc_fix_r(node_t* node)
  * 
  * ===========
  */
-void            tjunc(node_t* headnode)
+void tjunc(node_t *headnode)
 {
-    vec3_t          maxs, mins;
-    int             i;
+    vec3_t maxs, mins;
+    int i;
 
     Verbose("---- tjunc ----\n");
 
@@ -557,7 +551,7 @@ void            tjunc(node_t* headnode)
     // identify all points on common edges
     //
 
-    // origin points won't allways be inside the map, so extend the hash area 
+    // origin points won't allways be inside the map, so extend the hash area
     for (i = 0; i < 3; i++)
     {
         if (fabs(headnode->maxs[i]) > fabs(headnode->mins[i]))

@@ -6,7 +6,7 @@
 #pragma once
 #endif
 
-extern void*    CreateResourceLock(int LockNumber);
-extern void     ReleaseResourceLock(void** lock);
+extern void *CreateResourceLock(int LockNumber);
+extern void ReleaseResourceLock(void **lock);
 
 #endif // RESOURCE_LOCK_H__

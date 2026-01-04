@@ -34,120 +34,118 @@
            as delete[] is not required for them.  ReferencePtr can also handle void types
            as a template parameter.
 */
-template<class DATA_T>
+template <class DATA_T>
 class ReferenceArrayBlock
 {
-public:
-	DATA_T*			pData;			    // User defined data block
-	mutable ReferenceCounter	ReferenceCount;
+  public:
+    DATA_T *pData; // User defined data block
+    mutable ReferenceCounter ReferenceCount;
 };
 
-
-template<class DATA_T>
-class ReferenceArray  
+template <class DATA_T>
+class ReferenceArray
 {
-public:
-	// Construction
-	ReferenceArray();
-	ReferenceArray(DATA_T* other);
-	ReferenceArray(const ReferenceArray<DATA_T>& other);
-	virtual ~ReferenceArray();
+  public:
+    // Construction
+    ReferenceArray();
+    ReferenceArray(DATA_T *other);
+    ReferenceArray(const ReferenceArray<DATA_T> &other);
+    virtual ~ReferenceArray();
 
-	// Assignment
-	ReferenceArray<DATA_T>& operator=(const ReferenceArray<DATA_T>& other);       
-	ReferenceArray<DATA_T>& operator=(DATA_T* other);
+    // Assignment
+    ReferenceArray<DATA_T> &operator=(const ReferenceArray<DATA_T> &other);
+    ReferenceArray<DATA_T> &operator=(DATA_T *other);
 
-	// Dereferencing
-	operator DATA_T*() const {return m_pData->pData;}
-	DATA_T& operator[](unsigned int offset) const {return m_pData->pData[offset];}
-	DATA_T& operator[](int offset) const {return m_pData->pData[offset];}
+    // Dereferencing
+    operator DATA_T *() const { return m_pData->pData; }
+    DATA_T &operator[](unsigned int offset) const { return m_pData->pData[offset]; }
+    DATA_T &operator[](int offset) const { return m_pData->pData[offset]; }
 
-protected:
-	// Internal methods
-	void Alloc();				// Allocate the m_pData
-	void Release();				// Releases a reference count (possibly freeing memory)
+  protected:
+    // Internal methods
+    void Alloc();   // Allocate the m_pData
+    void Release(); // Releases a reference count (possibly freeing memory)
 
-protected:
-	// Member data
-	ReferenceArrayBlock<DATA_T>* m_pData;
+  protected:
+    // Member data
+    ReferenceArrayBlock<DATA_T> *m_pData;
 };
 
-
-template<class DATA_T>
+template <class DATA_T>
 ReferenceArray<DATA_T>::ReferenceArray()
 {
-	Alloc();
+    Alloc();
 }
 
-template<class DATA_T>
-ReferenceArray<DATA_T>::ReferenceArray(DATA_T* other)
+template <class DATA_T>
+ReferenceArray<DATA_T>::ReferenceArray(DATA_T *other)
 {
-	Alloc();
-	m_pData->pData = other;
-	m_pData->ReferenceCount = 1;
+    Alloc();
+    m_pData->pData = other;
+    m_pData->ReferenceCount = 1;
 }
 
-template<class DATA_T>
-ReferenceArray<DATA_T>::ReferenceArray(const ReferenceArray<DATA_T>& other)
+template <class DATA_T>
+ReferenceArray<DATA_T>::ReferenceArray(const ReferenceArray<DATA_T> &other)
 {
-	m_pData = other.m_pData;
-	m_pData->ReferenceCount++;
+    m_pData = other.m_pData;
+    m_pData->ReferenceCount++;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 ReferenceArray<DATA_T>::~ReferenceArray()
 {
-	Release();
+    Release();
 }
 
-template<class DATA_T>
-ReferenceArray<DATA_T>& ReferenceArray<DATA_T>::operator=(const ReferenceArray<DATA_T>& other)
+template <class DATA_T>
+ReferenceArray<DATA_T> &ReferenceArray<DATA_T>::operator=(const ReferenceArray<DATA_T> &other)
 {
-	if (m_pData != other.m_pData)
-	{
-		Release();
-		m_pData = other.m_pData;
-		m_pData->ReferenceCount++;
-	}
-	return *this;
+    if (m_pData != other.m_pData)
+    {
+        Release();
+        m_pData = other.m_pData;
+        m_pData->ReferenceCount++;
+    }
+    return *this;
 }
 
-template<class DATA_T>
-ReferenceArray<DATA_T>& ReferenceArray<DATA_T>::operator=(DATA_T* other)
+template <class DATA_T>
+ReferenceArray<DATA_T> &ReferenceArray<DATA_T>::operator=(DATA_T *other)
 {
-	if (m_pData->ReferenceCount.dec() <= 0)
-	{
-		delete[] m_pData->pData;
-		m_pData->pData = other;
-		m_pData->ReferenceCount = 1;
-	}
-	else
-	{
-		Alloc();
-		m_pData->pData = other;
-	}
-	return *this;
+    if (m_pData->ReferenceCount.dec() <= 0)
+    {
+        delete[] m_pData->pData;
+        m_pData->pData = other;
+        m_pData->ReferenceCount = 1;
+    }
+    else
+    {
+        Alloc();
+        m_pData->pData = other;
+    }
+    return *this;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 void ReferenceArray<DATA_T>::Alloc()
 {
-	m_pData = new ReferenceArrayBlock<DATA_T>;
-	m_pData->ReferenceCount = 1;
-	m_pData->pData = NULL;
+    m_pData = new ReferenceArrayBlock<DATA_T>;
+    m_pData->ReferenceCount = 1;
+    m_pData->pData = NULL;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 void ReferenceArray<DATA_T>::Release()
 {
-	assert(m_pData != NULL);
-	if (m_pData->ReferenceCount.dec() <= 0)
-	{
-		delete[] m_pData->pData;
-		m_pData->pData = NULL;
-		delete m_pData;
-		m_pData = NULL;
-	}
+    assert(m_pData != NULL);
+    if (m_pData->ReferenceCount.dec() <= 0)
+    {
+        delete[] m_pData->pData;
+        m_pData->pData = NULL;
+        delete m_pData;
+        m_pData = NULL;
+    }
 }
 
 #endif // !defined(AFX_ReferenceArray_H__BAEBCE9D_CD68_40AF_8A54_B23A0D14E807__INCLUDED_)

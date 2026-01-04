@@ -17,31 +17,31 @@
 // MIN/MAX/AVG functions, work best with basic types
 //
 
-template < typename T >
+template <typename T>
 inline T FASTCALL MIN(const T a, const T b)
 {
     return ((a < b) ? a : b);
 }
 
-template < typename T >
+template <typename T>
 inline T FASTCALL MIN(const T a, const T b, const T c)
 {
     return (MIN(MIN(a, b), c));
 }
 
-template < typename T >
+template <typename T>
 inline T FASTCALL MAX(const T a, const T b)
 {
     return ((a > b) ? a : b);
 }
 
-template < typename T >
+template <typename T>
 inline T FASTCALL MAX(const T a, const T b, const T c)
 {
     return (MAX(MAX(a, b), c));
 }
 
-template < typename T >
+template <typename T>
 inline T FASTCALL AVG(const T a, const T b)
 {
     return ((a + b) / 2);
@@ -52,47 +52,45 @@ inline T FASTCALL AVG(const T a, const T b)
 // (hopefully the compiler will choose the right one in most cases
 //
 
-
-template < typename T >
-inline T FASTCALL MIN(const T& a, const T& b)
+template <typename T>
+inline T FASTCALL MIN(const T &a, const T &b)
 {
     return ((a < b) ? a : b);
 }
 
-template < typename T >
-inline T FASTCALL MIN(const T& a, const T& b, const T& c)
+template <typename T>
+inline T FASTCALL MIN(const T &a, const T &b, const T &c)
 {
     return (MIN(MIN(a, b), c));
 }
 
-template < typename T >
-inline T FASTCALL MAX(const T& a, const T& b)
+template <typename T>
+inline T FASTCALL MAX(const T &a, const T &b)
 {
     return ((a > b) ? a : b);
 }
 
-template < typename T >
-inline T FASTCALL MAX(const T& a, const T& b, const T& c)
+template <typename T>
+inline T FASTCALL MAX(const T &a, const T &b, const T &c)
 {
     return (MAX(MAX(a, b), c));
 }
 
-template < typename T >
-inline T FASTCALL AVG(const T& a, const T& b)
+template <typename T>
+inline T FASTCALL AVG(const T &a, const T &b)
 {
     return ((a + b) / 2);
 }
-
 
 //
 // Generic Array Operations
 //
 
-template < typename T >
-inline T FASTCALL MIN(const T* array, const int size)
+template <typename T>
+inline T FASTCALL MIN(const T *array, const int size)
 {
     assert(size);
-    T               val = array[0];
+    T val = array[0];
 
     for (int i = 1; i < size; i++)
     {
@@ -104,11 +102,11 @@ inline T FASTCALL MIN(const T* array, const int size)
     return val;
 }
 
-template < typename T >
-inline T FASTCALL MAX(const T* array, const int size)
+template <typename T>
+inline T FASTCALL MAX(const T *array, const int size)
 {
     assert(size);
-    T               val = array[0];
+    T val = array[0];
 
     for (int i = 1; i < size; i++)
     {
@@ -120,11 +118,11 @@ inline T FASTCALL MAX(const T* array, const int size)
     return val;
 }
 
-template < typename T >
-inline T FASTCALL AVG(const T* array, const int size)
+template <typename T>
+inline T FASTCALL AVG(const T *array, const int size)
 {
     assert(size);
-    T               sum = array[0];
+    T sum = array[0];
 
     for (int i = 1; i < size; i++)
     {
@@ -133,11 +131,11 @@ inline T FASTCALL AVG(const T* array, const int size)
     return sum / num;
 }
 
-template < typename T >
-inline T FASTCALL SUM(const T* array, const int size)
+template <typename T>
+inline T FASTCALL SUM(const T *array, const int size)
 {
     assert(size);
-    T               sum = array[0];
+    T sum = array[0];
 
     for (int i = 1; i < size; i++)
     {
@@ -146,38 +144,34 @@ inline T FASTCALL SUM(const T* array, const int size)
     return sum;
 }
 
-
 // Uses one temp to swap, works best with user-defined types or doubles/long doubles
-template < typename T >
-inline void FASTCALL SWAP(T& a, T& b)
+template <typename T>
+inline void FASTCALL SWAP(T &a, T &b)
 {
-    T               temp = a;
+    T temp = a;
 
     a = b;
     b = temp;
 }
 
-
 // XOR math to swap (no temps), works with integral types very well
-template < typename T >
-inline void FASTCALL XOR_SWAP(T& a, T& b)
+template <typename T>
+inline void FASTCALL XOR_SWAP(T &a, T &b)
 {
     a ^= b;
     b ^= a;
     a ^= b;
 }
 
-
 // Uses two temps to swap, works very well with built-in types on pipelined CPUs
-template < typename T >
-inline void FASTCALL PIPE_SWAP(T& a, T& b)
+template <typename T>
+inline void FASTCALL PIPE_SWAP(T &a, T &b)
 {
-    T               tmpA = a;
-    T               tmpB = b;
+    T tmpA = a;
+    T tmpB = b;
 
     b = tmpA;
     a = tmpB;
 }
-
 
 #endif // BASEMATH_H__

@@ -14,15 +14,14 @@
 
 typedef struct
 {
-    HANDLE          Mutex;
-}
-ResourceLock_t;
+    HANDLE Mutex;
+} ResourceLock_t;
 
-void*           CreateResourceLock(int LockNumber)
+void *CreateResourceLock(int LockNumber)
 {
-    char            lockname[_MAX_PATH];
-    char            mapname[_MAX_PATH];
-    ResourceLock_t* lock = (ResourceLock_t*)Alloc(sizeof(ResourceLock_t));
+    char lockname[_MAX_PATH];
+    char mapname[_MAX_PATH];
+    ResourceLock_t *lock = (ResourceLock_t *)Alloc(sizeof(ResourceLock_t));
 
     ExtractFile(g_Mapname, mapname);
     safe_snprintf(lockname, _MAX_PATH, "%d%s", LockNumber, mapname);
@@ -31,13 +30,13 @@ void*           CreateResourceLock(int LockNumber)
 
     if (lock->Mutex == NULL)
     {
-        LPVOID          lpMsgBuf;
+        LPVOID lpMsgBuf;
 
         Log("lock->Mutex is NULL! [%s]", lockname);
         FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) & lpMsgBuf, 0, NULL);
+                          FORMAT_MESSAGE_FROM_SYSTEM |
+                          FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
         Error((LPCTSTR)lpMsgBuf);
     }
 
@@ -46,9 +45,9 @@ void*           CreateResourceLock(int LockNumber)
     return lock;
 }
 
-void            ReleaseResourceLock(void** lock)
+void ReleaseResourceLock(void **lock)
 {
-    ResourceLock_t* lockTmp = (ResourceLock_t*)*lock;
+    ResourceLock_t *lockTmp = (ResourceLock_t *)*lock;
 
     if (!ReleaseMutex(lockTmp->Mutex))
     {

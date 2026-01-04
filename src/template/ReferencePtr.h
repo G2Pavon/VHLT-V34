@@ -37,119 +37,117 @@
 	 its reference count at one and should not be manually deleted. (But it may be referenced
 	 as long as you know the object still exists in some scope somewhere)
 */
-template<class DATA_T>
+template <class DATA_T>
 class ReferencePtrBlock
 {
-public:
-	DATA_T*			pData;			    // User defined data block
-	mutable ReferenceCounter ReferenceCount;
+  public:
+    DATA_T *pData; // User defined data block
+    mutable ReferenceCounter ReferenceCount;
 };
 
-
-template<class DATA_T>
-class ReferencePtr  
+template <class DATA_T>
+class ReferencePtr
 {
-public:
-	// Construction
-	ReferencePtr();
-	ReferencePtr(DATA_T* other);
-	ReferencePtr(const ReferencePtr<DATA_T>& other);
-	virtual ~ReferencePtr();
+  public:
+    // Construction
+    ReferencePtr();
+    ReferencePtr(DATA_T *other);
+    ReferencePtr(const ReferencePtr<DATA_T> &other);
+    virtual ~ReferencePtr();
 
-	// Assignment
-	ReferencePtr<DATA_T>& operator=(const ReferencePtr<DATA_T>& other);
-	ReferencePtr<DATA_T>& operator=(DATA_T* other);
+    // Assignment
+    ReferencePtr<DATA_T> &operator=(const ReferencePtr<DATA_T> &other);
+    ReferencePtr<DATA_T> &operator=(DATA_T *other);
 
-	// Dereferencing
-	operator DATA_T*() const {return m_pData->pData;}
-	DATA_T* operator->() const {return m_pData->pData;}
+    // Dereferencing
+    operator DATA_T *() const { return m_pData->pData; }
+    DATA_T *operator->() const { return m_pData->pData; }
 
-protected:
-	// Internal methods
-	void Alloc();				// Allocate the m_pData
-	void Release();				// Releases a reference count (possibly freeing memory)
+  protected:
+    // Internal methods
+    void Alloc();   // Allocate the m_pData
+    void Release(); // Releases a reference count (possibly freeing memory)
 
-protected:
-	// Member data
-	ReferencePtrBlock<DATA_T>* m_pData;
+  protected:
+    // Member data
+    ReferencePtrBlock<DATA_T> *m_pData;
 };
 
-
-template<class DATA_T>
+template <class DATA_T>
 ReferencePtr<DATA_T>::ReferencePtr()
 {
-	Alloc();
+    Alloc();
 }
 
-template<class DATA_T>
-ReferencePtr<DATA_T>::ReferencePtr(DATA_T* other)
+template <class DATA_T>
+ReferencePtr<DATA_T>::ReferencePtr(DATA_T *other)
 {
-	Alloc();
-	m_pData->pData = other;
-	m_pData->ReferenceCount = 1;
+    Alloc();
+    m_pData->pData = other;
+    m_pData->ReferenceCount = 1;
 }
 
-template<class DATA_T>
-ReferencePtr<DATA_T>::ReferencePtr(const ReferencePtr<DATA_T>& other)
+template <class DATA_T>
+ReferencePtr<DATA_T>::ReferencePtr(const ReferencePtr<DATA_T> &other)
 {
-	m_pData = other.m_pData;
-	m_pData->ReferenceCount++;
+    m_pData = other.m_pData;
+    m_pData->ReferenceCount++;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 ReferencePtr<DATA_T>::~ReferencePtr()
 {
-	Release();
+    Release();
 }
 
-template<class DATA_T>
-ReferencePtr<DATA_T>& ReferencePtr<DATA_T>::operator=(const ReferencePtr<DATA_T>& other)
+template <class DATA_T>
+ReferencePtr<DATA_T> &ReferencePtr<DATA_T>::operator=(const ReferencePtr<DATA_T> &other)
 {
-	if (m_pData != other.m_pData)
-	{
-		Release();
-		m_pData = other.m_pData;
-		m_pData->ReferenceCount++;
-	}
-	return *this;
+    if (m_pData != other.m_pData)
+    {
+        Release();
+        m_pData = other.m_pData;
+        m_pData->ReferenceCount++;
+    }
+    return *this;
 }
 
-template<class DATA_T>
-ReferencePtr<DATA_T>& ReferencePtr<DATA_T>::operator=(DATA_T* other)
+template <class DATA_T>
+ReferencePtr<DATA_T> &ReferencePtr<DATA_T>::operator=(DATA_T *other)
 {
-	if (m_pData->ReferenceCount.dec() <= 0)
-	{
-		delete m_pData->pData;
-		m_pData->pData = other;
-		m_pData->ReferenceCount = 1;
-	}
-	else
-	{
-		Alloc();
-		m_pData->pData = other;
-	}
-	return *this;
+    if (m_pData->ReferenceCount.dec() <= 0)
+    {
+        delete m_pData->pData;
+        m_pData->pData = other;
+        m_pData->ReferenceCount = 1;
+    }
+    else
+    {
+        Alloc();
+        m_pData->pData = other;
+    }
+    return *this;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 void ReferencePtr<DATA_T>::Alloc()
 {
-	m_pData = new ReferencePtrBlock<DATA_T>;
-	m_pData->ReferenceCount = 1;
-	m_pData->pData = NULL;
+    m_pData = new ReferencePtrBlock<DATA_T>;
+    m_pData->ReferenceCount = 1;
+    m_pData->pData = NULL;
 }
 
-template<class DATA_T>
+template <class DATA_T>
 void ReferencePtr<DATA_T>::Release()
 {
-	assert(m_pData != NULL);
-	if (m_pData->ReferenceCount.dec() <= 0)
-	{
-		delete m_pData->pData;
-		m_pData->pData = NULL;
-		delete m_pData;
-		m_pData = NULL;
-	}
+    assert(m_pData != NULL);
+    if (m_pData->ReferenceCount.dec() <= 0)
+    {
+        delete m_pData->pData;
+        m_pData->pData = NULL;
+        delete m_pData;
+        m_pData = NULL;
+    }
 }
 
 #endif // !defined(AFX_ReferencePtr_H__BAEBCE9D_CD68_40AF_8A54_B23A0D14E807__INCLUDED_)
