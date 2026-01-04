@@ -114,9 +114,6 @@ typedef struct
 #define LUMP_MODELS 14
 #define HEADER_LUMPS 15
 
-//#define LUMP_MISCPAD      -1
-//#define LUMP_ZEROPAD      -2
-
 typedef struct
 {
     float mins[3], maxs[3];
@@ -258,8 +255,8 @@ typedef struct
 
 //============================================================================
 
-#define ANGLE_UP -1.0   //#define ANGLE_UP    -1 //--vluzacn
-#define ANGLE_DOWN -2.0 //#define ANGLE_DOWN  -2 //--vluzacn
+#define ANGLE_UP -1.0   //--vluzacn
+#define ANGLE_DOWN -2.0 //--vluzacn
 
 //
 // BSP File Data

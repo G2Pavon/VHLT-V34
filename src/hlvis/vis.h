@@ -30,7 +30,6 @@
 
 #define MAX_PORTALS 32768
 
-//#define USE_CHECK_STACK
 #define RVIS_LEVEL_1
 #define RVIS_LEVEL_2
 
