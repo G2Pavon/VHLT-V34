@@ -94,7 +94,6 @@ target_compile_definitions(hlbsp PRIVATE
 add_executable(hlcsg
     ${COMMON_SOURCES}
     ${SRC_DIR}/hlcsg/ansitoutf8.cpp
-    ${SRC_DIR}/hlcsg/autowad.cpp
     ${SRC_DIR}/hlcsg/brush.cpp
     ${SRC_DIR}/hlcsg/brushunion.cpp
     ${SRC_DIR}/hlcsg/hullfile.cpp
