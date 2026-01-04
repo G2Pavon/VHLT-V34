@@ -116,11 +116,6 @@ void            ResetTmpFiles()
 
 		safe_snprintf(filename, _MAX_PATH, "%s.ext", g_Mapname);
 		_unlink(filename);
-#ifdef ZHLT_XASH
-
-		safe_snprintf(filename, _MAX_PATH, "%s.dlit", g_Mapname);
-		_unlink(filename);
-#endif
     }
 }
 
@@ -576,13 +571,6 @@ void            Banner()
 #endif
 		" (%s)\n", g_Program, __DATE__);
     //Log("BUGGY %s (built: %s)\nUse at own risk.\n", g_Program, __DATE__);
-#ifdef ZHLT_XASH2
-	Log (" - special edition for Xash with change in bsp format\n");
-#else
-#ifdef ZHLT_XASH
-	Log(" - special edition for Xash\n");
-#endif
-#endif
 
     Log("Zoner's Half-Life Compilation Tools -- Custom Build\n"
         "Based on code modifications by Sean 'Zoner' Cavanaugh\n"
