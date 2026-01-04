@@ -38,22 +38,15 @@
 #define MAX_MAP_CLIPNODES    32767
 // hard limit (negative short's are used as contents values)
 
-#ifdef ZHLT_MAX_MAP_LEAFS
 #define MAX_MAP_LEAFS        32760
 #define MAX_MAP_LEAFS_ENGINE 8192
 // No problem has been observed in testmap or reported, except when viewing the map from outside (some leafs missing, no crash).
 // This problem indicates that engine's MAX_MAP_LEAFS is 8192 (for reason, see: Quake - gl_model.c - Mod_Init).
 // I don't know if visleafs > 8192 will cause Mod_DecompressVis overflow.
-#else
-#define MAX_MAP_LEAFS         8192
-// hard limit (halflife depends on it to setup pvs bits correctly)
-#endif
 
 #define MAX_MAP_VERTS        65535
 #define MAX_MAP_FACES        65535 // This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
-#ifdef ZHLT_WARNWORLDFACES
 #define MAX_MAP_WORLDFACES   32768
-#endif
 #define MAX_MAP_MARKSURFACES 65535
 // hard limit (data structures store them as unsigned shorts)
 
@@ -62,9 +55,8 @@
 
 #define MAX_MAP_TEXINFO      32767
 // hard limit (face.texinfo is signed short)
-#ifdef HLCSG_HLBSP_REDUCETEXTURE
 #define MAX_INTERNAL_MAP_TEXINFO 262144
-#endif
+
 
 #define MAX_MAP_EDGES       256000
 #define MAX_MAP_SURFEDGES   512000
@@ -100,9 +92,7 @@
 #define MAX_SURFACE_EXTENT  16 // if lightmap extent exceeds 16, the map will not be able to load in 'Software' renderer and HLDS. //--vluzacn
 #endif
 
-#ifdef ZHLT_LARGERANGE
 #define ENGINE_ENTITY_RANGE 4096.0
-#endif
 //=============================================================================
 
 #ifdef ZHLT_XASH2
@@ -206,9 +196,6 @@ typedef enum
     CONTENTS_LAVA = -5,
     CONTENTS_SKY = -6,
     CONTENTS_ORIGIN = -7,                                  // removed at csg time
-#ifndef HLCSG_CUSTOMHULL
-    CONTENTS_CLIP = -8,                                    // changed to contents_solid
-#endif
 
     CONTENTS_CURRENT_0 = -9,
     CONTENTS_CURRENT_90 = -10,
@@ -220,21 +207,12 @@ typedef enum
     CONTENTS_TRANSLUCENT = -15,
     CONTENTS_HINT = -16,     // Filters down to CONTENTS_EMPTY by bsp, ENGINE SHOULD NEVER SEE THIS
 
-#ifdef ZHLT_NULLTEX
     CONTENTS_NULL = -17,     // AJM  // removed in csg and bsp, VIS or RAD shouldnt have to deal with this, only clip planes!
-#endif
 
-#ifdef ZHLT_DETAIL   // AJM
-    CONTENTS_DETAIL = -18,  
-#endif
 
-#ifdef HLCSG_HLBSP_CUSTOMBOUNDINGBOX
 	CONTENTS_BOUNDINGBOX = -19, // similar to CONTENTS_ORIGIN
-#endif
 
-#ifdef HLCSG_EMPTYBRUSH
 	CONTENTS_TOEMPTY = -32,
-#endif
 }
 contents_t;
 
@@ -266,9 +244,6 @@ typedef struct texinfo_s
 texinfo_t;
 
 #define TEX_SPECIAL     1                                  // sky or slime or null, no lightmap or 256 subdivision
-#ifdef ZHLT_HIDDENSOUNDTEXTURE
-#define TEX_SHOULDHIDE  16384 // this flag is temporary; it might be set after CSG, but will be dropped after BSP
-#endif
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
@@ -364,11 +339,7 @@ extern dnode_t  g_dnodes[MAX_MAP_NODES];
 extern int      g_dnodes_checksum;
 
 extern int      g_numtexinfo;
-#ifdef HLCSG_HLBSP_REDUCETEXTURE
 extern texinfo_t g_texinfo[MAX_INTERNAL_MAP_TEXINFO];
-#else
-extern texinfo_t g_texinfo[MAX_MAP_TEXINFO];
-#endif
 extern int      g_texinfo_checksum;
 
 extern int      g_numfaces;
@@ -404,7 +375,6 @@ extern void     LoadBSPImage(dheader_t* header);
 extern void     LoadBSPFile(const char* const filename);
 extern void     WriteBSPFile(const char* const filename);
 extern void     PrintBSPFileSizes();
-#ifdef ZHLT_64BIT_FIX
 #ifdef PLATFORM_CAN_CALC_EXTENT
 extern void		WriteExtentFile (const char *const filename);
 extern bool		CalcFaceExtents_test ();
@@ -412,12 +382,9 @@ extern bool		CalcFaceExtents_test ();
 extern void		LoadExtentFile (const char *const filename);
 #endif
 extern void		GetFaceExtents (int facenum, int mins_out[2], int maxs_out[2]);
-#endif
-#ifdef ZHLT_EMBEDLIGHTMAP
 extern int		ParseImplicitTexinfoFromTexture (int miptex);
 extern int		ParseTexinfoForFace (const dface_t *f);
 extern void		DeleteEmbeddedLightmaps ();
-#endif
 
 //
 // Entity Related Stuff
@@ -446,9 +413,7 @@ extern entity_t g_entities[MAX_MAP_ENTITIES];
 extern void            ParseEntities();
 extern void            UnparseEntities();
 
-#ifdef ZHLT_DELETEKEY
 extern void            DeleteKey(entity_t* ent, const char* const key);
-#endif
 extern void            SetKeyValue(entity_t* ent, const char* const key, const char* const value);
 extern const char*     ValueForKey(const entity_t* const ent, const char* const key);
 extern int             IntForKey(const entity_t* const ent, const char* const key);
