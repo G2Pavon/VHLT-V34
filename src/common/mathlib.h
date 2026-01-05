@@ -3,6 +3,8 @@
 #include <math.h>
 #include <float.h>
 
+#include "mathtypes.h"
+
 #if !defined(qmax)
 #define qmax(a, b) (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn
 #endif
