@@ -27,76 +27,6 @@
 #include "blockmem.h"
 
 /*
- * ==============
- * getfiletime        
- * ==============
- */
-
-time_t getfiletime(const char *const filename)
-{
-    time_t filetime = 0;
-    struct stat filestat;
-
-    if (stat(filename, &filestat) == 0)
-        filetime = qmax(filestat.st_mtime, filestat.st_ctime);
-
-    return filetime;
-}
-
-/*
- * ==============      
- * getfilesize
- * ==============
- */
-long getfilesize(const char *const filename)
-{
-    long size = 0;
-    struct stat filestat;
-
-    if (stat(filename, &filestat) == 0)
-        size = filestat.st_size;
-
-    return size;
-}
-
-/*
- * ==============
- * getfiledata
- * ==============
- */
-long getfiledata(const char *const filename, char *buffer, const int buffersize)
-{
-    long size = 0;
-    int handle;
-    time_t start, end;
-
-    time(&start);
-
-    if ((handle = _open(filename, O_RDONLY)) != -1)
-    {
-        int bytesread;
-
-        Log("%-20s Restoring [%-13s - ", "BuildVisMatrix:", filename);
-        while ((bytesread = _read(handle, buffer, qmin(32 * 1024, buffersize - size))) > 0)
-        {
-            size += bytesread;
-            buffer += bytesread;
-        }
-        _close(handle);
-        time(&end);
-        Log("%10.3fMB] (%d)\n", size / (1024.0 * 1024.0), end - start);
-    }
-
-    if (buffersize != size)
-    {
-        Warning("Invalid file [%s] found.  File will be rebuilt!\n", filename);
-        _unlink(filename);
-    }
-
-    return size;
-}
-
-/*
  * ================
  * filelength
  * ================
@@ -193,18 +123,4 @@ int LoadFile(const char *const filename, char **bufferptr)
 
     *bufferptr = buffer;
     return length;
-}
-
-/*
- * ==============
- * SaveFile
- * ==============
- */
-void SaveFile(const char *const filename, const void *const buffer, int count)
-{
-    FILE *f;
-
-    f = SafeOpenWrite(filename);
-    SafeWrite(f, buffer, count);
-    fclose(f);
 }

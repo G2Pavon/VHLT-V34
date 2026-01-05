@@ -1,11 +1,7 @@
 #pragma once
 
 #include <stdio.h>
-#include <time.h>
 
-extern time_t getfiletime(const char *const filename);
-extern long getfilesize(const char *const filename);
-extern long getfiledata(const char *const filename, char *buffer, const int buffersize);
 extern bool q_exists(const char *const filename);
 extern int q_filelength(FILE *f);
 
@@ -15,4 +11,3 @@ extern void SafeRead(FILE *f, void *buffer, int count);
 extern void SafeWrite(FILE *f, const void *const buffer, int count);
 
 extern int LoadFile(const char *const filename, char **bufferptr);
-extern void SaveFile(const char *const filename, const void *const buffer, int count);
