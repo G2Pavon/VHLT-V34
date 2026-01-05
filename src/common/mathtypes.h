@@ -1,7 +1,5 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
-
 typedef unsigned char byte;
 
 #ifdef DOUBLEVEC_T
