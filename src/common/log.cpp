@@ -1,8 +1,6 @@
-#ifdef STDC_HEADERS
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

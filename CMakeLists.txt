@@ -14,7 +14,6 @@ if (MSVC)
         WIN32
         _CONSOLE
         SYSTEM_WIN32
-        STDC_HEADERS
     )
 endif()
 
