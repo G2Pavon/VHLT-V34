@@ -62,7 +62,6 @@
 #endif
 
 #include "win32fix.h"
-#include "mathtypes.h"
 
 #ifdef SYSTEM_WIN32
 #pragma warning(disable : 4127) // conditional expression is constant
