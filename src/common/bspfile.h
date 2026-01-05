@@ -1,7 +1,5 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
-
 // upper design bounds
 
 #define MAX_MAP_HULLS 4
