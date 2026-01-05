@@ -1,6 +1,7 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
+#include <stdio.h>
+#include <time.h>
 
 extern time_t getfiletime(const char *const filename);
 extern long getfilesize(const char *const filename);
