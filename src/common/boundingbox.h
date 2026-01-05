@@ -6,7 +6,7 @@
 // AJM:
 #pragma warning(disable : 4305) // truncation from 'const double' to 'float'
 
-#include "cmdlib.h" //--vluzacn
+#include "mathtypes.h"
 
 class BoundingBox
 {
