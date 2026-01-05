@@ -7,25 +7,21 @@ project(VHLT
 
 message("Configuring ${PROJECT_NAME}")
 
-# ================================
-# Output
-# ================================
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# ================================
-# Global (Windows / MSVC)
-# ================================
-
 if (MSVC)
-    add_compile_options(/MT /O2 /GL /Gy)
-    add_link_options(/LTCG)
     add_compile_definitions(
         WIN32
         _CONSOLE
         SYSTEM_WIN32
         STDC_HEADERS
     )
+endif()
+
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_compile_definitions(VERSION_64BIT)
+else()
+    add_compile_definitions(VERSION_32BIT)
 endif()
 
 # ================================
@@ -56,12 +52,6 @@ set(COMMON_SOURCES
     ${COMMON_DIR}/threads.cpp
     ${COMMON_DIR}/winding.cpp
 )
-
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_compile_definitions(VERSION_64BIT)
-else()
-    add_compile_definitions(VERSION_32BIT)
-endif()
 
 # ================================
 # hlbsp
