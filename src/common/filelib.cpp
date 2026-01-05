@@ -22,8 +22,6 @@
 #include "filelib.h"
 #include "messages.h"
 #include "log.h"
-#include "mathtypes.h"
-#include "mathlib.h"
 #include "blockmem.h"
 
 /*
