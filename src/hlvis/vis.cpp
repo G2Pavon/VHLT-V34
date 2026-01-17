@@ -15,6 +15,11 @@
 #include <windows.h>
 #endif
 
+#include "filelib.h"
+#include "cmdlinecfg.h"
+#include "threads.h"
+#include "log.h"
+
 /*
 
  NOTES

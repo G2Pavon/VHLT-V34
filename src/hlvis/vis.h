@@ -1,17 +1,6 @@
 #pragma once
 
-#include "cmdlib.h"
-#include "messages.h"
-#include "win32fix.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "threads.h"
-#include "filelib.h"
-
 #include "zones.h"
-#include "cmdlinecfg.h"
 
 #define DEFAULT_MAXDISTANCE_RANGE 0
 

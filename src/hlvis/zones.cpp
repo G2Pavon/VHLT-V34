@@ -3,6 +3,7 @@
 // (see LPGL.txt, or http://www.gnu.org/copyleft/lesser.txt)
 
 #include "vis.h"
+#include "log.h"
 
 void Zones::set(UINT32 zone, const BoundingBox &bounds)
 {
