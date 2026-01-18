@@ -1381,9 +1381,6 @@ static void Usage()
 #ifdef SYSTEM_WIN32
     Log("    -estimate      : display estimated time during compile\n");
 #endif
-#ifdef SYSTEM_POSIX
-    Log("    -noestimate    : do not display continuous compile time estimates\n");
-#endif
 
     Log("    -nonulltex     : Don't strip NULL faces\n");
 
@@ -1673,13 +1670,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
                     g_estimate = true;
-                }
-#endif
-
-#ifdef SYSTEM_POSIX
-                else if (!strcasecmp(argv[i], "-noestimate"))
-                {
-                    g_estimate = false;
                 }
 #endif
 

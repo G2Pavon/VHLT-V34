@@ -10,18 +10,6 @@
 #include "log.h"
 #include "mathlib.h"
 
-#ifdef SYSTEM_POSIX
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#endif
-
 #define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
 
 /*
@@ -43,49 +31,7 @@ double I_FloatTime()
 
     return (rval / 10000000.0);
 #endif
-
-#ifdef SYSTEM_POSIX
-    struct timeval tp;
-    struct timezone tzp;
-    static int secbase;
-
-    gettimeofday(&tp, &tzp);
-
-    if (!secbase)
-    {
-        secbase = tp.tv_sec;
-        return tp.tv_usec / 1000000.0;
-    }
-
-    return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
-#endif
 }
-
-#ifdef SYSTEM_POSIX
-char *strupr(char *string)
-{
-    int i;
-    int len = strlen(string);
-
-    for (i = 0; i < len; i++)
-    {
-        string[i] = toupper(string[i]);
-    }
-    return string;
-}
-
-char *strlwr(char *string)
-{
-    int i;
-    int len = strlen(string);
-
-    for (i = 0; i < len; i++)
-    {
-        string[i] = tolower(string[i]);
-    }
-    return string;
-}
-#endif
 
 // Case Insensitive substring matching
 const char *stristr(const char *const string, const char *const substring)

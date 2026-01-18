@@ -95,19 +95,11 @@
 #define SYSTEM_SLASH_CHAR '\\'
 #define SYSTEM_SLASH_STR "\\"
 #endif
-#ifdef SYSTEM_POSIX
-#define SYSTEM_SLASH_CHAR '/'
-#define SYSTEM_SLASH_STR "/"
-#endif
 
 // the dec offsetof macro doesn't work very well...
 #define myoffsetof(type, identifier) ((size_t)&((type *)0)->identifier)
 #define sizeofElement(type, identifier) (sizeof((type *)0)->identifier)
 
-#ifdef SYSTEM_POSIX
-extern char *strupr(char *string);
-extern char *strlwr(char *string);
-#endif
 extern const char *stristr(const char *const string, const char *const substring);
 extern bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t count, const char *const args, ...);
 extern bool safe_strncpy(char *const dest, const char *const src, const size_t count);

@@ -572,13 +572,6 @@ static void CorrectFPUPrecision()
 #endif
 #endif
 
-#ifdef SYSTEM_POSIX
-static void CorrectFPUPrecision()
-{
-    // just leave it to default and see if CalcFaceExtents_test gives us any error
-}
-#endif
-
 float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
 {
     volatile double val;

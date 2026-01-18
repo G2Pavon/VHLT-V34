@@ -59,10 +59,6 @@
 #define DEFAULT_ESTIMATE false
 #endif
 
-#ifdef SYSTEM_POSIX
-#define DEFAULT_ESTIMATE true
-#endif
-
 #define BOGUS_RANGE 65534
 
 #define MAX_HULLSHAPES 128 // arbitrary

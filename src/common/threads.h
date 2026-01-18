@@ -16,9 +16,6 @@ typedef void (*q_threadfunction)(int);
 #ifdef SYSTEM_WIN32
 #define DEFAULT_NUMTHREADS -1
 #endif
-#ifdef SYSTEM_POSIX
-#define DEFAULT_NUMTHREADS 1
-#endif
 
 #define DEFAULT_THREAD_PRIORITY eThreadPriorityNormal
 

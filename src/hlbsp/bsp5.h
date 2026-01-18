@@ -52,10 +52,6 @@
 #define DEFAULT_ESTIMATE false
 #endif
 
-#ifdef SYSTEM_POSIX
-#define DEFAULT_ESTIMATE true
-#endif
-
 #define MAXEDGES 48      // 32
 #define MAXPOINTS 28     // don't let a base face get past this \
                          // because it can be split more later

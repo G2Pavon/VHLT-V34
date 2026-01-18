@@ -192,35 +192,6 @@ inline bool VectorCompare(const vec3_t v1, const vec3_t v2)
 }
 
 //
-// Portable bit rotation
-//
-
-#ifdef SYSTEM_POSIX
-#undef rotl
-#undef rotr
-
-inline unsigned int rotl(unsigned value, unsigned int amt)
-{
-    unsigned t1, t2;
-
-    t1 = value >> ((sizeof(unsigned) * CHAR_BIT) - amt);
-
-    t2 = value << amt;
-    return (t1 | t2);
-}
-
-inline unsigned int rotr(unsigned value, unsigned int amt)
-{
-    unsigned t1, t2;
-
-    t1 = value << ((sizeof(unsigned) * CHAR_BIT) - amt);
-
-    t2 = value >> amt;
-    return (t1 | t2);
-}
-#endif
-
-//
 // Misc
 //
 
