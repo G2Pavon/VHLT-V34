@@ -408,9 +408,7 @@ static void WriteBSP(const char *const name)
     Log("\nUpdating %s.\n", filename); //--vluzacn
     WriteBSPFile(filename);
 }
-#ifdef WORDS_BIGENDIAN
-#error "I haven't added support for bigendian. Please disable RIPENT_TEXTURE in cmdlib.h ."
-#endif
+
 typedef struct
 {
     char identification[4]; // should be WAD2/WAD3

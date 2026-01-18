@@ -1,9 +1,5 @@
 #include "qrad.h"
 
-#ifdef WORDS_BIGENDIAN
-#error "HLRAD_TEXTURE doesn't support WORDS_BIGENDIAN, because I have no big endian machine to test it"
-#endif
-
 int g_numtextures;
 radtexture_t *g_textures;
 

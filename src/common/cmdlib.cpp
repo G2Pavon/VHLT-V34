@@ -275,64 +275,6 @@ void ExtractFileExtension(const char *const path, char *dest)
  * ============================================================================
  */
 
-#ifdef WORDS_BIGENDIAN
-
-short LittleShort(const short l)
-{
-    byte b1, b2;
-
-    b1 = l & 255;
-    b2 = (l >> 8) & 255;
-
-    return (b1 << 8) + b2;
-}
-
-short BigShort(const short l)
-{
-    return l;
-}
-
-int LittleLong(const int l)
-{
-    byte b1, b2, b3, b4;
-
-    b1 = l & 255;
-    b2 = (l >> 8) & 255;
-    b3 = (l >> 16) & 255;
-    b4 = (l >> 24) & 255;
-
-    return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
-}
-
-int BigLong(const int l)
-{
-    return l;
-}
-
-float LittleFloat(const float l)
-{
-    union
-    {
-        byte b[4];
-        float f;
-    } in, out;
-
-    in.f = l;
-    out.b[0] = in.b[3];
-    out.b[1] = in.b[2];
-    out.b[2] = in.b[1];
-    out.b[3] = in.b[0];
-
-    return out.f;
-}
-
-float BigFloat(const float l)
-{
-    return l;
-}
-
-#else // Little endian (Intel, etc)
-
 short BigShort(const short l)
 {
     byte b1, b2;
@@ -386,8 +328,6 @@ float LittleFloat(const float l)
 {
     return l;
 }
-
-#endif
 
 //=============================================================================
 
