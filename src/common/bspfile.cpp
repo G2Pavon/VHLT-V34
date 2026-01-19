@@ -539,13 +539,6 @@ void WriteBSPFile(const char *const filename)
 //  GetFaceExtents (with PLATFORM_CAN_CALC_EXTENT on)
 // =====================================================================================
 
-#ifdef VERSION_64BIT
-static void CorrectFPUPrecision()
-{
-    // do nothing, because we use SSE registers
-}
-#endif
-
 float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
 {
     volatile double val;
@@ -577,8 +570,6 @@ bool CalcFaceExtents_test()
     //   1. whether the calculation is performed on FPU
     //   2. whether the register precision is too low
 
-    CorrectFPUPrecision();
-
     ok = true;
     for (int i = 0; i < 6; i++)
     {
@@ -594,7 +585,6 @@ bool CalcFaceExtents_test()
 
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
-    CorrectFPUPrecision();
 
     dface_t *f;
     float mins[2], maxs[2], val;
