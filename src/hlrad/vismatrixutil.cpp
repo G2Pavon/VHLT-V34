@@ -6,9 +6,6 @@ size_t g_total_transfer = 0;
 size_t g_transfer_index_bytes = 0;
 size_t g_transfer_data_bytes = 0;
 
-#define COMPRESSED_TRANSFERS
-//#undef  COMPRESSED_TRANSFERS
-
 int FindTransferOffsetPatchnum(transfer_index_t *tIndex, const patch_t *const patch, const unsigned patchnum)
 {
     //
@@ -49,8 +46,6 @@ int FindTransferOffsetPatchnum(transfer_index_t *tIndex, const patch_t *const pa
         }
     }
 }
-
-#ifdef COMPRESSED_TRANSFERS
 
 static unsigned GetLengthOfRun(const transfer_raw_index_t *raw, const transfer_raw_index_t *const end)
 {
@@ -123,42 +118,6 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
 
     return CompressedArray;
 }
-
-#else  /*COMPRESSED_TRANSFERS*/
-
-static transfer_index_t *CompressTransferIndicies(const transfer_raw_index_t *tRaw, const unsigned rawSize, unsigned *iSize)
-{
-    unsigned x;
-    unsigned size = rawSize;
-    unsigned compressed_count = 0;
-
-    transfer_raw_index_t *raw = tRaw;
-    transfer_raw_index_t *end = tRaw + rawSize;
-
-    if (!size)
-    {
-        return NULL;
-    }
-
-    transfer_index_t CompressedArray = (transfer_index_t *)AllocBlock(sizeof(transfer_index_t) * size);
-    transfer_index_t *compressed = CompressedArray;
-
-    for (x = 0; x < size; x++, raw++, compressed++)
-    {
-        compressed->index = (*raw);
-        compressed->size = 0;
-        compressed_count++; // number of entries in compressed table
-    }
-
-    *iSize = compressed_count;
-
-    ThreadLock();
-    g_transfer_index_bytes += sizeof(transfer_index_t) * size;
-    ThreadUnlock();
-
-    return CompressedArray;
-}
-#endif /*COMPRESSED_TRANSFERS*/
 
 /*
  * =============
