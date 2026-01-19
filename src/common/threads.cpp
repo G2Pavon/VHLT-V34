@@ -1,8 +1,6 @@
-#ifdef SYSTEM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <malloc.h>
-#endif
 
 #include "cmdlib.h"
 #include "messages.h"
@@ -143,10 +141,9 @@ int GetThreadWork()
 
 q_threadfunction workfunction;
 
-#ifdef SYSTEM_WIN32
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
-#endif
+
 static void ThreadWorkerFunction(int unused)
 {
     int work;
@@ -157,9 +154,7 @@ static void ThreadWorkerFunction(int unused)
     }
 }
 
-#ifdef SYSTEM_WIN32
 #pragma warning(pop)
-#endif
 
 void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction func)
 {
@@ -168,11 +163,6 @@ void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction fun
 }
 
 #ifndef SINGLE_THREADED
-
-/*====================
-| Begin SYSTEM_WIN32
-=*/
-#ifdef SYSTEM_WIN32
 
 #define USED
 #include <windows.h>
@@ -371,12 +361,6 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     }
     Log(" (%.2f seconds)\n", end - start);
 }
-
-#endif
-
-/*=
-| End SYSTEM_WIN32
-=====================*/
 
 #endif /*SINGLE_THREADED */
 

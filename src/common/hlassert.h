@@ -2,7 +2,6 @@
 
 #include "cmdlib.h" //--vluzacn
 
-#ifdef SYSTEM_WIN32
 #ifdef _DEBUG
 
 #include "log.h"
@@ -29,4 +28,3 @@
 #define hlassert(exp)
 
 #endif // _DEBUG
-#endif // SYSTEM_WIN32

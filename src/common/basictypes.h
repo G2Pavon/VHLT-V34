@@ -3,8 +3,6 @@
 // (see LPGL.txt, or http://www.gnu.org/copyleft/lesser.txt)
 #pragma once
 
-#if defined(_WIN32) || defined(SYSTEM_WIN32)
-
 #undef CHAR
 #undef BYTE
 #undef INT
@@ -29,5 +27,3 @@ typedef signed int INT32;
 typedef unsigned int UINT32;
 typedef signed __int64 INT64;
 typedef unsigned __int64 UINT64;
-
-#endif /* SYSTEM_WIN32 */

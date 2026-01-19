@@ -1,10 +1,8 @@
 #include "qrad.h"
 
-#ifdef SYSTEM_WIN32
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "win32fix.h"
-#endif
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>

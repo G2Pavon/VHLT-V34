@@ -1,7 +1,5 @@
 
-/// ********* WIN32 **********
 
-#ifdef SYSTEM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <malloc.h>
@@ -97,5 +95,3 @@ bool Free(void *pointer)
     free(pointer);
     return true;
 }
-
-#endif /// ********* WIN32 **********

@@ -539,7 +539,7 @@ void WriteBSPFile(const char *const filename)
 // =====================================================================================
 //  GetFaceExtents (with PLATFORM_CAN_CALC_EXTENT on)
 // =====================================================================================
-#ifdef SYSTEM_WIN32
+
 #ifdef VERSION_32BIT
 static void CorrectFPUPrecision()
 {
@@ -569,7 +569,6 @@ static void CorrectFPUPrecision()
 {
     // do nothing, because we use SSE registers
 }
-#endif
 #endif
 
 float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)

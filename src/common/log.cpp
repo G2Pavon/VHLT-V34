@@ -12,10 +12,8 @@
 #include "log.h"
 #include "filelib.h"
 
-#ifdef SYSTEM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
 #include "scriplib.h"
 
@@ -210,7 +208,6 @@ void CDECL CloseLog()
 //  Every function up to this point should check g_log, the functions below should not
 //
 
-#ifdef SYSTEM_WIN32
 // AJM: fprintf/flush wasnt printing newline chars correctly (prefixed with \r) under win32
 //      due to the fact that those streams are in byte mode, so this function prefixes
 //      all \n with \r automatically.
@@ -238,21 +235,10 @@ void Safe_WriteLog(const char *const message)
         c++;
     }
 }
-#endif
 
 void WriteLog(const char *const message)
 {
-
-#ifndef SYSTEM_WIN32
-    if (CompileLog)
-    {
-        fprintf(CompileLog, "%s", message); //fprintf(CompileLog, message); //--vluzacn
-        fflush(CompileLog);
-    }
-#else
     Safe_WriteLog(message);
-#endif
-
     fprintf(stdout, "%s", message); //fprintf(stdout, message); //--vluzacn
     fflush(stdout);
     if (twice)
@@ -287,22 +273,6 @@ void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
     char message[MAX_ERROR];
     char message2[MAX_ERROR];
     va_list argptr;
-
-    /*#if defined( SYSTEM_WIN32 ) && !defined( __MINGW32__ ) && !defined( __BORLANDC__ )
-    {
-        char* wantint3 = getenv("WANTINT3");
-		if (wantint3)
-		{
-			if (atoi(wantint3))
-			{
-				__asm
-				{
-					int 3;
-				}
-			}
-		}
-    }
-#endif*/
 
     va_start(argptr, error);
     vsnprintf(message, MAX_ERROR, Localize(error), argptr);
@@ -612,7 +582,6 @@ void LogTimeElapsed(float elapsed_time)
     }
 }
 
-#ifdef SYSTEM_WIN32
 void wait()
 {
     Sleep(1000);
@@ -660,14 +629,7 @@ int InitConsole(int argc, char **argv)
         return -1;
     return 0;
 }
-#else
-int InitConsole(int argc, char **argv)
-{
-    twice = false;
-    useconsole = false;
-    return 0;
-}
-#endif
+
 void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];

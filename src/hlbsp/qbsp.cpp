@@ -8,10 +8,8 @@
 
 */
 
-#ifdef SYSTEM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
 #include "bsp5.h"
 
@@ -1378,9 +1376,7 @@ static void Usage()
     Log("    -low | -high   : run program an altered priority level\n");
     Log("    -nolog         : don't generate the compile logfiles\n");
     Log("    -threads #     : manually specify the number of threads to run\n");
-#ifdef SYSTEM_WIN32
     Log("    -estimate      : display estimated time during compile\n");
-#endif
 
     Log("    -nonulltex     : Don't strip NULL faces\n");
 
@@ -1637,9 +1633,6 @@ int main(const int argc, char **argv)
                 }
                 else if (!strcasecmp(argv[i], "-console"))
                 {
-#ifndef SYSTEM_WIN32
-                    Warning("The option '-console #' is only valid for Windows.");
-#endif
                     if (i + 1 < argc)
                         ++i;
                     else
@@ -1665,13 +1658,10 @@ int main(const int argc, char **argv)
                 {
                     g_noinsidefill = true;
                 }
-
-#ifdef SYSTEM_WIN32
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
                     g_estimate = true;
                 }
-#endif
 
                 else if (!strcasecmp(argv[i], "-dev"))
                 {
@@ -1818,11 +1808,8 @@ int main(const int argc, char **argv)
                     if (i + 1 < argc)
                     {
                         char tmp[_MAX_PATH];
-#ifdef SYSTEM_WIN32
+
                         GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-                        safe_strncpy(tmp, argv[0], _MAX_PATH);
-#endif
                         LoadLangFile(argv[++i], tmp);
                     }
                     else
@@ -1898,11 +1885,8 @@ int main(const int argc, char **argv)
                 {
                     char tmp[_MAX_PATH];
                     // try looking in the directory we were run from
-#ifdef SYSTEM_WIN32
+
                     GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-                    safe_strncpy(tmp, argv[0], _MAX_PATH);
-#endif
                     ExtractFilePath(tmp, strSystemEntitiesVoidFile);
                     safe_strncat(strSystemEntitiesVoidFile, ENTITIES_VOID, _MAX_PATH);
                 }

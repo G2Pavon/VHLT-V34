@@ -12,14 +12,11 @@
 
 #include "ripent.h"
 #ifdef RIPENT_PAUSE
-#ifdef SYSTEM_WIN32
 #include <conio.h>
 #endif
-#endif
-#ifdef SYSTEM_WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
 typedef enum
 {
@@ -808,12 +805,8 @@ void pause()
 {
     if (g_pause)
     {
-#ifdef SYSTEM_WIN32
         Log("\nPress any key to continue\n");
         getch();
-#else
-        Log("\nThe option '-pause' is only valid for Windows\n");
-#endif
     }
 }
 #endif
@@ -916,9 +909,6 @@ int main(int argc, char **argv)
                 }
                 else if (!strcasecmp(argv[i], "-console"))
                 {
-#ifndef SYSTEM_WIN32
-                    Warning("The option '-console #' is only valid for Windows.");
-#endif
                     if (i + 1 < argc)
                         ++i;
                     else
@@ -1005,11 +995,8 @@ int main(int argc, char **argv)
                     if (i + 1 < argc)
                     {
                         char tmp[_MAX_PATH];
-#ifdef SYSTEM_WIN32
+
                         GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-                        safe_strncpy(tmp, argv[0], _MAX_PATH);
-#endif
                         LoadLangFile(argv[++i], tmp);
                     }
                     else

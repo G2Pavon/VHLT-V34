@@ -8,10 +8,8 @@
     
 */
 
-#ifdef SYSTEM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
 #include <vector>
 #include <string>
@@ -2033,10 +2031,9 @@ static void CollectLight()
 //      Get light from other g_patches
 //      Run multi-threaded
 // =====================================================================================
-#ifdef SYSTEM_WIN32
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
-#endif
+
 static void GatherLight(int threadnum)
 {
     int j;
@@ -2359,9 +2356,7 @@ static void GatherRGBLight(int threadnum)
     }
 }
 
-#ifdef SYSTEM_WIN32
 #pragma warning(pop)
-#endif
 
 // =====================================================================================
 //  BounceLight
@@ -2707,9 +2702,7 @@ static void Usage()
     Log("    -low | -high    : run program an altered priority level\n");
     Log("    -nolog          : Do not generate the compile logfiles\n");
     Log("    -threads #      : manually specify the number of threads to run\n");
-#ifdef SYSTEM_WIN32
     Log("    -estimate       : display estimated time during compile\n");
-#endif
     Log("    -verbose        : compile with verbose messages\n");
     Log("    -noinfo         : Do not show tool configuration information\n");
     Log("    -dev #          : compile with developer message\n\n");
@@ -3024,11 +3017,8 @@ void LoadRadFiles(const char *const mapname, const char *const user_rad, const c
     {
         char tmp[_MAX_PATH];
         memset(tmp, 0, sizeof(tmp));
-#ifdef SYSTEM_WIN32
+
         GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-        safe_strncpy(tmp, argv0, _MAX_PATH);
-#endif
         ExtractFilePath(tmp, appdir);
     }
 
@@ -3163,9 +3153,6 @@ int main(const int argc, char **argv)
                 }
                 else if (!strcasecmp(argv[i], "-console"))
                 {
-#ifndef SYSTEM_WIN32
-                    Warning("The option '-console #' is only valid for Windows.");
-#endif
                     if (i + 1 < argc)
                         ++i;
                     else
@@ -3222,12 +3209,10 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-#ifdef SYSTEM_WIN32
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
                     g_estimate = true;
                 }
-#endif
                 else if (!strcasecmp(argv[i], "-fast"))
                 {
                     g_fastmode = true;
@@ -3806,11 +3791,8 @@ int main(const int argc, char **argv)
                     if (i + 1 < argc)
                     {
                         char tmp[_MAX_PATH];
-#ifdef SYSTEM_WIN32
+
                         GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-                        safe_strncpy(tmp, argv[0], _MAX_PATH);
-#endif
                         LoadLangFile(argv[++i], tmp);
                     }
                     else

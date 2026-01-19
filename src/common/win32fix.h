@@ -4,9 +4,6 @@
 
 #include <malloc.h>
 
-/////////////////////////////
-#ifdef SYSTEM_WIN32
-
 #define alloca _alloca
 
 #define strncasecmp _strnicmp
@@ -29,5 +26,3 @@
 
 #define FORCEINLINE __forceinline                   //--vluzacn
 #define FORMAT_PRINTF(STRING_INDEX, FIRST_TO_CHECK) //--vluzacn
-
-#endif

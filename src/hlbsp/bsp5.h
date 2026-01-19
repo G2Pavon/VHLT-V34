@@ -48,9 +48,7 @@
 
 #define DEFAULT_NULLTEX true
 
-#ifdef SYSTEM_WIN32
 #define DEFAULT_ESTIMATE false
-#endif
 
 #define MAXEDGES 48      // 32
 #define MAXPOINTS 28     // don't let a base face get past this \

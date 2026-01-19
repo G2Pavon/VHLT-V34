@@ -6,10 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef SYSTEM_WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
 const char paramfilename[_MAX_PATH] = "settings.txt";
 const char sepchr = '\n';
@@ -266,11 +265,8 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
     s = NULL;
 
     char tmp[_MAX_PATH];
-#ifdef SYSTEM_WIN32
+
     GetModuleFileName(NULL, tmp, _MAX_PATH);
-#else
-    safe_strncpy(tmp, argv[0], _MAX_PATH);
-#endif
     ExtractFilePath(tmp, filepath);
     strcat(filepath, paramfilename);
     f = fopen(filepath, "r");
