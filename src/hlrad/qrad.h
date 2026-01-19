@@ -20,10 +20,6 @@
 #include <io.h>
 #pragma warning(default : 4142 4028)
 
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-
 #ifdef STDC_HEADERS
 #include <ctype.h>
 #endif
