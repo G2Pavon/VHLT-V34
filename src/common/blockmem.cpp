@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <malloc.h>
+
 #include "cmdlib.h"
 #include "messages.h"
 #include "log.h"

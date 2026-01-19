@@ -1,7 +1,5 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
-
 extern void *AllocBlock(unsigned long size);
 extern bool FreeBlock(void *pointer);
 
