@@ -162,8 +162,6 @@ void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction fun
     RunThreadsOn(workcnt, showpacifier, ThreadWorkerFunction);
 }
 
-#ifndef SINGLE_THREADED
-
 #define USED
 #include <windows.h>
 
@@ -361,75 +359,3 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     }
     Log(" (%.2f seconds)\n", end - start);
 }
-
-#endif /*SINGLE_THREADED */
-
-/*====================
-| Begin SINGLE_THREADED
-=*/
-#ifdef SINGLE_THREADED
-
-int g_numthreads = 1;
-
-void ThreadSetPriority(q_threadpriority type)
-{
-}
-
-void threads_InitCrit()
-{
-}
-
-void threads_UninitCrit()
-{
-}
-
-void ThreadSetDefault()
-{
-    g_numthreads = 1;
-}
-
-void ThreadLock()
-{
-}
-
-void ThreadUnlock()
-{
-}
-
-void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
-{
-    int i;
-    double start, end;
-
-    dispatch = 0;
-    workcount = workcnt;
-    oldf = -1;
-    pacifier = showpacifier;
-    threadstart = I_FloatTime();
-    start = threadstart;
-    for (i = 0; i < THREADTIMES_SIZE; i++)
-    {
-        threadtimes[i] = 0.0;
-    }
-
-    if (pacifier)
-    {
-        setbuf(stdout, NULL);
-    }
-    func(0);
-
-    end = I_FloatTime();
-
-    if (pacifier)
-    {
-        PrintConsole("\r%60s\r", "");
-    }
-
-    Log(" (%.2f seconds)\n", end - start);
-}
-
-#endif
-
-/*=
-| End SINGLE_THREADED
-=====================*/
