@@ -440,20 +440,19 @@ extern void CreateFacelightDependencyList(); // run before AddPatchLights
 extern void AddPatchLights(int facenum);
 extern void FreeFacelightDependencyList();
 extern int TestLine(const vec3_t start, const vec3_t stop, vec_t *skyhitout = NULL);
-#define OPAQUE_NODE_INLINECALL
-#ifdef OPAQUE_NODE_INLINECALL
+
 typedef struct
 {
     vec3_t mins, maxs;
     int headnode;
 } opaquemodel_t;
 extern opaquemodel_t *opaquemodels;
-#endif
+
 extern void CreateOpaqueNodes();
 extern int TestLineOpaque(int modelnum, const vec3_t modelorigin, const vec3_t start, const vec3_t stop);
 extern int CountOpaqueFaces(int modelnum);
 extern void DeleteOpaqueNodes();
-#ifdef OPAQUE_NODE_INLINECALL
+
 extern int TestPointOpaque_r(int nodenum, bool solid, const vec3_t point);
 FORCEINLINE int TestPointOpaque(int modelnum, const vec3_t modelorigin, bool solid, const vec3_t point) // use "forceinline" because "inline" does nothing here
 {
@@ -470,9 +469,6 @@ FORCEINLINE int TestPointOpaque(int modelnum, const vec3_t modelorigin, bool sol
     }
     return TestPointOpaque_r(thismodel->headnode, solid, newpoint);
 }
-#else
-extern int TestPointOpaque(int modelnum, const vec3_t modelorigin, bool solid, const vec3_t point);
-#endif
 extern void CreateDirectLights();
 extern void DeleteDirectLights();
 extern void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal); // added "const" --vluzacn
