@@ -15,6 +15,8 @@
 
 #define Q_PI 3.14159265358979323846
 
+#define finite _finite
+
 extern const vec3_t vec3_origin;
 
 // HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.

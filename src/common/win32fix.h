@@ -9,8 +9,6 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
-#define finite _finite
-
 #define rotl _rotl
 #define rotr _rotr
 
