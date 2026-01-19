@@ -3,7 +3,6 @@
 ////////////////////////////
 // begin old vismat.c
 //
-#define HALFBIT
 
 // =====================================================================================
 //
@@ -175,11 +174,8 @@ static void BuildVisLeafs(int threadnum)
                 if (patch->leafnum != i)
                     continue;
                 patchnum = patch - g_patches;
-#ifdef HALFBIT
+
                 bitpos = patchnum * g_num_patches - (patchnum * (patchnum + 1)) / 2;
-#else
-                bitpos = patchnum * g_num_patches;
-#endif
                 for (facenum2 = facenum + 1; facenum2 < g_numfaces; facenum2++)
                     TestPatchToFace(patchnum, facenum2, head, bitpos, pvs);
             }
@@ -195,12 +191,8 @@ static void BuildVisMatrix()
 {
     int c;
 
-#ifdef HALFBIT
     c = ((g_num_patches + 1) * (g_num_patches + 1)) / 16;
     c += 1; //--vluzacn
-#else
-    c = g_num_patches * ((g_num_patches + 7) / 8);
-#endif
 
     Log("%-20s: %5.1f megs\n", "visibility matrix", c / (1024 * 1024.0));
 
@@ -257,11 +249,7 @@ static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_
         Warning("in CheckVisBit(), p2 > num_patches");
     }
 
-#ifdef HALFBIT
     bitpos = p1 * g_num_patches - (p1 * (p1 + 1)) / 2 + p2;
-#else
-    bitpos = p1 * g_num_patches + p2;
-#endif
 
     if (s_vismatrix[bitpos >> 3] & (1 << (bitpos & 7)))
     {
