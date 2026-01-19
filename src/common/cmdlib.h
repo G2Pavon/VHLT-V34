@@ -21,8 +21,6 @@
 // ZHLT_* features are spread across more than one tool. Hence, changing
 //      one of these settings probably means recompiling the whole set
 
-#define RIPENT_PAUSE //--vluzacn
-
 // tool specific settings below only mean a recompile of the tool affected
 
 #define HLCSG_GAMETEXTMESSAGE_UTF8 //--vluzacn

@@ -11,9 +11,7 @@
 // csg4.c
 
 #include "ripent.h"
-#ifdef RIPENT_PAUSE
 #include <conio.h>
-#endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -37,9 +35,7 @@ bool g_chart = DEFAULT_CHART;
 
 bool g_info = DEFAULT_INFO;
 
-#ifdef RIPENT_PAUSE
 bool g_pause = false;
-#endif
 
 bool g_writeextentfile = DEFAULT_WRITEEXTENTFILE;
 
@@ -787,16 +783,13 @@ static void Usage(void)
     Log("    -lightdata #    : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart          : Display bsp statitics\n");
     Log("    -noinfo         : Do not show tool configuration information\n\n");
-#ifdef RIPENT_PAUSE
     Log("    -pause          : Pause before exit\n\n");
-#endif
 
     Log("    mapfile         : The mapfile to process\n\n");
 
     exit(1);
 }
 
-#ifdef RIPENT_PAUSE
 void pause()
 {
     if (g_pause)
@@ -805,7 +798,6 @@ void pause()
         getch();
     }
 }
-#endif
 
 // =====================================================================================
 //  Settings
@@ -880,9 +872,7 @@ int main(int argc, char **argv)
 
     g_Program = "ripent";
 
-#ifdef RIPENT_PAUSE
     atexit(&pause);
-#endif
     int argcold = argc;
     char **argvold = argv;
     {
@@ -960,12 +950,10 @@ int main(int argc, char **argv)
                 {
                     g_info = false;
                 }
-#ifdef RIPENT_PAUSE
                 else if (!strcasecmp(argv[i], "-pause"))
                 {
                     g_pause = true;
                 }
-#endif
                 else if (!strcasecmp(argv[i], "-textureimport"))
                 {
                     g_texturemode = hl_import;
