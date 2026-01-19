@@ -31,10 +31,6 @@
 
 #pragma warning(disable : 4996)
 
-#ifdef __MINGW32__
-#include <io.h>
-#endif
-
 #include "win32fix.h"
 
 #pragma warning(disable : 4127) // conditional expression is constant
