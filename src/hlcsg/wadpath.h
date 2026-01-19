@@ -1,7 +1,6 @@
 #pragma once
 // AJM: added file in
-
-#include "cmdlib.h" //--vluzacn
+#include <stdlib.h>
 
 #define MAX_WADPATHS 128 // arbitrary
 

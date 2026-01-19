@@ -1,6 +1,8 @@
 // AJM: added this file in
-
-#include "csg.h"
+#include "wadpath.h"
+#include "log.h"
+#include "mathlib.h"
+#include "bspfile.h"
 
 wadpath_t *g_pWadPaths[MAX_WADPATHS];
 int g_iNumWadPaths = 0;
