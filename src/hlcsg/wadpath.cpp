@@ -24,10 +24,6 @@ void PushWadPath(const char *const path, bool inuse)
     current->totaltextures = 0;
 
     g_pWadPaths[g_iNumWadPaths++] = current;
-
-#ifdef _DEBUG
-    Log("[dbg] PushWadPath: %i[%s]\n", g_iNumWadPaths, path);
-#endif
 }
 
 // =====================================================================================

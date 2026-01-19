@@ -5,12 +5,7 @@
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (amckern@yahoo.com)\n"
 #define MODIFICATIONS_STRING "Submit detailed bug reports to (vluzacn@163.com)\n" //--vluzacn
 
-#ifdef _DEBUG
-#define ZHLT_VERSIONSTRING "v3.4 dbg"
-#else
 #define ZHLT_VERSIONSTRING "v3.4"
-#endif
-
 #define HACK_VERSIONSTRING "VL34" //--vluzacn
 
 #if !defined(HLCSG) && !defined(HLBSP) && !defined(HLVIS) && !defined(HLRAD) && !defined(RIPENT) //--vluzacn

@@ -50,11 +50,7 @@ extern void CheckFatal();
 
 extern void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
 
-#ifdef _DEBUG
-#define IfDebug(x) (x)
-#else
 #define IfDebug(x)
-#endif
 
 extern const char *Localize(const char *s);
 extern void LoadLangFile(const char *name, const char *programpath);
