@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mathtypes.h"
+
 // upper design bounds
 
 #define MAX_MAP_HULLS 4
