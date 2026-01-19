@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
-
 #include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define alloca _alloca
 
