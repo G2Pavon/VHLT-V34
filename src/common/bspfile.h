@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mathtypes.h"
+#include "mathlib.h"
 
 // upper design bounds
 
