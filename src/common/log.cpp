@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "cmdlib.h"
 #include "messages.h"
 #include "hlassert.h"

@@ -59,9 +59,6 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #define SYSTEM_SLASH_CHAR '\\'
 #define SYSTEM_SLASH_STR "\\"
