@@ -1,7 +1,6 @@
 
 #include "csg.h"
 
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -19,4 +18,3 @@ char *ANSItoUTF8(const char *string)
     free(unicode);
     return utf8;
 }
-#endif

@@ -47,9 +47,9 @@
 #define DEFAULT_SCALESIZE -1.0 //dont scale
 #define DEFAULT_RESETLOG true
 #define DEFAULT_NOLIGHTOPT false
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
+
 #define DEFAULT_NOUTF8 false
-#endif
+
 #define DEFAULT_NULLIFYTRIGGER true
 
 // AJM: added in
@@ -193,9 +193,7 @@ typedef struct
     hullbrush_t **brushes;
 } hullshape_t;
 
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
 extern char *ANSItoUTF8(const char *);
-#endif
 
 //=============================================================================
 // map.c
@@ -265,9 +263,9 @@ extern const char *GetClipTypeString(cliptype);
 extern vec_t g_scalesize;
 extern bool g_resetlog;
 extern bool g_nolightopt;
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
+
 extern bool g_noutf8;
-#endif
+
 extern bool g_nullifytrigger;
 
 extern vec_t g_tiny_threshold;

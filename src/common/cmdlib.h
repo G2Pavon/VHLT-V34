@@ -23,8 +23,6 @@
 
 // tool specific settings below only mean a recompile of the tool affected
 
-#define HLCSG_GAMETEXTMESSAGE_UTF8 //--vluzacn
-
 //=====================================================================
 
 #pragma warning(disable : 4996)

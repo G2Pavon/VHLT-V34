@@ -58,9 +58,9 @@ bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 vec_t g_scalesize = DEFAULT_SCALESIZE;
 bool g_resetlog = DEFAULT_RESETLOG;
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
+
 bool g_noutf8 = DEFAULT_NOUTF8;
-#endif
+
 bool g_nullifytrigger = DEFAULT_NULLIFYTRIGGER;
 bool g_viewsurface = false;
 
@@ -1490,9 +1490,7 @@ static void Usage()
 
     Log("    -nolightopt      : don't optimize engine light entities\n");
 
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
     Log("    -notextconvert   : don't convert game_text message from Windows ANSI to UTF8 format\n");
-#endif
 
     Log("    -dev #           : compile with developer message\n\n");
 
@@ -1621,9 +1619,7 @@ static void Settings()
         Log("map scaling           [ %7s ] [ %7s ]\n", buf1, buf2);
     }
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
     Log("convert game_text     [ %7s ] [ %7s ]\n", !g_noutf8 ? "on" : "off", !DEFAULT_NOUTF8 ? "on" : "off");
-#endif
 
     Log("\n");
 }
@@ -1950,12 +1946,10 @@ int main(const int argc, char **argv)
                 {
                     g_nolightopt = true;
                 }
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
                 else if (!strcasecmp(argv[i], "-notextconvert"))
                 {
                     g_noutf8 = true;
                 }
-#endif
                 else if (!strcasecmp(argv[i], "-viewsurface"))
                 {
                     g_viewsurface = true;
@@ -2116,7 +2110,6 @@ int main(const int argc, char **argv)
             ThreadSetPriority(g_threadpriority);
             Settings();
 
-#ifdef HLCSG_GAMETEXTMESSAGE_UTF8
             if (!g_noutf8)
             {
                 int count = 0;
@@ -2150,7 +2143,7 @@ int main(const int argc, char **argv)
                     Log("%d game_text messages converted from Windows ANSI(CP_ACP) to UTF-8 encoding\n", count);
                 }
             }
-#endif
+
             if (!g_onlyents)
             {
                 if (g_wadconfigname)
