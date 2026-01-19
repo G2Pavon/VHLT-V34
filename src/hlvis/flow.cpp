@@ -342,10 +342,7 @@ inline static winding_t *ClipToSeperators(
             {
                 AddPlane(stack, &plane);
             }
-
-#ifdef RVIS_LEVEL_1
             break; /* Antony was here */
-#endif
         }
     }
 

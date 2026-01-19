@@ -15,7 +15,6 @@
 
 #define MAX_PORTALS 32768
 
-#define RVIS_LEVEL_1
 #define RVIS_LEVEL_2
 
 #define PORTALFILE "PRT1" // WTF?
