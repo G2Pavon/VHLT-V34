@@ -20,10 +20,6 @@
 #include <io.h>
 #pragma warning(default : 4142 4028)
 
-#ifdef STDC_HEADERS
-#include <ctype.h>
-#endif
-
 #include <direct.h>
 
 #define DEFAULT_FASTMODE false
