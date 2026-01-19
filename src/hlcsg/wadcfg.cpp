@@ -1,6 +1,11 @@
 // AJM: ADDED THIS ENTIRE FILE IN
+#include <stdlib.h>
 
-#include "csg.h"
+#include "wadpath.h"
+#include "log.h"
+#include "filelib.h"
+#include "scriplib.h"
+
 void LoadWadconfig(const char *filename, const char *configname)
 {
     Log("Loading wad configuration '%s' from '%s' :\n", configname, filename);
