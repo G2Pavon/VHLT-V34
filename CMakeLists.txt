@@ -19,8 +19,6 @@ endif()
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_compile_definitions(VERSION_64BIT)
-else()
-    add_compile_definitions(VERSION_32BIT)
 endif()
 
 # ================================
