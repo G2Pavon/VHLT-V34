@@ -65,24 +65,12 @@ bool FreeBlock(void *pointer)
     }
 }
 
-#ifdef CHECK_HEAP
-// =====================================================================================
-//  HeapCheck
-// =====================================================================================
-void HeapCheck()
-{
-    if (_heapchk() != _HEAPOK)
-        hlassert(false);
-}
-#endif
-
 // =====================================================================================
 //  AllocBlock
 // =====================================================================================
 // HeapAlloc/HeapFree is thread safe by default
 void *Alloc(const unsigned long size)
 {
-    HeapCheck();
     return calloc(1, size);
 }
 
@@ -91,7 +79,6 @@ void *Alloc(const unsigned long size)
 // =====================================================================================
 bool Free(void *pointer)
 {
-    HeapCheck();
     free(pointer);
     return true;
 }
