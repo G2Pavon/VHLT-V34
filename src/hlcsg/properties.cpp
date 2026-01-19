@@ -1,9 +1,14 @@
 //KGP -- added in for use with HLCSG_NULLIFY_INVISIBLE
 
-#include "csg.h"
-
 #include <fstream>
 #include <istream>
+#include <set>
+#include <string>
+
+#include "filelib.h"
+#include "log.h"
+#include "bspfile.h"
+
 using namespace std;
 
 set<string> g_invisible_items;
