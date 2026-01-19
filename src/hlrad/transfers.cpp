@@ -4,10 +4,6 @@
 #include <fcntl.h>
 #include "win32fix.h"
 
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-
 /*
  * =============
  * writetransfers
