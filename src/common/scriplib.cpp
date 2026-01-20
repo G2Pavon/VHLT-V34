@@ -1,8 +1,11 @@
+#include <stdlib.h>
+#include <string.h>
+
+#include "scriplib.h"
 #include "cmdlib.h"
 #include "filelib.h"
 #include "messages.h"
 #include "log.h"
-#include "scriplib.h"
 
 char g_token[MAXTOKEN];
 char g_TXcommand;

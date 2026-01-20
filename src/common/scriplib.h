@@ -1,6 +1,6 @@
-#pragma once
+#pragma
 
-#include "cmdlib.h"
+#include <stdlib.h>
 
 #define MAXTOKEN 4096
 

@@ -6,6 +6,7 @@
 #include "bspfile.h"
 #include "scriplib.h"
 #include "blockmem.h"
+#include "cmdlib.h"
 
 //=============================================================================
 

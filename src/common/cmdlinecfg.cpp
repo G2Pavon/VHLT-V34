@@ -8,6 +8,7 @@
 #include "cmdlinecfg.h"
 #include "scriplib.h"
 #include "log.h"
+#include "cmdlib.h"
 
 const char paramfilename[_MAX_PATH] = "settings.txt";
 const char sepchr = '\n';
