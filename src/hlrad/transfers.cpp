@@ -1,9 +1,6 @@
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <stdio.h>
 
 #include "qrad.h"
-#include "win32fix.h"
-#include "filelib.h"
 #include "blockmem.h"
 #include "log.h"
 
