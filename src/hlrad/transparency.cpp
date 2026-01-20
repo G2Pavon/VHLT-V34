@@ -3,8 +3,17 @@
 //
 //	Transparency Arrays for sparse and vismatrix methods
 //
+#include <stdlib.h>
+#include <string.h>
+#include <stddef.h>
+#include <limits.h>
+
 #include "qrad.h"
 #include "threads.h"
+#include "mathtypes.h"
+#include "mathlib.h"
+#include "log.h"
+#include "win32fix.h"
 
 typedef struct
 {
