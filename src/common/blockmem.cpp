@@ -16,14 +16,13 @@
 void *AllocBlock(const unsigned long size)
 {
     void *pointer;
-    HANDLE h;
 
     if (!size)
     {
         Warning("Attempting to allocate 0 bytes");
     }
 
-    h = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
+    HANDLE h = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
 
     hlassume(h != NULL, assume_NoMemory);
 
@@ -44,14 +43,12 @@ void *AllocBlock(const unsigned long size)
 // =====================================================================================
 bool FreeBlock(void *pointer)
 {
-    HANDLE h;
-
     if (!pointer)
     {
         Warning("Freeing a null pointer");
     }
 
-    h = GlobalHandle(pointer);
+    HANDLE h = GlobalHandle(pointer);
 
     if (h)
     {
