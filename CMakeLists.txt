@@ -124,7 +124,6 @@ add_executable(hlvis
     ${COMMON_SOURCES}
     ${SRC_DIR}/hlvis/flow.cpp
     ${SRC_DIR}/hlvis/vis.cpp
-    ${SRC_DIR}/hlvis/zones.cpp
 )
 
 target_compile_definitions(hlvis PRIVATE HLVIS)

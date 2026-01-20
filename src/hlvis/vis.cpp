@@ -23,6 +23,7 @@
 #include "mathtypes.h"
 #include "mathlib.h"
 #include "bspfile.h"
+#include "winding.h"
 
 /*
 

@@ -7,6 +7,7 @@
 #include "log.h"
 #include "mathtypes.h"
 #include "mathlib.h"
+#include "winding.h"
 
 // =====================================================================================
 //  AllocStackWinding

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "zones.h"
+#include "bspfile.h"
 
 #define DEFAULT_MAXDISTANCE_RANGE 0
 
@@ -49,7 +49,6 @@ typedef struct
     byte *mightsee;
     unsigned nummightsee;
     int numcansee;
-    UINT32 zone; // Which zone is this portal a member of
 } portal_t;
 
 typedef struct seperating_plane_s
@@ -133,8 +132,6 @@ extern unsigned g_bitbytes;
 extern unsigned g_bitlongs;
 
 extern volatile int g_vislocalpercent;
-
-extern Zones *g_Zones;
 
 extern void BasePortalVis(int threadnum);
 
