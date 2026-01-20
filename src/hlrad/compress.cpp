@@ -1,9 +1,9 @@
-#include "cmdlib.h"
-#include "compress.h"
-#include "log.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
+
+#include "compress.h"
+#include "log.h"
 
 const size_t unused_size = 3u; // located at the end of a block
 
