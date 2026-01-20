@@ -2,6 +2,7 @@
 
 #include "mathtypes.h"
 #include "mathlib.h"
+#include "win32fix.h"
 
 // upper design bounds
 

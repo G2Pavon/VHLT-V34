@@ -1,8 +1,10 @@
 #pragma warning(disable : 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
 
-#include "winding.h"
+#include <string.h>
 
+#include "winding.h"
 #include "log.h"
+#include "mathtypes.h"
 #include "mathlib.h"
 #include "hlassert.h"
 
