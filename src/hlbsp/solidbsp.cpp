@@ -25,9 +25,13 @@
 #include <vector>
 
 #include "bsp5.h"
+#include "bspfile.h"
 #include "cmdlib.h"
 #include "log.h"
 #include "hlassert.h"
+#include "mathtypes.h"
+#include "mathlib.h"
+#include "winding.h"
 
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
 
