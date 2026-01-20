@@ -1,4 +1,6 @@
-#include "cmdlib.h" //--vluzacn
+#pragma once
+
+#include <stddef.h>
 
 extern void compress_compatability_test(void);
 
