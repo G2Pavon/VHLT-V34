@@ -1,6 +1,15 @@
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+
 #include "csg.h"
 #include "blockmem.h"
 #include "threads.h"
+#include "bspfile.h"
+#include "mathtypes.h"
+#include "mathlib.h"
+#include "log.h"
+#include "win32fix.h"
 
 plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
