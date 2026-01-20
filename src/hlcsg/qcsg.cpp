@@ -9,10 +9,11 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
-
-#include "csg.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
+
+#include "csg.h"
+#include "cmdlib.h"
 
 /*
 

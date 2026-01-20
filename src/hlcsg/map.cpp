@@ -1,6 +1,7 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 
 #include "csg.h"
+#include "cmdlib.h"
 
 int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];

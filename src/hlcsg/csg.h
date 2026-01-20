@@ -5,7 +5,6 @@
 #include <string>
 #include <map>
 
-#include "cmdlib.h"
 #include "messages.h"
 #include "win32fix.h"
 #include "log.h"
