@@ -2,7 +2,6 @@
 
 #include "winding.h"
 
-#include "cmdlib.h"
 #include "log.h"
 #include "mathlib.h"
 #include "hlassert.h"

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
 #include "basictypes.h"
 #include "mathtypes.h"
-#include "win32fix.h"
 #include "mathlib.h"
+#include "win32fix.h"
 #include "bspfile.h"
 #include "boundingbox.h"
 

@@ -17,6 +17,7 @@
 #include "cmdlinecfg.h"
 #include "threads.h"
 #include "log.h"
+#include "cmdlib.h"
 
 /*
 
