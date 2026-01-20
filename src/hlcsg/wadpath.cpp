@@ -1,4 +1,7 @@
 // AJM: added this file in
+#include <stdlib.h>
+#include <string.h>
+
 #include "wadpath.h"
 #include "log.h"
 #include "mathlib.h"
