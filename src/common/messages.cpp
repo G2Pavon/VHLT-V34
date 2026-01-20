@@ -1,4 +1,5 @@
 #include "messages.h"
+#include "cmdlib.h"
 
 // AJM: because these are repeated, they use up redundant memory.
 //  consequently ive made them into const strings which each occurance can point to.
