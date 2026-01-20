@@ -1,10 +1,7 @@
-
-#include <sys/stat.h>
-#include <io.h>
-#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
 #include "filelib.h"
-#include "messages.h"
 #include "log.h"
 #include "blockmem.h"
 
