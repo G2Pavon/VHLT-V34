@@ -1,10 +1,10 @@
 // AJM: ADDED THIS ENTIRE FILE IN
-#include <stdlib.h>
 
 #include "wadpath.h"
 #include "log.h"
 #include "filelib.h"
 #include "scriplib.h"
+#include "win32fix.h"
 
 void LoadWadconfig(const char *filename, const char *configname)
 {
