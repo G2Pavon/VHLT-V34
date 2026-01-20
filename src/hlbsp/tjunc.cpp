@@ -1,5 +1,10 @@
+#include <string.h>
+#include <math.h>
+
 #include "bsp5.h"
 #include "log.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 
 typedef struct wvert_s
 {
