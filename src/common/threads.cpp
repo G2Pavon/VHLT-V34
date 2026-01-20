@@ -2,12 +2,11 @@
 #include <windows.h>
 #include <malloc.h>
 
+#include "threads.h"
 #include "cmdlib.h"
 #include "messages.h"
 #include "log.h"
-#include "threads.h"
 #include "blockmem.h"
-
 #include "hlassert.h"
 
 q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
