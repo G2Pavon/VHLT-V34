@@ -1,5 +1,12 @@
+#include <string.h>
+#include <math.h>
+
 #include "bsp5.h"
+#include "bspfile.h"
 #include "hlassert.h"
+#include "log.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 
 //  SubdivideFace
 
