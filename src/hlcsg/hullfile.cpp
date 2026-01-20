@@ -1,6 +1,9 @@
+#include <stdio.h>
+
 #include "csg.h"
 #include "filelib.h"
 #include "log.h"
+#include "mathtypes.h"
 
 vec3_t g_hull_size[NUM_HULLS][2] =
     {
