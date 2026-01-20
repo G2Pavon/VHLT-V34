@@ -26,6 +26,7 @@
 //=====================================================================
 
 #pragma warning(disable : 4996)
+#include <stddef.h>
 
 #include "win32fix.h"
 
@@ -36,17 +37,6 @@
 #pragma warning(disable : 4786) // identifier was truncated to '255' characters in the browser information
 #pragma warning(disable : 4305) // truncation from 'const double' to 'float'
 #pragma warning(disable : 4800) // forcing value to bool 'true' or 'false' (performance warning)
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <ctype.h>
-#include <time.h>
-#include <stdarg.h>
-#include <limits.h>
-
-#include <stdint.h> //--vluzacn
 
 #define SYSTEM_SLASH_CHAR '\\'
 #define SYSTEM_SLASH_STR "\\"
