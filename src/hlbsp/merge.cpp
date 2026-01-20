@@ -1,5 +1,9 @@
+#include <cmath>
+
 #include "bsp5.h"
 #include "log.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 
 //  TryMerge
 //  MergeFaceToList
