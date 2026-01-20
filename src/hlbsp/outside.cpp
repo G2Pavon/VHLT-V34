@@ -1,10 +1,14 @@
 #pragma warning(disable : 4267) // 'size_t' to 'unsigned int', possible loss of data
 
+#include <stdio.h>
+
 #include "bsp5.h"
+#include "bspfile.h"
 #include "cmdlib.h"
 #include "filelib.h"
 #include "blockmem.h"
 #include "log.h"
+#include "mathtypes.h"
 
 //  PointInLeaf
 //  PlaceOccupant
