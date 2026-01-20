@@ -1,4 +1,6 @@
 #include "qrad.h"
+#include "blockmem.h"
+#include "threads.h"
 
 funcCheckVisBit g_CheckVisBit = NULL;
 

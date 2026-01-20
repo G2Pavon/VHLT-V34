@@ -1,4 +1,8 @@
+#include <io.h>
+
 #include "qrad.h"
+#include "threads.h"
+#include "cmdlib.h"
 
 // =====================================================================================
 //  CheckVisBit

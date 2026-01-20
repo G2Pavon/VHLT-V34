@@ -1,26 +1,10 @@
 #pragma once
 
-#include "cmdlib.h"
-#include "messages.h"
-#include "win32fix.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "winding.h"
-#include "scriplib.h"
-#include "threads.h"
-#include "blockmem.h"
-#include "filelib.h"
 #include "winding.h"
 #include "compress.h"
-#include "cmdlinecfg.h"
 
 #pragma warning(disable : 4142 4028)
-#include <io.h>
 #pragma warning(default : 4142 4028)
-
-#include <direct.h>
 
 #define DEFAULT_FASTMODE false
 #define DEFAULT_METHOD eMethodSparseVismatrix

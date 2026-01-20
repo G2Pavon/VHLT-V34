@@ -1,4 +1,7 @@
 #include "qrad.h"
+#include "filelib.h"
+#include "log.h"
+#include "cmdlib.h"
 
 int g_numtextures;
 radtexture_t *g_textures;

@@ -4,6 +4,7 @@
 //	Transparency Arrays for sparse and vismatrix methods
 //
 #include "qrad.h"
+#include "threads.h"
 
 typedef struct
 {

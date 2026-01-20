@@ -1,6 +1,8 @@
-#include "qrad.h"
 #include <vector>
 #include <algorithm>
+
+#include "qrad.h"
+#include "log.h"
 
 int g_lerp_enabled = DEFAULT_LERP_ENABLED;
 

@@ -15,6 +15,12 @@
 #include <string>
 
 #include "qrad.h"
+#include "cmdlinecfg.h"
+#include "filelib.h"
+#include "blockmem.h"
+#include "threads.h"
+#include "scriplib.h"
+#include "cmdlib.h"
 
 /*
  * NOTES
