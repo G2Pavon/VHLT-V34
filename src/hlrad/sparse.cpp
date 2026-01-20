@@ -1,9 +1,14 @@
 #include <io.h>
+#include <stdlib.h>
 
 #include "qrad.h"
 #include "blockmem.h"
 #include "threads.h"
 #include "cmdlib.h"
+#include "mathtypes.h"
+#include "mathlib.h"
+#include "bspfile.h"
+#include "log.h"
 
 typedef struct
 {
