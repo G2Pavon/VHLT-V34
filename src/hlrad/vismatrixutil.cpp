@@ -1,6 +1,10 @@
+#include <stddef.h>
+
 #include "qrad.h"
 #include "blockmem.h"
 #include "threads.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 
 funcCheckVisBit g_CheckVisBit = NULL;
 
