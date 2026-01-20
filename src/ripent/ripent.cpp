@@ -10,11 +10,17 @@
 
 // csg4.c
 
-#include "ripent.h"
 #include <conio.h>
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#include "ripent.h"
+#include "hlassert.h"
+#include "log.h"
+#include "cmdlinecfg.h"
+#include "filelib.h"
+#include "bspfile.h"
+#include "cmdlib.h"
 
 typedef enum
 {
