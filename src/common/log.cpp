@@ -1,16 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
-#include "cmdlib.h"
-#include "messages.h"
-#include "hlassert.h"
-#include "log.h"
-#include "filelib.h"
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include "log.h"
+#include "messages.h"
+#include "hlassert.h"
+#include "filelib.h"
 #include "scriplib.h"
 
 char *g_Program = "Uninitialized variable ::g_Program";

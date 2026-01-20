@@ -1,8 +1,6 @@
 #pragma once
 
-#include "cmdlib.h" //--vluzacn
-
-#include "mathtypes.h"
+#include "win32fix.h"
 #include "messages.h"
 
 typedef enum
