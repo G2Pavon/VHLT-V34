@@ -21,6 +21,7 @@
 #include "log.h"
 #include "cmdlib.h"
 #include "mathtypes.h"
+#include "mathlib.h"
 #include "bspfile.h"
 
 /*
