@@ -18,6 +18,7 @@
 #define finite _finite
 
 extern const vec3_t vec3_origin;
+extern const vec3_t vec3_one;
 
 // HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
 #define NORMAL_EPSILON 0.00001

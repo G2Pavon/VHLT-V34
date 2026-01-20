@@ -33,8 +33,6 @@ static unsigned int s_max_raw_count = 0; // Current array maximum (used for real
 static transList_t *s_sorted_list = NULL; // Sorted first by p1 then p2
 static unsigned int s_sorted_count = 0;
 
-const vec3_t vec3_one = {1.0, 1.0, 1.0};
-
 //===============================================
 // AddTransparencyToRawArray
 //===============================================

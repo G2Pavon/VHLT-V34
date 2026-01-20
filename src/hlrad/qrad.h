@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mathtypes.h"
+#include "mathlib.h"
 #include "winding.h"
 #include "compress.h"
 
@@ -373,7 +375,6 @@ extern vec3_t g_jitter_hack;
 
 extern bool g_customshadow_with_bouncelight;
 extern bool g_rgb_transfers;
-extern const vec3_t vec3_one;
 
 extern float g_transtotal_hack;
 extern unsigned char g_minlight;

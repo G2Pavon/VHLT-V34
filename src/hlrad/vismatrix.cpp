@@ -4,6 +4,8 @@
 #include "blockmem.h"
 #include "threads.h"
 #include "cmdlib.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 
 ////////////////////////////
 // begin old vismat.c
