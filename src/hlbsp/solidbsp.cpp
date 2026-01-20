@@ -26,6 +26,7 @@
 
 #include "bsp5.h"
 #include "cmdlib.h"
+#include "log.h"
 #include "hlassert.h"
 
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
