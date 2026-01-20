@@ -2,10 +2,12 @@
 
 #include "qrad.h"
 #include "blockmem.h"
+#include "log.h"
 #include "threads.h"
 #include "cmdlib.h"
 #include "mathtypes.h"
 #include "mathlib.h"
+#include "bspfile.h"
 
 ////////////////////////////
 // begin old vismat.c
