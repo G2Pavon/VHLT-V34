@@ -1,8 +1,13 @@
+#include <string>
+#include <deque>
+
 #include "csg.h"
 #include "cmdlib.h"
 #include "wadpath.h"
 #include "filelib.h"
 #include "threads.h"
+#include "log.h"
+#include "bspfile.h"
 
 #define MAXWADNAME 16
 #define MAX_TEXFILES 128
