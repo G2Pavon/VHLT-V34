@@ -1,14 +1,13 @@
-#include "cmdlib.h"
-#include "scriplib.h"
-#include "cmdlinecfg.h"
-#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#include "cmdlinecfg.h"
+#include "scriplib.h"
+#include "log.h"
 
 const char paramfilename[_MAX_PATH] = "settings.txt";
 const char sepchr = '\n';
