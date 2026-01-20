@@ -1,6 +1,7 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 
 #include "bsp5.h"
+#include "cmdlib.h"
 
 node_t g_outside_node; // portals outside the world face this
 

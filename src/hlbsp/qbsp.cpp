@@ -12,6 +12,7 @@
 #include <windows.h>
 
 #include "bsp5.h"
+#include "cmdlib.h"
 
 /*
 

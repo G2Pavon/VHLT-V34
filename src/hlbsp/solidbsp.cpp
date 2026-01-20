@@ -1,7 +1,5 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 
-#include "bsp5.h"
-
 //  FaceSide
 //  ChooseMidPlaneFromList
 //  ChoosePlaneFromList
@@ -25,6 +23,9 @@
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
 #include <vector>
+
+#include "bsp5.h"
+#include "cmdlib.h"
 
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
 

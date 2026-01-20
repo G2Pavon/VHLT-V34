@@ -1,5 +1,3 @@
-#include "bsp5.h"
-
 //  WriteClipNodes_r
 //  WriteClipNodes
 //  WriteDrawLeaf
@@ -11,6 +9,9 @@
 //  FinishBSPFile
 
 #include <map>
+
+#include "bsp5.h"
+#include "cmdlib.h"
 
 typedef std::map<int, int> PlaneMap;
 static PlaneMap gPlaneMap;
