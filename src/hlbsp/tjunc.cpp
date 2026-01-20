@@ -1,4 +1,5 @@
 #include "bsp5.h"
+#include "log.h"
 
 typedef struct wvert_s
 {

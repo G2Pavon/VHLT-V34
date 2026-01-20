@@ -2,6 +2,9 @@
 
 #include "bsp5.h"
 #include "cmdlib.h"
+#include "filelib.h"
+#include "blockmem.h"
+#include "log.h"
 
 //  PointInLeaf
 //  PlaceOccupant

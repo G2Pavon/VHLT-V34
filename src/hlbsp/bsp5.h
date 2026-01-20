@@ -1,16 +1,8 @@
 #pragma once
 
-#include "messages.h"
-#include "win32fix.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "blockmem.h"
-#include "filelib.h"
-#include "threads.h"
 #include "winding.h"
-#include "cmdlinecfg.h"
+#include "mathtypes.h"
+#include "bspfile.h"
 
 #define ENTITIES_VOID "entities.void"
 #define ENTITIES_VOID_EXT ".void"

@@ -13,6 +13,9 @@
 
 #include "bsp5.h"
 #include "cmdlib.h"
+#include "cmdlinecfg.h"
+#include "threads.h"
+#include "filelib.h"
 
 /*
 

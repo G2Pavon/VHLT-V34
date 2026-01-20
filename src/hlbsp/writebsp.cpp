@@ -12,6 +12,7 @@
 
 #include "bsp5.h"
 #include "cmdlib.h"
+#include "log.h"
 
 typedef std::map<int, int> PlaneMap;
 static PlaneMap gPlaneMap;
