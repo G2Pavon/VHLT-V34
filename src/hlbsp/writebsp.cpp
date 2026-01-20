@@ -9,10 +9,13 @@
 //  FinishBSPFile
 
 #include <map>
+#include <utility>
+#include <string.h>
 
 #include "bsp5.h"
 #include "cmdlib.h"
 #include "log.h"
+#include "bspfile.h"
 
 typedef std::map<int, int> PlaneMap;
 static PlaneMap gPlaneMap;
