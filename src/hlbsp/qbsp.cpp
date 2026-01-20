@@ -10,12 +10,14 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <stdio.h>
 
 #include "bsp5.h"
 #include "cmdlib.h"
 #include "cmdlinecfg.h"
-#include "threads.h"
 #include "filelib.h"
+#include "log.h"
+#include "threads.h"
 
 /*
 
