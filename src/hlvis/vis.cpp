@@ -9,15 +9,19 @@
     
 */
 
-#include "vis.h"
+#include <stdlib.h>
+#include <string.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include "vis.h"
 #include "filelib.h"
 #include "cmdlinecfg.h"
 #include "threads.h"
 #include "log.h"
 #include "cmdlib.h"
+#include "mathtypes.h"
+#include "bspfile.h"
 
 /*
 
