@@ -4,22 +4,14 @@
 #include <deque>
 #include <string>
 #include <map>
+#include <set>
 
-#include "messages.h"
-#include "win32fix.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathlib.h"
-#include "scriplib.h"
-#include "winding.h"
-#include "threads.h"
 #include "bspfile.h"
-#include "blockmem.h"
-#include "filelib.h"
 #include "boundingbox.h"
+#include "winding.h"
+#include "mathtypes.h"
+#include "mathlib.h"
 // AJM: added in
-#include "wadpath.h"
-#include "cmdlinecfg.h"
 
 #ifndef DOUBLEVEC_T
 #error you must add -dDOUBLEVEC_T to the project!
@@ -305,8 +297,6 @@ extern bool g_bWadAutoDetect;
 //=============================================================================
 // properties.cpp
 
-#include <string>
-#include <set>
 extern void properties_initialize(const char *filename);
 extern std::set<std::string> g_invisible_items;
 

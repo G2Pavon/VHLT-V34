@@ -1,5 +1,8 @@
 #include "csg.h"
 #include "cmdlib.h"
+#include "wadpath.h"
+#include "filelib.h"
+#include "threads.h"
 
 #define MAXWADNAME 16
 #define MAX_TEXFILES 128

@@ -1,4 +1,6 @@
 #include "csg.h"
+#include "blockmem.h"
+#include "hlassert.h"
 
 vec_t g_BrushUnionThreshold = DEFAULT_BRUSH_UNION_THRESHOLD;
 

@@ -14,6 +14,12 @@
 
 #include "csg.h"
 #include "cmdlib.h"
+#include "cmdlinecfg.h"
+#include "wadpath.h"
+#include "filelib.h"
+#include "blockmem.h"
+#include "threads.h"
+#include "scriplib.h"
 
 /*
 

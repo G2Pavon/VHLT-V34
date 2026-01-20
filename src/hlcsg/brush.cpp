@@ -1,4 +1,6 @@
 #include "csg.h"
+#include "blockmem.h"
+#include "threads.h"
 
 plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;

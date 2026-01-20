@@ -2,6 +2,9 @@
 
 #include "csg.h"
 #include "cmdlib.h"
+#include "blockmem.h"
+#include "scriplib.h"
+#include "log.h"
 
 int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];
