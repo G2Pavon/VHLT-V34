@@ -17,8 +17,7 @@ bool error = false;
 
 int plen(const char *p)
 {
-    int l;
-    for (l = 0;; l++)
+    for (int l = 0;; l++)
     {
         if (p[l] == '\0')
             return -1;
@@ -32,20 +31,20 @@ bool pvalid(const char *p)
 }
 bool pmatch(const char *cmdlineparam, const char *param)
 {
-    int cl, cstart, cend, pl, pstart, pend, k;
-    cl = plen(cmdlineparam);
-    pl = plen(param);
+    int k;
+    int cl = plen(cmdlineparam);
+    int pl = plen(param);
     if (cl < 0 || pl < 0)
         return false;
     bool anystart = (pl > 0 && param[0] == '*');
     bool anyend = (pl > 0 && param[pl - 1] == '*');
-    pstart = anystart ? 1 : 0;
-    pend = anyend ? pl - 1 : pl;
+    int pstart = anystart ? 1 : 0;
+    int pend = anyend ? pl - 1 : pl;
     if (pend < pstart)
         pend = pstart;
-    for (cstart = 0; cstart <= cl; ++cstart)
+    for (int cstart = 0; cstart <= cl; ++cstart)
     {
-        for (cend = cl; cend >= cstart; --cend)
+        for (int cend = cl; cend >= cstart; --cend)
         {
             if (cend - cstart == pend - pstart)
             {
@@ -211,13 +210,12 @@ const char *nextword(const char *s, char *token, unsigned int n)
 }
 void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
 {
-    int i;
     strcpy(cmdline, "");
     strcat(cmdline, "<");
     strcat(cmdline, g_Program);
     strcat(cmdline, ">");
     strcat(cmdline, SEPSTR);
-    for (i = 1; i < argc; ++i)
+    for (int i = 1; i < argc; ++i)
     {
         if (strlen(cmdline) + strlen(argv[i]) + strlen(SEPSTR) + 1 <= n)
         {
@@ -231,8 +229,8 @@ void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
 void unparsearg(int &argc, char **&argv, char *cmdline)
 {
     char *c;
-    int i, j;
-    i = 0;
+    int j;
+    int i = 0;
     for (c = cmdline; pvalid(c); c = pnext(c))
         i++;
     argc = i;
@@ -258,18 +256,17 @@ void unparsearg(int &argc, char **&argv, char *cmdline)
 void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&argvnew)
 {
     char token[MAXTOKEN], words[MAXTOKEN], cmdline[MAXTOKEN];
-    FILE *f;
-    char *s;
+
     const char *c, *c0;
     char filepath[_MAX_PATH];
-    s = NULL;
+    char *s = NULL;
 
     char tmp[_MAX_PATH];
 
     GetModuleFileName(NULL, tmp, _MAX_PATH);
     ExtractFilePath(tmp, filepath);
     strcat(filepath, paramfilename);
-    f = fopen(filepath, "r");
+    FILE *f = fopen(filepath, "r");
     if (f)
     {
         int len = 0x100000;
