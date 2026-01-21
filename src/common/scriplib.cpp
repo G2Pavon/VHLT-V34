@@ -40,8 +40,6 @@ bool s_tokenready; // only true if UnGetToken was just called
 // =====================================================================================
 static void AddScriptToStack(const char *const filename)
 {
-    int size;
-
     s_script++;
 
     if (s_script == &s_scriptstack[MAX_INCLUDES])
@@ -49,7 +47,7 @@ static void AddScriptToStack(const char *const filename)
 
     strcpy_s(s_script->filename, filename);
 
-    size = LoadFile(s_script->filename, (char **)&s_script->buffer);
+    int size = LoadFile(s_script->filename, (char **)&s_script->buffer);
 
     Log("Entering %s\n", s_script->filename);
 
@@ -251,9 +249,7 @@ skipspace:
 // =====================================================================================
 bool TokenAvailable()
 {
-    char *search_p;
-
-    search_p = s_script->script_p;
+    char *search_p = s_script->script_p;
 
     if (search_p >= s_script->end_p)
         return false;
