@@ -31,15 +31,13 @@ static int c_keep_faces;
 // =====================================================================================
 static node_t *PointInLeaf(node_t *node, const vec3_t point)
 {
-    vec_t d;
-
     if (node->isportalleaf)
     {
         //Log("PointInLeaf::node->contents == %i\n", node->contents);
         return node;
     }
 
-    d = DotProduct(g_dplanes[node->planenum].normal, point) - g_dplanes[node->planenum].dist;
+    vec_t d = DotProduct(g_dplanes[node->planenum].normal, point) - g_dplanes[node->planenum].dist;
 
     if (d > 0)
         return PointInLeaf(node->children[0], point);
@@ -52,9 +50,7 @@ static node_t *PointInLeaf(node_t *node, const vec3_t point)
 // =====================================================================================
 static bool PlaceOccupant(const int num, const vec3_t point, node_t *headnode)
 {
-    node_t *n;
-
-    n = PointInLeaf(headnode, point);
+    node_t *n = PointInLeaf(headnode, point);
     if (n->contents == CONTENTS_SOLID)
     {
         return false;
@@ -74,12 +70,9 @@ static FILE *linefile;
 
 static void MarkLeakTrail(portal_t *n2)
 {
-    int i;
     vec3_t p1, p2, dir;
-    float len;
-    portal_t *n1;
 
-    n1 = prevleaknode;
+    portal_t *n1 = prevleaknode;
     prevleaknode = n2;
 
     if (!n1)
@@ -97,13 +90,13 @@ static void MarkLeakTrail(portal_t *n2)
     fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
 
     VectorSubtract(p2, p1, dir);
-    len = VectorLength(dir);
+    float len = VectorLength(dir);
     VectorNormalize(dir);
 
     while (len > 2)
     {
         fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
-        for (i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             p1[i] += dir[i] * 2;
         len -= 2;
     }
@@ -116,7 +109,6 @@ static void MarkLeakTrail(portal_t *n2)
 // =====================================================================================
 static void FreeDetailNode_r(node_t *n)
 {
-    int i;
     if (n->planenum == -1)
     {
         if (!(n->isportalleaf && n->contents == CONTENTS_SOLID))
@@ -126,20 +118,21 @@ static void FreeDetailNode_r(node_t *n)
         }
         return;
     }
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         FreeDetailNode_r(n->children[i]);
         free(n->children[i]);
         n->children[i] = NULL;
     }
-    face_t *f, *next;
-    for (f = n->faces; f; f = next)
+    face_t *next;
+    for (face_t *f = n->faces; f; f = next)
     {
         next = f->next;
         FreeFace(f);
     }
     n->faces = NULL;
 }
+
 static void FillLeaf(node_t *l)
 {
     if (!l->isportalleaf)
@@ -156,12 +149,11 @@ static void FillLeaf(node_t *l)
     l->contents = CONTENTS_SOLID;
     l->planenum = -1;
 }
+
 static int hit_occupied;
 static int backdraw;
 static bool RecursiveFillOutside(node_t *l, const bool fill)
 {
-    portal_t *p;
-    int s;
 
     if ((l->contents == CONTENTS_SOLID) || (l->contents == CONTENTS_SKY))
     {
@@ -192,9 +184,9 @@ static bool RecursiveFillOutside(node_t *l, const bool fill)
     }
     outleafs++;
 
-    for (p = l->portals; p;)
+    for (portal_t *p = l->portals; p;)
     {
-        s = (p->nodes[0] == l);
+        int s = (p->nodes[0] == l);
 
         if (RecursiveFillOutside(p->nodes[s], fill))
         { // leaked, so stop filling
@@ -218,8 +210,7 @@ static void MarkFacesInside_r(node_t *node)
 {
     if (node->planenum == -1)
     {
-        face_t **fp;
-        for (fp = node->markfaces; *fp; fp++)
+        for (face_t **fp = node->markfaces; *fp; fp++)
         {
             (*fp)->outputnumber = 0;
         }
@@ -234,7 +225,6 @@ static node_t *ClearOutFaces_r(node_t *node)
 {
     face_t *f;
     face_t *fnext;
-    portal_t *p;
 
     // mark the node and all it's faces, so they
     // can be removed if no children use them
@@ -311,7 +301,7 @@ static node_t *ClearOutFaces_r(node_t *node)
         // this node is still inside
 
         // mark all the nodes used as portals
-        for (p = node->portals; p;)
+        for (portal_t *p = node->portals; p;)
         {
             if (p->onnode)
             {
@@ -348,10 +338,9 @@ bool isClassnameAllowableOutside(const char *const classname)
 {
     if (g_strAllowableOutsideList)
     {
-        unsigned x;
         char **list = g_strAllowableOutsideList;
 
-        for (x = 0; x < g_nAllowableOutside; x++, list++)
+        for (unsigned x = 0; x < g_nAllowableOutside; x++, list++)
         {
             if (list)
             {
@@ -438,12 +427,7 @@ void LoadAllowableOutsideList(const char *const filename)
 // =====================================================================================
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 {
-    int s;
-    int i;
-    bool inside;
-    bool ret;
     vec3_t origin;
-    const char *cl;
 
     Verbose("----- FillOutside ----\n");
 
@@ -459,11 +443,11 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     // place markers for all entities so
     // we know if we leak inside
     //
-    inside = false;
-    for (i = 1; i < g_numentities; i++)
+    bool inside = false;
+    for (int i = 1; i < g_numentities; i++)
     {
         GetVectorForKey(&g_entities[i], "origin", origin);
-        cl = ValueForKey(&g_entities[i], "classname");
+        const char *cl = ValueForKey(&g_entities[i], "classname");
         if (!isClassnameAllowableOutside(cl))
         {
             /*if (!VectorCompare(origin, vec3_origin))
@@ -516,7 +500,7 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
         return node;
     }
 
-    s = !(g_outside_node.portals->nodes[1] == &g_outside_node);
+    int s = !(g_outside_node.portals->nodes[1] == &g_outside_node);
 
     // first check to see if an occupied leaf is hit
     outleafs = 0;
@@ -539,7 +523,7 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
         }
     }
 
-    ret = RecursiveFillOutside(g_outside_node.portals->nodes[s], false);
+    bool ret = RecursiveFillOutside(g_outside_node.portals->nodes[s], false);
 
     if (leakfile)
     {
@@ -634,9 +618,8 @@ void MarkOccupied_r(node_t *node)
     if (node->empty == 1)
     {
         node->empty = 0;
-        portal_t *p;
         int s;
-        for (p = node->portals; p; p = p->next[!s])
+        for (portal_t *p = node->portals; p; p = p->next[!s])
         {
             s = (p->nodes[0] == node);
             MarkOccupied_r(p->nodes[s]);
@@ -660,10 +643,9 @@ void RemoveUnused_r(node_t *node)
 }
 void FillInside(node_t *node)
 {
-    int i;
     g_outside_node.empty = 0;
     ResetMark_r(node);
-    for (i = 1; i < g_numentities; i++)
+    for (int i = 1; i < g_numentities; i++)
     {
         if (*ValueForKey(&g_entities[i], "origin"))
         {
