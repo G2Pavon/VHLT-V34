@@ -83,12 +83,10 @@ dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 // =====================================================================================
 void GetParamsFromEnt(entity_t *mapent)
 {
-    int iTmp;
-
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
 
     // verbose(choices) : "Verbose compile messages" : 0 = [ 0 : "Off" 1 : "On" ]
-    iTmp = IntForKey(mapent, "verbose");
+    int iTmp = IntForKey(mapent, "verbose");
     if (iTmp == 1)
     {
         g_verbose = true;
@@ -197,9 +195,7 @@ void GetParamsFromEnt(entity_t *mapent)
 // =====================================================================================
 face_t *NewFaceFromFace(const face_t *const in)
 {
-    face_t *newf;
-
-    newf = AllocFace();
+    face_t *newf = AllocFace();
 
     newf->planenum = in->planenum;
     newf->texturenum = in->texturenum;
@@ -219,26 +215,21 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
 {
     vec_t dists[MAXEDGES + 1];
     int sides[MAXEDGES + 1];
-    int counts[3];
-    vec_t dot;
+    int counts[3] = {0, 0, 0};
     int i;
-    int j;
     face_t *newf;
     face_t *new2;
-    vec_t *p1;
-    vec_t *p2;
     vec3_t mid;
 
     if (in->numpoints < 0)
     {
         Error("SplitFace: freed face");
     }
-    counts[0] = counts[1] = counts[2] = 0;
 
     // determine sides for each point
     for (i = 0; i < in->numpoints; i++)
     {
-        dot = DotProduct(in->pts[i], split->normal);
+        vec_t dot = DotProduct(in->pts[i], split->normal);
         dot -= split->dist;
         dists[i] = dot;
         if (dot > ON_EPSILON)
@@ -281,7 +272,7 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
             vec_t sum = 0.0;
             for (i = 0; i < in->numpoints; i++)
             {
-                dot = DotProduct(in->pts[i], split->normal);
+                vec_t dot = DotProduct(in->pts[i], split->normal);
                 dot -= split->dist;
                 sum += dot;
             }
@@ -323,7 +314,7 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
             Error("SplitFace: numpoints > MAXEDGES");
         }
 
-        p1 = in->pts[i];
+        vec_t *p1 = in->pts[i];
 
         if (sides[i] == SIDE_ON)
         {
@@ -351,10 +342,10 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
         }
 
         // generate a split point
-        p2 = in->pts[(i + 1) % in->numpoints];
+        vec_t *p2 = in->pts[(i + 1) % in->numpoints];
 
-        dot = dists[i] / (dists[i] - dists[i + 1]);
-        for (j = 0; j < 3; j++)
+        vec_t dot = dists[i] / (dists[i] - dists[i + 1]);
+        for (int j = 0; j < 3; j++)
         { // avoid round off error when possible
             if (split->normal[j] == 1)
             {
@@ -382,14 +373,13 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
     }
     {
         Winding *wd = new Winding(newf->numpoints);
-        int x;
-        for (x = 0; x < newf->numpoints; x++)
+        for (int x = 0; x < newf->numpoints; x++)
         {
             VectorCopy(newf->pts[x], wd->m_Points[x]);
         }
         wd->RemoveColinearPoints();
         newf->numpoints = wd->m_NumPoints;
-        for (x = 0; x < newf->numpoints; x++)
+        for (int x = 0; x < newf->numpoints; x++)
         {
             VectorCopy(wd->m_Points[x], newf->pts[x]);
         }
@@ -401,14 +391,13 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
     }
     {
         Winding *wd = new Winding(new2->numpoints);
-        int x;
-        for (x = 0; x < new2->numpoints; x++)
+        for (int x = 0; x < new2->numpoints; x++)
         {
             VectorCopy(new2->pts[x], wd->m_Points[x]);
         }
         wd->RemoveColinearPoints();
         new2->numpoints = wd->m_NumPoints;
-        for (x = 0; x < new2->numpoints; x++)
+        for (int x = 0; x < new2->numpoints; x++)
         {
             VectorCopy(wd->m_Points[x], new2->pts[x]);
         }
@@ -440,9 +429,7 @@ void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t *
 // =====================================================================================
 face_t *AllocFace()
 {
-    face_t *f;
-
-    f = (face_t *)malloc(sizeof(face_t));
+    face_t *f = (face_t *)malloc(sizeof(face_t));
     memset(f, 0, sizeof(face_t));
 
     f->planenum = -1;
@@ -463,9 +450,7 @@ void FreeFace(face_t *f)
 // =====================================================================================
 surface_t *AllocSurface()
 {
-    surface_t *s;
-
-    s = (surface_t *)malloc(sizeof(surface_t));
+    surface_t *s = (surface_t *)malloc(sizeof(surface_t));
     memset(s, 0, sizeof(surface_t));
 
     return s;
@@ -484,9 +469,7 @@ void FreeSurface(surface_t *s)
 // =====================================================================================
 portal_t *AllocPortal()
 {
-    portal_t *p;
-
-    p = (portal_t *)malloc(sizeof(portal_t));
+    portal_t *p = (portal_t *)malloc(sizeof(portal_t));
     memset(p, 0, sizeof(portal_t));
 
     return p;
@@ -502,8 +485,7 @@ void FreePortal(portal_t *p) // consider: inline
 
 side_t *AllocSide()
 {
-    side_t *s;
-    s = (side_t *)malloc(sizeof(side_t));
+    side_t *s = (side_t *)malloc(sizeof(side_t));
     memset(s, 0, sizeof(side_t));
     return s;
 }
@@ -520,8 +502,7 @@ void FreeSide(side_t *s)
 
 side_t *NewSideFromSide(const side_t *s)
 {
-    side_t *news;
-    news = AllocSide();
+    side_t *news = AllocSide();
     news->plane = s->plane;
     news->w = new Winding(*s->w);
     return news;
@@ -529,8 +510,7 @@ side_t *NewSideFromSide(const side_t *s)
 
 brush_t *AllocBrush()
 {
-    brush_t *b;
-    b = (brush_t *)malloc(sizeof(brush_t));
+    brush_t *b = (brush_t *)malloc(sizeof(brush_t));
     memset(b, 0, sizeof(brush_t));
     return b;
 }
@@ -539,8 +519,8 @@ void FreeBrush(brush_t *b)
 {
     if (b->sides)
     {
-        side_t *s, *next;
-        for (s = b->sides; s; s = next)
+        side_t *next;
+        for (side_t *s = b->sides; s; s = next)
         {
             next = s->next;
             FreeSide(s);
@@ -552,8 +532,7 @@ void FreeBrush(brush_t *b)
 
 brush_t *NewBrushFromBrush(const brush_t *b)
 {
-    brush_t *newb;
-    newb = AllocBrush();
+    brush_t *newb = AllocBrush();
     side_t *s, **pnews;
     for (s = b->sides, pnews = &newb->sides; s; s = s->next, pnews = &(*pnews)->next)
     {
@@ -611,12 +590,9 @@ void SplitBrush(brush_t *in, const dplane_t *split, brush_t **front, brush_t **b
 // 'in' will be freed
 {
     in->next = NULL;
-    bool onfront;
-    bool onback;
-    onfront = false;
-    onback = false;
-    side_t *s;
-    for (s = in->sides; s; s = s->next)
+    bool onfront = false;
+    bool onback = false;
+    for (side_t *s = in->sides; s; s = s->next)
     {
         switch (s->w->WindingOnPlaneSide(split->normal, split->dist, 2 * ON_EPSILON))
         {
@@ -712,9 +688,7 @@ void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs)
 // =====================================================================================
 node_t *AllocNode()
 {
-    node_t *n;
-
-    n = (node_t *)malloc(sizeof(node_t));
+    node_t *n = (node_t *)malloc(sizeof(node_t));
     memset(n, 0, sizeof(node_t));
 
     return n;
@@ -725,12 +699,9 @@ node_t *AllocNode()
 // =====================================================================================
 void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
 {
-    int i;
-    vec_t val;
-
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-        val = v[i];
+        vec_t val = v[i];
         if (val < mins[i])
         {
             mins[i] = val;
@@ -747,9 +718,7 @@ void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
 // =====================================================================================
 static void AddFaceToBounds(const face_t *const f, vec3_t mins, vec3_t maxs)
 {
-    int i;
-
-    for (i = 0; i < f->numpoints; i++)
+    for (int i = 0; i < f->numpoints; i++)
     {
         AddPointToBounds(f->pts[i], mins, maxs);
     }
@@ -770,24 +739,20 @@ static void ClearBounds(vec3_t mins, vec3_t maxs)
 // =====================================================================================
 static surfchain_t *SurflistFromValidFaces()
 {
-    surface_t *n;
-    int i;
-    face_t *f;
     face_t *next;
-    surfchain_t *sc;
 
-    sc = (surfchain_t *)malloc(sizeof(*sc));
+    surfchain_t *sc = (surfchain_t *)malloc(sizeof(*sc));
     ClearBounds(sc->mins, sc->maxs);
     sc->surfaces = NULL;
 
     // grab planes from both sides
-    for (i = 0; i < g_numplanes; i += 2)
+    for (int i = 0; i < g_numplanes; i += 2)
     {
         if (!validfaces[i] && !validfaces[i + 1])
         {
             continue;
         }
-        n = AllocSurface();
+        surface_t *n = AllocSurface();
         n->next = sc->surfaces;
         sc->surfaces = n;
         ClearBounds(n->mins, n->maxs);
@@ -795,7 +760,7 @@ static surfchain_t *SurflistFromValidFaces()
         n->planenum = i;
 
         n->faces = NULL;
-        for (f = validfaces[i]; f; f = next)
+        for (face_t *f = validfaces[i]; f; f = next)
         {
             next = f->next;
             f->next = n->faces;
@@ -806,7 +771,7 @@ static surfchain_t *SurflistFromValidFaces()
                 n->detaillevel = f->detaillevel;
             }
         }
-        for (f = validfaces[i + 1]; f; f = next)
+        for (face_t *f = validfaces[i + 1]; f; f = next)
         {
             next = f->next;
             f->next = n->faces;
@@ -945,14 +910,11 @@ static facestyle_e SetFaceType(face_t *f)
 // =====================================================================================
 static surfchain_t *ReadSurfs(FILE *file)
 {
-    int r;
     int detaillevel;
     int planenum, g_texinfo, contents, numpoints;
-    face_t *f;
-    int i;
     double v[3];
     int line = 0;
-    double inaccuracy, inaccuracy_count = 0.0, inaccuracy_total = 0.0, inaccuracy_max = 0.0;
+    double inaccuracy_count = 0.0, inaccuracy_total = 0.0, inaccuracy_max = 0.0;
 
     // read in the polygons
     while (1)
@@ -960,7 +922,7 @@ static surfchain_t *ReadSurfs(FILE *file)
         if (file == polyfiles[2] && g_nohull2)
             break;
         line++;
-        r = fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &g_texinfo, &contents, &numpoints);
+        int r = fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &g_texinfo, &contents, &numpoints);
         if (r == 0 || r == -1)
         {
             return NULL;
@@ -995,7 +957,7 @@ static surfchain_t *ReadSurfs(FILE *file)
         {
             Verbose("ReadSurfs (line %i): skipping a surface", line);
 
-            for (i = 0; i < numpoints; i++)
+            for (int i = 0; i < numpoints; i++)
             {
                 line++;
                 //Verbose("skipping line %d", line);
@@ -1009,7 +971,7 @@ static surfchain_t *ReadSurfs(FILE *file)
             continue;
         }
 
-        f = AllocFace();
+        face_t *f = AllocFace();
         f->detaillevel = detaillevel;
         f->planenum = planenum;
         f->texturenum = g_texinfo;
@@ -1020,7 +982,7 @@ static surfchain_t *ReadSurfs(FILE *file)
 
         SetFaceType(f);
 
-        for (i = 0; i < f->numpoints; i++)
+        for (int i = 0; i < f->numpoints; i++)
         {
             line++;
             r = fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
@@ -1032,7 +994,7 @@ static surfchain_t *ReadSurfs(FILE *file)
             if (DEVELOPER_LEVEL_MEGASPAM <= g_developer)
             {
                 const dplane_t *plane = &g_dplanes[f->planenum];
-                inaccuracy = fabs(DotProduct(f->pts[i], plane->normal) - plane->dist);
+                double inaccuracy = fabs(DotProduct(f->pts[i], plane->normal) - plane->dist);
                 inaccuracy_count++;
                 inaccuracy_total += inaccuracy;
                 inaccuracy_max = qmax(inaccuracy, inaccuracy_max);
@@ -1050,9 +1012,8 @@ static brush_t *ReadBrushes(FILE *file)
     {
         if (file == brushfiles[2] && g_nohull2)
             break;
-        int r;
         int brushinfo;
-        r = fscanf(file, "%i\n", &brushinfo);
+        int r = fscanf(file, "%i\n", &brushinfo);
         if (r == 0 || r == -1)
         {
             if (brushes == NULL)
@@ -1068,12 +1029,10 @@ static brush_t *ReadBrushes(FILE *file)
         {
             break;
         }
-        brush_t *b;
-        b = AllocBrush();
+        brush_t *b = AllocBrush();
         b->next = brushes;
         brushes = b;
-        side_t **psn;
-        psn = &b->sides;
+        side_t **psn = &b->sides;
         while (1)
         {
             int planenum;
@@ -1087,12 +1046,10 @@ static brush_t *ReadBrushes(FILE *file)
             {
                 break;
             }
-            side_t *s;
-            s = AllocSide();
+            side_t *s = AllocSide();
             s->plane = g_dplanes[planenum ^ 1];
             s->w = new Winding(numpoints);
-            int x;
-            for (x = 0; x < numpoints; x++)
+            for (int x = 0; x < numpoints; x++)
             {
                 double v[3];
                 r = fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
@@ -1115,23 +1072,17 @@ static brush_t *ReadBrushes(FILE *file)
 // =====================================================================================
 static bool ProcessModel()
 {
-    surfchain_t *surfs;
-    brush_t *detailbrushes;
-    node_t *nodes;
-    dmodel_t *model;
-    int startleafs;
-
-    surfs = ReadSurfs(polyfiles[0]);
+    surfchain_t *surfs = ReadSurfs(polyfiles[0]);
 
     if (!surfs)
         return false; // all models are done
-    detailbrushes = ReadBrushes(brushfiles[0]);
+    brush_t *detailbrushes = ReadBrushes(brushfiles[0]);
 
     hlassume(g_nummodels < MAX_MAP_MODELS, assume_MAX_MAP_MODELS);
 
-    startleafs = g_numleafs;
+    int startleafs = g_numleafs;
     int modnum = g_nummodels;
-    model = &g_dmodels[modnum];
+    dmodel_t *model = &g_dmodels[modnum];
     g_nummodels++;
 
     //    Log("ProcessModel: %i (%i f)\n", modnum, model->numfaces);
@@ -1147,20 +1098,18 @@ static bool ProcessModel()
         else
         {
             vec3_t mins, maxs;
-            int i;
             VectorSubtract(surfs->mins, g_hull_size[g_hullnum][0], mins);
             VectorSubtract(surfs->maxs, g_hull_size[g_hullnum][1], maxs);
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 if (mins[i] > maxs[i])
                 {
-                    vec_t tmp;
-                    tmp = (mins[i] + maxs[i]) / 2;
+                    vec_t tmp = (mins[i] + maxs[i]) / 2;
                     mins[i] = tmp;
                     maxs[i] = tmp;
                 }
             }
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 model->maxs[i] = qmax(model->maxs[i], maxs[i]);
                 model->mins[i] = qmin(model->mins[i], mins[i]);
@@ -1169,9 +1118,9 @@ static bool ProcessModel()
     }
 
     // SolidBSP generates a node tree
-    nodes = SolidBSP(surfs,
-                     detailbrushes,
-                     modnum == 0);
+    node_t *nodes = SolidBSP(surfs,
+                             detailbrushes,
+                             modnum == 0);
 
     // build all the portals in the bsp tree
     // some portals are solid polygons, and some are paths to other leafs
@@ -1261,20 +1210,18 @@ static bool ProcessModel()
             else
             {
                 vec3_t mins, maxs;
-                int i;
                 VectorSubtract(surfs->mins, g_hull_size[hullnum][0], mins);
                 VectorSubtract(surfs->maxs, g_hull_size[hullnum][1], maxs);
-                for (i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
                 {
                     if (mins[i] > maxs[i])
                     {
-                        vec_t tmp;
-                        tmp = (mins[i] + maxs[i]) / 2;
+                        vec_t tmp = (mins[i] + maxs[i]) / 2;
                         mins[i] = tmp;
                         maxs[i] = tmp;
                     }
                 }
-                for (i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
                 {
                     model->maxs[i] = qmax(model->maxs[i], maxs[i]);
                     model->mins[i] = qmin(model->mins[i], mins[i]);
@@ -1308,8 +1255,7 @@ static bool ProcessModel()
 skipclip:
 
 {
-    entity_t *ent;
-    ent = EntityForModel(modnum);
+    entity_t *ent = EntityForModel(modnum);
     if (ent != &g_entities[0] && *ValueForKey(ent, "zhlt_minsmaxs"))
     {
         double origin[3], mins[3], maxs[3];
@@ -1467,7 +1413,6 @@ static void Settings()
 // =====================================================================================
 static void ProcessFile(const char *const filename)
 {
-    int i;
     char name[_MAX_PATH];
 
     // delete existing files
@@ -1483,7 +1428,7 @@ static void ProcessFile(const char *const filename)
     safe_snprintf(g_extentfilename, _MAX_PATH, "%s.ext", filename);
     unlink(g_extentfilename);
     // open the hull files
-    for (i = 0; i < NUM_HULLS; i++)
+    for (int i = 0; i < NUM_HULLS; i++)
     {
         //mapname.p[0-3]
         sprintf(name, "%s.p%i", filename, i);
@@ -1497,10 +1442,9 @@ static void ProcessFile(const char *const filename)
             Error("Can't open %s", name);
     }
     {
-        FILE *f;
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.hsz", filename);
-        f = fopen(name, "r");
+        FILE *f = fopen(name, "r");
         if (!f)
         {
             Warning("Couldn't open %s", name);
@@ -1509,10 +1453,9 @@ static void ProcessFile(const char *const filename)
         {
             float x1, y1, z1;
             float x2, y2, z2;
-            for (i = 0; i < NUM_HULLS; i++)
+            for (int i = 0; i < NUM_HULLS; i++)
             {
-                int count;
-                count = fscanf(f, "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
+                int count = fscanf(f, "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
                 if (count != 6)
                 {
                     Error("Load hull size (line %i): scanf failure", i + 1);
@@ -1544,7 +1487,7 @@ static void ProcessFile(const char *const filename)
             Warning("Couldn't open %s", name);
 #undef dplane_t
 #undef g_dplanes
-            for (i = 0; i < g_numplanes; i++)
+            for (int i = 0; i < g_numplanes; i++)
             {
                 plane_t *mp = &g_mapplanes[i];
                 dplane_t *dp = &g_dplanes[i];
@@ -1576,7 +1519,7 @@ static void ProcessFile(const char *const filename)
     FinishBSPFile();
 
     // Because the bsp file has been updated, these polyfiles are no longer valid.
-    for (i = 0; i < NUM_HULLS; i++)
+    for (int i = 0; i < NUM_HULLS; i++)
     {
         sprintf(name, "%s.p%i", filename, i);
         fclose(polyfiles[i]);
@@ -1599,7 +1542,6 @@ static void ProcessFile(const char *const filename)
 int main(const int argc, char **argv)
 {
     int i;
-    double start, end;
     const char *mapname_from_arg = NULL;
 
     g_Program = "hlbsp";
@@ -1907,11 +1849,11 @@ int main(const int argc, char **argv)
             }
 
             // BEGIN BSP
-            start = I_FloatTime();
+            double start = I_FloatTime();
 
             ProcessFile(g_Mapname);
 
-            end = I_FloatTime();
+            double end = I_FloatTime();
             LogTimeElapsed(end - start);
             // END BSP
 
