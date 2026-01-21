@@ -29,12 +29,9 @@ hullshape_t g_hullshapes[MAX_HULLSHAPES];
 
 int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
 {
-    int returnval;
-    plane_t *p;
-    plane_t temp;
     vec_t t;
 
-    returnval = 0;
+    int returnval = 0;
 
 find_plane:
     for (; returnval < g_nummapplanes; returnval++)
@@ -63,7 +60,7 @@ find_plane:
     // create new planes - double check that we have room for 2 planes
     hlassume(g_nummapplanes + 1 < MAX_INTERNAL_MAP_PLANES, assume_MAX_INTERNAL_MAP_PLANES);
 
-    p = &g_mapplanes[g_nummapplanes];
+    plane_t *p = &g_mapplanes[g_nummapplanes];
 
     VectorCopy(origin, p->origin);
     VectorCopy(normal, p->normal);
@@ -89,7 +86,7 @@ find_plane:
     // always put axial planes facing positive first
     if (normal[(p->type) % 3] < 0)
     {
-        temp = *p;
+        plane_t temp = *p;
         *p = *(p + 1);
         *(p + 1) = temp;
         returnval = g_nummapplanes + 1;
@@ -194,20 +191,15 @@ void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *con
 void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, const hullbrush_t *hb, brushhull_t *hull)
 {
     const hullbrushface_t *hbf;
-    const hullbrushedge_t *hbe;
-    const hullbrushvertex_t *hbv;
-    bface_t *f;
     vec3_t normal;
     vec3_t origin;
-    bool *axialbevel;
-    bool warned;
 
-    axialbevel = (bool *)malloc(hb->numfaces * sizeof(bool));
+    bool *axialbevel = (bool *)malloc(hb->numfaces * sizeof(bool));
     memset(axialbevel, 0, hb->numfaces * sizeof(bool));
-    warned = false;
+    bool warned = false;
 
     // check for collisions of face-vertex type. face-edge type is also permitted. face-face type is excluded.
-    for (f = hull0->faces; f; f = f->next)
+    for (bface_t *f = hull0->faces; f; f = f->next)
     {
         hullbrushface_t brushface;
         VectorCopy(f->plane->normal, brushface.normal);
@@ -221,15 +213,12 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
                 continue;
             }
             // now test precisely
-            vec_t dotmin;
-            vec_t dotmax;
-            dotmin = BOGUS_RANGE;
-            dotmax = -BOGUS_RANGE;
+            vec_t dotmin = BOGUS_RANGE;
+            vec_t dotmax = -BOGUS_RANGE;
             hlassume(hbf->numvertexes >= 1, assume_first);
             for (vec3_t *v = hbf->vertexes; v < hbf->vertexes + hbf->numvertexes; v++)
             {
-                vec_t dot;
-                dot = DotProduct(*v, brushface.normal);
+                vec_t dot = DotProduct(*v, brushface.normal);
                 dotmin = qmin(dotmin, dot);
                 dotmax = qmax(dotmax, dot);
             }
@@ -249,10 +238,9 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
 
         // find the impact point
         vec3_t bestvertex;
-        vec_t bestdist;
-        bestdist = BOGUS_RANGE;
+        vec_t bestdist = BOGUS_RANGE;
         hlassume(hb->numvertexes >= 1, assume_first);
-        for (hbv = hb->vertexes; hbv < hb->vertexes + hb->numvertexes; hbv++)
+        for (const hullbrushvertex_t *hbv = hb->vertexes; hbv < hb->vertexes + hb->numvertexes; hbv++)
         {
             if (hbv == hb->vertexes || DotProduct(hbv->point, brushface.normal) < bestdist - NORMAL_EPSILON)
             {
@@ -275,7 +263,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
     }
 
     // check for edge-edge type. edge-face type and face-edge type are excluded.
-    for (f = hull0->faces; f; f = f->next)
+    for (bface_t *f = hull0->faces; f; f = f->next)
     {
         for (int i = 0; i < f->w->m_NumPoints; i++) // for each edge in f
         {
@@ -287,8 +275,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
             VectorSubtract(brushedge.vertexes[1], brushedge.vertexes[0], brushedge.delta);
 
             // fill brushedge.normals[1]
-            int found;
-            found = 0;
+            int found = 0;
             for (bface_t *f2 = hull0->faces; f2; f2 = f2->next)
             {
                 for (int j = 0; j < f2->w->m_NumPoints; j++)
@@ -313,8 +300,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
             }
 
             // make sure the math is accurate
-            vec_t len;
-            len = VectorLength(brushedge.delta);
+            vec_t len = VectorLength(brushedge.delta);
             CrossProduct(brushedge.normals[0], brushedge.normals[1], brushedge.delta);
             if (!VectorNormalize(brushedge.delta))
             {
@@ -323,7 +309,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
             VectorScale(brushedge.delta, len, brushedge.delta);
 
             // check for each edge in the hullbrush
-            for (hbe = hb->edges; hbe < hb->edges + hb->numedges; hbe++)
+            for (const hullbrushedge_t *hbe = hb->edges; hbe < hb->edges + hb->numedges; hbe++)
             {
                 vec_t dot[4];
                 dot[0] = DotProduct(hbe->delta, brushedge.normals[0]);
@@ -360,13 +346,12 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
     {
         // find the impact point
         vec3_t bestvertex;
-        vec_t bestdist;
-        bestdist = BOGUS_RANGE;
+        vec_t bestdist = BOGUS_RANGE;
         if (!hull0->faces)
         {
             continue;
         }
-        for (f = hull0->faces; f; f = f->next)
+        for (bface_t *f = hull0->faces; f; f = f->next)
         {
             for (vec3_t *v = f->w->m_Points; v < f->w->m_Points + f->w->m_NumPoints; v++)
             {
@@ -436,30 +421,22 @@ void ExpandBrush(brush_t *brush, const int hullnum)
 
         return;
     }
-    //for looping through the faces and constructing the hull
-    bface_t *current_face;
-    plane_t *current_plane;
-    brushhull_t *hull;
+    //for looping through the faces and constructing the hull: hull, current_face, current_plane
     vec3_t origin, normal;
 
-    //for non-axial bevel testing
-    Winding *winding;
+    //for non-axial bevel testing: winding, other_plane, other_winding, counter, counter2, start_found, end_found, dir
     bface_t *other_face;
-    plane_t *other_plane;
-    Winding *other_winding;
     vec3_t edge_start, edge_end, edge, bevel_edge;
-    unsigned int counter, counter2, dir;
-    bool start_found, end_found;
     bool axialbevel[last_axial + 1][2] = {{false, false}, {false, false}, {false, false}};
 
     bool warned = false;
 
-    hull = &brush->hulls[hullnum];
+    brushhull_t *hull = &brush->hulls[hullnum];
 
     // step 1: for collision between player vertex and brush face. --vluzacn
-    for (current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
+    for (bface_t *current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
     {
-        current_plane = current_face->plane;
+        plane_t *current_plane = current_face->plane;
 
         //don't bother adding axial planes,
         //they're defined by adding the bounding box anyway
@@ -544,9 +521,9 @@ void ExpandBrush(brush_t *brush, const int hullnum)
     //only executes if cliptype is simple, normalized or precise
     if (g_cliptype == clip_simple || g_cliptype == clip_precise || g_cliptype == clip_normalized)
     {
-        for (current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
+        for (bface_t *current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
         {
-            current_plane = current_face->plane;
+            plane_t *current_plane = current_face->plane;
 
             //test to see if the plane is completely non-axial (if it is, need to add bevels to any
             //existing "inflection edges" where there's a sign change with a neighboring plane's normal for
@@ -557,9 +534,9 @@ void ExpandBrush(brush_t *brush, const int hullnum)
             //It's possible to have inflection in multiple directions -- in this case, a new plane
             //must be added for each sign change in the edge.
 
-            winding = current_face->w;
+            Winding *winding = current_face->w;
 
-            for (counter = 0; counter < (winding->m_NumPoints); counter++) //for each edge
+            for (unsigned int counter = 0; counter < (winding->m_NumPoints); counter++) //for each edge
             {
                 VectorCopy(winding->m_Points[counter], edge_start);
                 VectorCopy(winding->m_Points[(counter + 1) % winding->m_NumPoints], edge_end);
@@ -575,10 +552,10 @@ void ExpandBrush(brush_t *brush, const int hullnum)
                     {
                         continue;
                     }
-                    start_found = false;
-                    end_found = false;
-                    other_winding = other_face->w;
-                    for (counter2 = 0; counter2 < other_winding->m_NumPoints; counter2++)
+                    bool start_found = false;
+                    bool end_found = false;
+                    Winding *other_winding = other_face->w;
+                    for (unsigned int counter2 = 0; counter2 < other_winding->m_NumPoints; counter2++)
                     {
                         if (!start_found && VectorCompare(other_winding->m_Points[counter2], edge_start))
                         {
@@ -610,10 +587,10 @@ void ExpandBrush(brush_t *brush, const int hullnum)
                     continue;
                 }
 
-                other_plane = other_face->plane;
+                plane_t *other_plane = other_face->plane;
 
                 //check each direction for sign change in normal -- zero can be safely ignored
-                for (dir = 0; dir < 3; dir++)
+                for (unsigned int dir = 0; dir < 3; dir++)
                 {
                     if (current_plane->normal[dir] * other_plane->normal[dir] < -NORMAL_EPSILON) //sign changed, add bevel
                     {
@@ -736,23 +713,19 @@ void ExpandBrush(brush_t *brush, const int hullnum)
 void SortSides(brushhull_t *h)
 {
     int numsides;
-    bface_t **sides;
-    vec3_t *normals;
-    bool *isused;
-    int i, j;
-    int *sorted;
+    int i;
     bface_t *f;
     for (numsides = 0, f = h->faces; f; f = f->next)
     {
         numsides++;
     }
-    sides = (bface_t **)malloc(numsides * sizeof(bface_t *));
+    bface_t **sides = (bface_t **)malloc(numsides * sizeof(bface_t *));
     hlassume(sides != NULL, assume_NoMemory);
-    normals = (vec3_t *)malloc(numsides * sizeof(vec3_t));
+    vec3_t *normals = (vec3_t *)malloc(numsides * sizeof(vec3_t));
     hlassume(normals != NULL, assume_NoMemory);
-    isused = (bool *)malloc(numsides * sizeof(bool));
+    bool *isused = (bool *)malloc(numsides * sizeof(bool));
     hlassume(isused != NULL, assume_NoMemory);
-    sorted = (int *)malloc(numsides * sizeof(int));
+    int *sorted = (int *)malloc(numsides * sizeof(int));
     hlassume(sorted != NULL, assume_NoMemory);
     for (i = 0, f = h->faces; f; i++, f = f->next)
     {
@@ -765,7 +738,7 @@ void SortSides(brushhull_t *h)
     {
         int bestside;
         int bestaxial = -1;
-        for (j = 0; j < numsides; j++)
+        for (int j = 0; j < numsides; j++)
         {
             if (isused[j])
             {
@@ -792,7 +765,6 @@ void SortSides(brushhull_t *h)
 }
 void MakeHullFaces(const brush_t *const b, brushhull_t *h)
 {
-    bface_t *f;
     bface_t *f2;
     // this will decrease AllocBlock amount
     SortSides(h);
@@ -801,7 +773,7 @@ restart:
     h->bounds.reset();
 
     // for each face in this brushes hull
-    for (f = h->faces; f; f = f->next)
+    for (bface_t *f = h->faces; f; f = f->next)
     {
         Winding *w = new Winding(f->plane->normal, f->plane->dist);
         for (f2 = h->faces; f2; f2 = f2->next)
@@ -839,16 +811,14 @@ restart:
         {
             f->w = w;
             f->contents = CONTENTS_EMPTY;
-            unsigned int i;
-            for (i = 0; i < w->m_NumPoints; i++)
+            for (unsigned int i = 0; i < w->m_NumPoints; i++)
             {
                 h->bounds.add(w->m_Points[i]);
             }
         }
     }
 
-    unsigned int i;
-    for (i = 0; i < 3; i++)
+    for (unsigned int i = 0; i < 3; i++)
     {
         if (h->bounds.m_Mins[i] < -BOGUS_RANGE / 2 || h->bounds.m_Maxs[i] > BOGUS_RANGE / 2)
         {
@@ -866,10 +836,6 @@ restart:
 // =====================================================================================
 bool MakeBrushPlanes(brush_t *b)
 {
-    int i;
-    int j;
-    int planenum;
-    side_t *s;
     bface_t *f;
     vec3_t origin;
 
@@ -882,14 +848,14 @@ bool MakeBrushPlanes(brush_t *b)
     // convert to mapplanes
     //
     // for each side in this brush
-    for (i = 0; i < b->numsides; i++)
+    for (int i = 0; i < b->numsides; i++)
     {
-        s = &g_brushsides[b->firstside + i];
-        for (j = 0; j < 3; j++)
+        side_t *s = &g_brushsides[b->firstside + i];
+        for (int j = 0; j < 3; j++)
         {
             VectorSubtract(s->planepts[j], origin, s->planepts[j]);
         }
-        planenum = PlaneFromPoints(s->planepts[0], s->planepts[1], s->planepts[2]);
+        int planenum = PlaneFromPoints(s->planepts[0], s->planepts[1], s->planepts[2]);
         if (planenum == -1)
         {
             Fatal(assume_PLANE_WITH_NO_NORMAL, "Entity %i, Brush %i, Side %i: plane with no normal",
@@ -1058,14 +1024,9 @@ const char *ContentsToString(const contents_t type)
 // =====================================================================================
 contents_t CheckBrushContents(const brush_t *const b)
 {
-    contents_t best_contents;
-    contents_t contents;
-    side_t *s;
-    int i;
-    int best_i;
     bool assigned = false;
 
-    s = &g_brushsides[b->firstside];
+    side_t *s = &g_brushsides[b->firstside];
 
     // cycle though the sides of the brush and attempt to get our best side contents for
     //  determining overall brush contents
@@ -1074,14 +1035,14 @@ contents_t CheckBrushContents(const brush_t *const b)
         Error("Entity %i, Brush %i: Brush with no sides.\n",
               b->originalentitynum, b->originalbrushnum);
     }
-    best_i = 0;
-    best_contents = TextureContents(s->td.name);
+    int best_i = 0;
+    contents_t best_contents = TextureContents(s->td.name);
     // Difference between SKIP, ContentEmpty:
     // SKIP doesn't split space in bsp process, ContentEmpty splits space normally.
     if (!(strncasecmp(s->td.name, "content", 7) && strncasecmp(s->td.name, "skip", 4)))
         assigned = true;
     s++;
-    for (i = 1; i < b->numsides; i++, s++)
+    for (int i = 1; i < b->numsides; i++, s++)
     {
         contents_t contents_consider = TextureContents(s->td.name);
         if (assigned)
@@ -1099,11 +1060,11 @@ contents_t CheckBrushContents(const brush_t *const b)
             best_contents = contents_consider;
         }
     }
-    contents = best_contents;
+    contents_t contents = best_contents;
 
     // attempt to pick up on mixed_face_contents errors
     s = &g_brushsides[b->firstside];
-    for (i = 0; i < b->numsides; i++, s++)
+    for (int i = 0; i < b->numsides; i++, s++)
     {
         contents_t contents2 = TextureContents(s->td.name);
         if (assigned && strncasecmp(s->td.name, "content", 7) && strncasecmp(s->td.name, "skip", 4) && contents2 != CONTENTS_ORIGIN && contents2 != CONTENTS_HINT && contents2 != CONTENTS_BOUNDINGBOX)
@@ -1171,13 +1132,9 @@ contents_t CheckBrushContents(const brush_t *const b)
 // =====================================================================================
 void CreateBrush(const int brushnum) //--vluzacn
 {
-    brush_t *b;
-    int contents;
-    int h;
+    brush_t *b = &g_mapbrushes[brushnum];
 
-    b = &g_mapbrushes[brushnum];
-
-    contents = b->contents;
+    int contents = b->contents;
 
     if (contents == CONTENTS_ORIGIN)
         return;
@@ -1204,7 +1161,7 @@ void CreateBrush(const int brushnum) //--vluzacn
 
     if (b->cliphull)
     {
-        for (h = 1; h < NUM_HULLS; h++)
+        for (int h = 1; h < NUM_HULLS; h++)
         {
             if (b->cliphull & (1 << h))
             {
@@ -1219,7 +1176,7 @@ void CreateBrush(const int brushnum) //--vluzacn
     {
         if (b->noclip)
             return;
-        for (h = 1; h < NUM_HULLS; h++)
+        for (int h = 1; h < NUM_HULLS; h++)
         {
             ExpandBrush(b, h);
             MakeHullFaces(b, &b->hulls[h]);
@@ -1231,40 +1188,32 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
     const int MAXSIZE = 256;
 
     hullbrush_t *hb;
-    int numplanes;
     plane_t planes[MAXSIZE];
     Winding *w[MAXSIZE];
-    int numedges;
     hullbrushedge_t edges[MAXSIZE];
-    int numvertexes;
     hullbrushvertex_t vertexes[MAXSIZE];
-    int i;
     int j;
-    int k;
-    int e;
-    int e2;
     vec3_t origin;
     bool failed = false;
 
     // planes
 
-    numplanes = 0;
+    int numplanes = 0;
     GetVectorForKey(&g_entities[b->entitynum], "origin", origin);
 
-    for (i = 0; i < b->numsides; i++)
+    for (int i = 0; i < b->numsides; i++)
     {
         side_t *s;
         vec3_t p[3];
         vec3_t v1;
         vec3_t v2;
         vec3_t normal;
-        planetypes axial;
 
         s = &g_brushsides[b->firstside + i];
         for (j = 0; j < 3; j++)
         {
             VectorSubtract(s->planepts[j], origin, p[j]);
-            for (k = 0; k < 3; k++)
+            for (int k = 0; k < 3; k++)
             {
                 if (fabs(p[j][k] - floor(p[j][k] + 0.5)) <= ON_EPSILON && p[j][k] != floor(p[j][k] + 0.5))
                 {
@@ -1282,7 +1231,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             failed = true;
             continue;
         }
-        for (k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++)
         {
             if (fabs(normal[k]) < NORMAL_EPSILON)
             {
@@ -1290,7 +1239,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
                 VectorNormalize(normal);
             }
         }
-        axial = PlaneTypeForNormal(normal);
+        planetypes axial = PlaneTypeForNormal(normal);
         if (axial <= last_axial)
         {
             int sign = normal[axial] > 0 ? 1 : -1;
@@ -1310,7 +1259,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
 
     // windings
 
-    for (i = 0; i < numplanes; i++)
+    for (int i = 0; i < numplanes; i++)
     {
         w[i] = new Winding(planes[i].normal, planes[i].dist);
         for (j = 0; j < numplanes; j++)
@@ -1320,9 +1269,8 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
                 continue;
             }
             vec3_t normal;
-            vec_t dist;
             VectorSubtract(vec3_origin, planes[j].normal, normal);
-            dist = -planes[j].dist;
+            vec_t dist = -planes[j].dist;
             if (!w[i]->Chop(normal, dist))
             {
                 failed = true;
@@ -1332,19 +1280,17 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
     }
 
     // edges
-    numedges = 0;
-    for (i = 0; i < numplanes; i++)
+    int numedges = 0;
+    for (int i = 0; i < numplanes; i++)
     {
-        for (e = 0; e < w[i]->m_NumPoints; e++)
+        for (int e = 0; e < w[i]->m_NumPoints; e++)
         {
-            hullbrushedge_t *edge;
-            int found;
             if (numedges >= MAXSIZE)
             {
                 failed = true;
                 continue;
             }
-            edge = &edges[numedges];
+            hullbrushedge_t *edge = &edges[numedges];
             VectorCopy(w[i]->m_Points[(e + 1) % w[i]->m_NumPoints], edge->vertexes[0]);
             VectorCopy(w[i]->m_Points[e], edge->vertexes[1]);
             VectorCopy(edge->vertexes[0], edge->point);
@@ -1355,10 +1301,10 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
                 continue;
             }
             VectorCopy(planes[i].normal, edge->normals[0]);
-            found = 0;
-            for (k = 0; k < numplanes; k++)
+            int found = 0;
+            for (int k = 0; k < numplanes; k++)
             {
-                for (e2 = 0; e2 < w[k]->m_NumPoints; e2++)
+                for (int e2 = 0; e2 < w[k]->m_NumPoints; e2++)
                 {
                     if (VectorCompare(w[k]->m_Points[(e2 + 1) % w[k]->m_NumPoints], edge->vertexes[1]) &&
                         VectorCompare(w[k]->m_Points[e2], edge->vertexes[0]))
@@ -1387,10 +1333,10 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
     }
 
     // vertexes
-    numvertexes = 0;
-    for (i = 0; i < numplanes; i++)
+    int numvertexes = 0;
+    for (int i = 0; i < numplanes; i++)
     {
-        for (e = 0; e < w[i]->m_NumPoints; e++)
+        for (int e = 0; e < w[i]->m_NumPoints; e++)
         {
             vec3_t v;
             VectorCopy(w[i]->m_Points[e], v);
@@ -1414,7 +1360,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             VectorCopy(v, vertexes[numvertexes].point);
             numvertexes++;
 
-            for (k = 0; k < numplanes; k++)
+            for (int k = 0; k < numplanes; k++)
             {
                 if (fabs(DotProduct(v, planes[k].normal) - planes[k].dist) < ON_EPSILON)
                 {
@@ -1437,7 +1383,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
         hb->numfaces = numplanes;
         hb->faces = (hullbrushface_t *)malloc(hb->numfaces * sizeof(hullbrushface_t));
         hlassume(hb->faces != NULL, assume_NoMemory);
-        for (i = 0; i < numplanes; i++)
+        for (int i = 0; i < numplanes; i++)
         {
             hullbrushface_t *f = &hb->faces[i];
             VectorCopy(planes[i].normal, f->normal);
@@ -1445,7 +1391,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             f->numvertexes = w[i]->m_NumPoints;
             f->vertexes = (vec3_t *)malloc(f->numvertexes * sizeof(vec3_t));
             hlassume(f->vertexes != NULL, assume_NoMemory);
-            for (k = 0; k < w[i]->m_NumPoints; k++)
+            for (int k = 0; k < w[i]->m_NumPoints; k++)
             {
                 VectorCopy(w[i]->m_Points[k], f->vertexes[k]);
             }
@@ -1470,7 +1416,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
               b->originalentitynum, b->originalbrushnum);
     }
 
-    for (i = 0; i < numplanes; i++)
+    for (int i = 0; i < numplanes; i++)
     {
         delete w[i];
     }
@@ -1480,8 +1426,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
 
 hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
 {
-    hullbrush_t *hb2;
-    hb2 = (hullbrush_t *)malloc(sizeof(hullbrush_t));
+    hullbrush_t *hb2 = (hullbrush_t *)malloc(sizeof(hullbrush_t));
     hlassume(hb2 != NULL, assume_NoMemory);
     memcpy(hb2, hb, sizeof(hullbrush_t));
     hb2->faces = (hullbrushface_t *)malloc(hb->numfaces * sizeof(hullbrushface_t));
@@ -1534,10 +1479,7 @@ void InitDefaultHulls()
 
 void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthulls)
 {
-    entity_t *entity;
-    hullshape_t *hs;
-
-    entity = &g_entities[entitynum];
+    entity_t *entity = &g_entities[entitynum];
     if (!*ValueForKey(entity, "origin"))
     {
         Warning("info_hullshape with no ORIGIN brush.");
@@ -1546,7 +1488,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
     {
         Error("Too many info_hullshape entities. Can not exceed %d.", MAX_HULLSHAPES);
     }
-    hs = &g_hullshapes[g_numhullshapes];
+    hullshape_t *hs = &g_hullshapes[g_numhullshapes];
     g_numhullshapes++;
 
     hs->id = _strdup(id);
