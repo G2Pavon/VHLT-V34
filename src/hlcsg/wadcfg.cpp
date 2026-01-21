@@ -11,9 +11,8 @@ void LoadWadconfig(const char *filename, const char *configname)
     Log("Loading wad configuration '%s' from '%s' :\n", configname, filename);
     int found = 0;
     int count = 0;
-    int size;
     char *buffer;
-    size = LoadFile(filename, &buffer);
+    int size = LoadFile(filename, &buffer);
     ParseFromMemory(buffer, size);
     while (GetToken(true))
     {
@@ -76,9 +75,8 @@ void LoadWadcfgfile(const char *filename)
 {
     Log("Loading wad configuration file '%s' :\n", filename);
     int count = 0;
-    int size;
     char *buffer;
-    size = LoadFile(filename, &buffer);
+    int size = LoadFile(filename, &buffer);
     ParseFromMemory(buffer, size);
     while (GetToken(true))
     {
