@@ -37,14 +37,12 @@ void AddPortalToNodes(portal_t *p, node_t *front, node_t *back)
  */
 void RemovePortalFromNode(portal_t *portal, node_t *l)
 {
-    portal_t **pp;
-    portal_t *t;
 
     // remove reference to the current portal
-    pp = &l->portals;
+    portal_t **pp = &l->portals;
     while (1)
     {
-        t = *pp;
+        portal_t *t = *pp;
         if (!t)
         {
             Error("RemovePortalFromNode: portal not in leaf");
@@ -93,14 +91,11 @@ void RemovePortalFromNode(portal_t *portal, node_t *l)
 void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
 {
     vec3_t bounds[2];
-    int i, j, n;
-    portal_t *p;
     portal_t *portals[6];
     dplane_t bplanes[6];
-    dplane_t *pl;
 
     // pad with some space so there will never be null volume leafs
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         bounds[0][i] = mins[i] - SIDESPACE;
         bounds[1][i] = maxs[i] + SIDESPACE;
@@ -109,16 +104,16 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
     g_outside_node.contents = CONTENTS_SOLID;
     g_outside_node.portals = NULL;
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-        for (j = 0; j < 2; j++)
+        for (int j = 0; j < 2; j++)
         {
-            n = j * 3 + i;
+            int n = j * 3 + i;
 
-            p = AllocPortal();
+            portal_t *p = AllocPortal();
             portals[n] = p;
 
-            pl = &bplanes[n];
+            dplane_t *pl = &bplanes[n];
             memset(pl, 0, sizeof(*pl));
             if (j)
             {
@@ -137,9 +132,9 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
     }
 
     // clip the basewindings by all the other planes
-    for (i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++)
     {
-        for (j = 0; j < 6; j++)
+        for (int j = 0; j < 6; j++)
         {
             if (j == i)
             {
@@ -166,9 +161,7 @@ static int num_visportals;
 
 static void WritePortalFile_r(const node_t *const node)
 {
-    int i;
     portal_t *p;
-    Winding *w;
     dplane_t plane2;
 
     if (!node->isportalleaf)
@@ -185,7 +178,7 @@ static void WritePortalFile_r(const node_t *const node)
 
     for (p = node->portals; p;)
     {
-        w = p->winding;
+        Winding *w = p->winding;
         if (w && p->nodes[0] == node)
         {
             if (p->nodes[0]->contents == p->nodes[1]->contents)
@@ -215,7 +208,7 @@ static void WritePortalFile_r(const node_t *const node)
                     fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
                 }
 
-                for (i = 0; i < w->m_NumPoints; i++)
+                for (int i = 0; i < w->m_NumPoints; i++)
                 {
                     fprintf(pf, "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
                 }
@@ -229,11 +222,10 @@ static void WritePortalFile_r(const node_t *const node)
                     VectorMA(center, -0.5, p->plane.normal, center2);
                     fprintf(pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
                     fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
-                    for (i = 0; i < w->m_NumPoints; i++)
+                    for (int i = 0; i < w->m_NumPoints; i++)
                     {
-                        vec_t *p1, *p2;
-                        p1 = w->m_Points[i];
-                        p2 = w->m_Points[(i + 1) % w->m_NumPoints];
+                        vec_t *p1 = w->m_Points[i];
+                        vec_t *p2 = w->m_Points[(i + 1) % w->m_NumPoints];
                         fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
                         fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
                         fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
@@ -261,8 +253,6 @@ static void WritePortalFile_r(const node_t *const node)
  */
 static void NumberLeafs_r(node_t *node)
 {
-    portal_t *p;
-
     if (!node->isportalleaf)
     { // decision node
         node->visleafnum = -99;
@@ -279,7 +269,7 @@ static void NumberLeafs_r(node_t *node)
 
     node->visleafnum = num_visleafs++;
 
-    for (p = node->portals; p;)
+    for (portal_t *p = node->portals; p;)
     {
         if (p->nodes[0] == node) // only write out from first leaf
         {
@@ -381,9 +371,6 @@ void WritePortalfile(node_t *headnode)
 
 void FreePortals(node_t *node)
 {
-    portal_t *p;
-    portal_t *nextp;
-
     if (!node->isportalleaf)
     {
         FreePortals(node->children[0]);
@@ -391,7 +378,8 @@ void FreePortals(node_t *node)
         return;
     }
 
-    for (p = node->portals; p; p = nextp)
+    portal_t *nextp;
+    for (portal_t *p = node->portals; p; p = nextp)
     {
         if (p->nodes[0] == node)
         {
