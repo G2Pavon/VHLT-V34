@@ -24,8 +24,6 @@ static double threadtimes[THREADTIMES_SIZE];
 
 int GetThreadWork()
 {
-    int r, f, i;
-    double ct, finish, finish2, finish3;
     static const char *s1 = NULL; // avoid frequent call of Localize() in PrintConsole
     static const char *s2 = NULL;
 
@@ -59,16 +57,16 @@ int GetThreadWork()
         return -1;
     }
 
-    f = THREADTIMES_SIZE * dispatch / workcount;
+    int f = THREADTIMES_SIZE * dispatch / workcount;
     if (pacifier)
     {
         PrintConsole("\r%6d /%6d", dispatch, workcount);
 
         if (f != oldf)
         {
-            ct = I_FloatTime();
+            double ct = I_FloatTime();
             /* Fill in current time for threadtimes record */
-            for (i = oldf; i <= f; i++)
+            for (int i = oldf; i <= f; i++)
             {
                 if (threadtimes[i] < 1)
                 {
@@ -79,9 +77,9 @@ int GetThreadWork()
 
             if (f > 10)
             {
-                finish = (ct - threadtimes[0]) * (THREADTIMES_SIZEf - f) / f;
-                finish2 = 10.0 * (ct - threadtimes[f - 10]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
-                finish3 = THREADTIMES_SIZEf * (ct - threadtimes[f - 1]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
+                double finish = (ct - threadtimes[0]) * (THREADTIMES_SIZEf - f) / f;
+                double finish2 = 10.0 * (ct - threadtimes[f - 10]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
+                double finish3 = THREADTIMES_SIZEf * (ct - threadtimes[f - 1]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
 
                 if (finish > 1.0)
                 {
@@ -131,7 +129,7 @@ int GetThreadWork()
         }
     }
 
-    r = dispatch;
+    int r = dispatch;
     dispatch++;
 
     ThreadUnlock();
@@ -259,12 +257,10 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
 {
     DWORD threadid[MAX_THREADS];
     HANDLE threadhandle[MAX_THREADS];
-    int i;
-    double start, end;
 
     threadstart = I_FloatTime();
-    start = threadstart;
-    for (i = 0; i < THREADTIMES_SIZE; i++)
+    double start = threadstart;
+    for (int i = 0; i < THREADTIMES_SIZE; i++)
     {
         threadtimes[i] = 0;
     }
@@ -285,7 +281,7 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     // Create all the threads (suspended)
     //
     threads_InitCrit();
-    for (i = 0; i < g_numthreads; i++)
+    for (int i = 0; i < g_numthreads; i++)
     {
         HANDLE hThread = CreateThread(NULL,
                                       0,
@@ -319,7 +315,7 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     CheckFatal();
 
     // Start all the threads
-    for (i = 0; i < g_numthreads; i++)
+    for (int i = 0; i < g_numthreads; i++)
     {
         if (ResumeThread(threadhandle[i]) == 0xFFFFFFFF)
         {
@@ -342,7 +338,7 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     CheckFatal();
 
     // Wait for threads to complete
-    for (i = 0; i < g_numthreads; i++)
+    for (int i = 0; i < g_numthreads; i++)
     {
         Developer(DEVELOPER_LEVEL_MESSAGE, "WaitForSingleObject on thread #%d [%08X]\n", i, threadhandle[i]);
         WaitForSingleObject(threadhandle[i], INFINITE);
@@ -351,7 +347,7 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
 
     q_entry = NULL;
     threaded = false;
-    end = I_FloatTime();
+    double end = I_FloatTime();
     if (pacifier)
     {
         PrintConsole("\r%60s\r", "");
