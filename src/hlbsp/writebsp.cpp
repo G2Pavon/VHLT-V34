@@ -76,16 +76,14 @@ static int WriteTexinfo(int texinfo)
         return texinfo;
     }
 
-    texinfomap_t::iterator it;
-    it = g_texinfomap.find(texinfo);
+    texinfomap_t::iterator it = g_texinfomap.find(texinfo);
     if (it != g_texinfomap.end())
     {
         return it->second;
     }
 
-    int c;
     hlassume(g_nummappedtexinfo < MAX_MAP_TEXINFO, assume_MAX_MAP_TEXINFO);
-    c = g_nummappedtexinfo;
+    int c = g_nummappedtexinfo;
     g_mappedtexinfo[g_nummappedtexinfo] = g_texinfo[texinfo];
     g_texinfomap.insert(texinfomap_t::value_type(texinfo, g_nummappedtexinfo));
     g_nummappedtexinfo++;
@@ -97,10 +95,6 @@ static int WriteTexinfo(int texinfo)
 // =====================================================================================
 static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_t *outputmap)
 {
-    int i, c;
-    dclipnode_t *cn;
-    int num;
-
     if (node->isportalleaf)
     {
         if (node->contents == CONTENTS_SOLID)
@@ -115,6 +109,7 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     }
     if (node->planenum == -1)
     {
+        int num;
         if (node->iscontentsdetail)
         {
             num = CONTENTS_SOLID;
@@ -129,15 +124,15 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     }
 
     dclipnode_t tmpclipnode; // this clipnode will be inserted into g_dclipnodes[c] if it can't be merged
-    cn = &tmpclipnode;
-    c = g_numclipnodes;
+    dclipnode_t *cn = &tmpclipnode;
+    int c = g_numclipnodes;
     g_numclipnodes++;
     if (node->planenum & 1)
     {
         Error("WriteClipNodes_r: odd planenum");
     }
     cn->planenum = WritePlane(node->planenum);
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         cn->children[i] = WriteClipNodes_r(node->children[i], portalleaf, outputmap);
     }
@@ -181,14 +176,11 @@ void WriteClipNodes(node_t *nodes)
 // =====================================================================================
 static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
 {
-    face_t **fp;
-    face_t *f;
-    dleaf_t *leaf_p;
     int leafnum = g_numleafs;
 
     // emit a leaf
     hlassume(g_numleafs < MAX_MAP_LEAFS, assume_MAX_MAP_LEAFS);
-    leaf_p = &g_dleafs[g_numleafs];
+    dleaf_t *leaf_p = &g_dleafs[g_numleafs];
     g_numleafs++;
 
     leaf_p->contents = portalleaf->contents;
@@ -224,10 +216,10 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
 
     hlassume(node->markfaces != NULL, assume_EmptySolid);
 
-    for (fp = node->markfaces; *fp; fp++)
+    for (face_t **fp = node->markfaces; *fp; fp++)
     {
         // emit a marksurface
-        f = *fp;
+        face_t *f = *fp;
         do
         {
             // fix face 0 being seen everywhere
@@ -266,10 +258,6 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
 // =====================================================================================
 static void WriteFace(face_t *f)
 {
-    dface_t *df;
-    int i;
-    int e;
-
     if (CheckFaceForHint(f) || CheckFaceForSkip(f) || CheckFaceForNull(f)          // AJM
         || CheckFaceForDiscardable(f) || f->texturenum == -1 || f->referenced == 0 // this face is not referenced by any nonsolid leaf because it is completely covered by func_details
 
@@ -287,7 +275,7 @@ static void WriteFace(face_t *f)
 
     f->outputnumber = g_numfaces;
 
-    df = &g_dfaces[g_numfaces];
+    dface_t *df = &g_dfaces[g_numfaces];
     hlassume(g_numfaces < MAX_MAP_FACES, assume_MAX_MAP_FACES);
     g_numfaces++;
 
@@ -298,9 +286,9 @@ static void WriteFace(face_t *f)
 
     df->texinfo = WriteTexinfo(f->texturenum);
 
-    for (i = 0; i < f->numpoints; i++)
+    for (int i = 0; i < f->numpoints; i++)
     {
-        e = f->outputedges[i];
+        int e = f->outputedges[i];
         hlassume(g_numsurfedges < MAX_MAP_SURFEDGES, assume_MAX_MAP_SURFEDGES);
         g_dsurfedges[g_numsurfedges] = e;
         g_numsurfedges++;
@@ -339,14 +327,11 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
             return -1 - leafnum;
         }
     }
-    dnode_t *n;
-    int i;
-    face_t *f;
     int nodenum = g_numnodes;
 
     // emit a node
     hlassume(g_numnodes < MAX_MAP_NODES, assume_MAX_MAP_NODES);
-    n = &g_dnodes[g_numnodes];
+    dnode_t *n = &g_dnodes[g_numnodes];
     g_numnodes++;
 
     vec3_t mins, maxs;
@@ -375,7 +360,7 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     n->planenum = WritePlane(node->planenum);
     n->firstface = g_numfaces;
 
-    for (f = node->faces; f; f = f->next)
+    for (face_t *f = node->faces; f; f = f->next)
     {
         WriteFace(f);
     }
@@ -385,7 +370,7 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     //
     // recursively output the other nodes
     //
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         n->children[i] = WriteDrawNodes_r(node->children[i], portalleaf);
     }
@@ -397,11 +382,7 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
 // =====================================================================================
 static void FreeDrawNodes_r(node_t *node)
 {
-    int i;
-    face_t *f;
-    face_t *next;
-
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         if (node->children[i]->planenum != -1)
         {
@@ -412,7 +393,9 @@ static void FreeDrawNodes_r(node_t *node)
     //
     // free the faces on the node
     //
-    for (f = node->faces; f; f = next)
+
+    face_t *next;
+    for (face_t *f = node->faces; f; f = next)
     {
         next = f->next;
         FreeFace(f);
@@ -436,8 +419,7 @@ void OutputEdges_face(face_t *f)
     }
     f->outputedges = (int *)malloc(f->numpoints * sizeof(int));
     hlassume(f->outputedges != NULL, assume_NoMemory);
-    int i;
-    for (i = 0; i < f->numpoints; i++)
+    for (int i = 0; i < f->numpoints; i++)
     {
         int e = GetEdge(f->pts[i], f->pts[(i + 1) % f->numpoints], f);
         f->outputedges[i] = e;
@@ -450,8 +432,7 @@ int OutputEdges_r(node_t *node, int detaillevel)
     {
         return next;
     }
-    face_t *f;
-    for (f = node->faces; f; f = f->next)
+    for (face_t *f = node->faces; f; f = f->next)
     {
         if (f->detaillevel > detaillevel)
         {
@@ -465,8 +446,7 @@ int OutputEdges_r(node_t *node, int detaillevel)
             OutputEdges_face(f);
         }
     }
-    int i;
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         int r = OutputEdges_r(node->children[i], detaillevel);
         if (r == -1 ? false : next == -1 ? true
@@ -495,8 +475,7 @@ static void RemoveCoveredFaces_r(node_t *node)
         }
         else
         {
-            face_t **fp;
-            for (fp = node->markfaces; *fp; fp++)
+            for (face_t **fp = node->markfaces; *fp; fp++)
             {
                 for (face_t *f = *fp; f; f = f->original) // for each tjunc subface
                 {
@@ -520,8 +499,8 @@ void WriteDrawNodes(node_t *headnode)
 {
     RemoveCoveredFaces_r(headnode); // fill "referenced" value
     // higher detail level should not compete for edge pairing with lower detail level.
-    int detaillevel, nextdetaillevel;
-    for (detaillevel = 0; detaillevel != -1; detaillevel = nextdetaillevel)
+    int nextdetaillevel;
+    for (int detaillevel = 0; detaillevel != -1; detaillevel = nextdetaillevel)
     {
         nextdetaillevel = OutputEdges_r(headnode, detaillevel);
     }
@@ -594,7 +573,7 @@ void FinishBSPFile()
             bool *Used = (bool *)calloc(g_nummiptex, sizeof(bool));
             int Num = 0, Size = 0;
             int *Map = (int *)malloc(g_nummiptex * sizeof(int));
-            int i;
+
             hlassume(Used != NULL && Map != NULL, assume_NoMemory);
             int *lumpsizes = (int *)malloc(g_nummiptex * sizeof(int));
             const int newdatasizemax = g_texdatasize - ((byte *)&l->dataofs[g_nummiptex] - (byte *)l);
@@ -602,7 +581,7 @@ void FinishBSPFile()
             int newdatasize = 0;
             hlassume(lumpsizes != NULL && newdata != NULL, assume_NoMemory);
             int total = 0;
-            for (i = 0; i < g_nummiptex; i++)
+            for (int i = 0; i < g_nummiptex; i++)
             {
                 if (l->dataofs[i] == -1)
                 {
@@ -625,7 +604,7 @@ void FinishBSPFile()
                 Warning("Bad texdata structure.\n");
                 goto skipReduceTexdata;
             }
-            for (i = 0; i < g_numtexinfo; i++)
+            for (int i = 0; i < g_numtexinfo; i++)
             {
                 texinfo_t *t = &g_texinfo[i];
                 if (t->miptex < 0 || t->miptex >= g_nummiptex)
@@ -635,11 +614,11 @@ void FinishBSPFile()
                 }
                 Used[t->miptex] = true;
             }
-            for (i = 0; i < g_nummiptex; i++)
+            for (int i = 0; i < g_nummiptex; i++)
             {
                 const int MAXWADNAME = 16;
                 char name[MAXWADNAME];
-                int j, k;
+
                 if (l->dataofs[i] < 0)
                     continue;
                 if (Used[i] == true)
@@ -650,13 +629,13 @@ void FinishBSPFile()
                     safe_strncpy(name, m->name, MAXWADNAME);
                     if (name[1] == '\0')
                         continue;
-                    for (j = 0; j < 20; j++)
+                    for (int j = 0; j < 20; j++)
                     {
                         if (j < 10)
                             name[1] = '0' + j;
                         else
                             name[1] = 'A' + j - 10;
-                        for (k = 0; k < g_nummiptex; k++)
+                        for (int k = 0; k < g_nummiptex; k++)
                         {
                             if (l->dataofs[k] < 0)
                                 continue;
@@ -667,7 +646,7 @@ void FinishBSPFile()
                     }
                 }
             }
-            for (i = 0; i < g_nummiptex; i++)
+            for (int i = 0; i < g_nummiptex; i++)
             {
                 if (Used[i])
                 {
@@ -679,13 +658,13 @@ void FinishBSPFile()
                     Map[i] = -1;
                 }
             }
-            for (i = 0; i < g_numtexinfo; i++)
+            for (int i = 0; i < g_numtexinfo; i++)
             {
                 texinfo_t *t = &g_texinfo[i];
                 t->miptex = Map[t->miptex];
             }
             Size += (byte *)&l->dataofs[Num] - (byte *)l;
-            for (i = 0; i < g_nummiptex; i++)
+            for (int i = 0; i < g_nummiptex; i++)
             {
                 if (Used[i])
                 {
@@ -729,9 +708,8 @@ void FinishBSPFile()
     if (!g_nobrink)
     {
         Log("FixBrinks:\n");
-        dclipnode_t *clipnodes; //[MAX_MAP_CLIPNODES]
         int numclipnodes;
-        clipnodes = (dclipnode_t *)malloc(MAX_MAP_CLIPNODES * sizeof(dclipnode_t));
+        dclipnode_t *clipnodes = (dclipnode_t *)malloc(MAX_MAP_CLIPNODES * sizeof(dclipnode_t)); //[MAX_MAP_CLIPNODES]
         hlassume(clipnodes != NULL, assume_NoMemory);
         void *(*brinkinfo)[NUM_HULLS]; //[MAX_MAP_MODELS]
         int (*headnode)[NUM_HULLS];    //[MAX_MAP_MODELS]
