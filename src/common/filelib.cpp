@@ -12,12 +12,9 @@
  */
 int q_filelength(FILE *f)
 {
-    int pos;
-    int end;
-
-    pos = ftell(f);
+    int pos = ftell(f);
     fseek(f, 0, SEEK_END);
-    end = ftell(f);
+    int end = ftell(f);
     fseek(f, pos, SEEK_SET);
 
     return end;
@@ -30,9 +27,7 @@ int q_filelength(FILE *f)
  */
 bool q_exists(const char *const filename)
 {
-    FILE *f;
-
-    f = fopen(filename, "rb");
+    FILE *f = fopen(filename, "rb");
 
     if (!f)
     {
@@ -49,9 +44,7 @@ bool q_exists(const char *const filename)
 
 FILE *SafeOpenWrite(const char *const filename)
 {
-    FILE *f;
-
-    f = fopen(filename, "wb");
+    FILE *f = fopen(filename, "wb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -61,9 +54,7 @@ FILE *SafeOpenWrite(const char *const filename)
 
 FILE *SafeOpenRead(const char *const filename)
 {
-    FILE *f;
-
-    f = fopen(filename, "rb");
+    FILE *f = fopen(filename, "rb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -90,13 +81,9 @@ void SafeWrite(FILE *f, const void *const buffer, int count)
  */
 int LoadFile(const char *const filename, char **bufferptr)
 {
-    FILE *f;
-    int length;
-    char *buffer;
-
-    f = SafeOpenRead(filename);
-    length = q_filelength(f);
-    buffer = (char *)Alloc(length + 1);
+    FILE *f = SafeOpenRead(filename);
+    int length = q_filelength(f);
+    char *buffer = (char *)Alloc(length + 1);
     SafeRead(f, buffer, length);
     fclose(f);
 
