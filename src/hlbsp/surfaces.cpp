@@ -29,15 +29,10 @@ static int subdivides;
 // =====================================================================================
 void SubdivideFace(face_t *f, face_t **prevptr)
 {
-    vec_t mins, maxs;
     vec_t v;
-    int axis;
-    int i;
     dplane_t plane;
     face_t *front;
     face_t *back;
-    face_t *next;
-    texinfo_t *tex;
     vec3_t temp;
 
     // special (non-surface cached) faces don't need subdivision
@@ -46,7 +41,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
     {
         return;
     }
-    tex = &g_texinfo[f->texturenum];
+    texinfo_t *tex = &g_texinfo[f->texturenum];
 
     if (tex->flags & TEX_SPECIAL)
     {
@@ -67,14 +62,14 @@ void SubdivideFace(face_t *f, face_t **prevptr)
     if (f->facestyle == face_discardable)
         return;
 
-    for (axis = 0; axis < 2; axis++)
+    for (int axis = 0; axis < 2; axis++)
     {
         while (1)
         {
-            mins = 99999999;
-            maxs = -99999999;
+            vec_t mins = 99999999;
+            vec_t maxs = -99999999;
 
-            for (i = 0; i < f->numpoints; i++)
+            for (int i = 0; i < f->numpoints; i++)
             {
                 v = DotProduct(f->pts[i], tex->vecs[axis]);
                 if (v < mins)
@@ -100,7 +95,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
 
             VectorCopy(temp, plane.normal);
             plane.dist = (mins + g_subdivide_size - TEXTURE_STEP) / v; //plane.dist = (mins + g_subdivide_size - 16) / v; //--vluzacn
-            next = f->next;
+            face_t *next = f->next;
             SplitFace(f, &plane, &front, &back);
             if (!front || !back)
             {
@@ -163,22 +158,18 @@ static int hash_numslots[3];
 static void InitHash()
 {
     vec3_t size;
-    vec_t volume;
-    vec_t scale;
-    int newsize[2];
-    int i;
 
     memset(hashverts, 0, sizeof(hashverts));
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         hash_min[i] = -8000;
         size[i] = 16000;
     }
 
-    volume = size[0] * size[1];
+    vec_t volume = size[0] * size[1];
 
-    scale = sqrt(volume / NUM_HASH);
+    vec_t scale = sqrt(volume / NUM_HASH);
 
     hash_numslots[0] = (int)floor(size[0] / scale);
     hash_numslots[1] = (int)floor(size[1] / scale);
@@ -202,15 +193,11 @@ static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
 // returned value: the one bucket that a new vertex may "write" into
 // returned hashneighbors: the buckets that we should "read" to check for an existing vertex
 {
-    int h;
-    int i;
-    int x;
-    int y;
     int slot[2];
     vec_t normalized[2];
     vec_t slotdiff[2];
 
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         normalized[i] = hash_scale[i] * (vec[i] - hash_min[i]);
         slot[i] = (int)floor(normalized[i]);
@@ -220,17 +207,17 @@ static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
         slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i]; // do it twice to handle negative values
     }
 
-    h = slot[0] * hash_numslots[1] + slot[1];
+    int h = slot[0] * hash_numslots[1] + slot[1];
 
     *num_hashneighbors = 0;
-    for (x = -1; x <= 1; x++)
+    for (int x = -1; x <= 1; x++)
     {
         if (x == -1 && slotdiff[0] > hash_scale[0] * (2 * POINT_EPSILON) ||
             x == 1 && slotdiff[0] < 1 - hash_scale[0] * (2 * POINT_EPSILON))
         {
             continue;
         }
-        for (y = -1; y <= 1; y++)
+        for (int y = -1; y <= 1; y++)
         {
             if (y == -1 && slotdiff[1] > hash_scale[1] * (2 * POINT_EPSILON) ||
                 y == 1 && slotdiff[1] < 1 - hash_scale[1] * (2 * POINT_EPSILON))
@@ -256,14 +243,12 @@ static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
 // =====================================================================================
 static int GetVertex(const vec3_t in, const int planenum)
 {
-    int h;
-    int i;
     hashvert_t *hv;
     vec3_t vert;
     int num_hashneighbors;
     int hashneighbors[MAX_HASH_NEIGHBORS];
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (fabs(in[i] - VectorRound(in[i])) < 0.001)
         {
@@ -275,9 +260,9 @@ static int GetVertex(const vec3_t in, const int planenum)
         }
     }
 
-    h = HashVec(vert, &num_hashneighbors, hashneighbors);
+    int h = HashVec(vert, &num_hashneighbors, hashneighbors);
 
-    for (i = 0; i < num_hashneighbors; i++)
+    for (int i = 0; i < num_hashneighbors; i++)
         for (hv = hashverts[hashneighbors[i]]; hv; hv = hv->next)
         {
             if (fabs(hv->point[0] - vert[0]) < POINT_EPSILON && fabs(hv->point[1] - vert[1]) < POINT_EPSILON && fabs(hv->point[2] - vert[2]) < POINT_EPSILON)
@@ -333,15 +318,13 @@ static int GetVertex(const vec3_t in, const int planenum)
 // =====================================================================================
 int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f)
 {
-    int v1;
-    int v2;
     dedge_t *edge;
     int i;
 
     hlassert(f->contents);
 
-    v1 = GetVertex(p1, f->planenum);
-    v2 = GetVertex(p2, f->planenum);
+    int v1 = GetVertex(p1, f->planenum);
+    int v2 = GetVertex(p2, f->planenum);
     for (i = firstmodeledge; i < g_numedges; i++)
     {
         edge = &g_dedges[i];
