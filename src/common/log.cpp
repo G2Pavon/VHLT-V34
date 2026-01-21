@@ -209,12 +209,10 @@ void CDECL CloseLog()
 //      on compared to the time taken to compile the map, so its negligable.
 void Safe_WriteLog(const char *const message)
 {
-    const char *c;
-
     if (!CompileLog)
         return;
 
-    c = &message[0];
+    const char *c = &message[0];
 
     while (1)
     {
@@ -459,10 +457,8 @@ void CDECL FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
 // =====================================================================================
 static void LogArgs(int argc, char **argv)
 {
-    int i;
-
     Log("Command line: ");
-    for (i = 0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
     {
         if (strchr(argv[i], ' '))
         {
@@ -580,11 +576,10 @@ void wait()
 }
 int InitConsole(int argc, char **argv)
 {
-    int i;
     bool wrong = false;
     twice = false;
     useconsole = true;
-    for (i = 1; i < argc; ++i)
+    for (int i = 1; i < argc; ++i)
     {
         if (!strcasecmp(argv[i], "-console"))
         {
@@ -719,8 +714,7 @@ int loadlangfileline(char *line, int n, FILE *f)
 }
 const char *Localize(const char *s)
 {
-    int i;
-    for (i = 0; i < g_lang_count; i++)
+    for (int i = 0; i < g_lang_count; i++)
     {
         if (!strcmp(g_lang[i][0], s))
         {
