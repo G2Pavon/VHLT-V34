@@ -17,12 +17,9 @@ int g_iNumWadPaths = 0;
 // =====================================================================================
 void PushWadPath(const char *const path, bool inuse)
 {
-    int i;
-    wadpath_t *current;
-
     hlassume(g_iNumWadPaths < MAX_WADPATHS, assume_MAX_TEXFILES);
 
-    current = (wadpath_t *)malloc(sizeof(wadpath_t));
+    wadpath_t *current = (wadpath_t *)malloc(sizeof(wadpath_t));
 
     safe_strncpy(current->path, path, _MAX_PATH);
     current->usedbymap = inuse;
@@ -37,12 +34,9 @@ void PushWadPath(const char *const path, bool inuse)
 // =====================================================================================
 void FreeWadPaths()
 {
-    int i;
-    wadpath_t *current;
-
-    for (i = 0; i < g_iNumWadPaths; i++)
+    for (int i = 0; i < g_iNumWadPaths; i++)
     {
-        current = g_pWadPaths[i];
+        wadpath_t *current = g_pWadPaths[i];
         free(current);
     }
 }
@@ -53,13 +47,12 @@ void FreeWadPaths()
 // =====================================================================================
 void GetUsedWads()
 {
-    const char *pszWadPaths;
     char szTmp[_MAX_PATH];
-    int i, j;
+    int j;
 
-    pszWadPaths = ValueForKey(&g_entities[0], "wad");
+    const char *pszWadPaths = ValueForKey(&g_entities[0], "wad");
 
-    for (i = 0;;)
+    for (int i = 0;;)
     {
         for (j = i; pszWadPaths[j] != '\0'; j++)
         {
