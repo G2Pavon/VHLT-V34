@@ -104,11 +104,10 @@ static int FastChecksum(const void *const buffer, int bytes)
  */
 int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length)
 {
-    unsigned int j;
     byte *dest_p = dest;
     unsigned int current_length = 0;
 
-    for (j = 0; j < src_length; j++)
+    for (unsigned int j = 0; j < src_length; j++)
     {
         current_length++;
         hlassume(current_length <= dest_length, assume_COMPRESSVIS_OVERFLOW);
@@ -152,14 +151,11 @@ int CompressVis(const byte *const src, const unsigned int src_length, byte *dest
 void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length)
 {
     unsigned int current_length = 0;
-    int c;
-    byte *out;
-    int row;
 
-    row = (g_dmodels[0].visleafs + 7) >> 3; // same as the length used by VIS program in CompressVis
-                                            // The wrong size will cause DecompressVis to spend extremely long time once the source pointer runs into the invalid area in g_dvisdata (for example, in BuildFaceLights, some faces could hang for a few seconds), and sometimes to crash.
+    int row = (g_dmodels[0].visleafs + 7) >> 3; // same as the length used by VIS program in CompressVis
+                                                // The wrong size will cause DecompressVis to spend extremely long time once the source pointer runs into the invalid area in g_dvisdata (for example, in BuildFaceLights, some faces could hang for a few seconds), and sometimes to crash.
 
-    out = dest;
+    byte *out = dest;
 
     do
     {
@@ -178,7 +174,7 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
 
         hlassume(&src[1] - g_dvisdata < g_visdatasize, assume_DECOMPRESSVIS_OVERFLOW);
 
-        c = src[1];
+        int c = src[1];
         src += 2;
         while (c)
         {
@@ -207,16 +203,12 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
 // =====================================================================================
 static void SwapBSPFile(const bool todisk)
 {
-    int i, j, c;
-    dmodel_t *d;
-    dmiptexlump_t *mtl;
-
     // models
-    for (i = 0; i < g_nummodels; i++)
+    for (int i = 0; i < g_nummodels; i++)
     {
-        d = &g_dmodels[i];
+        dmodel_t *d = &g_dmodels[i];
 
-        for (j = 0; j < MAX_MAP_HULLS; j++)
+        for (int j = 0; j < MAX_MAP_HULLS; j++)
         {
             d->headnode[j] = LittleLong(d->headnode[j]);
         }
@@ -225,7 +217,7 @@ static void SwapBSPFile(const bool todisk)
         d->firstface = LittleLong(d->firstface);
         d->numfaces = LittleLong(d->numfaces);
 
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             d->mins[j] = LittleFloat(d->mins[j]);
             d->maxs[j] = LittleFloat(d->maxs[j]);
@@ -236,9 +228,9 @@ static void SwapBSPFile(const bool todisk)
     //
     // vertexes
     //
-    for (i = 0; i < g_numvertexes; i++)
+    for (int i = 0; i < g_numvertexes; i++)
     {
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             g_dvertexes[i].point[j] = LittleFloat(g_dvertexes[i].point[j]);
         }
@@ -247,9 +239,9 @@ static void SwapBSPFile(const bool todisk)
     //
     // planes
     //
-    for (i = 0; i < g_numplanes; i++)
+    for (int i = 0; i < g_numplanes; i++)
     {
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             g_dplanes[i].normal[j] = LittleFloat(g_dplanes[i].normal[j]);
         }
@@ -260,9 +252,9 @@ static void SwapBSPFile(const bool todisk)
     //
     // texinfos
     //
-    for (i = 0; i < g_numtexinfo; i++)
+    for (int i = 0; i < g_numtexinfo; i++)
     {
-        for (j = 0; j < 8; j++)
+        for (int j = 0; j < 8; j++)
         {
             g_texinfo[i].vecs[0][j] = LittleFloat(g_texinfo[i].vecs[0][j]);
         }
@@ -273,7 +265,7 @@ static void SwapBSPFile(const bool todisk)
     //
     // faces
     //
-    for (i = 0; i < g_numfaces; i++)
+    for (int i = 0; i < g_numfaces; i++)
     {
         g_dfaces[i].texinfo = LittleShort(g_dfaces[i].texinfo);
         g_dfaces[i].planenum = LittleShort(g_dfaces[i].planenum);
@@ -286,10 +278,10 @@ static void SwapBSPFile(const bool todisk)
     //
     // nodes
     //
-    for (i = 0; i < g_numnodes; i++)
+    for (int i = 0; i < g_numnodes; i++)
     {
         g_dnodes[i].planenum = LittleLong(g_dnodes[i].planenum);
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             g_dnodes[i].mins[j] = LittleShort(g_dnodes[i].mins[j]);
             g_dnodes[i].maxs[j] = LittleShort(g_dnodes[i].maxs[j]);
@@ -303,10 +295,10 @@ static void SwapBSPFile(const bool todisk)
     //
     // leafs
     //
-    for (i = 0; i < g_numleafs; i++)
+    for (int i = 0; i < g_numleafs; i++)
     {
         g_dleafs[i].contents = LittleLong(g_dleafs[i].contents);
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             g_dleafs[i].mins[j] = LittleShort(g_dleafs[i].mins[j]);
             g_dleafs[i].maxs[j] = LittleShort(g_dleafs[i].maxs[j]);
@@ -320,7 +312,7 @@ static void SwapBSPFile(const bool todisk)
     //
     // clipnodes
     //
-    for (i = 0; i < g_numclipnodes; i++)
+    for (int i = 0; i < g_numclipnodes; i++)
     {
         g_dclipnodes[i].planenum = LittleLong(g_dclipnodes[i].planenum);
         g_dclipnodes[i].children[0] = LittleShort(g_dclipnodes[i].children[0]);
@@ -332,7 +324,8 @@ static void SwapBSPFile(const bool todisk)
     //
     if (g_texdatasize)
     {
-        mtl = (dmiptexlump_t *)g_dtexdata;
+        int c;
+        dmiptexlump_t *mtl = (dmiptexlump_t *)g_dtexdata;
         if (todisk)
         {
             c = mtl->nummiptex;
@@ -342,7 +335,7 @@ static void SwapBSPFile(const bool todisk)
             c = LittleLong(mtl->nummiptex);
         }
         mtl->nummiptex = LittleLong(mtl->nummiptex);
-        for (i = 0; i < c; i++)
+        for (int i = 0; i < c; i++)
         {
             mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
         }
@@ -351,7 +344,7 @@ static void SwapBSPFile(const bool todisk)
     //
     // marksurfaces
     //
-    for (i = 0; i < g_nummarksurfaces; i++)
+    for (int i = 0; i < g_nummarksurfaces; i++)
     {
         g_dmarksurfaces[i] = LittleShort(g_dmarksurfaces[i]);
     }
@@ -359,7 +352,7 @@ static void SwapBSPFile(const bool todisk)
     //
     // surfedges
     //
-    for (i = 0; i < g_numsurfedges; i++)
+    for (int i = 0; i < g_numsurfedges; i++)
     {
         g_dsurfedges[i] = LittleLong(g_dsurfedges[i]);
     }
@@ -367,7 +360,7 @@ static void SwapBSPFile(const bool todisk)
     //
     // edges
     //
-    for (i = 0; i < g_numedges; i++)
+    for (int i = 0; i < g_numedges; i++)
     {
         g_dedges[i].v[0] = LittleShort(g_dedges[i].v[0]);
         g_dedges[i].v[1] = LittleShort(g_dedges[i].v[1]);
@@ -380,10 +373,8 @@ static void SwapBSPFile(const bool todisk)
 // =====================================================================================
 static int CopyLump(int lump, void *dest, int size, const dheader_t *const header)
 {
-    int length, ofs;
-
-    length = header->lumps[lump].filelen;
-    ofs = header->lumps[lump].fileofs;
+    int length = header->lumps[lump].filelen;
+    int ofs = header->lumps[lump].fileofs;
 
     if (length % size)
     {
@@ -422,10 +413,8 @@ void LoadBSPFile(const char *const filename)
 // =====================================================================================
 void LoadBSPImage(dheader_t *const header)
 {
-    unsigned int i;
-
     // swap the header
-    for (i = 0; i < sizeof(dheader_t) / 4; i++)
+    for (unsigned int i = 0; i < sizeof(dheader_t) / 4; i++)
     {
         ((int *)header)[i] = LittleLong(((int *)header)[i]);
     }
@@ -498,17 +487,14 @@ static void AddLump(int lumpnum, void *data, int len, dheader_t *header, FILE *b
 void WriteBSPFile(const char *const filename)
 {
     dheader_t outheader;
-    dheader_t *header;
-    FILE *bspfile;
-
-    header = &outheader;
+    dheader_t *header = &outheader;
     memset(header, 0, sizeof(dheader_t));
 
     SwapBSPFile(true);
 
     header->version = LittleLong(BSPVERSION);
 
-    bspfile = SafeOpenWrite(filename);
+    FILE *bspfile = SafeOpenWrite(filename);
     SafeWrite(bspfile, header, sizeof(dheader_t)); // overwritten later
 
     //      LUMP TYPE       DATA            LENGTH                              HEADER  BSPFILE
@@ -542,11 +528,8 @@ void WriteBSPFile(const char *const filename)
 
 float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
 {
-    volatile double val;
-    volatile double tmp;
-
-    val = (double)point[0] * (double)vecs[0]; // always do one operation at a time and save to memory
-    tmp = (double)point[1] * (double)vecs[1];
+    volatile double val = (double)point[0] * (double)vecs[0]; // always do one operation at a time and save to memory
+    volatile double tmp = (double)point[1] * (double)vecs[1];
     val = val + tmp;
     tmp = (double)point[2] * (double)vecs[2];
     val = val + tmp;
@@ -565,13 +548,12 @@ bool CalcFaceExtents_test()
         {1, 1, 1, 1, 1, 0.375 * FLT_EPSILON, -2, 0.375 * FLT_EPSILON},
         {1, 1, 1, 1, 0.375 * FLT_EPSILON, 1, -2, 0.375 * FLT_EPSILON},
         {1, 1, 1, 0.375 * FLT_EPSILON, 1, 1, -2, 0.375 * FLT_EPSILON}};
-    bool ok;
 
     // If the test failed, please check:
     //   1. whether the calculation is performed on FPU
     //   2. whether the register precision is too low
 
-    ok = true;
+    bool ok = true;
     for (int i = 0; i < 6; i++)
     {
         float val = CalculatePointVecsProduct(&testcases[i][0], &testcases[i][3]);
@@ -586,24 +568,19 @@ bool CalcFaceExtents_test()
 
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
-
-    dface_t *f;
-    float mins[2], maxs[2], val;
-    int i, j, e;
     dvertex_t *v;
-    texinfo_t *tex;
     int bmins[2], bmaxs[2];
 
-    f = &g_dfaces[facenum];
+    dface_t *f = &g_dfaces[facenum];
 
-    mins[0] = mins[1] = 999999;
-    maxs[0] = maxs[1] = -99999;
+    float mins[2] = {999999.0f, 999999.0f};
+    float maxs[2] = {-99999.0f, -99999.0f};
 
-    tex = &g_texinfo[ParseTexinfoForFace(f)];
+    texinfo_t *tex = &g_texinfo[ParseTexinfoForFace(f)];
 
-    for (i = 0; i < f->numedges; i++)
+    for (int i = 0; i < f->numedges; i++)
     {
-        e = g_dsurfedges[f->firstedge + i];
+        int e = g_dsurfedges[f->firstedge + i];
         if (e >= 0)
         {
             v = &g_dvertexes[g_dedges[e].v[0]];
@@ -612,7 +589,7 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
         {
             v = &g_dvertexes[g_dedges[-e].v[1]];
         }
-        for (j = 0; j < 2; j++)
+        for (int j = 0; j < 2; j++)
         {
             // The old code: val = v->point[0] * tex->vecs[j][0] + v->point[1] * tex->vecs[j][1] + v->point[2] * tex->vecs[j][2] + tex->vecs[j][3];
             //   was meant to be compiled for x86 under MSVC (prior to VS 11), so the intermediate values were stored as 64-bit double by default.
@@ -622,7 +599,7 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
             // The essential reason for having this ugly code is to get exactly the same value as the counterpart of game engine.
             // The counterpart of game engine is the function CalcFaceExtents in HLSDK.
             // So we must also know how Valve compiles HLSDK. I think Valve compiles HLSDK with VC6.0 in the past.
-            val = CalculatePointVecsProduct(v->point, tex->vecs[j]);
+            float val = CalculatePointVecsProduct(v->point, tex->vecs[j]);
             if (val < mins[j])
             {
                 mins[j] = val;
@@ -634,13 +611,13 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
         }
     }
 
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         bmins[i] = (int)floor(mins[i] / TEXTURE_STEP);
         bmaxs[i] = (int)ceil(maxs[i] / TEXTURE_STEP);
     }
 
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         mins_out[i] = bmins[i];
         maxs_out[i] = bmaxs[i];
@@ -652,8 +629,7 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 // =====================================================================================
 void WriteExtentFile(const char *const filename)
 {
-    FILE *f;
-    f = fopen(filename, "w");
+    FILE *f = fopen(filename, "w");
     if (!f)
     {
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -684,8 +660,7 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 {
     lightmapblock_t *block;
     // code from Quake
-    int i, j;
-    int best, best2;
+    int j;
     int x, y;
     if (w < 1 || h < 1)
     {
@@ -693,10 +668,10 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
     }
     for (block = blocks; block; block = block->next)
     {
-        best = BLOCK_HEIGHT;
-        for (i = 0; i < BLOCK_WIDTH - w; i++)
+        int best = BLOCK_HEIGHT;
+        for (int i = 0; i < BLOCK_WIDTH - w; i++)
         {
-            best2 = 0;
+            int best2 = 0;
             for (j = 0; j < w; j++)
             {
                 if (block->allocated[i + j] >= best)
@@ -713,7 +688,7 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
         if (best + h <= BLOCK_HEIGHT)
         {
             block->used = true;
-            for (i = 0; i < w; i++)
+            for (int i = 0; i < w; i++)
             {
                 block->allocated[x + i] = best + h;
             }
@@ -734,12 +709,11 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 }
 int CountBlocks()
 {
-    lightmapblock_t *blocks;
-    blocks = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
+    lightmapblock_t *blocks = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
     hlassume(blocks != NULL, assume_NoMemory);
     memset(blocks, 0, sizeof(lightmapblock_t));
-    int k;
-    for (k = 0; k < g_numfaces; k++)
+
+    for (int k = 0; k < g_numfaces; k++)
     {
         dface_t *f = &g_dfaces[k];
         const char *texname = GetTextureByNumber(ParseTexinfoForFace(f));
@@ -755,9 +729,8 @@ int CountBlocks()
         {
             int bmins[2];
             int bmaxs[2];
-            int i;
             GetFaceExtents(k, bmins, bmaxs);
-            for (i = 0; i < 2; i++)
+            for (int i = 0; i < 2; i++)
             {
                 extents[i] = (bmaxs[i] - bmins[i]) * TEXTURE_STEP;
             }
@@ -816,9 +789,9 @@ char *FindWadValue()
 // return NULL for syntax error
 // this function needs to be as stable as possible because it might be called from ripent
 {
-    int linestart, lineend;
+    int lineend;
     bool inentity = false;
-    for (linestart = 0; linestart < g_entdatasize;)
+    for (int linestart = 0; linestart < g_entdatasize;)
     {
         for (lineend = linestart; lineend < g_entdatasize; lineend++)
             if (g_dentdata[lineend] == '\r' || g_dentdata[lineend] == '\n')
@@ -977,11 +950,7 @@ void PrintBSPFileSizes()
 // =====================================================================================
 int ParseImplicitTexinfoFromTexture(int miptex)
 {
-    int texinfo;
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
-    int offset;
-    int size;
-    miptex_t *mt;
     char name[16];
 
     if (miptex < 0 || miptex >= numtextures)
@@ -989,15 +958,15 @@ int ParseImplicitTexinfoFromTexture(int miptex)
         Warning("ParseImplicitTexinfoFromTexture: internal error: invalid texture number %d.", miptex);
         return -1;
     }
-    offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
-    size = g_texdatasize - offset;
+    int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
+    int size = g_texdatasize - offset;
     if (offset < 0 || g_dtexdata + offset < (byte *)&((dmiptexlump_t *)g_dtexdata)->dataofs[numtextures] ||
         size < (int)sizeof(miptex_t))
     {
         return -1;
     }
 
-    mt = (miptex_t *)&g_dtexdata[offset];
+    miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
     safe_strncpy(name, mt->name, 16);
 
     if (!(strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
@@ -1005,7 +974,7 @@ int ParseImplicitTexinfoFromTexture(int miptex)
         return -1;
     }
 
-    texinfo = atoi(&name[5]);
+    int texinfo = atoi(&name[5]);
     if (texinfo < 0 || texinfo >= g_numtexinfo)
     {
         Warning("Invalid index of original texinfo: %d parsed from texture name '%s'.", texinfo, name);
@@ -1017,15 +986,11 @@ int ParseImplicitTexinfoFromTexture(int miptex)
 
 int ParseTexinfoForFace(const dface_t *f)
 {
-    int texinfo;
-    int miptex;
-    int texinfo2;
-
-    texinfo = f->texinfo;
-    miptex = g_texinfo[texinfo].miptex;
+    int texinfo = f->texinfo;
+    int miptex = g_texinfo[texinfo].miptex;
     if (miptex != -1)
     {
-        texinfo2 = ParseImplicitTexinfoFromTexture(miptex);
+        int texinfo2 = ParseImplicitTexinfoFromTexture(miptex);
         if (texinfo2 != -1)
         {
             texinfo = texinfo2;
@@ -1107,7 +1072,6 @@ void DeleteEmbeddedLightmaps()
 
     // Step 3: remove redundant textures
     {
-        int numremaining; // number of remaining textures
         bool *textureused = (bool *)malloc(numtextures * sizeof(bool));
         hlassume(textureused != NULL, assume_NoMemory);
 
@@ -1133,7 +1097,7 @@ void DeleteEmbeddedLightmaps()
             }
             countremovedtextures++;
         }
-        numremaining = i + 1;
+        int numremaining = i + 1; // number of remaining textures
         free(textureused);
 
         if (numremaining < numtextures)
@@ -1171,9 +1135,7 @@ void DeleteEmbeddedLightmaps()
 // =====================================================================================
 epair_t *ParseEpair()
 {
-    epair_t *e;
-
-    e = (epair_t *)Alloc(sizeof(epair_t));
+    epair_t *e = (epair_t *)Alloc(sizeof(epair_t));
 
     if (strlen(g_token) >= MAX_KEY - 1)
         Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)strlen(g_token));
@@ -1200,9 +1162,6 @@ extern void GetParamsFromEnt(entity_t *mapent);
 
 bool ParseEntity()
 {
-    epair_t *e;
-    entity_t *mapent;
-
     if (!GetToken(true))
     {
         return false;
@@ -1218,7 +1177,7 @@ bool ParseEntity()
         Error("g_numentities == MAX_MAP_ENTITIES");
     }
 
-    mapent = &g_entities[g_numentities];
+    entity_t *mapent = &g_entities[g_numentities];
     g_numentities++;
 
     while (1)
@@ -1231,7 +1190,7 @@ bool ParseEntity()
         {
             break;
         }
-        e = ParseEpair();
+        epair_t *e = ParseEpair();
         e->next = mapent->epairs;
         mapent->epairs = e;
     }
@@ -1294,14 +1253,13 @@ void ParseEntities()
 int anglesforvector(float angles[3], const float vector[3])
 {
     float z = vector[2], r = sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
-    float tmp;
     if (sqrt(z * z + r * r) < NORMAL_EPSILON)
     {
         return -1;
     }
     else
     {
-        tmp = sqrt(z * z + r * r);
+        float tmp = sqrt(z * z + r * r);
         z /= tmp, r /= tmp;
         if (r < NORMAL_EPSILON)
         {
@@ -1342,17 +1300,13 @@ int anglesforvector(float angles[3], const float vector[3])
 }
 void UnparseEntities()
 {
-    char *buf;
-    char *end;
-    epair_t *ep;
     char line[MAXTOKEN];
-    int i;
 
-    buf = g_dentdata;
-    end = buf;
+    char *buf = g_dentdata;
+    char *end = buf;
     *end = 0;
 
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
         if (!strcmp(ValueForKey(mapent, "classname"), "info_sunlight") ||
@@ -1398,7 +1352,7 @@ void UnparseEntities()
             }
         }
     }
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
         if (!strcmp(ValueForKey(mapent, "classname"), "light_shadow") || !strcmp(ValueForKey(mapent, "classname"), "light_bounce"))
@@ -1409,7 +1363,7 @@ void UnparseEntities()
         }
     }
     // ugly code
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
         if (!strcmp(ValueForKey(mapent, "classname"), "light_surface"))
@@ -1438,12 +1392,12 @@ void UnparseEntities()
     extern bool g_nolightopt;
     if (!g_nolightopt)
     {
-        int i, j;
+        int j;
         int count = 0;
         bool *lightneedcompare = (bool *)malloc(g_numentities * sizeof(bool));
         hlassume(lightneedcompare != NULL, assume_NoMemory);
         memset(lightneedcompare, 0, g_numentities * sizeof(bool));
-        for (i = g_numentities - 1; i > -1; i--)
+        for (int i = g_numentities - 1; i > -1; i--)
         {
             entity_t *ent = &g_entities[i];
             const char *classname = ValueForKey(ent, "classname");
@@ -1478,9 +1432,9 @@ void UnparseEntities()
         free(lightneedcompare);
     }
 #endif
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
-        ep = g_entities[i].epairs;
+        epair_t *ep = g_entities[i].epairs;
         if (!ep)
         {
             continue; // ent got removed
@@ -1512,8 +1466,7 @@ void UnparseEntities()
 // =====================================================================================
 void DeleteKey(entity_t *ent, const char *const key)
 {
-    epair_t **pep;
-    for (pep = &ent->epairs; *pep; pep = &(*pep)->next)
+    for (epair_t **pep = &ent->epairs; *pep; pep = &(*pep)->next)
     {
         if (!strcmp((*pep)->key, key))
         {
@@ -1558,9 +1511,7 @@ void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
 // =====================================================================================
 const char *ValueForKey(const entity_t *const ent, const char *const key)
 {
-    epair_t *ep;
-
-    for (ep = ent->epairs; ep; ep = ep->next)
+    for (epair_t *ep = ent->epairs; ep; ep = ep->next)
     {
         if (!strcmp(ep->key, key))
         {
@@ -1592,12 +1543,11 @@ vec_t FloatForKey(const entity_t *const ent, const char *const key)
 // =====================================================================================
 void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec)
 {
-    const char *k;
-    double v1, v2, v3;
-
-    k = ValueForKey(ent, key);
+    const char *k = ValueForKey(ent, key);
     // scanf into doubles, then assign, so it is vec_t size independent
-    v1 = v2 = v3 = 0;
+    double v1 = 0.0;
+    double v2 = 0.0;
+    double v3 = 0.0;
     sscanf(k, "%lf %lf %lf", &v1, &v2, &v3);
     vec[0] = v1;
     vec[1] = v2;
@@ -1610,12 +1560,9 @@ void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t ve
 // =====================================================================================
 entity_t *FindTargetEntity(const char *const target)
 {
-    int i;
-    const char *n;
-
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
-        n = ValueForKey(&g_entities[i], "targetname");
+        const char *n = ValueForKey(&g_entities[i], "targetname");
         if (!strcmp(n, target))
         {
             return &g_entities[i];
@@ -1651,13 +1598,10 @@ char *GetTextureByNumber(int texturenumber)
 {
     if (texturenumber == -1)
         return emptystring;
-    texinfo_t *info;
-    miptex_t *miptex;
-    int ofs;
 
-    info = &g_texinfo[texturenumber];
-    ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[info->miptex];
-    miptex = (miptex_t *)(&g_dtexdata[ofs]);
+    texinfo_t *info = &g_texinfo[texturenumber];
+    int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[info->miptex];
+    miptex_t *miptex = (miptex_t *)(&g_dtexdata[ofs]);
 
     return miptex->name;
 }
@@ -1668,15 +1612,13 @@ char *GetTextureByNumber(int texturenumber)
 // =====================================================================================
 entity_t *EntityForModel(const int modnum)
 {
-    int i;
-    const char *s;
     char name[16];
 
     sprintf(name, "*%i", modnum);
     // search the entities for one using modnum
-    for (i = 0; i < g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
-        s = ValueForKey(&g_entities[i], "model");
+        const char *s = ValueForKey(&g_entities[i], "model");
         if (!strcmp(s, name))
         {
             return &g_entities[i];
