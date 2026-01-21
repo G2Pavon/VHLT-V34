@@ -65,12 +65,11 @@ static void UpdateStatus(void)
 static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonsplit = NULL)
 {
     const vec_t epsilonmin = 0.002, epsilonmax = 0.2;
-    vec_t d_front, d_back;
-    vec_t dot;
     int i;
     vec_t *p;
 
-    d_front = d_back = 0;
+    vec_t d_front = 0.0;
+    vec_t d_back = 0.0;
 
     // axial planes are fast
     if (split->type <= last_axial)
@@ -80,7 +79,7 @@ static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonspli
 
         for (i = 0, p = in->pts[0] + split->type; i < in->numpoints; i++, p += 3)
         {
-            dot = *p - split->dist;
+            vec_t dot = *p - split->dist;
             if (dot > d_front)
                 d_front = dot;
             if (dot < d_back)
@@ -92,7 +91,7 @@ static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonspli
         // sloping planes take longer
         for (i = 0, p = in->pts[0]; i < in->numpoints; i++, p += 3)
         {
-            dot = DotProduct(p, split->normal);
+            vec_t dot = DotProduct(p, split->normal);
             dot -= split->dist;
             if (dot > d_front)
                 d_front = dot;
@@ -202,10 +201,9 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
     }
 
     node->isleaf = false;
-    vec_t dist, dist1, dist2;
-    dist = (node->mins[bestaxis] + node->maxs[bestaxis]) / 2;
-    dist1 = (3 * node->mins[bestaxis] + node->maxs[bestaxis]) / 4;
-    dist2 = (node->mins[bestaxis] + 3 * node->maxs[bestaxis]) / 4;
+    vec_t dist = (node->mins[bestaxis] + node->maxs[bestaxis]) / 2;
+    vec_t dist1 = (3 * node->mins[bestaxis] + node->maxs[bestaxis]) / 4;
+    vec_t dist2 = (node->mins[bestaxis] + 3 * node->maxs[bestaxis]) / 4;
     // Each child node is at most 3/4 the size of the parent node.
     // Most faces should be passed to a child node, faces left in the parent node are the ones whose dimensions are large enough to be comparable to the dimension of the parent node.
     node->nodefaces = new std::vector<face_t *>;
@@ -270,22 +268,19 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
 
 surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
 {
-    surfacetree_t *tree;
-    tree = (surfacetree_t *)malloc(sizeof(surfacetree_t));
+    surfacetree_t *tree = (surfacetree_t *)malloc(sizeof(surfacetree_t));
     tree->epsilon = epsilon;
     tree->result.middle = new std::vector<face_t *>;
     tree->headnode = (surfacetreenode_t *)malloc(sizeof(surfacetreenode_t));
     tree->headnode->leaffaces = new std::vector<face_t *>;
     {
-        surface_t *p2;
-        face_t *f;
-        for (p2 = surfaces; p2; p2 = p2->next)
+        for (surface_t *p2 = surfaces; p2; p2 = p2->next)
         {
             if (p2->onnode)
             {
                 continue;
             }
-            for (f = p2->faces; f; f = f->next)
+            for (face_t *f = p2->faces; f; f = f->next)
             {
                 tree->headnode->leaffaces->push_back(f);
             }
@@ -308,8 +303,9 @@ void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node, const
     {
         return;
     }
-    vec_t low, high;
-    low = high = -split->dist;
+    vec_t low = -split->dist;
+    vec_t high = -split->dist;
+
     for (int k = 0; k < 3; k++)
     {
         if (split->normal[k] >= 0)
@@ -396,26 +392,15 @@ void DeleteSurfaceTree(surfacetree_t *tree)
 // =====================================================================================
 static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins, const vec3_t maxs, int detaillevel)
 {
-    int j, l;
-    surface_t *p;
-    surface_t *bestsurface;
-    vec_t bestvalue;
-    vec_t value;
-    vec_t dist;
-    dplane_t *plane;
-    surfacetree_t *surfacetree;
-    std::vector<face_t *>::iterator it;
-    face_t *f;
-
-    surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
+    surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
 
     //
     // pick the plane that splits the least
     //
-    bestvalue = 9e30;
-    bestsurface = NULL;
+    vec_t bestvalue = 9e30;
+    surface_t *bestsurface = NULL;
 
-    for (p = surfaces; p; p = p->next)
+    for (surface_t *p = surfaces; p; p = p->next)
     {
         if (p->onnode)
         {
@@ -426,10 +411,10 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
             continue;
         }
 
-        plane = &g_dplanes[p->planenum];
+        dplane_t *plane = &g_dplanes[p->planenum];
 
         // check for axis aligned surfaces
-        l = plane->type;
+        int l = plane->type;
         if (l > last_axial)
         {
             continue;
@@ -438,9 +423,9 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         //
         // calculate the split metric along axis l, smaller values are better
         //
-        value = 0;
+        vec_t value = 0;
 
-        dist = plane->dist * plane->normal[l];
+        vec_t dist = plane->dist * plane->normal[l];
         if (maxs[l] - dist < ON_EPSILON || dist - mins[l] < ON_EPSILON)
             continue;
         if (maxs[l] - dist < g_maxnode_size / 2.0 - ON_EPSILON || dist - mins[l] < g_maxnode_size / 2.0 - ON_EPSILON)
@@ -453,9 +438,10 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         TestSurfaceTree(surfacetree, plane);
         frontcount += surfacetree->result.frontsize;
         backcount += surfacetree->result.backsize;
-        for (it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
+        for (
+            std::vector<face_t *>::iterator it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
         {
-            f = *it;
+            face_t *f = *it;
             if (f->facestyle == face_discardable)
             {
                 continue;
@@ -517,32 +503,20 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
                                       ,
                                       int detaillevel)
 {
-    surface_t *p;
-    surface_t *p2;
-    surface_t *bestsurface;
-    vec_t bestvalue;
-    vec_t value;
-    dplane_t *plane;
-    face_t *f;
-    double planecount;
-    double totalsplit;
-    double avesplit;
     double (*tmpvalue)[2];
-    surfacetree_t *surfacetree;
-    std::vector<face_t *>::iterator it;
 
-    planecount = 0;
-    totalsplit = 0;
+    double planecount = 0.0;
+    double totalsplit = 0.0;
     tmpvalue = (double (*)[2])malloc(g_numplanes * sizeof(double[2]));
-    surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
+    surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
 
     //
     // pick the plane that splits the least
     //
-    bestvalue = 9e30;
-    bestsurface = NULL;
+    vec_t bestvalue = 9e30;
+    surface_t *bestsurface = NULL;
 
-    for (p = surfaces; p; p = p->next)
+    for (surface_t *p = surfaces; p; p = p->next)
     {
         if (p->onnode)
         {
@@ -560,9 +534,9 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
         double coplanarcount = 0;
         double epsilonsplit = 0;
 
-        plane = &g_dplanes[p->planenum];
+        dplane_t *plane = &g_dplanes[p->planenum];
 
-        for (f = p->faces; f; f = f->next)
+        for (face_t *f = p->faces; f; f = f->next)
         {
             if (f->facestyle == face_discardable)
             {
@@ -574,9 +548,9 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
         {
             frontcount += surfacetree->result.frontsize;
             backcount += surfacetree->result.backsize;
-            for (it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
+            for (std::vector<face_t *>::iterator it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
             {
-                f = *it;
+                face_t *f = *it;
                 if (f->planenum == p->planenum || f->planenum == (p->planenum ^ 1))
                 {
                     continue;
@@ -602,7 +576,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
             }
         }
 
-        value = crosscount - sqrt(coplanarcount); // Not optimized. --vluzacn
+        vec_t value = crosscount - sqrt(coplanarcount); // Not optimized. --vluzacn
         if (coplanarcount == 0)
         {
             crosscount += 1;
@@ -617,8 +591,8 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
 
         tmpvalue[p->planenum][0] = value;
     }
-    avesplit = totalsplit / planecount;
-    for (p = surfaces; p; p = p->next)
+    double avesplit = totalsplit / planecount;
+    for (surface_t *p = surfaces; p; p = p->next)
     {
         if (p->onnode)
         {
@@ -628,7 +602,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
         {
             continue;
         }
-        value = tmpvalue[p->planenum][0] + avesplit * tmpvalue[p->planenum][1];
+        vec_t value = tmpvalue[p->planenum][0] + avesplit * tmpvalue[p->planenum][1];
         if (value < bestvalue)
         {
             bestvalue = value;
@@ -651,15 +625,13 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
 int CalcSplitDetaillevel(const node_t *node)
 {
     int bestdetaillevel = -1;
-    surface_t *s;
-    face_t *f;
-    for (s = node->surfaces; s; s = s->next)
+    for (surface_t *s = node->surfaces; s; s = s->next)
     {
         if (s->onnode)
         {
             continue;
         }
-        for (f = s->faces; f; f = f->next)
+        for (face_t *f = s->faces; f; f = f->next)
         {
             if (f->facestyle == face_discardable)
             {
@@ -697,31 +669,27 @@ static surface_t *SelectPartition(surface_t *surfaces, const node_t *const node,
 // =====================================================================================
 static void CalcSurfaceInfo(surface_t *surf)
 {
-    int i;
-    int j;
-    face_t *f;
-
     hlassume(surf->faces != NULL, assume_ValidPointer); // "CalcSurfaceInfo() surface without a face"
 
     //
     // calculate a bounding box
     //
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         surf->mins[i] = 99999;
         surf->maxs[i] = -99999;
     }
 
     surf->detaillevel = -1;
-    for (f = surf->faces; f; f = f->next)
+    for (face_t *f = surf->faces; f; f = f->next)
     {
         if (f->contents >= 0)
         {
             Error("Bad contents");
         }
-        for (i = 0; i < f->numpoints; i++)
+        for (int i = 0; i < f->numpoints; i++)
         {
-            for (j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
                 if (f->pts[i][j] < surf->mins[j])
                 {
@@ -742,9 +710,9 @@ static void CalcSurfaceInfo(surface_t *surf)
 void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
 {
     // when we move on to the next detaillevel, some discardable faces of previous detail level remain not on node (because they are discardable). remove them now
-    surface_t *s, **psnext;
-    face_t *f, **pfnext;
-    for (psnext = &node->surfaces; s = *psnext, s != NULL;)
+    surface_t *s;
+    face_t *f;
+    for (surface_t **psnext = &node->surfaces; s = *psnext, s != NULL;)
     {
         if (s->onnode)
         {
@@ -752,7 +720,7 @@ void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
             continue;
         }
         hlassume(s->faces, assume_ValidPointer);
-        for (pfnext = &s->faces; f = *pfnext, f != NULL;)
+        for (face_t **pfnext = &s->faces; f = *pfnext, f != NULL;)
         {
             if (detaillevel == -1 || f->detaillevel < detaillevel)
             {
@@ -783,16 +751,13 @@ void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
 // =====================================================================================
 static void DivideSurface(surface_t *in, const dplane_t *const split, surface_t **front, surface_t **back)
 {
-    face_t *facet;
     face_t *next;
     face_t *frontlist;
     face_t *backlist;
     face_t *frontfrag;
     face_t *backfrag;
-    surface_t *news;
-    dplane_t *inplane;
 
-    inplane = &g_dplanes[in->planenum];
+    dplane_t *inplane = &g_dplanes[in->planenum];
 
     // parallel case is easy
 
@@ -812,7 +777,7 @@ static void DivideSurface(surface_t *in, const dplane_t *const split, surface_t 
         { // split the surface into front and back
             frontlist = NULL;
             backlist = NULL;
-            for (facet = in->faces; facet; facet = next)
+            for (face_t *facet = in->faces; facet; facet = next)
             {
                 next = facet->next;
                 if (facet->planenum & 1)
@@ -836,7 +801,7 @@ static void DivideSurface(surface_t *in, const dplane_t *const split, surface_t 
     frontlist = NULL;
     backlist = NULL;
 
-    for (facet = in->faces; facet; facet = next)
+    for (face_t *facet = in->faces; facet; facet = next)
     {
         next = facet->next;
         SplitFace(facet, split, &frontfrag, &backfrag);
@@ -877,7 +842,7 @@ makesurfs:
     }
 
     // stuff got split, so allocate one new surface and reuse in
-    news = AllocSurface();
+    surface_t *news = AllocSurface();
     *news = *in;
     news->faces = backlist;
     *back = news;
@@ -895,20 +860,16 @@ makesurfs:
 // =====================================================================================
 static void SplitNodeSurfaces(surface_t *surfaces, const node_t *const node)
 {
-    surface_t *p;
     surface_t *next;
-    surface_t *frontlist;
-    surface_t *backlist;
     surface_t *frontfrag;
     surface_t *backfrag;
-    dplane_t *splitplane;
 
-    splitplane = &g_dplanes[node->planenum];
+    dplane_t *splitplane = &g_dplanes[node->planenum];
 
-    frontlist = NULL;
-    backlist = NULL;
+    surface_t *frontlist = NULL;
+    surface_t *backlist = NULL;
 
-    for (p = surfaces; p; p = next)
+    for (surface_t *p = surfaces; p; p = next)
     {
         next = p->next;
         DivideSurface(p, splitplane, &frontfrag, &backfrag);
@@ -938,13 +899,12 @@ static void SplitNodeSurfaces(surface_t *surfaces, const node_t *const node)
 }
 static void SplitNodeBrushes(brush_t *brushes, const node_t *node)
 {
-    brush_t *frontlist, *frontfrag;
-    brush_t *backlist, *backfrag;
+    brush_t *frontfrag;
+    brush_t *backfrag;
     brush_t *b, *next;
-    const dplane_t *splitplane;
-    frontlist = NULL;
-    backlist = NULL;
-    splitplane = &g_dplanes[node->planenum];
+    brush_t *frontlist = NULL;
+    brush_t *backlist = NULL;
+    const dplane_t *splitplane = &g_dplanes[node->planenum];
     for (b = brushes; b; b = next)
     {
         next = b->next;
@@ -1069,15 +1029,13 @@ static int ContentsForRank(const int rank)
 // =====================================================================================
 static void FreeLeafSurfs(node_t *leaf)
 {
-    surface_t *surf;
     surface_t *snext;
-    face_t *f;
     face_t *fnext;
 
-    for (surf = leaf->surfaces; surf; surf = snext)
+    for (surface_t *surf = leaf->surfaces; surf; surf = snext)
     {
         snext = surf->next;
-        for (f = surf->faces; f; f = fnext)
+        for (face_t *f = surf->faces; f; f = fnext)
         {
             fnext = f->next;
             FreeFace(f);
@@ -1089,8 +1047,8 @@ static void FreeLeafSurfs(node_t *leaf)
 }
 static void FreeLeafBrushes(node_t *leaf)
 {
-    brush_t *b, *next;
-    for (b = leaf->detailbrushes; b; b = next)
+    brush_t *next;
+    for (brush_t *b = leaf->detailbrushes; b; b = next)
     {
         next = b->next;
         FreeBrush(b);
@@ -1143,9 +1101,9 @@ static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 {
     face_t *f;
     surface_t *surf;
-    int rank, r;
+    int r;
 
-    rank = -1;
+    int rank = -1;
     for (surf = planelist; surf; surf = surf->next)
     {
         if (!surf->onnode)
@@ -1220,10 +1178,7 @@ static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 }
 static void MakeLeaf(node_t *leafnode)
 {
-    int nummarkfaces;
     face_t *markfaces[MAX_LEAF_FACES + 1];
-    surface_t *surf;
-    face_t *f;
 
     leafnode->planenum = -1;
 
@@ -1238,8 +1193,8 @@ static void MakeLeaf(node_t *leafnode)
 
     if (!(leafnode->isportalleaf && leafnode->contents == CONTENTS_SOLID))
     {
-        nummarkfaces = 0;
-        for (surf = leafnode->surfaces; surf; surf = surf->next)
+        int nummarkfaces = 0;
+        for (surface_t *surf = leafnode->surfaces; surf; surf = surf->next)
         {
             if (!surf->onnode)
             {
@@ -1249,7 +1204,7 @@ static void MakeLeaf(node_t *leafnode)
             {
                 continue;
             }
-            for (f = surf->faces; f; f = f->next)
+            for (face_t *f = surf->faces; f; f = f->next)
             {
                 if (f->original == NULL)
                 { // because it is not on node or its content is solid
@@ -1283,23 +1238,18 @@ static void MakeLeaf(node_t *leafnode)
 // =====================================================================================
 static void MakeNodePortal(node_t *node)
 {
-    portal_t *new_portal;
-    portal_t *p;
-    dplane_t *plane;
-    dplane_t clipplane;
-    Winding *w;
     int side = 0;
 
-    plane = &g_dplanes[node->planenum];
-    w = new Winding(*plane);
+    dplane_t *plane = &g_dplanes[node->planenum];
+    Winding *w = new Winding(*plane);
 
-    new_portal = AllocPortal();
+    portal_t *new_portal = AllocPortal();
     new_portal->plane = *plane;
     new_portal->onnode = node;
 
-    for (p = node->portals; p; p = p->next[side])
+    for (portal_t *p = node->portals; p; p = p->next[side])
     {
-        clipplane = p->plane;
+        dplane_t clipplane = p->plane;
         if (p->nodes[0] == node)
         {
             side = 0;
@@ -1336,22 +1286,16 @@ static void MakeNodePortal(node_t *node)
 // =====================================================================================
 static void SplitNodePortals(node_t *node)
 {
-    portal_t *p;
     portal_t *next_portal;
-    portal_t *new_portal;
-    node_t *f;
-    node_t *b;
-    node_t *other_node;
     int side = 0;
-    dplane_t *plane;
     Winding *frontwinding;
     Winding *backwinding;
 
-    plane = &g_dplanes[node->planenum];
-    f = node->children[0];
-    b = node->children[1];
+    dplane_t *plane = &g_dplanes[node->planenum];
+    node_t *f = node->children[0];
+    node_t *b = node->children[1];
 
-    for (p = node->portals; p; p = next_portal)
+    for (portal_t *p = node->portals; p; p = next_portal)
     {
         if (p->nodes[0] == node)
         {
@@ -1367,7 +1311,7 @@ static void SplitNodePortals(node_t *node)
         }
         next_portal = p->next[side];
 
-        other_node = p->nodes[!side];
+        node_t *other_node = p->nodes[!side];
         RemovePortalFromNode(p, p->nodes[0]);
         RemovePortalFromNode(p, p->nodes[1]);
 
@@ -1404,7 +1348,7 @@ static void SplitNodePortals(node_t *node)
         }
 
         // the winding is split
-        new_portal = AllocPortal();
+        portal_t *new_portal = AllocPortal();
         *new_portal = *p;
         new_portal->winding = backwinding;
         delete p->winding;
@@ -1433,10 +1377,6 @@ static void SplitNodePortals(node_t *node)
 // =====================================================================================
 static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
 {
-    int i;
-    int j;
-    vec_t v;
-    portal_t *p;
     portal_t *next_portal;
     int side = 0;
 
@@ -1447,7 +1387,7 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
     node->mins[0] = node->mins[1] = node->mins[2] = BOGUS_RANGE;
     node->maxs[0] = node->maxs[1] = node->maxs[2] = -BOGUS_RANGE;
 
-    for (p = node->portals; p; p = next_portal)
+    for (portal_t *p = node->portals; p; p = next_portal)
     {
         if (p->nodes[0] == node)
         {
@@ -1463,11 +1403,11 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
         }
         next_portal = p->next[side];
 
-        for (i = 0; i < p->winding->m_NumPoints; i++)
+        for (int i = 0; i < p->winding->m_NumPoints; i++)
         {
-            for (j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
-                v = p->winding->m_Points[i][j];
+                vec_t v = p->winding->m_Points[i][j];
                 if (v < node->mins[j])
                 {
                     node->mins[j] = v;
@@ -1484,19 +1424,19 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
     {
         return false;
     }
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         validmins[i] = qmax(node->mins[i], -(ENGINE_ENTITY_RANGE + g_maxnode_size));
         validmaxs[i] = qmin(node->maxs[i], ENGINE_ENTITY_RANGE + g_maxnode_size);
     }
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (validmaxs[i] - validmins[i] <= ON_EPSILON)
         {
             return false;
         }
     }
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (validmaxs[i] - validmins[i] > g_maxnode_size + ON_EPSILON)
         {
@@ -1514,18 +1454,14 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
 // =====================================================================================
 static void CopyFacesToNode(node_t *node, surface_t *surf)
 {
-    face_t **prevptr;
-    face_t *f;
-    face_t *newf;
-
     // merge as much as possible
     MergePlaneFaces(surf);
 
     // subdivide large faces
-    prevptr = &surf->faces;
+    face_t **prevptr = &surf->faces;
     while (1)
     {
-        f = *prevptr;
+        face_t *f = *prevptr;
         if (!f)
         {
             break;
@@ -1538,7 +1474,7 @@ static void CopyFacesToNode(node_t *node, surface_t *surf)
     // copy the faces to the node, and consider them the originals
     node->surfaces = NULL;
     node->faces = NULL;
-    for (f = surf->faces; f; f = f->next)
+    for (face_t *f = surf->faces; f; f = f->next)
     {
         if (f->facestyle == face_discardable)
         {
@@ -1546,7 +1482,7 @@ static void CopyFacesToNode(node_t *node, surface_t *surf)
         }
         if (f->contents != CONTENTS_SOLID)
         {
-            newf = AllocFace();
+            face_t *newf = AllocFace();
             *newf = *f;
             f->original = newf;
             newf->next = node->faces;
@@ -1560,12 +1496,9 @@ static void CopyFacesToNode(node_t *node, surface_t *surf)
 // =====================================================================================
 static void BuildBspTree_r(node_t *node)
 {
-    surface_t *split;
-    bool midsplit;
-    surface_t *allsurfs;
     vec3_t validmins, validmaxs;
 
-    midsplit = CalcNodeBounds(node, validmins, validmaxs);
+    bool midsplit = CalcNodeBounds(node, validmins, validmaxs);
     if (node->boundsbrush)
     {
         CalcBrushBounds(node->boundsbrush, node->loosemins, node->loosemaxs);
@@ -1578,7 +1511,7 @@ static void BuildBspTree_r(node_t *node)
 
     int splitdetaillevel = CalcSplitDetaillevel(node);
     FixDetaillevelForDiscardable(node, splitdetaillevel);
-    split = SelectPartition(node->surfaces, node, midsplit, splitdetaillevel, validmins, validmaxs);
+    surface_t *split = SelectPartition(node->surfaces, node, midsplit, splitdetaillevel, validmins, validmaxs);
     if (!node->isdetail && (!split || split->detaillevel > 0))
     {
         node->isportalleaf = true;
@@ -1600,7 +1533,7 @@ static void BuildBspTree_r(node_t *node)
 
     // these are final polygons
     split->onnode = node; // can't use again
-    allsurfs = node->surfaces;
+    surface_t *allsurfs = node->surfaces;
     node->planenum = split->planenum;
     node->faces = NULL;
     CopyFacesToNode(node, split);
@@ -1618,7 +1551,7 @@ static void BuildBspTree_r(node_t *node)
         for (int k = 0; k < 2; k++)
         {
             dplane_t p;
-            brush_t *copy, *front, *back;
+            brush_t *front, *back;
             if (k == 0)
             { // front child
                 VectorCopy(g_dplanes[split->planenum].normal, p.normal);
@@ -1629,7 +1562,7 @@ static void BuildBspTree_r(node_t *node)
                 VecSubtractVector(0, g_dplanes[split->planenum].normal, p.normal);
                 p.dist = -g_dplanes[split->planenum].dist - BOUNDS_EXPANSION;
             }
-            copy = NewBrushFromBrush(node->boundsbrush);
+            brush_t *copy = NewBrushFromBrush(node->boundsbrush);
             SplitBrush(copy, &p, &front, &back);
             if (back)
             {
@@ -1667,7 +1600,6 @@ node_t *SolidBSP(const surfchain_t *const surfhead,
                  brush_t *detailbrushes,
                  bool report_progress)
 {
-    node_t *headnode;
 
     ResetStatus(report_progress);
     double start_time = I_FloatTime();
@@ -1680,7 +1612,7 @@ node_t *SolidBSP(const surfchain_t *const surfhead,
         Verbose("----- SolidBSP -----\n");
     }
 
-    headnode = AllocNode();
+    node_t *headnode = AllocNode();
     headnode->surfaces = surfhead->surfaces;
     headnode->detailbrushes = detailbrushes;
     headnode->isdetail = false;
