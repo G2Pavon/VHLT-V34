@@ -22,11 +22,10 @@
 double I_FloatTime()
 {
     FILETIME ftime;
-    double rval;
 
     GetSystemTimeAsFileTime(&ftime);
 
-    rval = ftime.dwLowDateTime;
+    double rval = ftime.dwLowDateTime;
     rval += ((__int64)ftime.dwHighDateTime) << 32;
 
     return (rval / 10000000.0);
@@ -35,17 +34,13 @@ double I_FloatTime()
 // Case Insensitive substring matching
 const char *stristr(const char *const string, const char *const substring)
 {
-    char *string_copy;
-    char *substring_copy;
-    const char *match;
-
-    string_copy = _strdup(string);
+    char *string_copy = _strdup(string);
     _strlwr(string_copy);
 
-    substring_copy = _strdup(substring);
+    char *substring_copy = _strdup(substring);
     _strlwr(substring_copy);
 
-    match = strstr(string_copy, substring_copy);
+    const char *match = strstr(string_copy, substring_copy);
     if (match)
     {
         match = (string + (match - string_copy));
@@ -222,10 +217,8 @@ void ExtractFileExtension(const char *const path, char *dest)
 
 short BigShort(const short l)
 {
-    byte b1, b2;
-
-    b1 = (byte)(l & 255);
-    b2 = (byte)((l >> 8) & 255);
+    byte b1 = (byte)(l & 255);
+    byte b2 = (byte)((l >> 8) & 255);
 
     return (short)((b1 << 8) + b2);
 }
@@ -237,12 +230,10 @@ short LittleShort(const short l)
 
 int BigLong(const int l)
 {
-    byte b1, b2, b3, b4;
-
-    b1 = (byte)(l & 255);
-    b2 = (byte)((l >> 8) & 255);
-    b3 = (byte)((l >> 16) & 255);
-    b4 = (byte)((l >> 24) & 255);
+    byte b1 = (byte)(l & 255);
+    byte b2 = (byte)((l >> 8) & 255);
+    byte b3 = (byte)((l >> 16) & 255);
+    byte b4 = (byte)((l >> 24) & 255);
 
     return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
 }
@@ -278,13 +269,12 @@ float LittleFloat(const float l)
 
 bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t count, const char *const args, ...)
 {
-    size_t amt;
     va_list argptr;
 
     hlassert(count > 0);
 
     va_start(argptr, args);
-    amt = vsnprintf(dest, count, args, argptr);
+    size_t amt = vsnprintf(dest, count, args, argptr);
     va_end(argptr);
 
     // truncated (bad!, snprintf doesn't null terminate the string when this happens)
@@ -320,9 +310,7 @@ bool safe_strncat(char *const dest, const char *const src, const size_t count)
 
 bool TerminatedString(const char *buffer, const int size)
 {
-    int x;
-
-    for (x = 0; x < size; x++, buffer++)
+    for (int x = 0; x < size; x++, buffer++)
     {
         if ((*buffer) == 0)
         {
