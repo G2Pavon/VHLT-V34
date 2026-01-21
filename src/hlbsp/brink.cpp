@@ -414,8 +414,7 @@ btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 
 btreeleaf_t *BuildOutside(int &numobjects)
 {
-    btreeleaf_t *leaf_outside;
-    leaf_outside = AllocTreeleaf(numobjects, true);
+    btreeleaf_t *leaf_outside = AllocTreeleaf(numobjects, true);
     leaf_outside->clipnode = NULL;
     return leaf_outside;
 }
@@ -485,8 +484,8 @@ btreeleaf_t *BuildBaseCell(int &numobjects, bclipnode_t *clipnode, vec_t range, 
     AttachEdgeToFace(tf[5], te[3], true);
     AttachEdgeToFace(tf[5], te[6], true);
     AttachEdgeToFace(tf[5], te[7], false);
-    btreeleaf_t *tl;
-    tl = AllocTreeleaf(numobjects, false);
+
+    btreeleaf_t *tl = AllocTreeleaf(numobjects, false);
     for (int i = 0; i < 6; i++)
     {
         SetFaceLeafs(tf[i], tl, leaf_outside);
@@ -507,8 +506,7 @@ btreepoint_t *GetPointFromEdge(btreeedge_t *te, bool side)
 
 void RemoveEdgeFromList(btreeedge_l *el, btreeedge_t *te, bool side)
 {
-    btreeedge_l::iterator ei;
-    for (ei = el->begin(); ei != el->end(); ei++)
+    for (btreeedge_l::iterator ei = el->begin(); ei != el->end(); ei++)
     {
         if (ei->e == te && ei->side == side)
         {
@@ -546,8 +544,7 @@ void DeletePoint(int &numobjects, btreepoint_t *tp)
 
 void RemoveFaceFromList(btreeface_l *fl, btreeface_t *tf, bool side)
 {
-    btreeface_l::iterator fi;
-    for (fi = fl->begin(); fi != fl->end(); fi++)
+    for (btreeface_l::iterator fi = fl->begin(); fi != fl->end(); fi++)
     {
         if (fi->f == tf && fi->side == side)
         {
@@ -578,8 +575,7 @@ void DeleteEdge(int &numobjects, btreeedge_t *te) // warning: points in this edg
     }
     for (int side = 0; side < 2; side++)
     {
-        btreepoint_t *tp;
-        tp = GetPointFromEdge(te, side);
+        btreepoint_t *tp = GetPointFromEdge(te, side);
         RemovePointFromEdge(te, tp, side);
         if (tp->edges->empty())
         {
@@ -808,8 +804,7 @@ void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int 
         }
         if (tf->tmp_side == SIDE_CROSS)
         {
-            btreeface_t *frontface, *backface;
-            frontface = AllocTreeface(numobjects, tf->infinite);
+            btreeface_t *frontface = AllocTreeface(numobjects, tf->infinite);
             if (!tf->infinite)
             {
                 frontface->plane = tf->plane;
@@ -819,7 +814,7 @@ void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int 
             SetFaceLeafs(frontface, GetLeafFromFace(tf, false), GetLeafFromFace(tf, true));
             frontface->tmp_tested = true;
             frontface->tmp_side = SIDE_FRONT;
-            backface = AllocTreeface(numobjects, tf->infinite);
+            btreeface_t *backface = AllocTreeface(numobjects, tf->infinite);
             if (!tf->infinite)
             {
                 backface->plane = tf->plane;
@@ -895,8 +890,7 @@ void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int 
                     hlassume(false, assume_first);
                 }
 
-                btreeedge_t *te;
-                te = AllocTreeedge(numobjects, tf->infinite);
+                btreeedge_t *te = AllocTreeedge(numobjects, tf->infinite);
                 SetEdgePoints(te, vertex->first, vertex2->first);
                 if (!te->infinite)
                 {
@@ -986,8 +980,7 @@ void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int 
 
         if (tmp_side == SIDE_CROSS)
         {
-            btreeface_t *tf;
-            tf = AllocTreeface(numobjects, tl->infinite);
+            btreeface_t *tf = AllocTreeface(numobjects, tl->infinite);
             if (!tf->infinite)
             {
                 tf->plane = plane;
@@ -1093,8 +1086,8 @@ void BuildTreeCells_r(int &numobjects, bclipnode_t *c)
     {
         return;
     }
-    btreeleaf_t *tl, *front, *back;
-    tl = c->treeleaf;
+    btreeleaf_t *front, *back;
+    btreeleaf_t *tl = c->treeleaf;
     SplitTreeLeaf(numobjects, tl, c->plane, c->planenum, ON_EPSILON, front, back, c->children[0], c->children[1]);
     c->treeleaf = NULL;
     c->children[0]->treeleaf = front;
@@ -1199,11 +1192,9 @@ void ClearMarks_r(bclipnode_t *node)
 {
     if (node->isleaf)
     {
-        btreeface_l::iterator fi;
-        btreeedge_l::iterator ei;
-        for (fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
+        for (btreeface_l::iterator fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
         {
-            for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+            for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
             {
                 ei->e->tmp_tested = false;
             }
@@ -1220,11 +1211,9 @@ void CollectBrinks_r(bclipnode_t *node, int &numbrinks, bbrink_t **brinks)
 {
     if (node->isleaf)
     {
-        btreeface_l::iterator fi;
-        btreeedge_l::iterator ei;
-        for (fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
+        for (btreeface_l::iterator fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
         {
-            for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+            for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
             {
                 if (ei->e->tmp_tested)
                 {
@@ -1315,8 +1304,8 @@ bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     }
     VectorCopy((*b->nodes)[0].plane->normal, c->basenormal);
 
-    int side, i;
-    for (side = 0; side < 2; side++)
+    int i;
+    for (int side = 0; side < 2; side++)
     {
         vec3_t facing;
         CrossProduct(c->basenormal, c->axis, facing);
@@ -1363,7 +1352,7 @@ bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     }
 
     // fill in other information
-    for (side = 0; side < 2; side++)
+    for (int side = 0; side < 2; side++)
     {
         for (i = 0; i < c->numwedges[side]; i++)
         {
@@ -1389,7 +1378,7 @@ bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     }
 
     // check the normals
-    for (side = 0; side < 2; side++)
+    for (int side = 0; side < 2; side++)
     {
         for (i = 0; i < c->numwedges[side]; i++)
         {
@@ -1430,19 +1419,16 @@ void PrintCircle(const bcircle_t *c)
 bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, int content, bbrinklevel_e brinktype)
 {
     // make sure we won't do any harm
-    btreeface_l::iterator fi;
-    btreeedge_l::iterator ei;
-    int side;
     if (!clipnode->isleaf)
     {
         return false;
     }
     bool onback = false;
-    for (fi = clipnode->treeleaf->faces->begin(); fi != clipnode->treeleaf->faces->end(); fi++)
+    for (btreeface_l::iterator fi = clipnode->treeleaf->faces->begin(); fi != clipnode->treeleaf->faces->end(); fi++)
     {
-        for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+        for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
         {
-            for (side = 0; side < 2; side++)
+            for (int side = 0; side < 2; side++)
             {
                 btreepoint_t *tp = GetPointFromEdge(ei->e, side);
                 const dplane_t *plane = &g_dplanes[planenum];
@@ -1479,8 +1465,7 @@ void AnalyzeBrinks(bbrinkinfo_t *info)
     int countinvalid = 0;
     int countskipped = 0;
     int countfixed = 0;
-    int i, j, side;
-    for (i = 0; i < info->numbrinks; i++)
+    for (int i = 0; i < info->numbrinks; i++)
     {
         bbrink_t *b = info->brinks[i];
         if (b->numnodes <= 5) // quickly reject the most trivial brinks
@@ -1533,10 +1518,10 @@ void AnalyzeBrinks(bbrinkinfo_t *info)
         int transitionfound[2];
         bsurface_t *transitionpos[2];
         bool transitionside[2];
-        for (side = 0; side < 2; side++)
+        for (int side = 0; side < 2; side++)
         {
             transitionfound[side] = 0;
-            for (j = 1; j < c.numwedges[side]; j++) // we will later consider the surfaces on the first split
+            for (int j = 1; j < c.numwedges[side]; j++) // we will later consider the surfaces on the first split
             {
                 bsurface_t *s = &c.surfaces[side][j];
                 if ((s->prev->content == CONTENTS_SOLID) != (s->next->content == CONTENTS_SOLID))
@@ -1625,7 +1610,7 @@ void AnalyzeBrinks(bbrinkinfo_t *info)
             }
         }
         // this code does not fix all the bugs, it only aims to fix most of the bugs
-        for (side = 0; side < 2; side++)
+        for (int side = 0; side < 2; side++)
         {
             bsurface_t *smovement = transitionpos[side];
             bsurface_t *s;
@@ -1634,9 +1619,8 @@ void AnalyzeBrinks(bbrinkinfo_t *info)
                 bwedge_t *w = transitionside[!side] ? s->next : s->prev;
                 bsurface_t *snext = transitionside[!side] ? w->next : w->prev;
                 vec3_t tmp;
-                vec_t dot;
                 CrossProduct(smovement->normal, snext->normal, tmp);
-                dot = DotProduct(tmp, c.axis);
+                vec_t dot = DotProduct(tmp, c.axis);
                 if (transitionside[!side] ? dot < 0.01 : dot > -0.01)
                 {
                     break;
@@ -1664,9 +1648,9 @@ void AnalyzeBrinks(bbrinkinfo_t *info)
                 bclipnode_t *clipnode = (*b->nodes)[w->nodenum].clipnode;
                 int planenum = (*b->nodes)[smovement->nodenum].planenum;
                 bool planeside = transitionside[!side] ? smovement->nodeside : !smovement->nodeside;
-                bbrinklevel_e brinktype;
-                brinktype = isfloor ? (blocking ? BrinkFloorBlocking : BrinkFloor) : onfloor ? (blocking ? BrinkWallBlocking : BrinkWall)
-                                                                                             : BrinkAny;
+
+                bbrinklevel_e brinktype = isfloor ? (blocking ? BrinkFloorBlocking : BrinkFloor) : onfloor ? (blocking ? BrinkWallBlocking : BrinkWall)
+                                                                                                           : BrinkAny;
                 if (!AddPartition(clipnode, planenum, planeside, CONTENTS_EMPTY, brinktype))
                 {
                     berror = true;
@@ -1726,8 +1710,8 @@ void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes and co
         {
             continue;
         }
-        bpartition_t *current, **pp, *partitions;
-        partitions = clipnode->partitions;
+        bpartition_t *current, **pp;
+        bpartition_t *partitions = clipnode->partitions;
         clipnode->partitions = NULL;
         while ((current = partitions) != NULL)
         {
@@ -1819,9 +1803,8 @@ bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bbrinklev
         headnode_out = clipnode->content;
         return true;
     }
-    dclipnode_t *cn;
     dclipnode_t tmpclipnode;
-    cn = &tmpclipnode;
+    dclipnode_t *cn = &tmpclipnode;
     dclipnode_t *c = current;
     current++;
     cn->planenum = p->planenum;
@@ -1832,8 +1815,7 @@ bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bbrinklev
         return false;
     }
     cn->children[!p->planeside] = r;
-    clipnodemap_t::iterator output;
-    output = outputmap->find(MakeKey(*cn));
+    clipnodemap_t::iterator output = outputmap->find(MakeKey(*cn));
     if (g_noclipnodemerge || output == outputmap->end())
     {
         if (c >= end)
@@ -1865,9 +1847,8 @@ bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &headnode
     }
     else
     {
-        dclipnode_t *cn;
         dclipnode_t tmpclipnode;
-        cn = &tmpclipnode;
+        dclipnode_t *cn = &tmpclipnode;
         dclipnode_t *c = current;
         current++;
         cn->planenum = clipnode->planenum;
@@ -1880,8 +1861,7 @@ bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &headnode
             }
             cn->children[k] = r;
         }
-        clipnodemap_t::iterator output;
-        output = outputmap->find(MakeKey(*cn));
+        clipnodemap_t::iterator output = outputmap->find(MakeKey(*cn));
         if (g_noclipnodemerge || output == outputmap->end())
         {
             if (c >= end)
