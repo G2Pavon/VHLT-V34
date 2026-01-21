@@ -10,16 +10,13 @@ vec_t g_BrushUnionThreshold = DEFAULT_BRUSH_UNION_THRESHOLD;
 
 static Winding *NewWindingFromPlane(const brushhull_t *const hull, const int planenum)
 {
-    Winding *winding;
     Winding *front;
     Winding *back;
-    bface_t *face;
-    plane_t *plane;
 
-    plane = &g_mapplanes[planenum];
-    winding = new Winding(plane->normal, plane->dist);
+    plane_t *plane = &g_mapplanes[planenum];
+    Winding *winding = new Winding(plane->normal, plane->dist);
 
-    for (face = hull->faces; face; face = face->next)
+    for (bface_t *face = hull->faces; face; face = face->next)
     {
         plane = &g_mapplanes[face->planenum];
         winding->Clip(plane->normal, plane->dist, &front, &back);
@@ -87,18 +84,12 @@ static void AddPlaneToUnion(brushhull_t *hull, const int planenum)
 {
     bool need_new_face = false;
 
-    bface_t *new_face_list;
-
-    bface_t *face;
-    bface_t *next;
-
-    plane_t *split;
     Winding *front;
     Winding *back;
 
-    new_face_list = NULL;
+    bface_t *new_face_list = NULL;
 
-    next = NULL;
+    bface_t *next = NULL;
 
     hlassert(hull);
 
@@ -108,7 +99,7 @@ static void AddPlaneToUnion(brushhull_t *hull, const int planenum)
     }
     hlassert(hull->faces->w);
 
-    for (face = hull->faces; face; face = next)
+    for (bface_t *face = hull->faces; face; face = next)
     {
         hlassert(face->w);
         next = face->next;
@@ -120,7 +111,7 @@ static void AddPlaneToUnion(brushhull_t *hull, const int planenum)
             continue;
         }
 
-        split = &g_mapplanes[planenum];
+        plane_t *split = &g_mapplanes[planenum];
         face->w->Clip(split->normal, split->dist, &front, &back);
 
         if (front)
@@ -178,12 +169,9 @@ static vec_t CalculateSolidVolume(const brushhull_t *const hull)
 
     int x = 0;
     vec_t volume = 0.0;
-    vec_t inverse;
     vec3_t midpoint = {0.0, 0.0, 0.0};
 
-    bface_t *face;
-
-    for (face = hull->faces; face; face = face->next, x++)
+    for (bface_t *face = hull->faces; face; face = face->next, x++)
     {
         vec3_t facemid;
 
@@ -192,13 +180,13 @@ static vec_t CalculateSolidVolume(const brushhull_t *const hull)
         Developer(DEVELOPER_LEVEL_MESSAGE, "Midpoint for face %d is %f %f %f\n", x, facemid[0], facemid[1], facemid[2]);
     }
 
-    inverse = 1.0 / x;
+    vec_t inverse = 1.0 / x;
 
     VectorScale(midpoint, inverse, midpoint);
 
     Developer(DEVELOPER_LEVEL_MESSAGE, "Midpoint for hull is %f %f %f\n", midpoint[0], midpoint[1], midpoint[2]);
 
-    for (face = hull->faces; face; face = face->next, x++)
+    for (bface_t *face = hull->faces; face; face = face->next, x++)
     {
         plane_t *plane = &g_mapplanes[face->planenum];
         vec_t area = face->w->getArea();
@@ -218,9 +206,7 @@ static vec_t CalculateSolidVolume(const brushhull_t *const hull)
 static void DumpHullWindings(const brushhull_t *const hull)
 {
     int x = 0;
-    bface_t *face;
-
-    for (face = hull->faces; face; face = face->next)
+    for (bface_t *face = hull->faces; face; face = face->next)
     {
         Developer(DEVELOPER_LEVEL_MEGASPAM, "Winding %d\n", x++);
         face->w->Print();
@@ -230,25 +216,21 @@ static void DumpHullWindings(const brushhull_t *const hull)
 
 static bool isInvalidHull(const brushhull_t *const hull)
 {
-    int x = 0;
-    bface_t *face;
-
     vec3_t mins = {99999.0, 99999.0, 99999.0};
     vec3_t maxs = {-99999.0, -99999.0, -99999.0};
 
-    for (face = hull->faces; face; face = face->next)
+    for (bface_t *face = hull->faces; face; face = face->next)
     {
-        unsigned int y;
         Winding *winding = face->w;
 
-        for (y = 0; y < winding->m_NumPoints; y++)
+        for (unsigned int y = 0; y < winding->m_NumPoints; y++)
         {
             VectorCompareMinimum(mins, winding->m_Points[y], mins);
             VectorCompareMaximum(maxs, winding->m_Points[y], maxs);
         }
     }
 
-    for (x = 0; x < 3; x++)
+    for (int x = 0; x < 3; x++)
     {
         if ((mins[x] < (-BOGUS_RANGE / 2)) || (maxs[x] > (BOGUS_RANGE / 2)))
         {
@@ -260,28 +242,21 @@ static bool isInvalidHull(const brushhull_t *const hull)
 
 void CalculateBrushUnions(const int brushnum)
 {
-    int bn, hull;
-    brush_t *b1;
-    brush_t *b2;
-    brushhull_t *bh1;
-    brushhull_t *bh2;
-    entity_t *e;
+    brush_t *b1 = &g_mapbrushes[brushnum];
+    entity_t *e = &g_entities[b1->entitynum];
 
-    b1 = &g_mapbrushes[brushnum];
-    e = &g_entities[b1->entitynum];
-
-    for (hull = 0; hull < 1 /* NUM_HULLS */; hull++)
+    for (int hull = 0; hull < 1 /* NUM_HULLS */; hull++)
     {
-        bh1 = &b1->hulls[hull];
+        brushhull_t *bh1 = &b1->hulls[hull];
         if (!bh1->faces) // Skip it if it is not in this hull
         {
             continue;
         }
 
-        for (bn = brushnum + 1; bn < e->numbrushes; bn++)
+        for (int bn = brushnum + 1; bn < e->numbrushes; bn++)
         { // Only compare if b2 > b1, tests are communitive
-            b2 = &g_mapbrushes[e->firstbrush + bn];
-            bh2 = &b2->hulls[hull];
+            brush_t *b2 = &g_mapbrushes[e->firstbrush + bn];
+            brushhull_t *bh2 = &b2->hulls[hull];
 
             if (!bh2->faces) // Skip it if it is not in this hull
             {
@@ -296,13 +271,12 @@ void CalculateBrushUnions(const int brushnum)
 
             {
                 brushhull_t union_hull;
-                bface_t *face;
 
                 union_hull.bounds = bh1->bounds;
 
                 union_hull.faces = CopyFaceList(bh1->faces);
 
-                for (face = bh2->faces; face; face = face->next)
+                for (bface_t *face = bh2->faces; face; face = face->next)
                 {
                     AddPlaneToUnion(&union_hull, face->planenum);
                 }
@@ -326,24 +300,18 @@ void CalculateBrushUnions(const int brushnum)
                 }
 
                 {
-                    vec_t volume_brush_1;
-                    vec_t volume_brush_2;
-                    vec_t volume_brush_union;
-                    vec_t volume_ratio_1;
-                    vec_t volume_ratio_2;
-
                     if (isInvalidHull(&union_hull))
                     {
                         FreeFaceList(union_hull.faces);
                         continue;
                     }
 
-                    volume_brush_union = CalculateSolidVolume(&union_hull);
-                    volume_brush_1 = CalculateSolidVolume(bh1);
-                    volume_brush_2 = CalculateSolidVolume(bh2);
+                    vec_t volume_brush_union = CalculateSolidVolume(&union_hull);
+                    vec_t volume_brush_1 = CalculateSolidVolume(bh1);
+                    vec_t volume_brush_2 = CalculateSolidVolume(bh2);
 
-                    volume_ratio_1 = volume_brush_union / volume_brush_1;
-                    volume_ratio_2 = volume_brush_union / volume_brush_2;
+                    vec_t volume_ratio_1 = volume_brush_union / volume_brush_1;
+                    vec_t volume_ratio_2 = volume_brush_union / volume_brush_2;
 
                     if ((volume_ratio_1 > g_BrushUnionThreshold) || (g_developer >= DEVELOPER_LEVEL_MESSAGE))
                     {
