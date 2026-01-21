@@ -116,16 +116,12 @@ void DeleteCurrentEntity(entity_t *entity)
 // =====================================================================================
 void TextureAxisFromPlane(const plane_t *const pln, vec3_t xv, vec3_t yv)
 {
-    int bestaxis;
-    vec_t dot, best;
-    int i;
+    vec_t best = 0;
+    int bestaxis = 0;
 
-    best = 0;
-    bestaxis = 0;
-
-    for (i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++)
     {
-        dot = DotProduct(pln->normal, s_baseaxis[i * 3]);
+        vec_t dot = DotProduct(pln->normal, s_baseaxis[i * 3]);
         if (dot > best)
         {
             best = dot;
@@ -173,15 +169,10 @@ static bool CheckForInvisible(entity_t *mapent)
 // =====================================================================================
 static void ParseBrush(entity_t *mapent)
 {
-    brush_t *b;
-    int i, j;
-    side_t *side;
-    contents_t contents;
-    bool ok;
     bool nullify = CheckForInvisible(mapent);
     hlassume(g_nummapbrushes < MAX_MAP_BRUSHES, assume_MAX_MAP_BRUSHES);
 
-    b = &g_mapbrushes[g_nummapbrushes];
+    brush_t *b = &g_mapbrushes[g_nummapbrushes];
     g_nummapbrushes++;
     b->firstside = g_numbrushsides;
     b->originalentitynum = g_numparsedentities;
@@ -232,9 +223,8 @@ static void ParseBrush(entity_t *mapent)
     for (int h = 0; h < NUM_HULLS; h++)
     {
         char key[16];
-        const char *value;
         sprintf(key, "zhlt_hull%d", h);
-        value = ValueForKey(mapent, key);
+        const char *value = ValueForKey(mapent, key);
         if (*value)
         {
             b->hullshapes[h] = _strdup(value);
@@ -247,7 +237,7 @@ static void ParseBrush(entity_t *mapent)
 
     mapent->numbrushes++;
 
-    ok = GetToken(true);
+    bool ok = GetToken(true);
     while (ok)
     {
         g_TXcommand = 0;
@@ -257,14 +247,14 @@ static void ParseBrush(entity_t *mapent)
         }
 
         hlassume(g_numbrushsides < MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
-        side = &g_brushsides[g_numbrushsides];
+        side_t *side = &g_brushsides[g_numbrushsides];
         g_numbrushsides++;
 
         b->numsides++;
 
         side->bevel = false;
         // read the three point plane definition
-        for (i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             if (i != 0)
             {
@@ -277,7 +267,7 @@ static void ParseBrush(entity_t *mapent)
                       b->numsides, g_token);
             }
 
-            for (j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
                 GetToken(false);
                 side->planepts[i][j] = atof(g_token);
@@ -409,24 +399,23 @@ static void ParseBrush(entity_t *mapent)
             // We are QuArK mode and need to translate some numbers to align textures its way
             // from QuArK, the texture vectors are given directly from the three points
             vec3_t TexPt[2];
-            int k;
-            float dot22, dot23, dot33, mdet, aa, bb, dd;
+            float aa, bb, dd;
 
-            k = g_TXcommand - '0';
-            for (j = 0; j < 3; j++)
+            int k = g_TXcommand - '0';
+            for (int j = 0; j < 3; j++)
             {
                 TexPt[1][j] = (side->planepts[k][j] - side->planepts[0][j]) * ScaleCorrection;
             }
             k = 3 - k;
-            for (j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
                 TexPt[0][j] = (side->planepts[k][j] - side->planepts[0][j]) * ScaleCorrection;
             }
 
-            dot22 = DotProduct(TexPt[0], TexPt[0]);
-            dot23 = DotProduct(TexPt[0], TexPt[1]);
-            dot33 = DotProduct(TexPt[1], TexPt[1]);
-            mdet = dot22 * dot33 - dot23 * dot23;
+            float dot22 = DotProduct(TexPt[0], TexPt[0]);
+            float dot23 = DotProduct(TexPt[0], TexPt[1]);
+            float dot33 = DotProduct(TexPt[1], TexPt[1]);
+            float mdet = dot22 * dot33 - dot23 * dot23;
             if (mdet < 1E-6 && mdet > -1E-6)
             {
                 aa = bb = dd = 0;
@@ -445,7 +434,7 @@ static void ParseBrush(entity_t *mapent)
                 dd = dot22 * mdet;
             }
 
-            for (j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
                 side->td.vects.quark.vects[0][j] = aa * TexPt[0][j] + bb * TexPt[1][j];
                 side->td.vects.quark.vects[1][j] = -(/*cc */ bb * TexPt[0][j] + dd * TexPt[1][j]);
@@ -470,27 +459,28 @@ static void ParseBrush(entity_t *mapent)
         }
     }
 
-    b->contents = contents = CheckBrushContents(b);
-    for (j = 0; j < b->numsides; j++)
+    contents_t contents = CheckBrushContents(b);
+    b->contents = contents;
+    for (int j = 0; j < b->numsides; j++)
     {
-        side = &g_brushsides[b->firstside + j];
+        side_t *side = &g_brushsides[b->firstside + j];
         if (nullify && strncasecmp(side->td.name, "BEVEL", 5) && strncasecmp(side->td.name, "ORIGIN", 6) && strncasecmp(side->td.name, "HINT", 4) && strncasecmp(side->td.name, "SKIP", 4) && strncasecmp(side->td.name, "SOLIDHINT", 9) && strncasecmp(side->td.name, "SPLITFACE", 9) && strncasecmp(side->td.name, "BOUNDINGBOX", 11) && strncasecmp(side->td.name, "CONTENT", 7) && strncasecmp(side->td.name, "SKY", 3))
         {
             safe_strncpy(side->td.name, "NULL", sizeof(side->td.name));
         }
     }
-    for (j = 0; j < b->numsides; j++)
+    for (int j = 0; j < b->numsides; j++)
     {
         // change to SKIP now that we have set brush content.
-        side = &g_brushsides[b->firstside + j];
+        side_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "SPLITFACE", 9))
         {
             strcpy(side->td.name, "SKIP");
         }
     }
-    for (j = 0; j < b->numsides; j++)
+    for (int j = 0; j < b->numsides; j++)
     {
-        side = &g_brushsides[b->firstside + j];
+        side_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "CONTENT", 7))
         {
             strcpy(side->td.name, "NULL");
@@ -498,9 +488,9 @@ static void ParseBrush(entity_t *mapent)
     }
     if (g_nullifytrigger)
     {
-        for (j = 0; j < b->numsides; j++)
+        for (int j = 0; j < b->numsides; j++)
         {
-            side = &g_brushsides[b->firstside + j];
+            side_t *side = &g_brushsides[b->firstside + j];
             if (!strncasecmp(side->td.name, "AAATRIGGER", 10))
             {
                 strcpy(side->td.name, "NULL");
@@ -528,7 +518,7 @@ static void ParseBrush(entity_t *mapent)
         CreateBrush(mapent->firstbrush + b->brushnum); // to get sizes
         b->contents = contents;
 
-        for (i = 0; i < NUM_HULLS; i++)
+        for (int i = 0; i < NUM_HULLS; i++)
         {
             b->hulls[i].faces = NULL;
         }
@@ -583,7 +573,7 @@ static void ParseBrush(entity_t *mapent)
         CreateBrush(mapent->firstbrush + b->brushnum); // to get sizes
         b->contents = contents;
 
-        for (i = 0; i < NUM_HULLS; i++)
+        for (int i = 0; i < NUM_HULLS; i++)
         {
             b->hulls[i].faces = NULL;
         }
@@ -608,9 +598,9 @@ static void ParseBrush(entity_t *mapent)
         brush_t *newb = CopyCurrentBrush(mapent, b);
         newb->contents = CONTENTS_SOLID;
         newb->cliphull = ~0;
-        for (j = 0; j < newb->numsides; j++)
+        for (int j = 0; j < newb->numsides; j++)
         {
-            side = &g_brushsides[newb->firstside + j];
+            side_t *side = &g_brushsides[newb->firstside + j];
             strcpy(side->td.name, "NULL");
         }
     }
@@ -618,9 +608,9 @@ static void ParseBrush(entity_t *mapent)
     {
         // check for mix of CLIP and normal texture
         bool mixed = false;
-        for (j = 0; j < b->numsides; j++)
+        for (int j = 0; j < b->numsides; j++)
         {
-            side = &g_brushsides[b->firstside + j];
+            side_t *side = &g_brushsides[b->firstside + j];
             if (!strncasecmp(side->td.name, "NULL", 4))
             { // this is not supposed to be a HINT brush, so remove all invisible faces from hull 0.
                 strcpy(side->td.name, "SKIP");
@@ -634,9 +624,9 @@ static void ParseBrush(entity_t *mapent)
             newb->cliphull = 0;
         }
         b->contents = CONTENTS_SOLID;
-        for (j = 0; j < b->numsides; j++)
+        for (int j = 0; j < b->numsides; j++)
         {
-            side = &g_brushsides[b->firstside + j];
+            side_t *side = &g_brushsides[b->firstside + j];
             strcpy(side->td.name, "NULL");
         }
     }
@@ -649,9 +639,6 @@ static void ParseBrush(entity_t *mapent)
 bool ParseMapEntity()
 {
     bool all_clip = true;
-    int this_entity;
-    entity_t *mapent;
-    epair_t *e;
 
     g_numparsedbrushes = 0;
     if (!GetToken(true))
@@ -659,7 +646,7 @@ bool ParseMapEntity()
         return false;
     }
 
-    this_entity = g_numentities;
+    int this_entity = g_numentities;
 
     if (strcmp(g_token, "{"))
     {
@@ -671,7 +658,7 @@ bool ParseMapEntity()
     hlassume(g_numentities < MAX_MAP_ENTITIES, assume_MAX_MAP_ENTITIES);
     g_numentities++;
 
-    mapent = &g_entities[this_entity];
+    entity_t *mapent = &g_entities[this_entity];
     mapent->firstbrush = g_nummapbrushes;
     mapent->numbrushes = 0;
 
@@ -690,7 +677,7 @@ bool ParseMapEntity()
         }
         else // else assume an epair
         {
-            e = ParseEpair();
+            epair_t *e = ParseEpair();
             if (mapent->numbrushes > 0)
                 Warning("Error: ParseEntity: Keyvalue comes after brushes."); //--vluzacn
 
@@ -706,8 +693,7 @@ bool ParseMapEntity()
         }
     }
     {
-        int i;
-        for (i = 0; i < mapent->numbrushes; i++)
+        for (int i = 0; i < mapent->numbrushes; i++)
         {
             brush_t *brush = &g_mapbrushes[mapent->firstbrush + i];
             if (
@@ -726,9 +712,13 @@ bool ParseMapEntity()
     }
     if (strcmp(ValueForKey(mapent, "classname"), "info_hullshape")) // info_hullshape is not affected by '-scale'
     {
-        bool ent_move_b = false, ent_scale_b = false, ent_gscale_b = false;
-        vec3_t ent_move = {0, 0, 0}, ent_scale_origin = {0, 0, 0};
-        vec_t ent_scale = 1, ent_gscale = 1;
+        bool ent_move_b = false;
+        bool ent_scale_b = false;
+        bool ent_gscale_b = false;
+        vec3_t ent_move = {0, 0, 0};
+        vec3_t ent_scale_origin = {0, 0, 0};
+        vec_t ent_scale = 1;
+        vec_t ent_gscale = 1;
 
         if (g_scalesize > 0)
         {
@@ -769,7 +759,7 @@ bool ParseMapEntity()
             }
             else
             {
-                int ibrush, iside, ipoint;
+                int ibrush, iside;
                 brush_t *brush;
                 side_t *side;
                 vec_t *point;
@@ -777,7 +767,7 @@ bool ParseMapEntity()
                 {
                     for (iside = 0, side = g_brushsides + brush->firstside; iside < brush->numsides; ++iside, ++side)
                     {
-                        for (ipoint = 0; ipoint < 3; ++ipoint)
+                        for (int ipoint = 0; ipoint < 3; ++ipoint)
                         {
                             point = side->planepts[ipoint];
                             if (ent_scale_b)
@@ -883,10 +873,9 @@ bool ParseMapEntity()
                         double v[3];
                         int origin[3];
                         char string[MAXTOKEN];
-                        int i;
                         GetVectorForKey(mapent, "origin", v);
                         VectorScale(v, ent_gscale, v);
-                        for (i = 0; i < 3; ++i)
+                        for (int i = 0; i < 3; ++i)
                             origin[i] = (int)(v[i] >= 0 ? v[i] + 0.5 : v[i] - 0.5);
                         safe_snprintf(string, MAXTOKEN, "%d %d %d", origin[0], origin[1], origin[2]);
                         SetKeyValue(mapent, "origin", string);
@@ -943,18 +932,14 @@ bool ParseMapEntity()
     {
         // this is pretty gross, because the brushes are expected to be
         // in linear order for each entity
-        brush_t *temp;
-        int newbrushes;
-        int worldbrushes;
-        int i;
 
-        newbrushes = mapent->numbrushes;
-        worldbrushes = g_entities[0].numbrushes;
+        int newbrushes = mapent->numbrushes;
+        int worldbrushes = g_entities[0].numbrushes;
 
-        temp = (brush_t *)Alloc(newbrushes * sizeof(brush_t));
+        brush_t *temp = (brush_t *)Alloc(newbrushes * sizeof(brush_t));
         memcpy(temp, g_mapbrushes + mapent->firstbrush, newbrushes * sizeof(brush_t));
 
-        for (i = 0; i < newbrushes; i++)
+        for (int i = 0; i < newbrushes; i++)
         {
             temp[i].entitynum = 0;
             temp[i].brushnum += worldbrushes;
@@ -970,7 +955,7 @@ bool ParseMapEntity()
         // fix up indexes
         g_numentities--;
         g_entities[0].numbrushes += newbrushes;
-        for (i = 1; i < g_numentities; i++)
+        for (int i = 1; i < g_numentities; i++)
         {
             g_entities[i].firstbrush += newbrushes;
         }
@@ -981,12 +966,9 @@ bool ParseMapEntity()
 
     if (!strcmp(ValueForKey(mapent, "classname"), "info_hullshape"))
     {
-        bool disabled;
-        const char *id;
-        int defaulthulls;
-        disabled = IntForKey(mapent, "disabled");
-        id = ValueForKey(mapent, "targetname");
-        defaulthulls = IntForKey(mapent, "defaulthulls");
+        bool disabled = IntForKey(mapent, "disabled");
+        const char *id = ValueForKey(mapent, "targetname");
+        int defaulthulls = IntForKey(mapent, "defaulthulls");
         CreateHullShape(this_entity, disabled, id, defaulthulls);
         DeleteCurrentEntity(mapent);
         return true;
@@ -1011,12 +993,11 @@ bool ParseMapEntity()
 // =====================================================================================
 unsigned int CountEngineEntities()
 {
-    unsigned int x;
     unsigned num_engine_entities = 0;
     entity_t *mapent = g_entities;
 
     // for each entity in the map
-    for (x = 0; x < g_numentities; x++, mapent++)
+    for (unsigned int x = 0; x < g_numentities; x++, mapent++)
     {
         const char *classname = ValueForKey(mapent, "classname");
 
@@ -1051,8 +1032,6 @@ const char *ContentsToString(const contents_t type);
 
 void LoadMapFile(const char *const filename)
 {
-    unsigned num_engine_entities;
-
     LoadScriptFile(filename);
 
     g_numentities = 0;
@@ -1077,7 +1056,7 @@ void LoadMapFile(const char *const filename)
     }
     */
 
-    num_engine_entities = CountEngineEntities();
+    unsigned num_engine_entities = CountEngineEntities();
 
     hlassume(num_engine_entities < MAX_ENGINE_ENTITIES, assume_MAX_ENGINE_ENTITIES);
 
