@@ -8,19 +8,16 @@
 // =====================================================================================
 bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *const point, vec_t epsilon /* = 0.0*/)
 {
-    int numpoints;
-    int x;
     vec3_t delta;
     vec3_t normal;
-    vec_t dist;
 
-    numpoints = w.m_NumPoints;
+    int numpoints = w.m_NumPoints;
 
-    for (x = 0; x < numpoints; x++)
+    for (int x = 0; x < numpoints; x++)
     {
         VectorSubtract(w.m_Points[(x + 1) % numpoints], w.m_Points[x], delta);
         CrossProduct(delta, plane.normal, normal);
-        dist = DotProduct(point, normal) - DotProduct(w.m_Points[x], normal);
+        vec_t dist = DotProduct(point, normal) - DotProduct(w.m_Points[x], normal);
 
         if (dist < 0.0 && (epsilon == 0.0 || dist * dist > epsilon * epsilon * DotProduct(normal, normal)))
         {
@@ -39,19 +36,15 @@ bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *cons
 // =====================================================================================
 bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_t *const point, vec_t width)
 {
-    int numpoints;
-    int x;
     vec3_t delta;
     vec3_t normal;
-    vec_t dist;
+    int numpoints = w.m_NumPoints;
 
-    numpoints = w.m_NumPoints;
-
-    for (x = 0; x < numpoints; x++)
+    for (int x = 0; x < numpoints; x++)
     {
         VectorSubtract(w.m_Points[(x + 1) % numpoints], w.m_Points[x], delta);
         CrossProduct(delta, plane.normal, normal);
-        dist = DotProduct(point, normal) - DotProduct(w.m_Points[x], normal);
+        vec_t dist = DotProduct(point, normal) - DotProduct(w.m_Points[x], normal);
 
         if (dist < 0.0 || dist * dist <= width * width * DotProduct(normal, normal))
         {
@@ -70,36 +63,30 @@ bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_
 // =====================================================================================
 void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point)
 {
-    int numpoints;
-    int x;
-    vec_t *p1, *p2;
     vec3_t delta;
     vec3_t normal;
-    vec_t dist;
-    vec_t dot1, dot2, dot;
     vec3_t bestpoint;
     vec_t bestdist;
-    bool in;
 
-    numpoints = w.m_NumPoints;
+    int numpoints = w.m_NumPoints;
 
-    in = true;
-    for (x = 0; x < numpoints; x++)
+    bool in = true;
+    for (int x = 0; x < numpoints; x++)
     {
-        p1 = w.m_Points[x];
-        p2 = w.m_Points[(x + 1) % numpoints];
+        vec_t *p1 = w.m_Points[x];
+        vec_t *p2 = w.m_Points[(x + 1) % numpoints];
         VectorSubtract(p2, p1, delta);
         CrossProduct(delta, plane.normal, normal);
-        dist = DotProduct(point, normal) - DotProduct(p1, normal);
+        vec_t dist = DotProduct(point, normal) - DotProduct(p1, normal);
 
         if (dist < 0.0)
         {
             in = false;
 
             CrossProduct(plane.normal, normal, delta);
-            dot = DotProduct(delta, point);
-            dot1 = DotProduct(delta, p1);
-            dot2 = DotProduct(delta, p2);
+            vec_t dot = DotProduct(delta, point);
+            vec_t dot1 = DotProduct(delta, p1);
+            vec_t dot2 = DotProduct(delta, p2);
             if (dot1 < dot && dot < dot2)
             {
                 dist = dist / DotProduct(normal, normal);
@@ -113,13 +100,13 @@ void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point
         return;
     }
 
-    for (x = 0; x < numpoints; x++)
+    for (int x = 0; x < numpoints; x++)
     {
-        p1 = w.m_Points[x];
+        vec_t *p1 = w.m_Points[x];
         VectorSubtract(p1, point, delta);
-        dist = DotProduct(delta, plane.normal) / DotProduct(plane.normal, plane.normal);
+        vec_t dist = DotProduct(delta, plane.normal) / DotProduct(plane.normal, plane.normal);
         VectorMA(delta, -dist, plane.normal, delta);
-        dot = DotProduct(delta, delta);
+        vec_t dot = DotProduct(delta, delta);
 
         if (x == 0 || dot < bestdist)
         {
@@ -145,21 +132,15 @@ void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point
 // =====================================================================================
 vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *const point, vec_t width, vec_t maxmove)
 {
-    int pass;
-    int numplanes;
-    dplane_t *planes;
-    int x;
     vec3_t v;
-    vec_t newwidth;
-    vec_t bestwidth;
     vec3_t bestpoint;
 
     snap_to_winding(w, plane, point);
 
-    planes = (dplane_t *)malloc(w.m_NumPoints * sizeof(dplane_t));
+    dplane_t *planes = (dplane_t *)malloc(w.m_NumPoints * sizeof(dplane_t));
     hlassume(planes != NULL, assume_NoMemory);
-    numplanes = 0;
-    for (x = 0; x < w.m_NumPoints; x++)
+    int numplanes = 0;
+    for (int x = 0; x < w.m_NumPoints; x++)
     {
         VectorSubtract(w.m_Points[(x + 1) % w.m_NumPoints], w.m_Points[x], v);
         CrossProduct(v, plane.normal, planes[numplanes].normal);
@@ -171,20 +152,18 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
         numplanes++;
     }
 
-    bestwidth = 0;
+    vec_t bestwidth = 0;
     VectorCopy(point, bestpoint);
-    newwidth = width;
+    vec_t newwidth = width;
 
-    for (pass = 0; pass < 5; pass++) // apply binary search method for 5 iterations to find the maximal distance that the point can be kept away from all the edges
+    for (int pass = 0; pass < 5; pass++) // apply binary search method for 5 iterations to find the maximal distance that the point can be kept away from all the edges
     {
-        bool failed;
         vec3_t newpoint;
-        Winding *newwinding;
 
-        failed = true;
+        bool failed = true;
 
-        newwinding = new Winding(w);
-        for (x = 0; x < numplanes && newwinding->m_NumPoints > 0; x++)
+        Winding *newwinding = new Winding(w);
+        for (int x = 0; x < numplanes && newwinding->m_NumPoints > 0; x++)
         {
             dplane_t clipplane = planes[x];
             clipplane.dist += newwidth;
@@ -229,14 +208,11 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
 
 bool intersect_linesegment_plane(const dplane_t *const plane, const vec_t *const p1, const vec_t *const p2, vec3_t point)
 {
-    vec_t part1;
-    vec_t part2;
-    int i;
-    part1 = DotProduct(p1, plane->normal) - plane->dist;
-    part2 = DotProduct(p2, plane->normal) - plane->dist;
+    vec_t part1 = DotProduct(p1, plane->normal) - plane->dist;
+    vec_t part2 = DotProduct(p2, plane->normal) - plane->dist;
     if (part1 * part2 > 0 || part1 == part2)
         return false;
-    for (i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
         point[i] = (part1 * p2[i] - part2 * p1[i]) / (part1 - part2);
     return true;
 }
@@ -261,20 +237,21 @@ void plane_from_points(const vec3_t p1, const vec3_t p2, const vec3_t p3, dplane
 //LineSegmentIntersectsBounds --vluzacn
 bool LineSegmentIntersectsBounds_r(const vec_t *p1, const vec_t *p2, const vec_t *mins, const vec_t *maxs, int d)
 {
-    vec_t lmin, lmax;
-    const vec_t *tmp;
     vec3_t x1, x2;
-    int i;
     d--;
     if (p2[d] < p1[d])
-        tmp = p1, p1 = p2, p2 = tmp;
+    {
+        const vec_t *tmp = p1;
+        p1 = p2;
+        p2 = tmp;
+    }
     if (p2[d] < mins[d] || p1[d] > maxs[d])
         return false;
     if (d == 0)
         return true;
-    lmin = p1[d] >= mins[d] ? 0 : (mins[d] - p1[d]) / (p2[d] - p1[d]);
-    lmax = p2[d] <= maxs[d] ? 1 : (p2[d] - maxs[d]) / (p2[d] - p1[d]);
-    for (i = 0; i < d; ++i)
+    vec_t lmin = p1[d] >= mins[d] ? 0 : (mins[d] - p1[d]) / (p2[d] - p1[d]);
+    vec_t lmax = p2[d] <= maxs[d] ? 1 : (p2[d] - maxs[d]) / (p2[d] - p1[d]);
+    for (int i = 0; i < d; ++i)
     {
         x1[i] = (1 - lmin) * p1[i] + lmin * p2[i];
         x2[i] = (1 - lmax) * p2[i] + lmax * p2[i];
@@ -293,10 +270,9 @@ inline bool LineSegmentIntersectsBounds(const vec3_t p1, const vec3_t p2, const 
 bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scaleout, int &opaquestyleout // light must convert to this style. -1 = no convert
 )
 {
-    int x;
     VectorFill(scaleout, 1.0);
     opaquestyleout = -1;
-    for (x = 0; x < g_opaque_face_count; x++)
+    for (int x = 0; x < g_opaque_face_count; x++)
     {
         if (!TestLineOpaque(g_opaque_face_list[x].modelnum, g_opaque_face_list[x].origin, p1, p2))
         {
@@ -324,8 +300,7 @@ bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scal
 // =====================================================================================
 void SnapToPlane(const dplane_t *const plane, vec_t *const point, vec_t offset)
 {
-    vec_t dist;
-    dist = DotProduct(point, plane->normal) - plane->dist;
+    vec_t dist = DotProduct(point, plane->normal) - plane->dist;
     dist -= offset;
     VectorMA(point, -dist, plane->normal, point);
 }
@@ -358,11 +333,10 @@ vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, 
         int i, j;
         vec3_t *pnormal;
         vec_t *psize;
-        vec_t dot;
         vec3_t *pedge;
         for (i = 0, pnormal = g_skynormals[skylevel], psize = g_skynormalsizes[skylevel]; i < g_numskynormals[skylevel]; i++, pnormal++, psize++)
         {
-            dot = DotProduct(*pnormal, receiver_normal);
+            vec_t dot = DotProduct(*pnormal, receiver_normal);
             if (dot <= 0)
                 continue;
             for (j = 0, pedge = edges; j < numedges; j++, pedge++)
@@ -420,12 +394,10 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
         int i, j;
         vec3_t *pnormal;
         vec_t *psize;
-        vec_t dot;
-        vec_t dot2;
         vec3_t *pedge;
         for (i = 0, pnormal = g_skynormals[skylevel], psize = g_skynormalsizes[skylevel]; i < g_numskynormals[skylevel]; i++, pnormal++, psize++)
         {
-            dot = DotProduct(*pnormal, receiver_normal);
+            vec_t dot = DotProduct(*pnormal, receiver_normal);
             if (dot <= 0)
                 continue;
             for (j = 0, pedge = edges; j < numedges; j++, pedge++)
@@ -443,7 +415,7 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
             {
                 dot = pow(dot, lighting_power);
             }
-            dot2 = -DotProduct(*pnormal, emitter_normal);
+            vec_t dot2 = -DotProduct(*pnormal, emitter_normal);
             if (dot2 <= emitter_stopdot2 + NORMAL_EPSILON)
             {
                 dot = 0;
@@ -466,19 +438,15 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
 // =====================================================================================
 void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *patch, vec3_t &origin)
 {
-    const dplane_t *faceplane;
-    const vec_t *faceplaneoffset;
-    const vec_t *facenormal;
     dplane_t clipplane;
-    Winding w;
 
-    faceplane = getPlaneFromFaceNumber(patch->faceNumber);
-    faceplaneoffset = g_face_offset[patch->faceNumber];
-    facenormal = faceplane->normal;
+    const dplane_t *faceplane = getPlaneFromFaceNumber(patch->faceNumber);
+    const vec_t *faceplaneoffset = g_face_offset[patch->faceNumber];
+    const vec_t *facenormal = faceplane->normal;
     VectorCopy(normal, clipplane.normal);
     clipplane.dist = DotProduct(pos, clipplane.normal);
 
-    w = *patch->winding;
+    Winding w = *patch->winding;
     if (w.WindingOnPlaneSide(clipplane.normal, clipplane.dist) != SIDE_CROSS)
     {
         VectorCopy(patch->origin, origin);
@@ -493,21 +461,19 @@ void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *pa
         else
         {
             vec3_t center;
-            bool found;
             vec3_t bestpoint;
             vec_t bestdist = -1.0;
             vec3_t point;
-            vec_t dist;
             vec3_t v;
 
             w.getCenter(center);
-            found = false;
+            bool found = false;
 
             VectorMA(center, PATCH_HUNT_OFFSET, facenormal, point);
             if (HuntForWorld(point, faceplaneoffset, faceplane, 2, 1.0, PATCH_HUNT_OFFSET))
             {
                 VectorSubtract(point, center, v);
-                dist = VectorLength(v);
+                vec_t dist = VectorLength(v);
                 if (!found || dist < bestdist)
                 {
                     found = true;
@@ -519,10 +485,8 @@ void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *pa
             {
                 for (int i = 0; i < w.m_NumPoints; i++)
                 {
-                    const vec_t *p1;
-                    const vec_t *p2;
-                    p1 = w.m_Points[i];
-                    p2 = w.m_Points[(i + 1) % w.m_NumPoints];
+                    const vec_t *p1 = w.m_Points[i];
+                    const vec_t *p2 = w.m_Points[(i + 1) % w.m_NumPoints];
                     VectorAdd(p1, p2, point);
                     VectorAdd(point, center, point);
                     VectorScale(point, 1.0 / 3.0, point);
@@ -530,7 +494,7 @@ void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *pa
                     if (HuntForWorld(point, faceplaneoffset, faceplane, 1, 0.0, PATCH_HUNT_OFFSET))
                     {
                         VectorSubtract(point, center, v);
-                        dist = VectorLength(v);
+                        vec_t dist = VectorLength(v);
                         if (!found || dist < bestdist)
                         {
                             found = true;
