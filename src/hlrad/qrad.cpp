@@ -150,16 +150,13 @@ vec3_t g_maxdiscardedpos = {0, 0, 0};
 // =====================================================================================
 void GetParamsFromEnt(entity_t *mapent)
 {
-    int iTmp;
-    float flTmp;
     char szTmp[256]; //lightdata
-    const char *pszTmp;
 
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
 
     // lightdata(string) : "Lighting Data Memory" : "8192"
-    iTmp = IntForKey(mapent, "lightdata") * 1024; //lightdata
-    if (iTmp > g_max_map_lightdata)               //--vluzacn
+    int iTmp = IntForKey(mapent, "lightdata") * 1024; //lightdata
+    if (iTmp > g_max_map_lightdata)                   //--vluzacn
     {
         g_max_map_lightdata = iTmp;
         sprintf_s(szTmp, "%i", g_max_map_lightdata);
@@ -225,10 +222,12 @@ void GetParamsFromEnt(entity_t *mapent)
 
     // ambient(string) : "Ambient world light (0.0 to 1.0, R G B)" : "0 0 0"
     //vec3_t          g_ambient = { DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE };
-    pszTmp = ValueForKey(mapent, "ambient");
+    const char *pszTmp = ValueForKey(mapent, "ambient");
     if (pszTmp)
     {
-        float red = 0, green = 0, blue = 0;
+        float red = 0;
+        float green = 0;
+        float blue = 0;
         if (sscanf(pszTmp, "%f %f %f", &red, &green, &blue))
         {
             if (red < 0 || red > 1 || green < 0 || green > 1 || blue < 0 || blue > 1)
@@ -260,7 +259,7 @@ void GetParamsFromEnt(entity_t *mapent)
     }
 
     // smooth(integer) : "Smoothing threshold (in degrees)" : 0
-    flTmp = FloatForKey(mapent, "smooth");
+    float flTmp = FloatForKey(mapent, "smooth");
     if (flTmp)
     {
         /*g_smoothing_threshold = flTmp;*/
@@ -370,16 +369,12 @@ void GetParamsFromEnt(entity_t *mapent)
 // =====================================================================================
 static void MakeParents(const int nodenum, const int parent)
 {
-    int i;
-    int j;
-    dnode_t *node;
-
     nodeparents[nodenum] = parent;
-    node = g_dnodes + nodenum;
+    dnode_t *node = g_dnodes + nodenum;
 
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
-        j = node->children[i];
+        int j = node->children[i];
         if (j < 0)
         {
             leafparents[-j - 1] = nodenum;
@@ -413,12 +408,10 @@ typedef std::vector<texlight_t>::iterator texlight_i;
 // =====================================================================================
 static void ReadLightFile(const char *const filename)
 {
-    FILE *f;
     char scan[MAXTOKEN];
-    short argCnt;
     unsigned int file_texlights = 0;
 
-    f = fopen(filename, "r");
+    FILE *f = fopen(filename, "r");
     if (!f)
     {
         Warning("Could not open texlight file %s", filename);
@@ -431,11 +424,13 @@ static void ReadLightFile(const char *const filename)
 
     while (fgets(scan, sizeof(scan), f))
     {
-        char *comment;
         char szTexlight[_MAX_PATH];
-        vec_t r, g, b, i = 1;
+        vec_t r;
+        vec_t g;
+        vec_t b;
+        vec_t i = 1;
 
-        comment = strstr(scan, "//");
+        char *comment = strstr(scan, "//");
         if (comment)
         {
             // Newline and Null terminate the string early if there is a c++ style single line comment
@@ -443,7 +438,7 @@ static void ReadLightFile(const char *const filename)
             comment[1] = 0;
         }
 
-        argCnt = sscanf(scan, "%s %f %f %f %f", szTexlight, &r, &g, &b, &i);
+        short argCnt = sscanf(scan, "%s %f %f %f %f", szTexlight, &r, &g, &b, &i);
 
         if (argCnt == 2)
         {
@@ -466,8 +461,7 @@ static void ReadLightFile(const char *const filename)
             continue;
         }
 
-        texlight_i it;
-        for (it = s_texlights.begin(); it != s_texlights.end(); it++)
+        for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
         {
             if (strcmp(it->name.c_str(), szTexlight) == 0)
             {
@@ -505,8 +499,7 @@ static void ReadLightFile(const char *const filename)
 // =====================================================================================
 static void LightForTexture(const char *const name, vec3_t result)
 {
-    texlight_i it;
-    for (it = s_texlights.begin(); it != s_texlights.end(); it++)
+    for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
     {
         if (!strcasecmp(name, it->name.c_str()))
         {
@@ -531,7 +524,10 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
     int fn = f - g_dfaces;
     if (g_face_texlights[fn])
     {
-        double r, g, b, scaler;
+        double r;
+        double g;
+        double b;
+        double scaler;
         switch (sscanf(ValueForKey(g_face_texlights[fn], "_light"), "%lf %lf %lf %lf", &r, &g, &b, &scaler))
         {
         case -1:
@@ -559,17 +555,13 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
         light[2] = b > 0 ? b : 0;
         return;
     }
-    texinfo_t *tx;
-    miptex_t *mt;
-    int ofs;
-
     //
     // check for light emited by texture
     //
-    tx = &g_texinfo[f->texinfo];
+    texinfo_t *tx = &g_texinfo[f->texinfo];
 
-    ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
-    mt = (miptex_t *)((byte *)g_dtexdata + ofs);
+    int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
+    miptex_t *mt = (miptex_t *)((byte *)g_dtexdata + ofs);
 
     LightForTexture(mt->name, light);
 }
@@ -587,24 +579,20 @@ static bool IsSpecial(const dface_t *const f)
 // =====================================================================================
 static bool PlacePatchInside(patch_t *patch)
 {
-    const dplane_t *plane;
     const vec_t *face_offset = g_face_offset[patch->faceNumber];
 
-    plane = getPlaneFromFaceNumber(patch->faceNumber);
+    const dplane_t *plane = getPlaneFromFaceNumber(patch->faceNumber);
 
-    vec_t pointsfound;
-    vec_t pointstested;
-    pointsfound = pointstested = 0;
+    vec_t pointsfound = 0;
+    vec_t pointstested = 0;
     vec3_t center;
-    bool found;
     vec3_t bestpoint;
     vec_t bestdist = -1.0;
     vec3_t point;
-    vec_t dist;
     vec3_t v;
 
     patch->winding->getCenter(center);
-    found = false;
+    bool found = false;
 
     VectorMA(center, PATCH_HUNT_OFFSET, plane->normal, point);
     pointstested++;
@@ -613,7 +601,7 @@ static bool PlacePatchInside(patch_t *patch)
     {
         pointsfound++;
         VectorSubtract(point, center, v);
-        dist = VectorLength(v);
+        vec_t dist = VectorLength(v);
         if (!found || dist < bestdist)
         {
             found = true;
@@ -624,10 +612,8 @@ static bool PlacePatchInside(patch_t *patch)
     {
         for (int i = 0; i < patch->winding->m_NumPoints; i++)
         {
-            const vec_t *p1;
-            const vec_t *p2;
-            p1 = patch->winding->m_Points[i];
-            p2 = patch->winding->m_Points[(i + 1) % patch->winding->m_NumPoints];
+            const vec_t *p1 = patch->winding->m_Points[i];
+            const vec_t *p2 = patch->winding->m_Points[(i + 1) % patch->winding->m_NumPoints];
             VectorAdd(p1, p2, point);
             VectorAdd(point, center, point);
             VectorScale(point, 1.0 / 3.0, point);
@@ -638,7 +624,7 @@ static bool PlacePatchInside(patch_t *patch)
             {
                 pointsfound++;
                 VectorSubtract(point, center, v);
-                dist = VectorLength(v);
+                vec_t dist = VectorLength(v);
                 if (!found || dist < bestdist)
                 {
                     found = true;
@@ -676,9 +662,8 @@ static void UpdateEmitterInfo(patch_t *patch)
     for (int x = 0; x < winding->m_NumPoints; x++)
     {
         vec3_t delta;
-        vec_t dist;
         VectorSubtract(winding->m_Points[x], origin, delta);
-        dist = VectorLength(delta);
+        vec_t dist = VectorLength(delta);
         if (dist > radius)
         {
             radius = dist;
@@ -732,8 +717,6 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
     // patch->winding->m_NumPoints must > 0
     // plA->dist and plB->dist will not be used
     Winding *winding = NULL;
-    vec_t chop;
-    vec_t epsilon;
     const int max_gridsize = 64;
     vec_t gridstartA;
     vec_t gridstartB;
@@ -741,32 +724,26 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
     int gridsizeB;
     vec_t gridchopA;
     vec_t gridchopB;
-    int numstrips;
 
     winding = new Winding(*patch->winding); // perform all the operations on the copy
-    chop = patch->chop;
+    vec_t chop = patch->chop;
     chop = qmax(1.0, chop);
-    epsilon = 0.6;
+    vec_t epsilon = 0.6;
 
     // optimize the grid
     {
-        vec_t minA;
-        vec_t maxA;
-        vec_t minB;
-        vec_t maxB;
+        vec_t minA = BOGUS_RANGE;
+        vec_t maxA = -BOGUS_RANGE;
+        vec_t minB = BOGUS_RANGE;
+        vec_t maxB = -BOGUS_RANGE;
 
-        minA = minB = BOGUS_RANGE;
-        maxA = maxB = -BOGUS_RANGE;
         for (int x = 0; x < winding->m_NumPoints; x++)
         {
-            vec_t *point;
-            vec_t dotA;
-            vec_t dotB;
-            point = winding->m_Points[x];
-            dotA = DotProduct(point, plA->normal);
+            vec_t *point = winding->m_Points[x];
+            vec_t dotA = DotProduct(point, plA->normal);
             minA = qmin(minA, dotA);
             maxA = qmax(maxA, dotA);
-            dotB = DotProduct(point, plB->normal);
+            vec_t dotB = DotProduct(point, plB->normal);
             minB = qmin(minB, dotB);
             maxB = qmax(maxB, dotB);
         }
@@ -797,11 +774,10 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
         g_numwindings = 0;
         for (int i = 1; i < gridsizeA; i++)
         {
-            vec_t dist;
             Winding *front = NULL;
             Winding *back = NULL;
 
-            dist = gridstartA + i * gridchopA;
+            vec_t dist = gridstartA + i * gridchopA;
             winding->Clip(plA->normal, dist, &front, &back);
 
             if (!front || front->WindingOnPlaneSide(plA->normal, dist, epsilon) == SIDE_ON) // ended
@@ -851,7 +827,7 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
 
     // cut by the direction of plane B
     {
-        numstrips = g_numwindings;
+        int numstrips = g_numwindings;
         for (int i = 0; i < numstrips; i++)
         {
             Winding *strip = windingArray[i];
@@ -859,11 +835,10 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
 
             for (int j = 1; j < gridsizeB; j++)
             {
-                vec_t dist;
                 Winding *front = NULL;
                 Winding *back = NULL;
 
-                dist = gridstartB + j * gridchopB;
+                vec_t dist = gridstartB + j * gridchopB;
                 strip->Clip(plB->normal, dist, &front, &back);
 
                 if (!front || front->WindingOnPlaneSide(plB->normal, dist, epsilon) == SIDE_ON) // ended
@@ -929,13 +904,11 @@ static void getGridPlanes(const patch_t *const p, dplane_t *const pl)
     texinfo_t *tx = &g_texinfo[f->texinfo];
     dplane_t *plane = planes;
     const dplane_t *faceplane = getPlaneFromFaceNumber(patch->faceNumber);
-    int x;
 
-    for (x = 0; x < 2; x++, plane++)
+    for (int x = 0; x < 2; x++, plane++)
     {
         // cut the patch along texel grid planes
-        vec_t val;
-        val = DotProduct(faceplane->normal, tx->vecs[!x]);
+        vec_t val = DotProduct(faceplane->normal, tx->vecs[!x]);
         VectorMA(tx->vecs[!x], -val, faceplane->normal, plane->normal);
         VectorNormalize(plane->normal);
         plane->dist = DotProduct(plane->normal, patch->origin);
@@ -950,9 +923,6 @@ static void SubdividePatch(patch_t *patch)
     dplane_t planes[2];
     dplane_t *plA = &planes[0];
     dplane_t *plB = &planes[1];
-    Winding **winding;
-    unsigned x;
-    patch_t *new_patch;
 
     memset(windingArray, 0, sizeof(windingArray));
     g_numwindings = 0;
@@ -960,9 +930,9 @@ static void SubdividePatch(patch_t *patch)
     getGridPlanes(patch, planes);
     cutWindingWithGrid(patch, plA, plB);
 
-    x = 0;
+    unsigned x = 0;
     patch->next = NULL;
-    winding = windingArray;
+    Winding **winding = windingArray;
     while (*winding == NULL)
     {
         winding++;
@@ -976,7 +946,7 @@ static void SubdividePatch(patch_t *patch)
     PlacePatchInside(patch);
     UpdateEmitterInfo(patch);
 
-    new_patch = g_patches + g_num_patches;
+    patch_t *new_patch = g_patches + g_num_patches;
     for (; x < g_numwindings; x++, winding++)
     {
         if (*winding)
@@ -1006,27 +976,22 @@ static float totalarea = 0;
 vec_t *chopscales; //[nummiptex]
 void ReadCustomChopValue()
 {
-    int num;
-    int i, k;
-    entity_t *mapent;
-    epair_t *ep;
-
-    num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     chopscales = (vec_t *)malloc(num * sizeof(vec_t));
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
     {
         chopscales[i] = 1.0;
     }
-    for (k = 0; k < g_numentities; k++)
+    for (int k = 0; k < g_numentities; k++)
     {
-        mapent = &g_entities[k];
+        entity_t *mapent = &g_entities[k];
         if (strcmp(ValueForKey(mapent, "classname"), "info_chopscale"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_chopscale entity detected.\n");
-        for (i = 0; i < num; i++)
+        for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (ep = mapent->epairs; ep; ep = ep->next)
+            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
             {
                 if (strcasecmp(ep->key, texname))
                     continue;
@@ -1047,27 +1012,22 @@ vec_t ChopScaleForTexture(int facenum)
 vec_t *g_smoothvalues; //[nummiptex]
 void ReadCustomSmoothValue()
 {
-    int num;
-    int i, k;
-    entity_t *mapent;
-    epair_t *ep;
-
-    num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_smoothvalues = (vec_t *)malloc(num * sizeof(vec_t));
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
     {
         g_smoothvalues[i] = g_smoothing_threshold;
     }
-    for (k = 0; k < g_numentities; k++)
+    for (int k = 0; k < g_numentities; k++)
     {
-        mapent = &g_entities[k];
+        entity_t *mapent = &g_entities[k];
         if (strcmp(ValueForKey(mapent, "classname"), "info_smoothvalue"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_smoothvalue entity detected.\n");
-        for (i = 0; i < num; i++)
+        for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (ep = mapent->epairs; ep; ep = ep->next)
+            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
             {
                 if (strcasecmp(ep->key, texname))
                     continue;
@@ -1081,35 +1041,31 @@ void ReadCustomSmoothValue()
 }
 void ReadTranslucentTextures()
 {
-    int num;
-    int i, k;
-    entity_t *mapent;
-    epair_t *ep;
-
-    num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_translucenttextures = (vec3_t *)malloc(num * sizeof(vec3_t));
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
     {
         VectorClear(g_translucenttextures[i]);
     }
-    for (k = 0; k < g_numentities; k++)
+    for (int k = 0; k < g_numentities; k++)
     {
-        mapent = &g_entities[k];
+        entity_t *mapent = &g_entities[k];
         if (strcmp(ValueForKey(mapent, "classname"), "info_translucent"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_translucent entity detected.\n");
-        for (i = 0; i < num; i++)
+        for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (ep = mapent->epairs; ep; ep = ep->next)
+            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
             {
                 if (strcasecmp(ep->key, texname))
                     continue;
                 if (!strcasecmp(ep->key, "origin"))
                     continue;
-                double r, g, b;
-                int count;
-                count = sscanf(ep->value, "%lf %lf %lf", &r, &g, &b);
+                double r;
+                double g;
+                double b;
+                int count = sscanf(ep->value, "%lf %lf %lf", &r, &g, &b);
                 if (count == 1)
                 {
                     g = b = r;
@@ -1135,43 +1091,37 @@ void ReadTranslucentTextures()
 vec3_t *g_lightingconeinfo; //[nummiptex]
 static vec_t DefaultScaleForPower(vec_t power)
 {
-    vec_t scale;
     // scale = Pi / Integrate [2 Pi * Sin [x] * Cos[x] ^ power, {x, 0, Pi / 2}]
-    scale = (1 + power) / 2.0;
+    vec_t scale = (1 + power) / 2.0;
     return scale;
 }
 void ReadLightingCone()
 {
-    int num;
-    int i, k;
-    entity_t *mapent;
-    epair_t *ep;
-
-    num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_lightingconeinfo = (vec3_t *)malloc(num * sizeof(vec3_t));
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
     {
         g_lightingconeinfo[i][0] = 1.0; // default power
         g_lightingconeinfo[i][1] = 1.0; // default scale
     }
-    for (k = 0; k < g_numentities; k++)
+    for (int k = 0; k < g_numentities; k++)
     {
-        mapent = &g_entities[k];
+        entity_t *mapent = &g_entities[k];
         if (strcmp(ValueForKey(mapent, "classname"), "info_angularfade"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_angularfade entity detected.\n");
-        for (i = 0; i < num; i++)
+        for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (ep = mapent->epairs; ep; ep = ep->next)
+            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
             {
                 if (strcasecmp(ep->key, texname))
                     continue;
                 if (!strcasecmp(ep->key, "origin"))
                     continue;
-                double power, scale;
-                int count;
-                count = sscanf(ep->value, "%lf %lf", &power, &scale);
+                double power;
+                double scale;
+                int count = sscanf(ep->value, "%lf %lf", &power, &scale);
                 if (count == 1)
                 {
                     scale = 1.0;
@@ -1205,12 +1155,11 @@ static vec_t getScale(const patch_t *const patch)
         const dplane_t *faceplane = getPlaneFromFace(f);
         vec3_t vecs_perpendicular[2];
         vec_t scale[2];
-        vec_t dot;
 
         // snap texture "vecs" to faceplane without affecting texture alignment
         for (int x = 0; x < 2; x++)
         {
-            dot = DotProduct(faceplane->normal, tx->vecs[x]);
+            vec_t dot = DotProduct(faceplane->normal, tx->vecs[x]);
             VectorMA(tx->vecs[x], -dot, faceplane->normal, vecs_perpendicular[x]);
         }
 
@@ -1315,7 +1264,6 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
                 Error("invalid light style: style (%d) >= ALLSTYLES (%d)", style, ALLSTYLES);
             }
         }
-        patch_t *patch;
         vec3_t light;
         vec3_t centroid = {0, 0, 0};
 
@@ -1332,7 +1280,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
             return;
         }
 
-        patch = &g_patches[g_num_patches];
+        patch_t *patch = &g_patches[g_num_patches];
         hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
         memset(patch, 0, sizeof(patch_t));
 
@@ -1437,10 +1385,8 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 
         // Per-face data
         {
-            int j;
-
             // Centroid of face for nudging samples in direct lighting pass
-            for (j = 0; j < f->numedges; j++)
+            for (int j = 0; j < f->numedges; j++)
             {
                 int edge = g_dsurfedges[f->firstedge + j];
 
@@ -1470,13 +1416,11 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 
             if (g_subdivide)
             {
-                vec_t amt;
-                vec_t length;
                 vec3_t delta;
 
                 VectorSubtract(maxs, mins, delta);
-                length = VectorLength(delta);
-                amt = patch->chop;
+                vec_t length = VectorLength(delta);
+                vec_t amt = patch->chop;
 
                 if (length > amt)
                 {
@@ -1535,10 +1479,9 @@ static void AddFaceToOpaqueList(
 // =====================================================================================
 static void FreeOpaqueFaceList()
 {
-    unsigned x;
     opaqueList_t *opaque = g_opaque_face_list;
 
-    for (x = 0; x < g_opaque_face_count; x++, opaque++)
+    for (unsigned x = 0; x < g_opaque_face_count; x++, opaque++)
     {
     }
     free(g_opaque_face_list);
@@ -1549,13 +1492,12 @@ static void FreeOpaqueFaceList()
 }
 static void LoadOpaqueEntities()
 {
-    int modelnum, entnum;
-    for (modelnum = 0; modelnum < g_nummodels; modelnum++)
+    for (int modelnum = 0; modelnum < g_nummodels; modelnum++)
     {
         dmodel_t *model = &g_dmodels[modelnum];
         char stringmodel[16];
         sprintf(stringmodel, "*%i", modelnum);
-        for (entnum = 0; entnum < g_numentities; entnum++)
+        for (int entnum = 0; entnum < g_numentities; entnum++)
         {
             entity_t *ent = &g_entities[entnum];
             if (strcmp(ValueForKey(ent, "model"), stringmodel))
@@ -1568,7 +1510,8 @@ static void LoadOpaqueEntities()
                     entity_t *ent2 = FindTargetEntity(ValueForKey(ent, "light_origin"));
                     if (ent2)
                     {
-                        vec3_t light_origin, model_center;
+                        vec3_t light_origin;
+                        vec3_t model_center;
                         GetVectorForKey(ent2, "origin", light_origin);
                         GetVectorForKey(ent, "model_center", model_center);
                         VectorSubtract(light_origin, model_center, origin);
@@ -1587,7 +1530,10 @@ static void LoadOpaqueEntities()
                 const char *s;
                 if (*(s = ValueForKey(ent, "zhlt_customshadow")))
                 {
-                    double r1 = 1.0, g1 = 1.0, b1 = 1.0, tmp = 1.0;
+                    double r1 = 1.0;
+                    double g1 = 1.0;
+                    double b1 = 1.0;
+                    double tmp = 1.0;
                     if (sscanf(s, "%lf %lf %lf", &r1, &g1, &b1) == 3) //RGB version
                     {
                         if (r1 < 0.0)
@@ -1612,8 +1558,7 @@ static void LoadOpaqueEntities()
             }
             int opaquestyle = -1;
             {
-                int j;
-                for (j = 0; j < g_numentities; j++)
+                for (int j = 0; j < g_numentities; j++)
                 {
                     entity_t *lightent = &g_entities[j];
                     if (!strcmp(ValueForKey(lightent, "classname"), "light_shadow") && *ValueForKey(lightent, "target") && !strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
@@ -1651,7 +1596,8 @@ static void LoadOpaqueEntities()
     }
     {
         Log("%i opaque models\n", g_opaque_face_count);
-        int i, facecount;
+        int i;
+        int facecount;
         for (facecount = 0, i = 0; i < g_opaque_face_count; i++)
         {
             facecount += CountOpaqueFaces(g_opaque_face_list[i].modelnum);
@@ -1717,21 +1663,10 @@ static entity_t *FindTexlightEntity(int facenum)
 }
 static void MakePatches()
 {
-    int i;
-    int j;
-    unsigned int k;
-    dface_t *f;
-    int fn;
-    Winding *w;
-    dmodel_t *mod;
     vec3_t origin;
-    entity_t *ent;
     const char *s;
     vec3_t light_origin;
     vec3_t model_center;
-    bool b_light_origin;
-    bool b_model_center;
-    eModelLightmodes lightmode;
 
     int style; //LRC
 
@@ -1740,14 +1675,14 @@ static void MakePatches()
     Log("Create Patches : ");
     g_patches = (patch_t *)AllocBlock(MAX_PATCHES * sizeof(patch_t));
 
-    for (i = 0; i < g_nummodels; i++)
+    for (int i = 0; i < g_nummodels; i++)
     {
-        b_light_origin = false;
-        b_model_center = false;
-        lightmode = eModelLightmodeNull;
+        bool b_light_origin = false;
+        bool b_model_center = false;
+        eModelLightmodes lightmode = eModelLightmodeNull;
 
-        mod = g_dmodels + i;
-        ent = EntityForModel(i);
+        dmodel_t *mod = g_dmodels + i;
+        entity_t *ent = EntityForModel(i);
         VectorCopy(vec3_origin, origin);
 
         if (*(s = ValueForKey(ent, "zhlt_lightflags")))
@@ -1831,8 +1766,7 @@ static void MakePatches()
         }
         int bouncestyle = -1;
         {
-            int j;
-            for (j = 0; j < g_numentities; j++)
+            for (int j = 0; j < g_numentities; j++)
             {
                 entity_t *lightent = &g_entities[j];
                 if (!strcmp(ValueForKey(lightent, "classname"), "light_bounce") && *ValueForKey(lightent, "target") && !strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
@@ -1850,16 +1784,16 @@ static void MakePatches()
             }
         }
 
-        for (j = 0; j < mod->numfaces; j++)
+        for (int j = 0; j < mod->numfaces; j++)
         {
-            fn = mod->firstface + j;
+            int fn = mod->firstface + j;
             g_face_entity[fn] = ent;
             VectorCopy(origin, g_face_offset[fn]);
             g_face_texlights[fn] = FindTexlightEntity(fn);
             g_face_lightmode[fn] = lightmode;
-            f = g_dfaces + fn;
-            w = new Winding(*f);
-            for (k = 0; k < w->m_NumPoints; k++)
+            dface_t *f = g_dfaces + fn;
+            Winding *w = new Winding(*f);
+            for (unsigned int k = 0; k < w->m_NumPoints; k++)
             {
                 VectorAdd(w->m_Points[k], origin, w->m_Points[k]);
             }
@@ -1909,13 +1843,12 @@ static void SortPatches()
     // Fixup g_face_patches & Fixup patch->next
     memset(g_face_patches, 0, sizeof(g_face_patches));
     {
-        unsigned x;
         patch_t *patch = g_patches + 1;
         patch_t *prev = g_patches;
 
         g_face_patches[prev->faceNumber] = prev;
 
-        for (x = 1; x < g_num_patches; x++, patch++)
+        for (unsigned x = 1; x < g_num_patches; x++, patch++)
         {
             if (patch->faceNumber != prev->faceNumber)
             {
@@ -1941,13 +1874,12 @@ static void SortPatches()
 // =====================================================================================
 static void FreePatches()
 {
-    unsigned x;
     patch_t *patch = g_patches;
 
     // AJM EX
     //Log("patches: %i of %i (%2.2lf percent)\n", g_num_patches, MAX_PATCHES, (double)((double)g_num_patches / (double)MAX_PATCHES));
 
-    for (x = 0; x < g_num_patches; x++, patch++)
+    for (unsigned x = 0; x < g_num_patches; x++, patch++)
     {
         delete patch->winding;
     }
@@ -1963,22 +1895,19 @@ static void FreePatches()
 // =====================================================================================
 static void WriteWorld(const char *const name)
 {
-    unsigned i;
     unsigned j;
-    FILE *out;
     patch_t *patch;
-    Winding *w;
 
-    out = fopen(name, "w");
+    FILE *out = fopen(name, "w");
 
     if (!out)
         Error("Couldn't open %s", name);
 
     for (j = 0, patch = g_patches; j < g_num_patches; j++, patch++)
     {
-        w = patch->winding;
+        Winding *w = patch->winding;
         Log("%i\n", w->m_NumPoints);
-        for (i = 0; i < w->m_NumPoints; i++)
+        for (unsigned i = 0; i < w->m_NumPoints; i++)
         {
             Log("%5.2f %5.2f %5.2f %5.3f %5.3f %5.3f\n",
                 w->m_Points[i][0],
@@ -1996,18 +1925,16 @@ static void WriteWorld(const char *const name)
 // =====================================================================================
 static void CollectLight()
 {
-    unsigned j; //LRC
     unsigned i;
     patch_t *patch;
 
     for (i = 0, patch = g_patches; i < g_num_patches; i++, patch++)
     {
         vec3_t newtotallight[MAXLIGHTMAPS];
-        for (j = 0; j < MAXLIGHTMAPS && newstyles[i][j] != 255; j++)
+        for (unsigned j = 0; j < MAXLIGHTMAPS && newstyles[i][j] != 255; j++)
         {
             VectorClear(newtotallight[j]);
-            int k;
-            for (k = 0; k < MAXLIGHTMAPS && patch->totalstyle[k] != 255; k++)
+            for (int k = 0; k < MAXLIGHTMAPS && patch->totalstyle[k] != 255; k++)
             {
                 if (patch->totalstyle[k] == newstyles[i][j])
                 {
@@ -2016,7 +1943,7 @@ static void CollectLight()
                 }
             }
         }
-        for (j = 0; j < MAXLIGHTMAPS; j++)
+        for (unsigned j = 0; j < MAXLIGHTMAPS; j++)
         {
             if (newstyles[i][j] != 255)
             {
@@ -2042,58 +1969,46 @@ static void CollectLight()
 
 static void GatherLight(int threadnum)
 {
-    int j;
-    patch_t *patch;
-
-    unsigned k, m; //LRC
-                   //LRC    vec3_t          sum;
-
-    unsigned iIndex;
-    transfer_data_t *tData;
-    transfer_index_t *tIndex;
     float f;
     vec3_t adds[ALLSTYLES];
-    int style;
     unsigned int fastfind_index = 0;
 
     while (1)
     {
-        j = GetThreadWork();
+        int j = GetThreadWork();
         if (j == -1)
         {
             break;
         }
         memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
 
-        patch = &g_patches[j];
+        patch_t *patch = &g_patches[j];
 
-        tData = patch->tData;
-        tIndex = patch->tIndex;
-        iIndex = patch->iIndex;
+        transfer_data_t *tData = patch->tData;
+        transfer_index_t *tIndex = patch->tIndex;
+        unsigned iIndex = patch->iIndex;
 
-        for (m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
+        for (unsigned m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
         {
             VectorAdd(adds[patch->totalstyle[m]], patch->totallight[m], adds[patch->totalstyle[m]]);
         }
 
-        for (k = 0; k < iIndex; k++, tIndex++)
+        for (unsigned k = 0; k < iIndex; k++, tIndex++)
         {
-            unsigned l;
             unsigned size = (tIndex->size + 1);
             unsigned patchnum = tIndex->index;
 
-            for (l = 0; l < size; l++, tData += float_size[g_transfer_compress_type], patchnum++)
+            for (unsigned l = 0; l < size; l++, tData += float_size[g_transfer_compress_type], patchnum++)
             {
                 vec3_t v;
                 //LRC:
                 patch_t *emitpatch = &g_patches[patchnum];
-                unsigned emitstyle;
                 int opaquestyle = -1;
                 GetStyle(j, patchnum, opaquestyle, fastfind_index);
                 float_decompress(g_transfer_compress_type, tData, &f);
 
                 // for each style on the emitting patch
-                for (emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->directstyle[emitstyle] != 255; emitstyle++)
+                for (unsigned emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->directstyle[emitstyle] != 255; emitstyle++)
                 {
                     VectorScale(emitpatch->directlight[emitstyle], f, v);
                     VectorMultiply(v, emitpatch->bouncereflectivity, v);
@@ -2117,7 +2032,7 @@ static void GatherLight(int threadnum)
                         VectorAdd(adds[addstyle], v, adds[addstyle]);
                     }
                 }
-                for (emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->totalstyle[emitstyle] != 255; emitstyle++)
+                for (unsigned emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->totalstyle[emitstyle] != 255; emitstyle++)
                 {
                     VectorScale(emitlight[patchnum][emitstyle], f, v);
                     VectorMultiply(v, emitpatch->bouncereflectivity, v);
@@ -2151,11 +2066,11 @@ static void GatherLight(int threadnum)
         }
 
         vec_t maxlights[ALLSTYLES];
-        for (style = 0; style < ALLSTYLES; style++)
+        for (int style = 0; style < ALLSTYLES; style++)
         {
             maxlights[style] = VectorMaximum(adds[style]);
         }
-        for (m = 0; m < MAXLIGHTMAPS; m++)
+        for (unsigned m = 0; m < MAXLIGHTMAPS; m++)
         {
             unsigned char beststyle = 255;
             if (m == 0)
@@ -2165,7 +2080,7 @@ static void GatherLight(int threadnum)
             else
             {
                 vec_t bestmaxlight = 0;
-                for (style = 1; style < ALLSTYLES; style++)
+                for (int style = 1; style < ALLSTYLES; style++)
                 {
                     if (maxlights[style] > bestmaxlight + NORMAL_EPSILON)
                     {
@@ -2185,7 +2100,7 @@ static void GatherLight(int threadnum)
                 newstyles[j][m] = 255;
             }
         }
-        for (style = 1; style < ALLSTYLES; style++)
+        for (int style = 1; style < ALLSTYLES; style++)
         {
             if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
             {
@@ -2204,57 +2119,46 @@ static void GatherLight(int threadnum)
 // RGB Transfer version
 static void GatherRGBLight(int threadnum)
 {
-    int j;
-    patch_t *patch;
 
-    unsigned k, m; //LRC
-                   //LRC    vec3_t          sum;
-
-    unsigned iIndex;
-    rgb_transfer_data_t *tRGBData;
-    transfer_index_t *tIndex;
     float f[3];
     vec3_t adds[ALLSTYLES];
-    int style;
     unsigned int fastfind_index = 0;
 
     while (1)
     {
-        j = GetThreadWork();
+        int j = GetThreadWork();
         if (j == -1)
         {
             break;
         }
         memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
 
-        patch = &g_patches[j];
+        patch_t *patch = &g_patches[j];
 
-        tRGBData = patch->tRGBData;
-        tIndex = patch->tIndex;
-        iIndex = patch->iIndex;
+        rgb_transfer_data_t *tRGBData = patch->tRGBData;
+        transfer_index_t *tIndex = patch->tIndex;
+        unsigned iIndex = patch->iIndex;
 
-        for (m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
+        for (unsigned m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
         {
             VectorAdd(adds[patch->totalstyle[m]], patch->totallight[m], adds[patch->totalstyle[m]]);
         }
 
-        for (k = 0; k < iIndex; k++, tIndex++)
+        for (unsigned k = 0; k < iIndex; k++, tIndex++)
         {
-            unsigned l;
             unsigned size = (tIndex->size + 1);
             unsigned patchnum = tIndex->index;
-            for (l = 0; l < size; l++, tRGBData += vector_size[g_rgbtransfer_compress_type], patchnum++)
+            for (unsigned l = 0; l < size; l++, tRGBData += vector_size[g_rgbtransfer_compress_type], patchnum++)
             {
                 vec3_t v;
                 //LRC:
                 patch_t *emitpatch = &g_patches[patchnum];
-                unsigned emitstyle;
                 int opaquestyle = -1;
                 GetStyle(j, patchnum, opaquestyle, fastfind_index);
                 vector_decompress(g_rgbtransfer_compress_type, tRGBData, &f[0], &f[1], &f[2]);
 
                 // for each style on the emitting patch
-                for (emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->directstyle[emitstyle] != 255; emitstyle++)
+                for (unsigned emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->directstyle[emitstyle] != 255; emitstyle++)
                 {
                     VectorMultiply(emitpatch->directlight[emitstyle], f, v);
                     VectorMultiply(v, emitpatch->bouncereflectivity, v);
@@ -2278,7 +2182,7 @@ static void GatherRGBLight(int threadnum)
                         VectorAdd(adds[addstyle], v, adds[addstyle]);
                     }
                 }
-                for (emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->totalstyle[emitstyle] != 255; emitstyle++)
+                for (unsigned emitstyle = 0; emitstyle < MAXLIGHTMAPS && emitpatch->totalstyle[emitstyle] != 255; emitstyle++)
                 {
                     VectorMultiply(emitlight[patchnum][emitstyle], f, v);
                     VectorMultiply(v, emitpatch->bouncereflectivity, v);
@@ -2312,11 +2216,11 @@ static void GatherRGBLight(int threadnum)
         }
 
         vec_t maxlights[ALLSTYLES];
-        for (style = 0; style < ALLSTYLES; style++)
+        for (int style = 0; style < ALLSTYLES; style++)
         {
             maxlights[style] = VectorMaximum(adds[style]);
         }
-        for (m = 0; m < MAXLIGHTMAPS; m++)
+        for (unsigned m = 0; m < MAXLIGHTMAPS; m++)
         {
             unsigned char beststyle = 255;
             if (m == 0)
@@ -2326,7 +2230,7 @@ static void GatherRGBLight(int threadnum)
             else
             {
                 vec_t bestmaxlight = 0;
-                for (style = 1; style < ALLSTYLES; style++)
+                for (int style = 1; style < ALLSTYLES; style++)
                 {
                     if (maxlights[style] > bestmaxlight + NORMAL_EPSILON)
                     {
@@ -2346,7 +2250,7 @@ static void GatherRGBLight(int threadnum)
                 newstyles[j][m] = 255;
             }
         }
-        for (style = 1; style < ALLSTYLES; style++)
+        for (int style = 1; style < ALLSTYLES; style++)
         {
             if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
             {
@@ -2369,21 +2273,18 @@ static void GatherRGBLight(int threadnum)
 // =====================================================================================
 static void BounceLight()
 {
-    unsigned i;
     char name[64];
 
-    unsigned j; //LRC
-
-    for (i = 0; i < g_num_patches; i++)
+    for (unsigned i = 0; i < g_num_patches; i++)
     {
         patch_t *patch = &g_patches[i];
-        for (j = 0; j < MAXLIGHTMAPS && patch->totalstyle[j] != 255; j++)
+        for (unsigned j = 0; j < MAXLIGHTMAPS && patch->totalstyle[j] != 255; j++)
         {
             VectorCopy(patch->totallight[j], emitlight[i][j]);
         }
     }
 
-    for (i = 0; i < g_numbounce; i++)
+    for (unsigned i = 0; i < g_numbounce; i++)
     {
         Log("Bounce %u ", i + 1);
         if (g_rgb_transfers)
@@ -2402,10 +2303,10 @@ static void BounceLight()
             WriteWorld(name);
         }
     }
-    for (i = 0; i < g_num_patches; i++)
+    for (unsigned i = 0; i < g_num_patches; i++)
     {
         patch_t *patch = &g_patches[i];
-        for (j = 0; j < MAXLIGHTMAPS && patch->totalstyle[j] != 255; j++)
+        for (unsigned j = 0; j < MAXLIGHTMAPS && patch->totalstyle[j] != 255; j++)
         {
             VectorCopy(emitlight[i][j], patch->totallight[j]);
         }
@@ -2455,10 +2356,9 @@ static void MakeScalesStub()
 // =====================================================================================
 static void FreeTransfers()
 {
-    unsigned x;
     patch_t *patch = g_patches;
 
-    for (x = 0; x < g_num_patches; x++, patch++)
+    for (unsigned x = 0; x < g_num_patches; x++, patch++)
     {
         if (patch->tData)
         {
@@ -2480,20 +2380,14 @@ static void FreeTransfers()
 
 static void ExtendLightmapBuffer()
 {
-    int maxsize;
-    int i;
-    int j;
-    int ofs;
-    dface_t *f;
-
-    maxsize = 0;
-    for (i = 0; i < g_numfaces; i++)
+    int maxsize = 0;
+    for (int i = 0; i < g_numfaces; i++)
     {
-        f = &g_dfaces[i];
+        dface_t *f = &g_dfaces[i];
         if (f->lightofs >= 0)
         {
-            ofs = f->lightofs;
-            for (j = 0; j < MAXLIGHTMAPS && f->styles[j] != 255; j++)
+            int ofs = f->lightofs;
+            for (int j = 0; j < MAXLIGHTMAPS && f->styles[j] != 255; j++)
             {
                 ofs += (MAX_SURFACE_EXTENT + 1) * (MAX_SURFACE_EXTENT + 1) * 3;
             }
@@ -2516,9 +2410,6 @@ static void ExtendLightmapBuffer()
 // =====================================================================================
 static void RadWorld()
 {
-    unsigned i;
-    unsigned j;
-
     MakeBackplanes();
     MakeParents(0, -1);
     MakeTnodes(&g_dmodels[0]);
@@ -2532,13 +2423,12 @@ static void RadWorld()
         char name[_MAX_PATH + 20];
         sprintf(name, "%s_patch.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
-        FILE *f;
-        f = fopen(name, "w");
+        FILE *f = fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;
             const vec3_t pos[pos_count] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 0, -1}, {1, 0, 0}, {0, 0, 0}};
-            int j, k;
+            int j;
             patch_t *patch;
             vec3_t v;
             for (j = 0, patch = g_patches; j < g_num_patches; j++, patch++)
@@ -2546,7 +2436,7 @@ static void RadWorld()
                 if (patch->flags == ePatchFlagOutside)
                     continue;
                 VectorCopy(patch->origin, v);
-                for (k = 0; k < pos_count; ++k)
+                for (int k = 0; k < pos_count; ++k)
                     fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
             }
             fclose(f);
@@ -2563,13 +2453,12 @@ static void RadWorld()
         char name[_MAX_PATH + 20];
         sprintf(name, "%s_edge.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
-        FILE *f;
-        f = fopen(name, "w");
+        FILE *f = fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;
             const vec3_t pos[pos_count] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 0, -1}, {1, 0, 0}, {0, 0, 0}};
-            int j, k;
+            int j;
             edgeshare_t *es;
             vec3_t v;
             for (j = 0, es = g_edgeshare; j < MAX_MAP_EDGES; j++, es++)
@@ -2581,7 +2470,7 @@ static void RadWorld()
                     VectorScale(v, 0.5, v);
                     VectorAdd(v, es->interface_normal, v);
                     VectorAdd(v, g_face_offset[es->faces[0] - g_dfaces], v);
-                    for (k = 0; k < pos_count; ++k)
+                    for (int k = 0; k < pos_count; ++k)
                         fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
                 }
             }
@@ -2731,13 +2620,12 @@ static void Usage()
 
     Log("   -minlight #    : Minimum final light (integer from 0 to 255)\n");
     {
-        int i;
         Log("   -compress #    : compress tranfer (");
-        for (i = 0; i < float_type_count; i++)
+        for (int i = 0; i < float_type_count; i++)
             Log(" %d=%s", i, float_type_string[i]);
         Log(" )\n");
         Log("   -rgbcompress # : compress rgbtranfer (");
-        for (i = 0; i < vector_type_count; i++)
+        for (int i = 0; i < vector_type_count; i++)
             Log(" %d=%s", i, vector_type_string[i]);
         Log(" )\n");
     }
@@ -2953,29 +2841,25 @@ static void Settings()
 // =====================================================================================
 void ReadInfoTexlights()
 {
-    int k;
-    int values;
     int numtexlights = 0;
     float r, g, b, i;
-    entity_t *mapent;
-    epair_t *ep;
     texlight_t texlight;
 
-    for (k = 0; k < g_numentities; k++)
+    for (int k = 0; k < g_numentities; k++)
     {
-        mapent = &g_entities[k];
+        entity_t *mapent = &g_entities[k];
 
         if (strcmp(ValueForKey(mapent, "classname"), "info_texlights"))
             continue;
 
         Log("Reading texlights from info_texlights map entity\n");
 
-        for (ep = mapent->epairs; ep; ep = ep->next)
+        for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
         {
             if (!strcmp(ep->key, "classname") || !strcmp(ep->key, "origin"))
                 continue; // we dont care about these keyvalues
 
-            values = sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);
+            int values = sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);
 
             if (values == 1)
             {
@@ -3132,8 +3016,6 @@ void LoadRadFiles(const char *const mapname, const char *const user_rad, const c
 // =====================================================================================
 int main(const int argc, char **argv)
 {
-    int i;
-    double start, end;
     const char *mapname_from_arg = NULL;
     const char *user_lights = NULL;
 
@@ -3151,7 +3033,7 @@ int main(const int argc, char **argv)
             if (argc == 1)
                 Usage();
 
-            for (i = 1; i < argc; i++)
+            for (int i = 1; i < argc; i++)
             {
                 if (!strcasecmp(argv[i], "-dump"))
                 {
@@ -3840,9 +3722,8 @@ int main(const int argc, char **argv)
             ThreadSetPriority(g_threadpriority);
             LogStart(argcold, argvold);
             {
-                int i;
                 Log("Arguments: ");
-                for (i = 1; i < argc; i++)
+                for (int i = 1; i < argc; i++)
                 {
                     if (strchr(argv[i], ' '))
                     {
@@ -3867,7 +3748,7 @@ int main(const int argc, char **argv)
             // END INIT
 
             // BEGIN RAD
-            start = I_FloatTime();
+            double start = I_FloatTime();
 
             // normalise maxlight
 
@@ -3889,8 +3770,7 @@ int main(const int argc, char **argv)
             ReadLightingCone();
             g_smoothing_threshold_2 = g_smoothing_value_2 < 0 ? g_smoothing_threshold : (float)cos(g_smoothing_value_2 * (Q_PI / 180.0));
             {
-                int style;
-                for (style = 0; style < ALLSTYLES; ++style)
+                for (int style = 0; style < ALLSTYLES; ++style)
                 {
                     g_corings[style] = style ? g_coring : 0;
                 }
@@ -3929,7 +3809,7 @@ int main(const int argc, char **argv)
 
             WriteBSPFile(g_source);
 
-            end = I_FloatTime();
+            double end = I_FloatTime();
             LogTimeElapsed(end - start);
             // END RAD
         }
