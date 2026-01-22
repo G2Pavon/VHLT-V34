@@ -61,8 +61,7 @@ void compress_compatability_test()
     float_decompress(FLOAT16, v + 4, &f[4]);
     vector_decompress(VECTOR24, v, &f[0], &f[1], &f[2]);
     float ans[5] = {0.109375f, 1.015625f, 0.015625f, 0.123001f, 0.000000f};
-    int i;
-    for (i = 0; i < 5; ++i)
+    for (int i = 0; i < 5; ++i)
         if (f[i] - ans[i] > 0.00001f || f[i] - ans[i] < -0.00001f)
             fail();
     free(v);
