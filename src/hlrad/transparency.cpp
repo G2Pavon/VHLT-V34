@@ -3,10 +3,10 @@
 //
 //	Transparency Arrays for sparse and vismatrix methods
 //
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
-#include <limits.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstddef>
+#include <climits>
 
 #include "qrad.h"
 #include "threads.h"

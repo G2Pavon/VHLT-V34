@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "qrad.h"
 #include "cmdlib.h"

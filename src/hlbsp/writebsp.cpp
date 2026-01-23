@@ -10,7 +10,7 @@
 
 #include <map>
 #include <utility>
-#include <string.h>
+#include <cstring>
 
 #include "bsp5.h"
 #include "cmdlib.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 
 extern bool q_exists(const char *const filename);
 extern int q_filelength(FILE *f);

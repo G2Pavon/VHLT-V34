@@ -1,5 +1,5 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
-#include <stdio.h>
+#include <cstdio>
 
 #include "bsp5.h"
 #include "cmdlib.h"

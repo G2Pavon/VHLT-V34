@@ -1,6 +1,6 @@
 #pragma once
 // AJM: added file in
-#include <stdlib.h>
+#include <cstdlib>
 
 #define MAX_WADPATHS 128 // arbitrary
 

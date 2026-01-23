@@ -1,5 +1,5 @@
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 #include "filelib.h"
 #include "log.h"

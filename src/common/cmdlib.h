@@ -26,7 +26,7 @@
 //=====================================================================
 
 #pragma warning(disable : 4996)
-#include <stddef.h>
+#include <cstddef>
 
 #include "win32fix.h"
 

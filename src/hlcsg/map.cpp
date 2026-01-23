@@ -1,7 +1,7 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cmath>
 
 #include "csg.h"
 #include "cmdlib.h"

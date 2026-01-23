@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include <cstddef>
 
 #include "qrad.h"
 #include "blockmem.h"

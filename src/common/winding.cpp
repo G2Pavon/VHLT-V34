@@ -1,6 +1,6 @@
 #pragma warning(disable : 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
 
-#include <string.h>
+#include <cstring>
 
 #include "winding.h"
 #include "log.h"

@@ -1,6 +1,6 @@
 // AJM: added this file in
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "wadpath.h"
 #include "log.h"

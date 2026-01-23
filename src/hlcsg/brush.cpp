@@ -1,6 +1,6 @@
-#include <string.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cmath>
+#include <cstdlib>
 
 #include "csg.h"
 #include "blockmem.h"

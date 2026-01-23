@@ -1,8 +1,8 @@
 #pragma once
 
-#include <malloc.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <malloc.h> // for _alloca
+#include <cstring>
 
 #define alloca _alloca
 

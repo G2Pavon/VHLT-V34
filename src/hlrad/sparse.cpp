@@ -1,5 +1,5 @@
 #include <io.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "qrad.h"
 #include "blockmem.h"
