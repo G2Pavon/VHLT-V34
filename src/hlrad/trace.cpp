@@ -31,15 +31,10 @@ static tnode_t *tnode_p;
  */
 static void MakeTnode(const int nodenum)
 {
-    tnode_t *t;
-    dplane_t *plane;
-    int i;
-    dnode_t *node;
+    tnode_t *t = tnode_p++;
 
-    t = tnode_p++;
-
-    node = g_dnodes + nodenum;
-    plane = g_dplanes + node->planenum;
+    dnode_t *node = g_dnodes + nodenum;
+    dplane_t *plane = g_dplanes + node->planenum;
 
     t->type = plane->type;
     VectorCopy(plane->normal, t->normal);
@@ -50,7 +45,7 @@ static void MakeTnode(const int nodenum)
             Developer(DEVELOPER_LEVEL_MESSAGE, "Warning: MakeTnode: negative plane\n");
     t->dist = plane->dist;
 
-    for (i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
     {
         if (node->children[i] < 0)
             t->children[i] = g_dleafs[-node->children[i] - 1].contents;
@@ -86,12 +81,8 @@ void MakeTnodes(dmodel_t * /*bm*/)
 
 int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linecontent, vec_t *skyhit)
 {
-    tnode_t *tnode;
     float front, back;
     vec3_t mid;
-    float frac;
-    int side;
-    int r;
 
     if (node < 0)
     {
@@ -117,7 +108,7 @@ int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linec
         return CONTENTS_EMPTY;
     }
 
-    tnode = &tnodes[node];
+    tnode_t *tnode = &tnodes[node];
     switch (tnode->type)
     {
     case plane_x:
@@ -158,8 +149,8 @@ int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linec
             return CONTENTS_SKY;
         return CONTENTS_EMPTY;
     }
-    side = (front - back) < 0;
-    frac = front / (front - back);
+    int side = (front - back) < 0;
+    float frac = front / (front - back);
     if (frac < 0)
         frac = 0;
     if (frac > 1)
@@ -167,7 +158,7 @@ int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linec
     mid[0] = start[0] + (stop[0] - start[0]) * frac;
     mid[1] = start[1] + (stop[1] - start[1]) * frac;
     mid[2] = start[2] + (stop[2] - start[2]) * frac;
-    r = TestLine_r(tnode->children[side], start, mid, linecontent, skyhit);
+    int r = TestLine_r(tnode->children[side], start, mid, linecontent, skyhit);
     if (r != CONTENTS_EMPTY)
         return r;
     return TestLine_r(tnode->children[!side], mid, stop, linecontent, skyhit);
@@ -224,7 +215,7 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
 
     Winding *w = f->winding;
     const Winding *w2 = f2->winding;
-    const vec_t *pA, *pB, *pC, *pD, *p2A, *p2B, *p2C, *p2D;
+    const vec_t *pA, *pB, *pD, *p2A, *p2B, *p2D;
     int i, i2;
 
     for (i = 0; i < w->m_NumPoints; i++)
@@ -233,11 +224,11 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
         {
             pA = w->m_Points[(i + w->m_NumPoints - 1) % w->m_NumPoints];
             pB = w->m_Points[i];
-            pC = w->m_Points[(i + 1) % w->m_NumPoints];
+            const vec_t *pC = w->m_Points[(i + 1) % w->m_NumPoints];
             pD = w->m_Points[(i + 2) % w->m_NumPoints];
             p2A = w2->m_Points[(i2 + w2->m_NumPoints - 1) % w2->m_NumPoints];
             p2B = w2->m_Points[i2];
-            p2C = w2->m_Points[(i2 + 1) % w2->m_NumPoints];
+            const vec_t *p2C = w2->m_Points[(i2 + 1) % w2->m_NumPoints];
             p2D = w2->m_Points[(i2 + 2) % w2->m_NumPoints];
             if (!VectorCompare(pB, p2C) || !VectorCompare(pC, p2B))
             {
@@ -259,7 +250,6 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     const vec_t *normal = f->plane.normal;
     vec3_t e1, e2;
     dplane_t pl1, pl2;
-    int side1, side2;
 
     VectorSubtract(p2D, pA, e1);
     CrossProduct(normal, e1, pl1.normal); // pointing outward
@@ -273,7 +263,7 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     {
         return false;
     }
-    side1 = (DotProduct(pB, pl1.normal) - pl1.dist > ON_EPSILON) ? 1 : 0;
+    int side1 = (DotProduct(pB, pl1.normal) - pl1.dist > ON_EPSILON) ? 1 : 0;
 
     VectorSubtract(pD, p2A, e2);
     CrossProduct(normal, e2, pl2.normal); // pointing outward
@@ -287,11 +277,11 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     {
         return false;
     }
-    side2 = (DotProduct(p2B, pl2.normal) - pl2.dist > ON_EPSILON) ? 1 : 0;
+    int side2 = (DotProduct(p2B, pl2.normal) - pl2.dist > ON_EPSILON) ? 1 : 0;
 
     Winding *neww = new Winding(w->m_NumPoints + w2->m_NumPoints - 4 + side1 + side2);
-    int j, k;
-    k = 0;
+    int j;
+    int k = 0;
     for (j = (i + 2) % w->m_NumPoints; j != i; j = (j + 1) % w->m_NumPoints)
     {
         VectorCopy(w->m_Points[j], neww->m_Points[k]);
@@ -326,7 +316,7 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
 
 int MergeOpaqueFaces(int firstface, int numfaces)
 {
-    int i, j, newnum;
+    int i, j;
     opaqueface_t *faces = &opaquefaces[firstface];
     for (i = 0; i < numfaces; i++)
     {
@@ -349,7 +339,7 @@ int MergeOpaqueFaces(int firstface, int numfaces)
             j++;
         }
     }
-    newnum = j;
+    int newnum = j;
     for (; j < numfaces; j++)
     {
         memset(&faces[j], 0, sizeof(opaqueface_t));
@@ -363,16 +353,13 @@ void BuildFaceEdges(opaqueface_t *f)
         return;
     f->numedges = f->winding->m_NumPoints;
     f->edges = (dplane_t *)calloc(f->numedges, sizeof(dplane_t));
-    const vec_t *p1, *p2;
     const vec_t *n = f->plane.normal;
     vec3_t e;
-    dplane_t *pl;
-    int x;
-    for (x = 0; x < f->winding->m_NumPoints; x++)
+    for (int x = 0; x < f->winding->m_NumPoints; x++)
     {
-        p1 = f->winding->m_Points[x];
-        p2 = f->winding->m_Points[(x + 1) % f->winding->m_NumPoints];
-        pl = &f->edges[x];
+        const vec_t *p1 = f->winding->m_Points[x];
+        const vec_t *p2 = f->winding->m_Points[(x + 1) % f->winding->m_NumPoints];
+        dplane_t *pl = &f->edges[x];
         VectorSubtract(p2, p1, e);
         CrossProduct(n, e, pl->normal);
         if (VectorNormalize(pl->normal) == 0.0)
@@ -388,11 +375,10 @@ void BuildFaceEdges(opaqueface_t *f)
 
 void CreateOpaqueNodes()
 {
-    int i, j;
     opaquemodels = (opaquemodel_t *)calloc(g_nummodels, sizeof(opaquemodel_t));
     opaquenodes = (opaquenode_t *)calloc(g_numnodes, sizeof(opaquenode_t));
     opaquefaces = (opaqueface_t *)calloc(g_numfaces, sizeof(opaqueface_t));
-    for (i = 0; i < g_numfaces; i++)
+    for (int i = 0; i < g_numfaces; i++)
     {
         opaqueface_t *of = &opaquefaces[i];
         dface_t *df = &g_dfaces[i];
@@ -410,7 +396,7 @@ void CreateOpaqueNodes()
         }
         of->texinfo = df->texinfo;
         texinfo_t *info = &g_texinfo[of->texinfo];
-        for (j = 0; j < 2; j++)
+        for (int j = 0; j < 2; j++)
         {
             for (int k = 0; k < 4; k++)
             {
@@ -423,7 +409,7 @@ void CreateOpaqueNodes()
         of->tex_height = tex->height;
         of->tex_canvas = tex->canvas;
     }
-    for (i = 0; i < g_numnodes; i++)
+    for (int i = 0; i < g_numnodes; i++)
     {
         opaquenode_t *on = &opaquenodes[i];
         dnode_t *dn = &g_dnodes[i];
@@ -436,16 +422,16 @@ void CreateOpaqueNodes()
         on->numfaces = dn->numfaces;
         on->numfaces = MergeOpaqueFaces(on->firstface, on->numfaces);
     }
-    for (i = 0; i < g_numfaces; i++)
+    for (int i = 0; i < g_numfaces; i++)
     {
         BuildFaceEdges(&opaquefaces[i]);
     }
-    for (i = 0; i < g_nummodels; i++)
+    for (int i = 0; i < g_nummodels; i++)
     {
         opaquemodel_t *om = &opaquemodels[i];
         dmodel_t *dm = &g_dmodels[i];
         om->headnode = dm->headnode[0];
-        for (j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++)
         {
             om->mins[j] = dm->mins[j] - 1;
             om->maxs[j] = dm->maxs[j] + 1;
@@ -455,8 +441,7 @@ void CreateOpaqueNodes()
 
 void DeleteOpaqueNodes()
 {
-    int i;
-    for (i = 0; i < g_numfaces; i++)
+    for (int i = 0; i < g_numfaces; i++)
     {
         opaqueface_t *of = &opaquefaces[i];
         if (of->winding)
@@ -472,13 +457,12 @@ void DeleteOpaqueNodes()
 int TestLineOpaque_face(int facenum, const vec3_t hit)
 {
     opaqueface_t *thisface = &opaquefaces[facenum];
-    int x;
     if (thisface->numedges == 0)
     {
         Developer(DEVELOPER_LEVEL_WARNING, "Warning: TestLineOpaque: Empty face.\n");
         return 0;
     }
-    for (x = 0; x < thisface->numedges; x++)
+    for (int x = 0; x < thisface->numedges; x++)
     {
         if (DotProduct(hit, thisface->edges[x].normal) - thisface->edges[x].dist > ON_EPSILON)
         {
@@ -487,9 +471,8 @@ int TestLineOpaque_face(int facenum, const vec3_t hit)
     }
     if (thisface->tex_alphatest)
     {
-        double x, y;
-        x = DotProduct(hit, thisface->tex_vecs[0]) + thisface->tex_vecs[0][3];
-        y = DotProduct(hit, thisface->tex_vecs[1]) + thisface->tex_vecs[1][3];
+        double x = DotProduct(hit, thisface->tex_vecs[0]) + thisface->tex_vecs[0][3];
+        double y = DotProduct(hit, thisface->tex_vecs[1]) + thisface->tex_vecs[1][3];
         x = floor(x - thisface->tex_width * floor(x / thisface->tex_width));
         y = floor(y - thisface->tex_height * floor(y / thisface->tex_height));
         x = x > thisface->tex_width - 1 ? thisface->tex_width - 1 : x < 0 ? 0
@@ -506,13 +489,12 @@ int TestLineOpaque_face(int facenum, const vec3_t hit)
 
 int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
 {
-    opaquenode_t *thisnode;
     vec_t front, back;
     if (nodenum < 0)
     {
         return 0;
     }
-    thisnode = &opaquenodes[nodenum];
+    opaquenode_t *thisnode = &opaquenodes[nodenum];
     switch (thisnode->type)
     {
     case plane_x:
@@ -544,12 +526,9 @@ int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
         return TestLineOpaque_r(thisnode->children[0], start, stop) || TestLineOpaque_r(thisnode->children[1], start, stop);
     }
     {
-        int side;
-        vec_t frac;
         vec3_t mid;
-        int facenum;
-        side = (front - back) < 0;
-        frac = front / (front - back);
+        int side = (front - back) < 0;
+        vec_t frac = front / (front - back);
         if (frac < 0)
             frac = 0;
         if (frac > 1)
@@ -557,7 +536,7 @@ int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
         mid[0] = start[0] + (stop[0] - start[0]) * frac;
         mid[1] = start[1] + (stop[1] - start[1]) * frac;
         mid[2] = start[2] + (stop[2] - start[2]) * frac;
-        for (facenum = thisnode->firstface; facenum < thisnode->firstface + thisnode->numfaces; facenum++)
+        for (int facenum = thisnode->firstface; facenum < thisnode->firstface + thisnode->numfaces; facenum++)
         {
             if (TestLineOpaque_face(facenum, mid))
             {
@@ -571,22 +550,21 @@ int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
 int TestLineOpaque(int modelnum, const vec3_t modelorigin, const vec3_t start, const vec3_t stop)
 {
     opaquemodel_t *thismodel = &opaquemodels[modelnum];
-    vec_t front, back, frac;
     vec3_t p1, p2;
     VectorSubtract(start, modelorigin, p1);
     VectorSubtract(stop, modelorigin, p2);
-    int axial;
-    for (axial = 0; axial < 3; axial++)
+
+    for (int axial = 0; axial < 3; axial++)
     {
-        front = p1[axial] - thismodel->maxs[axial];
-        back = p2[axial] - thismodel->maxs[axial];
+        vec_t front = p1[axial] - thismodel->maxs[axial];
+        vec_t back = p2[axial] - thismodel->maxs[axial];
         if (front >= -ON_EPSILON && back >= -ON_EPSILON)
         {
             return 0;
         }
         if (front > ON_EPSILON || back > ON_EPSILON)
         {
-            frac = front / (front - back);
+            vec_t frac = front / (front - back);
             if (front > back)
             {
                 p1[0] = p1[0] + (p2[0] - p1[0]) * frac;
@@ -608,7 +586,7 @@ int TestLineOpaque(int modelnum, const vec3_t modelorigin, const vec3_t start, c
         }
         if (front > ON_EPSILON || back > ON_EPSILON)
         {
-            frac = front / (front - back);
+            vec_t frac = front / (front - back);
             if (front > back)
             {
                 p1[0] = p1[0] + (p2[0] - p1[0]) * frac;
@@ -628,8 +606,7 @@ int TestLineOpaque(int modelnum, const vec3_t modelorigin, const vec3_t start, c
 
 int CountOpaqueFaces_r(opaquenode_t *node)
 {
-    int count;
-    count = node->numfaces;
+    int count = node->numfaces;
     if (node->children[0] >= 0)
     {
         count += CountOpaqueFaces_r(&opaquenodes[node->children[0]]);
@@ -688,8 +665,7 @@ int TestPointOpaque_r(int nodenum, bool solid, const vec3_t point)
         }
     }
     {
-        int facenum;
-        for (facenum = thisnode->firstface; facenum < thisnode->firstface + thisnode->numfaces; facenum++)
+        for (int facenum = thisnode->firstface; facenum < thisnode->firstface + thisnode->numfaces; facenum++)
         {
             if (TestLineOpaque_face(facenum, point))
             {
