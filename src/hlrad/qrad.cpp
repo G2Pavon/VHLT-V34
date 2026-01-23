@@ -10,9 +10,9 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
 #include <vector>
 #include <string>
+#include <cmath>
 
 #include "qrad.h"
 #include "cmdlinecfg.h"
@@ -203,7 +203,7 @@ void GetParamsFromEnt(entity_t *mapent)
     iTmp = IntForKey(mapent, "bounce");
     if (iTmp)
     {
-        g_numbounce = abs(iTmp);
+        g_numbounce = std::abs(iTmp);
         Log("%30s [ %-9s ]\n", "Number of radiosity bounces", ValueForKey(mapent, "bounce"));
     }
 
@@ -1641,7 +1641,7 @@ static entity_t *FindTexlightEntity(int facenum)
         }
         if (*ValueForKey(ent, "_fdist"))
         {
-            if (fabs(DotProduct(delta, dplane->normal)) > FloatForKey(ent, "_fdist"))
+            if (std::abs(DotProduct(delta, dplane->normal)) > FloatForKey(ent, "_fdist"))
                 continue;
         }
         if (*ValueForKey(ent, "_fclass"))

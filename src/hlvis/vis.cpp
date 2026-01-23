@@ -13,6 +13,7 @@
 #include <cstring>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cmath>
 
 #include "vis.h"
 #include "filelib.h"
@@ -938,7 +939,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_maxdistance = abs(atoi(argv[++i]));
+                        g_maxdistance = std::abs(atoi(argv[++i]));
                     }
                     else
                     {

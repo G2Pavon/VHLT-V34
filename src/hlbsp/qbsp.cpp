@@ -11,6 +11,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <cstdio>
+#include <cmath>
 
 #include "bsp5.h"
 #include "cmdlib.h"
@@ -994,7 +995,7 @@ static surfchain_t *ReadSurfs(FILE *file)
             if (DEVELOPER_LEVEL_MEGASPAM <= g_developer)
             {
                 const dplane_t *plane = &g_dplanes[f->planenum];
-                double inaccuracy = fabs(DotProduct(f->pts[i], plane->normal) - plane->dist);
+                double inaccuracy = std::abs(DotProduct(f->pts[i], plane->normal) - plane->dist);
                 inaccuracy_count++;
                 inaccuracy_total += inaccuracy;
                 inaccuracy_max = qmax(inaccuracy, inaccuracy_max);

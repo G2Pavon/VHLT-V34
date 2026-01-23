@@ -1,6 +1,7 @@
 #pragma warning(disable : 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
 
 #include <cstring>
+#include <cmath>
 
 #include "winding.h"
 #include "log.h"
@@ -298,7 +299,7 @@ void Winding::initFromPlane(const vec3_t normal, const vec_t dist)
     int x = -1;
     for (int i = 0; i < 3; i++)
     {
-        v = fabs(normal[i]);
+        v = std::abs(normal[i]);
         if (v > max)
         {
             max = v;

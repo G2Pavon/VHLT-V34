@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "qrad.h"
 #include "filelib.h"
 #include "threads.h"
@@ -89,8 +91,8 @@ void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgeend, dfa
         for (int i = 0; i < f->numedges; i++)
         {
             int e = g_dsurfedges[f->firstedge + i];
-            edgeshare_t *es = &g_edgeshare[abs(e)];
-            int v0 = g_dedges[abs(e)].v[0], v1 = g_dedges[abs(e)].v[1];
+            edgeshare_t *es = &g_edgeshare[std::abs(e)];
+            int v0 = g_dedges[std::abs(e)].v[0], v1 = g_dedges[std::abs(e)].v[1];
             Log(" e=%d v0=%d(%f,%f,%f) v1=%d(%f,%f,%f) share0=%d share1=%d\n", e,
                 v0, g_dvertexes[v0].point[0], g_dvertexes[v0].point[1], g_dvertexes[v0].point[2],
                 v1, g_dvertexes[v1].point[0], g_dvertexes[v1].point[1], g_dvertexes[v1].point[2],
@@ -118,14 +120,14 @@ int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeen
     for (count1 = count2 = 0, i = 0; i < f->numedges; i++)
     {
         int e = g_dsurfedges[f->firstedge + i];
-        if (g_dedges[abs(e)].v[0] == g_dedges[abs(e)].v[1])
+        if (g_dedges[std::abs(e)].v[0] == g_dedges[std::abs(e)].v[1])
             continue;
-        if (abs(e) == edgeabs)
+        if (std::abs(e) == edgeabs)
         {
             edge = e;
             count1++;
         }
-        else if (g_dedges[abs(e)].v[0] == vnum || g_dedges[abs(e)].v[1] == vnum)
+        else if (g_dedges[std::abs(e)].v[0] == vnum || g_dedges[std::abs(e)].v[1] == vnum)
         {
             edgenext = e;
             count2++;
@@ -138,22 +140,22 @@ int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeen
     }
 
     vec3_t vec1, vec2;
-    int vnum11 = g_dedges[abs(edge)].v[edge > 0 ? 0 : 1];
-    int vnum12 = g_dedges[abs(edge)].v[edge > 0 ? 1 : 0];
-    int vnum21 = g_dedges[abs(edgenext)].v[edgenext > 0 ? 0 : 1];
-    int vnum22 = g_dedges[abs(edgenext)].v[edgenext > 0 ? 1 : 0];
+    int vnum11 = g_dedges[std::abs(edge)].v[edge > 0 ? 0 : 1];
+    int vnum12 = g_dedges[std::abs(edge)].v[edge > 0 ? 1 : 0];
+    int vnum21 = g_dedges[std::abs(edgenext)].v[edgenext > 0 ? 0 : 1];
+    int vnum22 = g_dedges[std::abs(edgenext)].v[edgenext > 0 ? 1 : 0];
     if (vnum == vnum12 && vnum == vnum21 && vnum != vnum11 && vnum != vnum22)
     {
         VectorSubtract(g_dvertexes[vnum11].point, g_dvertexes[vnum].point, vec1);
         VectorSubtract(g_dvertexes[vnum22].point, g_dvertexes[vnum].point, vec2);
-        edgeabsnext = abs(edgenext);
+        edgeabsnext = std::abs(edgenext);
         edgeendnext = edgenext > 0 ? 0 : 1;
     }
     else if (vnum == vnum11 && vnum == vnum22 && vnum != vnum12 && vnum != vnum21)
     {
         VectorSubtract(g_dvertexes[vnum12].point, g_dvertexes[vnum].point, vec1);
         VectorSubtract(g_dvertexes[vnum21].point, g_dvertexes[vnum].point, vec2);
-        edgeabsnext = abs(edgenext);
+        edgeabsnext = std::abs(edgenext);
         edgeendnext = edgenext > 0 ? 1 : 0;
     }
     else
@@ -330,8 +332,8 @@ void PairEdges()
                 {
                     int miptex0 = g_texinfo[e->faces[0]->texinfo].miptex;
                     int miptex1 = g_texinfo[e->faces[1]->texinfo].miptex;
-                    if (fabs(g_lightingconeinfo[miptex0][0] - g_lightingconeinfo[miptex1][0]) > NORMAL_EPSILON ||
-                        fabs(g_lightingconeinfo[miptex0][1] - g_lightingconeinfo[miptex1][1]) > NORMAL_EPSILON)
+                    if (std::abs(g_lightingconeinfo[miptex0][0] - g_lightingconeinfo[miptex1][0]) > NORMAL_EPSILON ||
+                        std::abs(g_lightingconeinfo[miptex0][1] - g_lightingconeinfo[miptex1][1]) > NORMAL_EPSILON)
                     {
                         e->coplanar = false;
                         VectorClear(e->interface_normal);
@@ -344,13 +346,13 @@ void PairEdges()
                 if (e->smooth)
                 {
                     // compute the matrix in advance
-                    if (!TranslateTexToTex(e->faces[0] - g_dfaces, abs(k), e->faces[1] - g_dfaces, e->textotex[0], e->textotex[1]))
+                    if (!TranslateTexToTex(e->faces[0] - g_dfaces, std::abs(k), e->faces[1] - g_dfaces, e->textotex[0], e->textotex[1]))
                     {
                         e->smooth = false;
                         e->coplanar = false;
                         VectorClear(e->interface_normal);
 
-                        dvertex_t *dv = &g_dvertexes[g_dedges[abs(k)].v[0]];
+                        dvertex_t *dv = &g_dvertexes[g_dedges[std::abs(k)].v[0]];
                         Developer(DEVELOPER_LEVEL_MEGASPAM, "TranslateTexToTex failed on face %d and %d @(%f,%f,%f)", (int)(e->faces[0] - g_dfaces), (int)(e->faces[1] - g_dfaces), dv->point[0], dv->point[1], dv->point[2]);
                     }
                 }
@@ -901,7 +903,7 @@ void ChopFrag(samplefrag_t *frag)
         samplefragedge_t *e = &frag->edges[frag->numedges];
 
         // some basic info
-        e->edgenum = abs(g_dsurfedges[f->firstedge + i]);
+        e->edgenum = std::abs(g_dsurfedges[f->firstedge + i]);
         e->edgeside = (g_dsurfedges[f->firstedge + i] < 0 ? 1 : 0);
         edgeshare_t *es = &g_edgeshare[e->edgenum];
         if (!es->smooth)
@@ -989,7 +991,7 @@ void ChopFrag(samplefrag_t *frag)
             continue;
         }
 
-        if (fabs(e->ratio - 1) < 0.005)
+        if (std::abs(e->ratio - 1) < 0.005)
         {
             e->prevtonext = *m;
             e->nexttoprev = *m_inverse;
@@ -1130,11 +1132,11 @@ static bool FindBestEdge(samplefraginfo_t *info, samplefrag_t *&bestfrag, sample
             {
                 better = (e->noseam && !bestedge->noseam);
             }
-            else if (fabs(e->distance - bestedge->distance) > ON_EPSILON)
+            else if (std::abs(e->distance - bestedge->distance) > ON_EPSILON)
             {
                 better = (e->distance < bestedge->distance);
             }
-            else if (fabs(e->distancereduction - bestedge->distancereduction) > ON_EPSILON)
+            else if (std::abs(e->distancereduction - bestedge->distancereduction) > ON_EPSILON)
             {
                 better = (e->distancereduction > bestedge->distancereduction);
             }
@@ -1330,7 +1332,7 @@ static light_flag_t SetSampleFromST(vec_t *const point,
         {
             better = !nudged_one;
         }
-        else if (fabs(dist - best_dist) > 2 * ON_EPSILON)
+        else if (std::abs(dist - best_dist) > 2 * ON_EPSILON)
         {
             better = (dist < best_dist);
         }
@@ -2376,7 +2378,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
         {
             CrossProduct(tex->vecs[1 - x], dp->normal, texlightgap_textoworld[x]);
             len = DotProduct(texlightgap_textoworld[x], tex->vecs[x]);
-            if (fabs(len) < NORMAL_EPSILON)
+            if (std::abs(len) < NORMAL_EPSILON)
             {
                 VectorClear(texlightgap_textoworld[x]);
             }
@@ -2600,9 +2602,9 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             // discard the texlight if the spot is too close to the texlight plane
                             if (l->texlightgap > 0)
                             {
-                                vec_t test = dot2 * dist;                                                        // distance from spot to texlight plane;
-                                test -= l->texlightgap * fabs(DotProduct(l->normal, texlightgap_textoworld[0])); // maximum distance reduction if the spot is allowed to shift l->texlightgap pixels along s axis
-                                test -= l->texlightgap * fabs(DotProduct(l->normal, texlightgap_textoworld[1])); // maximum distance reduction if the spot is allowed to shift l->texlightgap pixels along t axis
+                                vec_t test = dot2 * dist;                                                            // distance from spot to texlight plane;
+                                test -= l->texlightgap * std::abs(DotProduct(l->normal, texlightgap_textoworld[0])); // maximum distance reduction if the spot is allowed to shift l->texlightgap pixels along s axis
+                                test -= l->texlightgap * std::abs(DotProduct(l->normal, texlightgap_textoworld[1])); // maximum distance reduction if the spot is allowed to shift l->texlightgap pixels along t axis
                                 if (test < -ON_EPSILON)
                                 {
                                     continue;
@@ -2965,9 +2967,9 @@ void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal)
             int e1 = g_dsurfedges[prev_edge];
             int e2 = g_dsurfedges[next_edge];
 
-            edgeshare_t *es = &g_edgeshare[abs(e)];
-            edgeshare_t *es1 = &g_edgeshare[abs(e1)];
-            edgeshare_t *es2 = &g_edgeshare[abs(e2)];
+            edgeshare_t *es = &g_edgeshare[std::abs(e)];
+            edgeshare_t *es1 = &g_edgeshare[std::abs(e1)];
+            edgeshare_t *es2 = &g_edgeshare[std::abs(e2)];
 
             if ((!es->smooth || es->coplanar) && (!es1->smooth || es1->coplanar) && (!es2->smooth || es2->coplanar))
             {
@@ -3449,11 +3451,11 @@ void BuildFacelights(const int facenum)
                 {
                     int *pwallflags = &sample_wallflags[(s - s_center + l.lmcache_side) + (2 * l.lmcache_side + 1) * (t - t_center + l.lmcache_side)];
                     int coord[2] = {s - s_origin, t - t_origin};
-                    int axis = abs(coord[0]) >= abs(coord[1]) ? 0 : 1;
+                    int axis = std::abs(coord[0]) >= std::abs(coord[1]) ? 0 : 1;
                     int sign = coord[axis] >= 0 ? 1 : -1;
                     bool blocked1 = false;
                     bool blocked2 = false;
-                    for (int dist = 1; dist < abs(coord[axis]); dist++)
+                    for (int dist = 1; dist < std::abs(coord[axis]); dist++)
                     {
                         int test1[2];
                         int test2[2];
@@ -3461,8 +3463,8 @@ void BuildFacelights(const int facenum)
                         double intercept = (double)coord[1 - axis] * (double)test1[axis] / (double)coord[axis];
                         test1[1 - axis] = (int)floor(intercept + 0.01);
                         test2[1 - axis] = (int)ceil(intercept - 0.01);
-                        if (abs(test1[0] + s_origin - s_center) > l.lmcache_side || abs(test1[1] + t_origin - t_center) > l.lmcache_side ||
-                            abs(test2[0] + s_origin - s_center) > l.lmcache_side || abs(test2[1] + t_origin - t_center) > l.lmcache_side)
+                        if (std::abs(test1[0] + s_origin - s_center) > l.lmcache_side || std::abs(test1[1] + t_origin - t_center) > l.lmcache_side ||
+                            std::abs(test2[0] + s_origin - s_center) > l.lmcache_side || std::abs(test2[1] + t_origin - t_center) > l.lmcache_side)
                         {
                             Warning("HLRAD_AVOIDWALLBLEED: internal error. Contact vluzacn@163.com concerning this issue.");
                             continue;

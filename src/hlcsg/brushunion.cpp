@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "csg.h"
 #include "blockmem.h"
 #include "log.h"
@@ -193,7 +195,7 @@ static vec_t CalculateSolidVolume(const brushhull_t *const hull)
         vec_t dist = DotProduct(plane->normal, midpoint);
 
         dist -= plane->dist;
-        dist = fabs(dist);
+        dist = std::abs(dist);
 
         volume += area * dist / 3.0;
     }

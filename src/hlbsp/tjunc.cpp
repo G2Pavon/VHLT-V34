@@ -202,15 +202,15 @@ static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
     for (int i = 0; i < num_hashneighbors; ++i)
         for (w = wedge_hash[hashneighbors[i]]; w; w = w->next)
         {
-            if (fabs(w->origin[0] - origin[0]) > EQUAL_EPSILON ||
-                fabs(w->origin[1] - origin[1]) > EQUAL_EPSILON ||
-                fabs(w->origin[2] - origin[2]) > EQUAL_EPSILON)
+            if (std::abs(w->origin[0] - origin[0]) > EQUAL_EPSILON ||
+                std::abs(w->origin[1] - origin[1]) > EQUAL_EPSILON ||
+                std::abs(w->origin[2] - origin[2]) > EQUAL_EPSILON)
             {
                 continue;
             }
-            if (fabs(w->dir[0] - dir[0]) > NORMAL_EPSILON ||
-                fabs(w->dir[1] - dir[1]) > NORMAL_EPSILON ||
-                fabs(w->dir[2] - dir[2]) > NORMAL_EPSILON)
+            if (std::abs(w->dir[0] - dir[0]) > NORMAL_EPSILON ||
+                std::abs(w->dir[1] - dir[1]) > NORMAL_EPSILON ||
+                std::abs(w->dir[2] - dir[2]) > NORMAL_EPSILON)
             {
                 continue;
             }
@@ -245,7 +245,7 @@ static void AddVert(const wedge_t *const w, const vec_t t)
     wvert_t *v = w->head.next;
     do
     {
-        if (fabs(v->t - t) < T_EPSILON)
+        if (std::abs(v->t - t) < T_EPSILON)
         {
             return;
         }
@@ -524,13 +524,13 @@ void tjunc(node_t *headnode)
     // origin points won't allways be inside the map, so extend the hash area
     for (int i = 0; i < 3; i++)
     {
-        if (fabs(headnode->maxs[i]) > fabs(headnode->mins[i]))
+        if (std::abs(headnode->maxs[i]) > std::abs(headnode->mins[i]))
         {
-            maxs[i] = fabs(headnode->maxs[i]);
+            maxs[i] = std::abs(headnode->maxs[i]);
         }
         else
         {
-            maxs[i] = fabs(headnode->mins[i]);
+            maxs[i] = std::abs(headnode->mins[i]);
         }
     }
     VectorSubtract(vec3_origin, maxs, mins);

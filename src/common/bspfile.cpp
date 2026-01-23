@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "filelib.h"
 #include "messages.h"
 #include "hlassert.h"
@@ -739,7 +741,7 @@ int CountBlocks()
             if (f->numedges > 0)
             {
                 int e = g_dsurfedges[f->firstedge];
-                dvertex_t *v = &g_dvertexes[g_dedges[abs(e)].v[e >= 0 ? 0 : 1]];
+                dvertex_t *v = &g_dvertexes[g_dedges[std::abs(e)].v[e >= 0 ? 0 : 1]];
                 VectorCopy(v->point, point);
             }
         }

@@ -154,7 +154,7 @@ inline bool VectorCompare(const vec3_t v1, const vec3_t v2)
 
     for (i = 0; i < 3; i++)
     {
-        if (fabs(v1[i] - v2[i]) > EQUAL_EPSILON)
+        if (std::abs(v1[i] - v2[i]) > EQUAL_EPSILON)
         {
             return false;
         }
@@ -196,9 +196,9 @@ inline planetypes PlaneTypeForNormal(vec3_t normal)
 {
     vec_t ax, ay, az;
 
-    ax = fabs(normal[0]);
-    ay = fabs(normal[1]);
-    az = fabs(normal[2]);
+    ax = std::abs(normal[0]);
+    ay = std::abs(normal[1]);
+    az = std::abs(normal[2]);
     if (ax > 1.0 - DIR_EPSILON && ay < DIR_EPSILON && az < DIR_EPSILON)
     {
         return plane_x;

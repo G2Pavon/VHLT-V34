@@ -798,11 +798,11 @@ bool ParseMapEntity()
                         if (ent_scale_b)
                         {
                             vec_t coord[2];
-                            if (fabs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
                             {
                                 coord[0] = DotProduct(ent_scale_origin, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0] + side->td.vects.valve.shift[0];
                                 side->td.vects.valve.scale[0] *= ent_scale;
-                                if (fabs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                                if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
                                 {
                                     side->td.vects.valve.shift[0] = coord[0] - DotProduct(ent_scale_origin, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0];
                                 }
@@ -815,11 +815,11 @@ bool ParseMapEntity()
                             {
                                 zeroscale = true;
                             }
-                            if (fabs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
                             {
                                 coord[1] = DotProduct(ent_scale_origin, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1] + side->td.vects.valve.shift[1];
                                 side->td.vects.valve.scale[1] *= ent_scale;
-                                if (fabs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                                if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
                                 {
                                     side->td.vects.valve.shift[1] = coord[1] - DotProduct(ent_scale_origin, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1];
                                 }
@@ -835,7 +835,7 @@ bool ParseMapEntity()
                         }
                         if (ent_move_b)
                         {
-                            if (fabs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
                             {
                                 side->td.vects.valve.shift[0] -= DotProduct(ent_move, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0];
                             }
@@ -843,7 +843,7 @@ bool ParseMapEntity()
                             {
                                 zeroscale = true;
                             }
-                            if (fabs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
                             {
                                 side->td.vects.valve.shift[1] -= DotProduct(ent_move, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1];
                             }
@@ -971,9 +971,9 @@ bool ParseMapEntity()
         DeleteCurrentEntity(mapent);
         return true;
     }
-    if (fabs(mapent->origin[0]) > ENGINE_ENTITY_RANGE + ON_EPSILON ||
-        fabs(mapent->origin[1]) > ENGINE_ENTITY_RANGE + ON_EPSILON ||
-        fabs(mapent->origin[2]) > ENGINE_ENTITY_RANGE + ON_EPSILON)
+    if (std::abs(mapent->origin[0]) > ENGINE_ENTITY_RANGE + ON_EPSILON ||
+        std::abs(mapent->origin[1]) > ENGINE_ENTITY_RANGE + ON_EPSILON ||
+        std::abs(mapent->origin[2]) > ENGINE_ENTITY_RANGE + ON_EPSILON)
     {
         const char *classname = ValueForKey(mapent, "classname");
         if (strncmp(classname, "light", 5))

@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cmath>
 
 #include "qrad.h"
 #include "cmdlib.h"
@@ -137,7 +138,7 @@ int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linec
     {
         return TestLine_r(tnode->children[1], start, stop, linecontent, skyhit);
     }
-    if (fabs(front) <= ON_EPSILON && fabs(back) <= ON_EPSILON)
+    if (std::abs(front) <= ON_EPSILON && std::abs(back) <= ON_EPSILON)
     {
         int r1 = TestLine_r(tnode->children[0], start, stop, linecontent, skyhit);
         if (r1 == CONTENTS_SOLID)
@@ -204,7 +205,7 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     {
         return false;
     }
-    if (fabs(f2->plane.dist - f->plane.dist) > ON_EPSILON || fabs(f2->plane.normal[0] - f->plane.normal[0]) > NORMAL_EPSILON || fabs(f2->plane.normal[1] - f->plane.normal[1]) > NORMAL_EPSILON || fabs(f2->plane.normal[2] - f->plane.normal[2]) > NORMAL_EPSILON)
+    if (std::abs(f2->plane.dist - f->plane.dist) > ON_EPSILON || std::abs(f2->plane.normal[0] - f->plane.normal[0]) > NORMAL_EPSILON || std::abs(f2->plane.normal[1] - f->plane.normal[1]) > NORMAL_EPSILON || std::abs(f2->plane.normal[2] - f->plane.normal[2]) > NORMAL_EPSILON)
     {
         return false;
     }
@@ -521,7 +522,7 @@ int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
     {
         return TestLineOpaque_r(thisnode->children[1], start, stop);
     }
-    if (fabs(front) <= ON_EPSILON && fabs(back) <= ON_EPSILON)
+    if (std::abs(front) <= ON_EPSILON && std::abs(back) <= ON_EPSILON)
     {
         return TestLineOpaque_r(thisnode->children[0], start, stop) || TestLineOpaque_r(thisnode->children[1], start, stop);
     }

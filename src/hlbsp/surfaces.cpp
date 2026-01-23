@@ -250,7 +250,7 @@ static int GetVertex(const vec3_t in, const int planenum)
 
     for (int i = 0; i < 3; i++)
     {
-        if (fabs(in[i] - VectorRound(in[i])) < 0.001)
+        if (std::abs(in[i] - VectorRound(in[i])) < 0.001)
         {
             vert[i] = VectorRound(in[i]);
         }
@@ -265,7 +265,7 @@ static int GetVertex(const vec3_t in, const int planenum)
     for (int i = 0; i < num_hashneighbors; i++)
         for (hv = hashverts[hashneighbors[i]]; hv; hv = hv->next)
         {
-            if (fabs(hv->point[0] - vert[0]) < POINT_EPSILON && fabs(hv->point[1] - vert[1]) < POINT_EPSILON && fabs(hv->point[2] - vert[2]) < POINT_EPSILON)
+            if (std::abs(hv->point[0] - vert[0]) < POINT_EPSILON && std::abs(hv->point[1] - vert[1]) < POINT_EPSILON && std::abs(hv->point[2] - vert[2]) < POINT_EPSILON)
             {
                 hv->numedges++;
                 if (hv->numplanes == 3)

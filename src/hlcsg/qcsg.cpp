@@ -11,6 +11,7 @@
 */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
+#include <cmath>
 
 #include "csg.h"
 #include "cmdlib.h"
@@ -446,7 +447,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
                 vec3_t texnormal;
                 CrossProduct(tex->vecs[1], tex->vecs[0], texnormal);
                 VectorNormalize(texnormal);
-                if (fabs(DotProduct(texnormal, f->plane->normal)) <= NORMAL_EPSILON)
+                if (std::abs(DotProduct(texnormal, f->plane->normal)) <= NORMAL_EPSILON)
                 {
                     Warning("Entity %i, Brush %i: Malformed texture alignment (texture %s): Texture axis perpendicular to face.",
                             b->originalentitynum, b->originalbrushnum,

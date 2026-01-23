@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #include "qrad.h"
 #include "log.h"
@@ -110,7 +111,7 @@ static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t positio
     // use phong normal instead of face normal, because phong normal is a continuous function
     GetPhongNormal(surface, position, phongnormal);
     dot = DotProduct(spot, phongnormal);
-    if (fabs(dot) > ON_EPSILON)
+    if (std::abs(dot) > ON_EPSILON)
     {
         frac = DotProduct(surfacespot, phongnormal) / dot;
         frac = qmax(0, qmin(frac, 1)); // to correct some extreme cases
@@ -125,7 +126,7 @@ static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t positio
     VectorSubtract(surfacespot, middle, v);
     vec_t dist2 = VectorLength(middle) + VectorLength(v);
 
-    if (dist > ON_EPSILON && fabs(dist2 - dist) > ON_EPSILON)
+    if (dist > ON_EPSILON && std::abs(dist2 - dist) > ON_EPSILON)
     {
         VectorScale(spot, dist2 / dist, spot);
     }
@@ -973,7 +974,7 @@ static bool TestLineSegmentIntersectWall(const facetriangulation_t *facetrian, c
         }
         vec_t dot1 = DotProduct(p1, wall->direction);
         vec_t dot2 = DotProduct(p2, wall->direction);
-        if (fabs(front) <= 2 * ON_EPSILON && fabs(back) <= 2 * ON_EPSILON)
+        if (std::abs(front) <= 2 * ON_EPSILON && std::abs(back) <= 2 * ON_EPSILON)
         {
             top = qmin(top, qmax(dot1, dot2));
             bottom = qmax(bottom, qmin(dot1, dot2));
@@ -1089,7 +1090,7 @@ static void GatherPatches(localtriangulation_t *lt, const facetriangulation_t *f
         vec_t angle = GetAngle(points[0].leftdirection, points[i].leftdirection, lt->normal);
         if (i == 0)
         {
-            if (g_drawlerp && fabs(angle) > NORMAL_EPSILON)
+            if (g_drawlerp && std::abs(angle) > NORMAL_EPSILON)
             {
                 Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 7.\n");
             }
@@ -1150,7 +1151,7 @@ static void PurgePatches(localtriangulation_t *lt)
         while (next[cur] != cur && valid[next[cur]] != 2)
         {
             vec_t angle = GetAngle(points[cur].leftdirection, points[next[cur]].leftdirection, lt->normal);
-            if (fabs(angle) <= (1.0 * Q_PI / 180) ||
+            if (std::abs(angle) <= (1.0 * Q_PI / 180) ||
                 GetAngleDiff(angle, 0) <= Q_PI + NORMAL_EPSILON && DotProduct(points[next[cur]].leftspot, v) >= DotProduct(points[cur].leftspot, v) - ON_EPSILON / 2)
             {
                 // remove next patch
@@ -1170,7 +1171,7 @@ static void PurgePatches(localtriangulation_t *lt)
         while (prev[cur] != cur && valid[prev[cur]] != 2)
         {
             vec_t angle = GetAngle(points[prev[cur]].leftdirection, points[cur].leftdirection, lt->normal);
-            if (fabs(angle) <= (1.0 * Q_PI / 180) ||
+            if (std::abs(angle) <= (1.0 * Q_PI / 180) ||
                 GetAngleDiff(angle, 0) <= Q_PI + NORMAL_EPSILON && DotProduct(points[prev[cur]].leftspot, v) >= DotProduct(points[cur].leftspot, v) - ON_EPSILON / 2)
             {
                 // remove previous patch
@@ -1437,7 +1438,7 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
         localtriangulation_t::Wedge *wnext = &lt->sortedwedges[(i + 1) % (int)lt->sortedwedges.size()];
 
         vec_t angle = GetAngle(w->leftdirection, wnext->leftdirection, lt->normal);
-        if (g_drawlerp && ((int)lt->sortedwedges.size() >= 2 && fabs(angle) <= (0.9 * Q_PI / 180)))
+        if (g_drawlerp && ((int)lt->sortedwedges.size() >= 2 && std::abs(angle) <= (0.9 * Q_PI / 180)))
         {
             Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 9.\n");
         }
@@ -1476,7 +1477,7 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
             }
         }
     }
-    if (g_drawlerp && ((int)lt->sortedwedges.size() > 0 && fabs(total - 2 * Q_PI) > 10 * NORMAL_EPSILON))
+    if (g_drawlerp && ((int)lt->sortedwedges.size() > 0 && std::abs(total - 2 * Q_PI) > 10 * NORMAL_EPSILON))
     {
         Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 11.\n");
     }
@@ -1514,7 +1515,7 @@ static void FindNeighbors(facetriangulation_t *facetrian)
     for (int i = 0; i < f->numedges; i++)
     {
         e = g_dsurfedges[f->firstedge + i];
-        es = &g_edgeshare[abs(e)];
+        es = &g_edgeshare[std::abs(e)];
         if (!es->smooth)
         {
             continue;
@@ -1542,7 +1543,7 @@ static void FindNeighbors(facetriangulation_t *facetrian)
     for (int i = 0; i < f->numedges; i++)
     {
         e = g_dsurfedges[f->firstedge + i];
-        es = &g_edgeshare[abs(e)];
+        es = &g_edgeshare[std::abs(e)];
         if (!es->smooth)
         {
             continue;
@@ -1594,13 +1595,13 @@ static void BuildWalls(facetriangulation_t *facetrian)
         for (int j = 0; j < f2->numedges; j++)
         {
             int e = g_dsurfedges[f2->firstedge + j];
-            const edgeshare_t *es = &g_edgeshare[abs(e)];
+            const edgeshare_t *es = &g_edgeshare[std::abs(e)];
             if (!es->smooth)
             {
                 facetriangulation_t::Wall wall;
 
-                VectorAdd(g_dvertexes[g_dedges[abs(e)].v[0]].point, g_face_offset[facenum], wall.points[0]);
-                VectorAdd(g_dvertexes[g_dedges[abs(e)].v[1]].point, g_face_offset[facenum], wall.points[1]);
+                VectorAdd(g_dvertexes[g_dedges[std::abs(e)].v[0]].point, g_face_offset[facenum], wall.points[0]);
+                VectorAdd(g_dvertexes[g_dedges[std::abs(e)].v[1]].point, g_face_offset[facenum], wall.points[1]);
                 VectorSubtract(wall.points[1], wall.points[0], wall.direction);
                 vec_t dot = DotProduct(wall.direction, dp->normal);
                 VectorMA(wall.direction, -dot, dp->normal, wall.direction);

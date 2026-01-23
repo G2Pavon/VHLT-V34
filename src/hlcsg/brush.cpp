@@ -603,7 +603,7 @@ void ExpandBrush(brush_t *brush, const int hullnum)
 
                         //normalize to length 1
                         VectorNormalize(normal);
-                        if (fabs(normal[(dir + 1) % 3]) <= NORMAL_EPSILON || fabs(normal[(dir + 2) % 3]) <= NORMAL_EPSILON)
+                        if (std::abs(normal[(dir + 1) % 3]) <= NORMAL_EPSILON || std::abs(normal[(dir + 2) % 3]) <= NORMAL_EPSILON)
                         { // coincide with axial plane
                             continue;
                         }
@@ -744,7 +744,7 @@ void SortSides(brushhull_t *h)
             {
                 continue;
             }
-            int axial = (fabs(normals[j][0]) < NORMAL_EPSILON) + (fabs(normals[j][1]) < NORMAL_EPSILON) + (fabs(normals[j][2]) < NORMAL_EPSILON);
+            int axial = (std::abs(normals[j][0]) < NORMAL_EPSILON) + (std::abs(normals[j][1]) < NORMAL_EPSILON) + (std::abs(normals[j][2]) < NORMAL_EPSILON);
             if (axial > bestaxial)
             {
                 bestside = j;
@@ -1215,7 +1215,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             VectorSubtract(s->planepts[j], origin, p[j]);
             for (int k = 0; k < 3; k++)
             {
-                if (fabs(p[j][k] - floor(p[j][k] + 0.5)) <= ON_EPSILON && p[j][k] != floor(p[j][k] + 0.5))
+                if (std::abs(p[j][k] - floor(p[j][k] + 0.5)) <= ON_EPSILON && p[j][k] != floor(p[j][k] + 0.5))
                 {
                     Warning("Entity %i, Brush %i: vertex (%4.8f %4.8f %4.8f) of an info_hullshape entity is slightly off-grid.",
                             b->originalentitynum, b->originalbrushnum,
@@ -1233,7 +1233,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
         }
         for (int k = 0; k < 3; k++)
         {
-            if (fabs(normal[k]) < NORMAL_EPSILON)
+            if (std::abs(normal[k]) < NORMAL_EPSILON)
             {
                 normal[k] = 0.0;
                 VectorNormalize(normal);
@@ -1320,7 +1320,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
                 failed = true;
                 continue;
             }
-            if (fabs(DotProduct(edge->vertexes[0], edge->normals[0]) - planes[i].dist) > NORMAL_EPSILON || fabs(DotProduct(edge->vertexes[1], edge->normals[0]) - planes[i].dist) > NORMAL_EPSILON || fabs(DotProduct(edge->vertexes[0], edge->normals[1]) - planes[j].dist) > NORMAL_EPSILON || fabs(DotProduct(edge->vertexes[1], edge->normals[1]) - planes[j].dist) > NORMAL_EPSILON)
+            if (std::abs(DotProduct(edge->vertexes[0], edge->normals[0]) - planes[i].dist) > NORMAL_EPSILON || std::abs(DotProduct(edge->vertexes[1], edge->normals[0]) - planes[i].dist) > NORMAL_EPSILON || std::abs(DotProduct(edge->vertexes[0], edge->normals[1]) - planes[j].dist) > NORMAL_EPSILON || std::abs(DotProduct(edge->vertexes[1], edge->normals[1]) - planes[j].dist) > NORMAL_EPSILON)
             {
                 failed = true;
                 continue;
@@ -1362,9 +1362,9 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
 
             for (int k = 0; k < numplanes; k++)
             {
-                if (fabs(DotProduct(v, planes[k].normal) - planes[k].dist) < ON_EPSILON)
+                if (std::abs(DotProduct(v, planes[k].normal) - planes[k].dist) < ON_EPSILON)
                 {
-                    if (fabs(DotProduct(v, planes[k].normal) - planes[k].dist) > NORMAL_EPSILON)
+                    if (std::abs(DotProduct(v, planes[k].normal) - planes[k].dist) > NORMAL_EPSILON)
                     {
                         failed = true;
                     }

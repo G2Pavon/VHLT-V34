@@ -186,7 +186,7 @@ inline static void AddPlane(pstack_t *const stack, const plane_t *const split)
     {
         for (int j = 0; j < stack->clipPlaneCount; j++)
         {
-            if (fabs((stack->clipPlane[j]).dist - split->dist) <= EQUAL_EPSILON &&
+            if (std::abs((stack->clipPlane[j]).dist - split->dist) <= EQUAL_EPSILON &&
                 VectorCompare((stack->clipPlane[j]).normal, split->normal))
             {
                 return;
