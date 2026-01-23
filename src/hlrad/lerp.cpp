@@ -1146,7 +1146,7 @@ static void PurgePatches(localtriangulation_t *lt)
 
         CrossProduct(points[cur].leftdirection, lt->normal, normal);
         VectorNormalize(normal);
-        VectorScale(normal, cos(TRIANGLE_SHAPE_THRESHOLD), v);
+        VectorScale(normal, std::cos(TRIANGLE_SHAPE_THRESHOLD), v);
         VectorMA(v, sin(TRIANGLE_SHAPE_THRESHOLD), points[cur].leftdirection, v);
         while (next[cur] != cur && valid[next[cur]] != 2)
         {
@@ -1166,7 +1166,7 @@ static void PurgePatches(localtriangulation_t *lt)
 
         CrossProduct(lt->normal, points[cur].leftdirection, normal);
         VectorNormalize(normal);
-        VectorScale(normal, cos(TRIANGLE_SHAPE_THRESHOLD), v);
+        VectorScale(normal, std::cos(TRIANGLE_SHAPE_THRESHOLD), v);
         VectorMA(v, sin(TRIANGLE_SHAPE_THRESHOLD), points[cur].leftdirection, v);
         while (prev[cur] != cur && valid[prev[cur]] != 2)
         {

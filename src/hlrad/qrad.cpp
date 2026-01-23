@@ -263,7 +263,7 @@ void GetParamsFromEnt(entity_t *mapent)
     if (flTmp)
     {
         /*g_smoothing_threshold = flTmp;*/
-        g_smoothing_threshold = cos(g_smoothing_value * (Q_PI / 180.0)); // --vluzacn
+        g_smoothing_threshold = std::cos(g_smoothing_value * (Q_PI / 180.0)); // --vluzacn
         Log("%30s [ %-9s ]\n", "Smoothing threshold", ValueForKey(mapent, "smooth"));
     }
 
@@ -1033,7 +1033,7 @@ void ReadCustomSmoothValue()
                     continue;
                 if (!strcasecmp(ep->key, "origin"))
                     continue;
-                g_smoothvalues[i] = cos(atof(ep->value) * (Q_PI / 180.0));
+                g_smoothvalues[i] = std::cos(atof(ep->value) * (Q_PI / 180.0));
                 Developer(DEVELOPER_LEVEL_MESSAGE, "info_smoothvalue: %s = %f\n", texname, atof(ep->value));
             }
         }
@@ -3711,7 +3711,7 @@ int main(const int argc, char **argv)
                 Usage();
             }
 
-            g_smoothing_threshold = (float)cos(g_smoothing_value * (Q_PI / 180.0));
+            g_smoothing_threshold = (float)std::cos(g_smoothing_value * (Q_PI / 180.0));
 
             safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
             FlipSlashes(g_Mapname);
@@ -3768,7 +3768,7 @@ int main(const int argc, char **argv)
             ReadCustomSmoothValue();
             ReadTranslucentTextures();
             ReadLightingCone();
-            g_smoothing_threshold_2 = g_smoothing_value_2 < 0 ? g_smoothing_threshold : (float)cos(g_smoothing_value_2 * (Q_PI / 180.0));
+            g_smoothing_threshold_2 = g_smoothing_value_2 < 0 ? g_smoothing_threshold : (float)std::cos(g_smoothing_value_2 * (Q_PI / 180.0));
             {
                 for (int style = 0; style < ALLSTYLES; ++style)
                 {

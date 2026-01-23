@@ -1,5 +1,6 @@
 #include <string>
 #include <deque>
+#include <cmath>
 
 #include "csg.h"
 #include "cmdlib.h"
@@ -766,7 +767,7 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
             {
                 vec_t ang = bt->vects.valve.rotate / 180 * Q_PI;
                 sinv = sin(ang);
-                cosv = cos(ang);
+                cosv = std::cos(ang);
             }
 
             if (vecs[0][0])

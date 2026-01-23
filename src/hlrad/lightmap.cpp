@@ -168,7 +168,7 @@ int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeen
     vec_t dot = DotProduct(vec1, vec2);
     dot = dot > 1 ? 1 : dot < -1 ? -1
                                  : dot;
-    angle = acos(dot);
+    angle = std::acos(dot);
     edgeshare_t *es = &g_edgeshare[edgeabsnext];
     if (!(es->faces[0] && es->faces[1]))
         return 1;
@@ -981,7 +981,7 @@ void ChopFrag(samplefrag_t *frag)
         CrossProduct(e->direction, frag->windingplane.normal, normal);
         VectorNormalize(normal); // points inward
         e->distancereduction = DotProduct(v, normal);
-        e->flippedangle = frag->flippedangle + acos(qmin(es->cos_normals_angle, 1.0));
+        e->flippedangle = frag->flippedangle + std::acos(qmin(es->cos_normals_angle, 1.0));
 
         // calculate the matrix
         e->ratio = (*m_inverse).v[2][2];
@@ -1607,12 +1607,12 @@ void CreateDirectLights()
                 if (*ValueForKey(g_face_texlights[p->faceNumber], "_cone"))
                 {
                     dl->stopdot = FloatForKey(g_face_texlights[p->faceNumber], "_cone");
-                    dl->stopdot = dl->stopdot >= 90 ? 0 : (float)cos(dl->stopdot / 180 * Q_PI);
+                    dl->stopdot = dl->stopdot >= 90 ? 0 : (float)std::cos(dl->stopdot / 180 * Q_PI);
                 }
                 if (*ValueForKey(g_face_texlights[p->faceNumber], "_cone2"))
                 {
                     dl->stopdot2 = FloatForKey(g_face_texlights[p->faceNumber], "_cone2");
-                    dl->stopdot2 = dl->stopdot2 >= 90 ? 0 : (float)cos(dl->stopdot2 / 180 * Q_PI);
+                    dl->stopdot2 = dl->stopdot2 >= 90 ? 0 : (float)std::cos(dl->stopdot2 / 180 * Q_PI);
                 }
                 if (dl->stopdot2 > dl->stopdot)
                     dl->stopdot2 = dl->stopdot;
@@ -1800,8 +1800,8 @@ void CreateDirectLights()
             {
                 dl->stopdot2 = dl->stopdot;
             }
-            dl->stopdot2 = (float)cos(dl->stopdot2 / 180 * Q_PI);
-            dl->stopdot = (float)cos(dl->stopdot / 180 * Q_PI);
+            dl->stopdot2 = (float)std::cos(dl->stopdot2 / 180 * Q_PI);
+            dl->stopdot = (float)std::cos(dl->stopdot / 180 * Q_PI);
 
             if (!FindTargetEntity(target)) //--vluzacn
             {
@@ -1850,7 +1850,7 @@ void CreateDirectLights()
                     }
 
                     dl->normal[2] = 0;
-                    dl->normal[0] = (float)cos(angle / 180 * Q_PI);
+                    dl->normal[0] = (float)std::cos(angle / 180 * Q_PI);
                     dl->normal[1] = (float)sin(angle / 180 * Q_PI);
                 }
 
@@ -1862,8 +1862,8 @@ void CreateDirectLights()
                 }
 
                 dl->normal[2] = (float)sin(angle / 180 * Q_PI);
-                dl->normal[0] *= (float)cos(angle / 180 * Q_PI);
-                dl->normal[1] *= (float)cos(angle / 180 * Q_PI);
+                dl->normal[0] *= (float)std::cos(angle / 180 * Q_PI);
+                dl->normal[1] *= (float)std::cos(angle / 180 * Q_PI);
             }
 
             if (FloatForKey(e, "_sky") || !strcmp(name, "light_environment"))
@@ -1961,7 +1961,7 @@ void CreateDirectLights()
                     {
                         vec_t totalweight = 0;
                         int count;
-                        vec_t testdot = cos(testangle * (Q_PI / 180.0));
+                        vec_t testdot = std::cos(testangle * (Q_PI / 180.0));
                         for (count = 0, i = 0; i < g_numskynormals[SUNSPREAD_SKYLEVEL]; i++)
                         {
                             vec3_t &testnormal = g_skynormals[SUNSPREAD_SKYLEVEL][i];
