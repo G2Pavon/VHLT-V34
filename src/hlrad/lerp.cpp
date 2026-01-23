@@ -138,7 +138,7 @@ static vec_t GetAngle(const vec3_t leftdirection, const vec3_t rightdirection, c
     vec3_t v;
 
     CrossProduct(rightdirection, leftdirection, v);
-    vec_t angle = atan2(DotProduct(v, normal), DotProduct(rightdirection, leftdirection));
+    vec_t angle = std::atan2(DotProduct(v, normal), DotProduct(rightdirection, leftdirection));
 
     return angle;
 }

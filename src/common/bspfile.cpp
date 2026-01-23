@@ -1276,7 +1276,7 @@ int anglesforvector(float angles[3], const float vector[3])
         }
         else
         {
-            angles[0] = atan(z / r) / Q_PI * 180;
+            angles[0] = std::atan(z / r) / Q_PI * 180;
             float x = vector[0], y = vector[1];
             tmp = std::sqrt(x * x + y * y);
             x /= tmp, y /= tmp;
@@ -1288,11 +1288,11 @@ int anglesforvector(float angles[3], const float vector[3])
             {
                 if (y >= 0)
                 {
-                    angles[1] = 2 * atan(y / (1 + x)) / Q_PI * 180;
+                    angles[1] = 2 * std::atan(y / (1 + x)) / Q_PI * 180;
                 }
                 else
                 {
-                    angles[1] = 2 * atan(y / (1 + x)) / Q_PI * 180 + 360;
+                    angles[1] = 2 * std::atan(y / (1 + x)) / Q_PI * 180 + 360;
                 }
             }
         }
