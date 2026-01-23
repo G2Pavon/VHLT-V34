@@ -650,7 +650,7 @@ static void CalcFaceExtents(lightinfo_t *l)
         {
             l->lmcache_density = 1;
         }
-        l->lmcache_side = (int)ceil((0.5 * g_blur * l->lmcache_density - 0.5) * (1 - NORMAL_EPSILON));
+        l->lmcache_side = (int)std::ceil((0.5 * g_blur * l->lmcache_density - 0.5) * (1 - NORMAL_EPSILON));
         l->lmcache_offset = l->lmcache_side;
         l->lmcachewidth = l->texsize[0] * l->lmcache_density + 1 + 2 * l->lmcache_side;
         l->lmcacheheight = l->texsize[1] * l->lmcache_density + 1 + 2 * l->lmcache_side;
@@ -3156,8 +3156,8 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
             //    || +     +-----+-----+     +     + || +     +-----+-----+-----+     + || +     +-----+-----+-----+     + || +     +     +-----+-----+     + ||
             //    ==============================================================================================================================================
             //
-            square[0][0] = l->texmins[0] * TEXTURE_STEP + ceil(s - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
-            square[0][1] = l->texmins[1] * TEXTURE_STEP + ceil(t - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
+            square[0][0] = l->texmins[0] * TEXTURE_STEP + std::ceil(s - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
+            square[0][1] = l->texmins[1] * TEXTURE_STEP + std::ceil(t - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
             square[1][0] = l->texmins[0] * TEXTURE_STEP + std::floor(s + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
             square[1][1] = l->texmins[1] * TEXTURE_STEP + std::floor(t + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
         }
@@ -3462,7 +3462,7 @@ void BuildFacelights(const int facenum)
                         test1[axis] = test2[axis] = sign * dist;
                         double intercept = (double)coord[1 - axis] * (double)test1[axis] / (double)coord[axis];
                         test1[1 - axis] = (int)std::floor(intercept + 0.01);
-                        test2[1 - axis] = (int)ceil(intercept - 0.01);
+                        test2[1 - axis] = (int)std::ceil(intercept - 0.01);
                         if (std::abs(test1[0] + s_origin - s_center) > l.lmcache_side || std::abs(test1[1] + t_origin - t_center) > l.lmcache_side ||
                             std::abs(test2[0] + s_origin - s_center) > l.lmcache_side || std::abs(test2[1] + t_origin - t_center) > l.lmcache_side)
                         {

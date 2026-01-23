@@ -829,7 +829,7 @@ static int CQ_MapPoint(const unsigned char point[CQ_DIM], const unsigned char (*
         bestdist += (colors[best][k] - point[k]) * (colors[best][k] - point[k]);
     }
 
-    int searchradius = (int)ceil(std::sqrt((double)bestdist) + 0.1);
+    int searchradius = (int)std::ceil(std::sqrt((double)bestdist) + 0.1);
     CQ_MapPoint_r(&bestdist, &best, searchtree, colors, point, searchradius);
     return best;
 }

@@ -749,7 +749,7 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
         }
 
         gridchopA = chop;
-        gridsizeA = (int)ceil((maxA - minA - 2 * epsilon) / gridchopA);
+        gridsizeA = (int)std::ceil((maxA - minA - 2 * epsilon) / gridchopA);
         gridsizeA = qmax(1, gridsizeA);
         if (gridsizeA > max_gridsize)
         {
@@ -759,7 +759,7 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
         gridstartA = (minA + maxA) / 2.0 - (gridsizeA / 2.0) * gridchopA;
 
         gridchopB = chop;
-        gridsizeB = (int)ceil((maxB - minB - 2 * epsilon) / gridchopB);
+        gridsizeB = (int)std::ceil((maxB - minB - 2 * epsilon) / gridchopB);
         gridsizeB = qmax(1, gridsizeB);
         if (gridsizeB > max_gridsize)
         {
