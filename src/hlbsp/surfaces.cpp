@@ -171,8 +171,8 @@ static void InitHash()
 
     vec_t scale = std::sqrt(volume / NUM_HASH);
 
-    hash_numslots[0] = (int)floor(size[0] / scale);
-    hash_numslots[1] = (int)floor(size[1] / scale);
+    hash_numslots[0] = (int)std::floor(size[0] / scale);
+    hash_numslots[1] = (int)std::floor(size[1] / scale);
     while (hash_numslots[0] * hash_numslots[1] > NUM_HASH)
     {
         Developer(DEVELOPER_LEVEL_WARNING, "hash_numslots[0] * hash_numslots[1] > NUM_HASH");
@@ -200,7 +200,7 @@ static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
     for (int i = 0; i < 2; i++)
     {
         normalized[i] = hash_scale[i] * (vec[i] - hash_min[i]);
-        slot[i] = (int)floor(normalized[i]);
+        slot[i] = (int)std::floor(normalized[i]);
         slotdiff[i] = normalized[i] - (vec_t)slot[i];
 
         slot[i] = (slot[i] + hash_numslots[i]) % hash_numslots[i];

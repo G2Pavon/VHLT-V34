@@ -3114,8 +3114,8 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
             vec_t t = ((i / l->lmcachewidth) - l->lmcache_offset) / (vec_t)l->lmcache_density;
             s_vec = l->texmins[0] * TEXTURE_STEP + s * TEXTURE_STEP;
             t_vec = l->texmins[1] * TEXTURE_STEP + t * TEXTURE_STEP;
-            nearest_s = qmax(0, qmin((int)floor(s + 0.5), l->texsize[0]));
-            nearest_t = qmax(0, qmin((int)floor(t + 0.5), l->texsize[1]));
+            nearest_s = qmax(0, qmin((int)std::floor(s + 0.5), l->texsize[0]));
+            nearest_t = qmax(0, qmin((int)std::floor(t + 0.5), l->texsize[1]));
             sampled = l->lmcache[i];
             normal_out = &l->lmcache_normal[i];
             wallflags_out = &l->lmcache_wallflags[i];
@@ -3158,8 +3158,8 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
             //
             square[0][0] = l->texmins[0] * TEXTURE_STEP + ceil(s - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
             square[0][1] = l->texmins[1] * TEXTURE_STEP + ceil(t - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
-            square[1][0] = l->texmins[0] * TEXTURE_STEP + floor(s + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
-            square[1][1] = l->texmins[1] * TEXTURE_STEP + floor(t + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
+            square[1][0] = l->texmins[0] * TEXTURE_STEP + std::floor(s + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
+            square[1][1] = l->texmins[1] * TEXTURE_STEP + std::floor(t + (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP + TEXTURE_STEP;
         }
         // find world's position for the sample
         {
@@ -3461,7 +3461,7 @@ void BuildFacelights(const int facenum)
                         int test2[2];
                         test1[axis] = test2[axis] = sign * dist;
                         double intercept = (double)coord[1 - axis] * (double)test1[axis] / (double)coord[axis];
-                        test1[1 - axis] = (int)floor(intercept + 0.01);
+                        test1[1 - axis] = (int)std::floor(intercept + 0.01);
                         test2[1 - axis] = (int)ceil(intercept - 0.01);
                         if (std::abs(test1[0] + s_origin - s_center) > l.lmcache_side || std::abs(test1[1] + t_origin - t_center) > l.lmcache_side ||
                             std::abs(test2[0] + s_origin - s_center) > l.lmcache_side || std::abs(test2[1] + t_origin - t_center) > l.lmcache_side)
@@ -4717,7 +4717,7 @@ void FinalLightFace(const int facenum)
             // ------------------------------------------------------------------------
             for (int i = 0; i < 3; ++i)
             {
-                lbi[i] = (int)floor(lb[i] + 0.5);
+                lbi[i] = (int)std::floor(lb[i] + 0.5);
                 if (lbi[i] < 0)
                     lbi[i] = 0;
             }

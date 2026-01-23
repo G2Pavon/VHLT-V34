@@ -108,7 +108,7 @@ extern const vec3_t vec3_one;
         (a)[1] = -((a)[1]); \
         (a)[2] = -((a)[2]); \
     }
-#define VectorRound(a) floor((a) + 0.5)
+#define VectorRound(a) std::floor((a) + 0.5)
 #define VectorMA(a, scale, b, dest)            \
     {                                          \
         (dest)[0] = (a)[0] + (scale) * (b)[0]; \

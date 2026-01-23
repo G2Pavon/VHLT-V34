@@ -1215,7 +1215,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             VectorSubtract(s->planepts[j], origin, p[j]);
             for (int k = 0; k < 3; k++)
             {
-                if (std::abs(p[j][k] - floor(p[j][k] + 0.5)) <= ON_EPSILON && p[j][k] != floor(p[j][k] + 0.5))
+                if (std::abs(p[j][k] - std::floor(p[j][k] + 0.5)) <= ON_EPSILON && p[j][k] != std::floor(p[j][k] + 0.5))
                 {
                     Warning("Entity %i, Brush %i: vertex (%4.8f %4.8f %4.8f) of an info_hullshape entity is slightly off-grid.",
                             b->originalentitynum, b->originalbrushnum,

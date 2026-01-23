@@ -474,8 +474,8 @@ int TestLineOpaque_face(int facenum, const vec3_t hit)
     {
         double x = DotProduct(hit, thisface->tex_vecs[0]) + thisface->tex_vecs[0][3];
         double y = DotProduct(hit, thisface->tex_vecs[1]) + thisface->tex_vecs[1][3];
-        x = floor(x - thisface->tex_width * floor(x / thisface->tex_width));
-        y = floor(y - thisface->tex_height * floor(y / thisface->tex_height));
+        x = std::floor(x - thisface->tex_width * std::floor(x / thisface->tex_width));
+        y = std::floor(y - thisface->tex_height * std::floor(y / thisface->tex_height));
         x = x > thisface->tex_width - 1 ? thisface->tex_width - 1 : x < 0 ? 0
                                                                           : x;
         y = y > thisface->tex_height - 1 ? thisface->tex_height - 1 : y < 0 ? 0

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 
 #include "qrad.h"
 #include "log.h"
@@ -660,7 +661,7 @@ void FindFacePositions(int facenum)
     map->step[2] = 1.0;
     for (int k = 0; k < 2; k++)
     {
-        imins[k] = (int)floor(texmins[k] / map->step[k] + 0.5 - ON_EPSILON);
+        imins[k] = (int)std::floor(texmins[k] / map->step[k] + 0.5 - ON_EPSILON);
         imaxs[k] = (int)ceil(texmaxs[k] / map->step[k] - 0.5 + ON_EPSILON);
     }
     map->start[0] = (imins[0] - 0.5) * map->step[0];
@@ -780,9 +781,9 @@ bool FindNearestPosition(int facenum, const Winding *texwinding, const dplane_t 
     if (point_in_winding(*map->texwinding, map->texplane, original_st, 4 * ON_EPSILON))
     {
         itmin = (int)ceil((original_st[1] - map->start[1] - 2 * ON_EPSILON) / map->step[1]) - 1;
-        itmax = (int)floor((original_st[1] - map->start[1] + 2 * ON_EPSILON) / map->step[1]);
+        itmax = (int)std::floor((original_st[1] - map->start[1] + 2 * ON_EPSILON) / map->step[1]);
         ismin = (int)ceil((original_st[0] - map->start[0] - 2 * ON_EPSILON) / map->step[0]) - 1;
-        ismax = (int)floor((original_st[0] - map->start[0] + 2 * ON_EPSILON) / map->step[0]);
+        ismax = (int)std::floor((original_st[0] - map->start[0] + 2 * ON_EPSILON) / map->step[0]);
         itmin = qmax(0, itmin);
         itmax = qmin(itmax, map->h - 1);
         ismin = qmax(0, ismin);
@@ -843,11 +844,11 @@ bool FindNearestPosition(int facenum, const Winding *texwinding, const dplane_t 
     ismax = -1;
     for (int x = 0; x < texwinding->m_NumPoints; x++)
     {
-        it = (int)floor((texwinding->m_Points[x][1] - map->start[1] + 0.5 * ON_EPSILON) / map->step[1]);
+        it = (int)std::floor((texwinding->m_Points[x][1] - map->start[1] + 0.5 * ON_EPSILON) / map->step[1]);
         itmin = qmin(itmin, it);
         it = (int)ceil((texwinding->m_Points[x][1] - map->start[1] - 0.5 * ON_EPSILON) / map->step[1]) - 1;
         itmax = qmax(it, itmax);
-        is = (int)floor((texwinding->m_Points[x][0] - map->start[0] + 0.5 * ON_EPSILON) / map->step[0]);
+        is = (int)std::floor((texwinding->m_Points[x][0] - map->start[0] + 0.5 * ON_EPSILON) / map->step[0]);
         ismin = qmin(ismin, is);
         is = (int)ceil((texwinding->m_Points[x][0] - map->start[0] - 0.5 * ON_EPSILON) / map->step[0]) - 1;
         ismax = qmax(is, ismax);

@@ -743,7 +743,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
         s->result = numcolors_out;
         for (int k = 0; k < CQ_DIM; k++)
         {
-            int val = (int)floor(n->centerofpoints[k] + 0.5 + 0.00001);
+            int val = (int)std::floor(n->centerofpoints[k] + 0.5 + 0.00001);
             val = qmax(0, qmin(val, 255));
             colors_out[numcolors_out][k] = val;
         }
@@ -935,8 +935,8 @@ static void GetLightInt(dface_t *face, const int texsize[2], int ix, int iy, vec
 
 static void GetLight(dface_t *face, const int texsize[2], double x, double y, vec3_t &light)
 {
-    int ix = (int)floor(x);
-    int iy = (int)floor(y);
+    int ix = (int)std::floor(x);
+    int iy = (int)std::floor(y);
     double dx = x - ix;
     dx = qmax(0, qmin(dx, 1));
     double dy = y - iy;
@@ -1152,20 +1152,20 @@ void EmbedLightmapInTextures()
                     dest_s = s_vec / resolution + 0.5;
                     dest_t = t_vec / resolution + 0.5;
                 }
-                dest_s = dest_s - texturesize[0] * floor(dest_s / texturesize[0]);
-                dest_t = dest_t - texturesize[1] * floor(dest_t / texturesize[1]);
-                int dest_is = (int)floor(dest_s); // dest_is = dest_s % texturesize[0]
-                int dest_it = (int)floor(dest_t); // dest_it = dest_t % texturesize[1]
+                dest_s = dest_s - texturesize[0] * std::floor(dest_s / texturesize[0]);
+                dest_t = dest_t - texturesize[1] * std::floor(dest_t / texturesize[1]);
+                int dest_is = (int)std::floor(dest_s); // dest_is = dest_s % texturesize[0]
+                int dest_it = (int)std::floor(dest_t); // dest_it = dest_t % texturesize[1]
                 dest_is = qmax(0, qmin(dest_is, texturesize[0] - 1));
                 dest_it = qmax(0, qmin(dest_it, texturesize[1] - 1));
                 dest = &texture[dest_it * texturesize[0] + dest_is];
 
                 double src_s = s_vec;
                 double src_t = t_vec;
-                src_s = src_s - tex->width * floor(src_s / tex->width);
-                src_t = src_t - tex->height * floor(src_t / tex->height);
-                int src_is = (int)floor(src_s); // src_is = src_s % tex->width
-                int src_it = (int)floor(src_t); // src_it = src_t % tex->height
+                src_s = src_s - tex->width * std::floor(src_s / tex->width);
+                src_t = src_t - tex->height * std::floor(src_t / tex->height);
+                int src_is = (int)std::floor(src_s); // src_is = src_s % tex->width
+                int src_it = (int)std::floor(src_t); // src_it = src_t % tex->height
                 src_is = qmax(0, qmin(src_is, tex->width - 1));
                 src_it = qmax(0, qmin(src_it, tex->height - 1));
                 byte src_index = tex->canvas[src_it * tex->width + src_is];
@@ -1211,7 +1211,7 @@ void EmbedLightmapInTextures()
                     {
                         for (int j = 0; j < 3; j++)
                         {
-                            int val = (int)floor((*src)[j] / (*src)[3] + 0.5);
+                            int val = (int)std::floor((*src)[j] / (*src)[3] + 0.5);
                             (*dest)[j] = qmax(0, qmin(val, 255));
                         }
                         (*dest)[3] = 255;
@@ -1256,7 +1256,7 @@ void EmbedLightmapInTextures()
                     {
                         for (int j = 0; j < 3; j++)
                         {
-                            int val = (int)floor(average[j] / average[3] + 0.5);
+                            int val = (int)std::floor(average[j] / average[3] + 0.5);
                             (*dest)[j] = qmax(0, qmin(val, 255));
                         }
                         (*dest)[3] = 255;

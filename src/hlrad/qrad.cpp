@@ -1306,7 +1306,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
             GetVectorForKey(g_face_texlights[fn], "_texcolor", texturecolor);
             for (int k = 0; k < 3; k++)
             {
-                texturecolor[k] = floor(texturecolor[k] + 0.001);
+                texturecolor[k] = std::floor(texturecolor[k] + 0.001);
             }
             if (VectorMinimum(texturecolor) < -0.001 || VectorMaximum(texturecolor) > 255.001)
             {
