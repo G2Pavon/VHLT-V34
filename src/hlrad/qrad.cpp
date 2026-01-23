@@ -683,7 +683,7 @@ static void UpdateEmitterInfo(patch_t *patch)
             if (area < size * radius * radius)
             {
                 // stop here
-                radius = sqrt(area / size);
+                radius = std::sqrt(area / size);
                 // just decrease the range to limit the use of the new method. because when the area is small, the new method becomes randomized and unstable.
             }
         }
@@ -1168,7 +1168,7 @@ static vec_t getScale(const patch_t *const patch)
 
         // don't care about the angle between vecs[0] and vecs[1] (given the length of "vecs", smaller angle = larger texel area), because gridplanes will have the same angle (also smaller angle = larger patch area)
 
-        return sqrt(scale[0] * scale[1]);
+        return std::sqrt(scale[0] * scale[1]);
     }
     else
     {

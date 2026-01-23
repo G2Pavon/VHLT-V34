@@ -2296,7 +2296,7 @@ void BuildDiffuseNormals()
                 hlassume(numpoints < (1 << (2 * SKYLEVELMAX)) + 2, assume_first);
                 point_t mid;
                 VectorAdd(points[edges[j].point[0]], points[edges[j].point[1]], mid);
-                double len = sqrt(DotProduct(mid, mid));
+                double len = std::sqrt(DotProduct(mid, mid));
                 hlassume(len > 0.2, assume_first);
                 VectorScale(mid, 1 / len, mid);
                 int p2 = numpoints;
@@ -2618,7 +2618,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             if (l->stopdot > 0.0) // stopdot2 > 0.0 or stopdot > 0.0
                             {
                                 vec_t range_scale = 1 - l->stopdot2 * l->stopdot2;
-                                range_scale = 1 / sqrt(qmax(NORMAL_EPSILON, range_scale));
+                                range_scale = 1 / std::sqrt(qmax(NORMAL_EPSILON, range_scale));
                                 // range_scale = 1 / sin (cone2)
                                 range_scale = qmin(range_scale, 2); // restrict this to 2, because skylevel has limit.
                                 range *= range_scale;               // because smaller cones are more likely to create the ugly grid effect.

@@ -115,7 +115,7 @@ extern const vec3_t vec3_one;
         (dest)[1] = (a)[1] + (scale) * (b)[1]; \
         (dest)[2] = (a)[2] + (scale) * (b)[2]; \
     }
-#define VectorLength(a) sqrt((double)((double)((a)[0] * (a)[0]) + (double)((a)[1] * (a)[1]) + (double)((a)[2] * (a)[2])))
+#define VectorLength(a) std::sqrt((double)((double)((a)[0] * (a)[0]) + (double)((a)[1] * (a)[1]) + (double)((a)[2] * (a)[2])))
 #define VectorCompareMinimum(a, b, c)  \
     {                                  \
         (c)[0] = qmin((a)[0], (b)[0]); \
@@ -134,7 +134,7 @@ inline vec_t VectorNormalize(vec3_t v)
     double length;
 
     length = DotProduct(v, v);
-    length = sqrt(length);
+    length = std::sqrt(length);
     if (length < NORMAL_EPSILON)
     {
         VectorClear(v);

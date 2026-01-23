@@ -169,7 +169,7 @@ static void InitHash()
 
     vec_t volume = size[0] * size[1];
 
-    vec_t scale = sqrt(volume / NUM_HASH);
+    vec_t scale = std::sqrt(volume / NUM_HASH);
 
     hash_numslots[0] = (int)floor(size[0] / scale);
     hash_numslots[1] = (int)floor(size[1] / scale);

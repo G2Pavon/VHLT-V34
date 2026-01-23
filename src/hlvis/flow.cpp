@@ -888,7 +888,7 @@ vec_t WindingDist(const winding_t *w[2])
         free(boundnormals);
         free(bounddists);
     }
-    return (sqrt(minsqrdist));
+    return (std::sqrt(minsqrdist));
 }
 // AJM: MVD
 // =====================================================================================
@@ -981,7 +981,7 @@ void MaxDistVis(int unused)
                             radius[side] = qmax(radius[side], dist);
                         }
                     }
-                    radius[side] = sqrt(radius[side]);
+                    radius[side] = std::sqrt(radius[side]);
                 }
                 VectorSubtract(center[0], center[1], v);
                 dist = VectorLength(v);

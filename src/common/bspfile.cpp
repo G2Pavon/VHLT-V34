@@ -1254,14 +1254,14 @@ void ParseEntities()
 // =====================================================================================
 int anglesforvector(float angles[3], const float vector[3])
 {
-    float z = vector[2], r = sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
-    if (sqrt(z * z + r * r) < NORMAL_EPSILON)
+    float z = vector[2], r = std::sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+    if (std::sqrt(z * z + r * r) < NORMAL_EPSILON)
     {
         return -1;
     }
     else
     {
-        float tmp = sqrt(z * z + r * r);
+        float tmp = std::sqrt(z * z + r * r);
         z /= tmp, r /= tmp;
         if (r < NORMAL_EPSILON)
         {
@@ -1278,7 +1278,7 @@ int anglesforvector(float angles[3], const float vector[3])
         {
             angles[0] = atan(z / r) / Q_PI * 180;
             float x = vector[0], y = vector[1];
-            tmp = sqrt(x * x + y * y);
+            tmp = std::sqrt(x * x + y * y);
             x /= tmp, y /= tmp;
             if (x < -1 + NORMAL_EPSILON)
             {

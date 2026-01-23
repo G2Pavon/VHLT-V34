@@ -23,6 +23,7 @@
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
 #include <vector>
+#include <cmath>
 
 #include "bsp5.h"
 #include "bspfile.h"
@@ -576,7 +577,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
             }
         }
 
-        vec_t value = crosscount - sqrt(coplanarcount); // Not optimized. --vluzacn
+        vec_t value = crosscount - std::sqrt(coplanarcount); // Not optimized. --vluzacn
         if (coplanarcount == 0)
         {
             crosscount += 1;
