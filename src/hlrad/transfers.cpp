@@ -12,24 +12,20 @@
 
 void writetransfers(const char *const transferfile, const long total_patches)
 {
-    FILE *file;
-
-    file = fopen(transferfile, "w+b");
+    FILE *file = fopen(transferfile, "w+b");
     if (file != NULL)
     {
-        unsigned amtwritten;
-        patch_t *patch;
 
         Log("Writing transfers file [%s]\n", transferfile);
 
-        amtwritten = fwrite(&total_patches, sizeof(total_patches), 1, file);
+        unsigned amtwritten = fwrite(&total_patches, sizeof(total_patches), 1, file);
         if (amtwritten != 1)
         {
             goto FailedWrite;
         }
 
         long patchcount = total_patches;
-        for (patch = g_patches; patchcount-- > 0; patch++)
+        for (patch_t *patch = g_patches; patchcount-- > 0; patch++)
         {
             amtwritten = fwrite(&patch->iIndex, sizeof(patch->iIndex), 1, file);
             if (amtwritten != 1)
@@ -91,18 +87,15 @@ FailedWrite:
 
 bool readtransfers(const char *const transferfile, const long numpatches)
 {
-    FILE *file;
     long total_patches;
 
-    file = fopen(transferfile, "rb");
+    FILE *file = fopen(transferfile, "rb");
     if (file != NULL)
     {
-        unsigned amtread;
-        patch_t *patch;
 
         Log("Reading transfers file [%s]\n", transferfile);
 
-        amtread = fread(&total_patches, sizeof(total_patches), 1, file);
+        unsigned amtread = fread(&total_patches, sizeof(total_patches), 1, file);
         if (amtread != 1)
         {
             goto FailedRead;
@@ -113,7 +106,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
         }
 
         long patchcount = total_patches;
-        for (patch = g_patches; patchcount-- > 0; patch++)
+        for (patch_t *patch = g_patches; patchcount-- > 0; patch++)
         {
             amtread = fread(&patch->iIndex, sizeof(patch->iIndex), 1, file);
             if (amtread != 1)
@@ -167,10 +160,9 @@ bool readtransfers(const char *const transferfile, const long numpatches)
 
 FailedRead:
 {
-    unsigned x;
     patch_t *patch = g_patches;
 
-    for (x = 0; x < g_num_patches; x++, patch++)
+    for (unsigned x = 0; x < g_num_patches; x++, patch++)
     {
         FreeBlock(patch->tData);
         FreeBlock(patch->tIndex);
