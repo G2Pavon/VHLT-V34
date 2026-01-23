@@ -9,9 +9,7 @@
 #include "log.h"
 #include "bspfile.h"
 
-using namespace std;
-
-set<string> g_invisible_items;
+std::set<std::string> g_invisible_items;
 
 void properties_initialize(const char *filename)
 {
@@ -30,7 +28,7 @@ void properties_initialize(const char *filename)
         return;
     }
 
-    ifstream file(filename, ios::in);
+    std::ifstream file(filename, std::ios::in);
     if (!file)
     {
         file.close();
@@ -42,8 +40,8 @@ void properties_initialize(const char *filename)
     memset(line, 0, sizeof(char) * 4096);
     while (!file.eof())
     {
-        string str;
-        getline(file, str);
+        std::string str;
+        std::getline(file, str);
         { //--vluzacn
             char *s = strdup(str.c_str());
             int i;

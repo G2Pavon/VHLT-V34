@@ -141,9 +141,7 @@ void TextureAxisFromPlane(const plane_t *const pln, vec3_t xv, vec3_t yv)
 // =====================================================================================
 static bool CheckForInvisible(entity_t *mapent)
 {
-    using namespace std;
-
-    string keyval(ValueForKey(mapent, "classname"));
+    std::string keyval(ValueForKey(mapent, "classname"));
     if (g_invisible_items.count(keyval))
     {
         return true;
