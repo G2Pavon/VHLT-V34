@@ -1851,7 +1851,7 @@ void CreateDirectLights()
 
                     dl->normal[2] = 0;
                     dl->normal[0] = (float)std::cos(angle / 180 * Q_PI);
-                    dl->normal[1] = (float)sin(angle / 180 * Q_PI);
+                    dl->normal[1] = (float)std::sin(angle / 180 * Q_PI);
                 }
 
                 angle = FloatForKey(e, "pitch");
@@ -1861,7 +1861,7 @@ void CreateDirectLights()
                     angle = vAngles[0];
                 }
 
-                dl->normal[2] = (float)sin(angle / 180 * Q_PI);
+                dl->normal[2] = (float)std::sin(angle / 180 * Q_PI);
                 dl->normal[0] *= (float)std::cos(angle / 180 * Q_PI);
                 dl->normal[1] *= (float)std::cos(angle / 180 * Q_PI);
             }

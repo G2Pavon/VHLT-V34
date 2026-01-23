@@ -766,7 +766,7 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
             else
             {
                 vec_t ang = bt->vects.valve.rotate / 180 * Q_PI;
-                sinv = sin(ang);
+                sinv = std::sin(ang);
                 cosv = std::cos(ang);
             }
 
