@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cmath>
 
 #include "qrad.h"
 #include "blockmem.h"
@@ -232,7 +233,7 @@ void MakeScales(const int threadnum)
 
             if (lighting_diversify && !light_behind_surface)
             {
-                dot1 = lighting_scale * pow(dot1, lighting_power);
+                dot1 = lighting_scale * std::pow(dot1, lighting_power);
             }
             float trans = (dot1 * dot2) / (dist * dist); // Inverse square falloff factoring angle between patch normals
             if (trans * patch2->area > 0.8f)
@@ -461,7 +462,7 @@ void MakeRGBScales(const int threadnum)
 
             if (lighting_diversify && !light_behind_surface)
             {
-                dot1 = lighting_scale * pow(dot1, lighting_power);
+                dot1 = lighting_scale * std::pow(dot1, lighting_power);
             }
             float trans_one = (dot1 * dot2) / (dist * dist); // Inverse square falloff factoring angle between patch normals
 

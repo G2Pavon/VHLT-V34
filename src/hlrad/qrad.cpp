@@ -1317,7 +1317,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
             VectorScale(texturecolor, 1.0 / 255.0, texturereflectivity);
             for (int k = 0; k < 3; k++)
             {
-                texturereflectivity[k] = pow(texturereflectivity[k], g_texreflectgamma);
+                texturereflectivity[k] = std::pow(texturereflectivity[k], g_texreflectgamma);
             }
             VectorScale(texturereflectivity, g_texreflectscale, texturereflectivity);
             if (VectorMaximum(texturereflectivity) > 1.0 + NORMAL_EPSILON)

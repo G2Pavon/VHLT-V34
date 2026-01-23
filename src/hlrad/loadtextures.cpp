@@ -381,7 +381,7 @@ void LoadTextures()
                     VectorScale(tex->palette[tex->canvas[j]], 1.0 / 255.0, reflectivity);
                     for (int k = 0; k < 3; k++)
                     {
-                        reflectivity[k] = pow(reflectivity[k], g_texreflectgamma);
+                        reflectivity[k] = std::pow(reflectivity[k], g_texreflectgamma);
                     }
                     VectorScale(reflectivity, g_texreflectscale, reflectivity);
                 }
@@ -1181,7 +1181,7 @@ void EmbedLightmapInTextures()
                 {
                     for (int k = 0; k < 3; k++)
                     {
-                        float v = src_color[k] * pow(light[k] / denominator, gamma);
+                        float v = src_color[k] * std::pow(light[k] / denominator, gamma);
                         (*dest)[k] += 255 * qmax(0, qmin(v, 255));
                     }
                     (*dest)[3] += 255;

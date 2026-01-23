@@ -2449,7 +2449,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                                 vec3_t add_one;
                                 if (lighting_diversify)
                                 {
-                                    dot = lighting_scale * pow(dot, lighting_power);
+                                    dot = lighting_scale * std::pow(dot, lighting_power);
                                 }
                                 VectorScale(l->intensity, dot * l->sunnormalweights[j], add_one);
                                 VectorMultiply(add_one, transparency, add_one);
@@ -2522,7 +2522,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                                 vec3_t add_one;
                                 if (lighting_diversify)
                                 {
-                                    dot = lighting_scale * pow(dot, lighting_power);
+                                    dot = lighting_scale * std::pow(dot, lighting_power);
                                 }
                                 VectorScale(sky_intensity, dot, add_one);
                                 VectorMultiply(add_one, transparency, add_one);
@@ -2580,7 +2580,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             vec_t denominator = dist * dist * l->fade;
                             if (lighting_diversify)
                             {
-                                dot = lighting_scale * pow(dot, lighting_power);
+                                dot = lighting_scale * std::pow(dot, lighting_power);
                             }
                             ratio = dot / denominator;
                             VectorScale(l->intensity, ratio, add);
@@ -2596,7 +2596,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             }
                             if (lighting_diversify && !light_behind_surface)
                             {
-                                dot = lighting_scale * pow(dot, lighting_power);
+                                dot = lighting_scale * std::pow(dot, lighting_power);
                             }
                             float dot2 = -DotProduct(delta, l->normal);
                             // discard the texlight if the spot is too close to the texlight plane
@@ -2712,7 +2712,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             }
                             if (lighting_diversify)
                             {
-                                dot = lighting_scale * pow(dot, lighting_power);
+                                dot = lighting_scale * std::pow(dot, lighting_power);
                             }
                             ratio = dot * dot2 / denominator;
 
@@ -4676,13 +4676,13 @@ void FinalLightFace(const int facenum)
             //      so i reformatted it into a somewhat readable "normal" fashion. :P
 
             if (g_colour_qgamma[0] != 1.0)
-                lb[0] = (float)pow(lb[0] / 256.0f, g_colour_qgamma[0]) * 256.0f;
+                lb[0] = (float)std::pow(lb[0] / 256.0f, g_colour_qgamma[0]) * 256.0f;
 
             if (g_colour_qgamma[1] != 1.0)
-                lb[1] = (float)pow(lb[1] / 256.0f, g_colour_qgamma[1]) * 256.0f;
+                lb[1] = (float)std::pow(lb[1] / 256.0f, g_colour_qgamma[1]) * 256.0f;
 
             if (g_colour_qgamma[2] != 1.0)
-                lb[2] = (float)pow(lb[2] / 256.0f, g_colour_qgamma[2]) * 256.0f;
+                lb[2] = (float)std::pow(lb[2] / 256.0f, g_colour_qgamma[2]) * 256.0f;
 
             // Two different ways of adding noise to the lightmap - colour jitter
             // (red, green and blue channels are independent), and mono jitter

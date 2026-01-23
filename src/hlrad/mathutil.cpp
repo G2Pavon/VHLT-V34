@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "qrad.h"
 #include "log.h"
 
@@ -192,11 +194,11 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
             {
                 break;
             }
-            newwidth += width * pow(0.5, pass + 1);
+            newwidth += width * std::pow(0.5, pass + 1);
         }
         else
         {
-            newwidth -= width * pow(0.5, pass + 1);
+            newwidth -= width * std::pow(0.5, pass + 1);
         }
     }
 
@@ -352,7 +354,7 @@ vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, 
             }
             if (lighting_power != 1.0)
             {
-                dot = pow(dot, lighting_power);
+                dot = std::pow(dot, lighting_power);
             }
             area += dot * (*psize);
         }
@@ -413,7 +415,7 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
             }
             if (lighting_power != 1.0)
             {
-                dot = pow(dot, lighting_power);
+                dot = std::pow(dot, lighting_power);
             }
             vec_t dot2 = -DotProduct(*pnormal, emitter_normal);
             if (dot2 <= emitter_stopdot2 + NORMAL_EPSILON)
