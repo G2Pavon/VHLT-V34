@@ -15,14 +15,13 @@
 
 #define Q_PI 3.14159265358979323846
 
-extern const vec3_t vec3_origin;
-extern const vec3_t vec3_one;
-
 // HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
 #define NORMAL_EPSILON 0.00001
 #define ON_EPSILON 0.04 // we should ensure that (float)BOGUS_RANGE < (float)(BOGUA_RANGE + 0.2 * ON_EPSILON)
 #define EQUAL_EPSILON 0.004
 
+const vec3_t vec3_origin = {0, 0, 0};
+const vec3_t vec3_one = {1.0, 1.0, 1.0};
 //
 // Vector Math
 //

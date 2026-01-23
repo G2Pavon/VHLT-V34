@@ -40,7 +40,6 @@ set(COMMON_SOURCES
     ${COMMON_DIR}/cmdlinecfg.cpp
     ${COMMON_DIR}/filelib.cpp
     ${COMMON_DIR}/log.cpp
-    ${COMMON_DIR}/mathlib.cpp
     ${COMMON_DIR}/messages.cpp
     ${COMMON_DIR}/scriplib.cpp
     ${COMMON_DIR}/threads.cpp
