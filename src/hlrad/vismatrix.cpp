@@ -62,9 +62,8 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const in
                     }
                     vec3_t origin1, origin2;
                     vec3_t delta;
-                    vec_t dist;
                     VectorSubtract(patch->origin, patch2->origin, delta);
-                    dist = VectorLength(delta);
+                    vec_t dist = VectorLength(delta);
                     if (dist < patch2->emitter_range - ON_EPSILON)
                     {
                         GetAlternateOrigin(patch->origin, plane->normal, patch2, origin2);
@@ -135,15 +134,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const in
 
 static void BuildVisLeafs(int threadnum)
 {
-    int i;
-    int lface, facenum, facenum2;
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
-    dleaf_t *srcleaf;
-    dleaf_t *leaf;
-    patch_t *patch;
-    int head;
-    unsigned bitpos;
-    unsigned patchnum;
 
     while (1)
     {
@@ -151,11 +142,11 @@ static void BuildVisLeafs(int threadnum)
         // build a minimal BSP tree that only
         // covers areas relevent to the PVS
         //
-        i = GetThreadWork();
+        int i = GetThreadWork();
         if (i == -1)
             break;
         i++; // skip leaf 0
-        srcleaf = &g_dleafs[i];
+        dleaf_t *srcleaf = &g_dleafs[i];
         if (!g_visdatasize)
         {
             memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
@@ -169,23 +160,23 @@ static void BuildVisLeafs(int threadnum)
             }
             DecompressVis(&g_dvisdata[srcleaf->visofs], pvs, sizeof(pvs));
         }
-        head = 0;
+        int head = 0;
 
         //
         // go through all the faces inside the
         // leaf, and process the patches that
         // actually have origins inside
         //
-        for (facenum = 0; facenum < g_numfaces; facenum++)
+        for (int facenum = 0; facenum < g_numfaces; facenum++)
         {
-            for (patch = g_face_patches[facenum]; patch; patch = patch->next)
+            for (patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next)
             {
                 if (patch->leafnum != i)
                     continue;
-                patchnum = patch - g_patches;
+                unsigned patchnum = patch - g_patches;
 
-                bitpos = patchnum * g_num_patches - (patchnum * (patchnum + 1)) / 2;
-                for (facenum2 = facenum + 1; facenum2 < g_numfaces; facenum2++)
+                unsigned bitpos = patchnum * g_num_patches - (patchnum * (patchnum + 1)) / 2;
+                for (int facenum2 = facenum + 1; facenum2 < g_numfaces; facenum2++)
                     TestPatchToFace(patchnum, facenum2, head, bitpos, pvs);
             }
         }
@@ -198,9 +189,7 @@ static void BuildVisLeafs(int threadnum)
 // =====================================================================================
 static void BuildVisMatrix()
 {
-    int c;
-
-    c = ((g_num_patches + 1) * (g_num_patches + 1)) / 16;
+    int c = ((g_num_patches + 1) * (g_num_patches + 1)) / 16;
     c += 1; //--vluzacn
 
     Log("%-20s: %5.1f megs\n", "visibility matrix", c / (1024 * 1024.0));
@@ -236,8 +225,6 @@ static void FreeVisMatrix()
 // =====================================================================================
 static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_out, unsigned int &next_index)
 {
-    unsigned bitpos;
-
     const unsigned a = p1;
     const unsigned b = p2;
 
@@ -258,7 +245,7 @@ static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_
         Warning("in CheckVisBit(), p2 > num_patches");
     }
 
-    bitpos = p1 * g_num_patches - (p1 * (p1 + 1)) / 2 + p2;
+    unsigned bitpos = p1 * g_num_patches - (p1 * (p1 + 1)) / 2 + p2;
 
     if (s_vismatrix[bitpos >> 3] & (1 << (bitpos & 7)))
     {
