@@ -15,8 +15,6 @@
 
 #define Q_PI 3.14159265358979323846
 
-#define finite _finite
-
 extern const vec3_t vec3_origin;
 extern const vec3_t vec3_one;
 
@@ -168,7 +166,7 @@ inline bool VectorCompare(const vec3_t v1, const vec3_t v2)
 
 inline bool isPointFinite(const vec_t *p)
 {
-    if (finite(p[0]) && finite(p[1]) && finite(p[2]))
+    if (std::isfinite(p[0]) && std::isfinite(p[1]) && std::isfinite(p[2]))
     {
         return true;
     }
