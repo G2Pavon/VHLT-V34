@@ -1,4 +1,5 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
+#include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <cmath>
@@ -268,7 +269,7 @@ static void ParseBrush(entity_t *mapent)
             for (int j = 0; j < 3; j++)
             {
                 GetToken(false);
-                side->planepts[i][j] = atof(g_token);
+                side->planepts[i][j] = std::atof(g_token);
             }
 
             GetToken(false);
@@ -323,15 +324,15 @@ static void ParseBrush(entity_t *mapent)
         if (g_nMapFileVersion < 220) // Worldcraft 2.1-, Radiant
         {
             GetToken(false);
-            side->td.vects.valve.shift[0] = atof(g_token);
+            side->td.vects.valve.shift[0] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.shift[1] = atof(g_token);
+            side->td.vects.valve.shift[1] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.rotate = atof(g_token);
+            side->td.vects.valve.rotate = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.scale[0] = atof(g_token);
+            side->td.vects.valve.scale[0] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.scale[1] = atof(g_token);
+            side->td.vects.valve.scale[1] = std::atof(g_token);
         }
         else // Worldcraft 2.2+
         {
@@ -343,13 +344,13 @@ static void ParseBrush(entity_t *mapent)
             }
 
             GetToken(false);
-            side->td.vects.valve.UAxis[0] = atof(g_token);
+            side->td.vects.valve.UAxis[0] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.UAxis[1] = atof(g_token);
+            side->td.vects.valve.UAxis[1] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.UAxis[2] = atof(g_token);
+            side->td.vects.valve.UAxis[2] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.shift[0] = atof(g_token);
+            side->td.vects.valve.shift[0] = std::atof(g_token);
 
             GetToken(false);
             if (strcmp(g_token, "]"))
@@ -365,13 +366,13 @@ static void ParseBrush(entity_t *mapent)
             }
 
             GetToken(false);
-            side->td.vects.valve.VAxis[0] = atof(g_token);
+            side->td.vects.valve.VAxis[0] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.VAxis[1] = atof(g_token);
+            side->td.vects.valve.VAxis[1] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.VAxis[2] = atof(g_token);
+            side->td.vects.valve.VAxis[2] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.shift[1] = atof(g_token);
+            side->td.vects.valve.shift[1] = std::atof(g_token);
 
             GetToken(false);
             if (strcmp(g_token, "]"))
@@ -385,9 +386,9 @@ static void ParseBrush(entity_t *mapent)
 
             // texure scale
             GetToken(false);
-            side->td.vects.valve.scale[0] = atof(g_token);
+            side->td.vects.valve.scale[0] = std::atof(g_token);
             GetToken(false);
-            side->td.vects.valve.scale[1] = atof(g_token);
+            side->td.vects.valve.scale[1] = std::atof(g_token);
         }
 
         ok = GetToken(true); // Done with line, this reads the first item from the next line

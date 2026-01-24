@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <cmath>
 
 #include "filelib.h"
@@ -1536,7 +1537,7 @@ int IntForKey(const entity_t *const ent, const char *const key)
 // =====================================================================================
 vec_t FloatForKey(const entity_t *const ent, const char *const key)
 {
-    return atof(ValueForKey(ent, key));
+    return std::atof(ValueForKey(ent, key));
 }
 
 // =====================================================================================

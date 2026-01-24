@@ -9,9 +9,10 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
+#include <cstdlib>
+#include <cmath>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
-#include <cmath>
 
 #include "csg.h"
 #include "cmdlib.h"
@@ -1804,7 +1805,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_BrushUnionThreshold = (float)atof(argv[++i]);
+                        g_BrushUnionThreshold = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -1815,7 +1816,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_tiny_threshold = (float)atof(argv[++i]);
+                        g_tiny_threshold = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -1859,7 +1860,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_scalesize = atof(argv[++i]);
+                        g_scalesize = std::atof(argv[++i]);
                     }
                     else
                     {

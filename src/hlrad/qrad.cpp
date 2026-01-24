@@ -7,12 +7,12 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <cstdlib>
 #include <vector>
 #include <string>
 #include <cmath>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include "qrad.h"
 #include "cmdlinecfg.h"
@@ -997,9 +997,9 @@ void ReadCustomChopValue()
                     continue;
                 if (!strcasecmp(ep->key, "origin"))
                     continue;
-                if (atof(ep->value) <= 0)
+                if (std::atof(ep->value) <= 0)
                     continue;
-                chopscales[i] = atof(ep->value);
+                chopscales[i] = std::atof(ep->value);
                 Developer(DEVELOPER_LEVEL_MESSAGE, "info_chopscale: %s = %f\n", texname, chopscales[i]);
             }
         }
@@ -1033,8 +1033,8 @@ void ReadCustomSmoothValue()
                     continue;
                 if (!strcasecmp(ep->key, "origin"))
                     continue;
-                g_smoothvalues[i] = std::cos(atof(ep->value) * (Q_PI / 180.0));
-                Developer(DEVELOPER_LEVEL_MESSAGE, "info_smoothvalue: %s = %f\n", texname, atof(ep->value));
+                g_smoothvalues[i] = std::cos(std::atof(ep->value) * (Q_PI / 180.0));
+                Developer(DEVELOPER_LEVEL_MESSAGE, "info_smoothvalue: %s = %f\n", texname, std::atof(ep->value));
             }
         }
     }
@@ -3113,7 +3113,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_chop = atof(argv[++i]);
+                        g_chop = std::atof(argv[++i]);
                         if (g_chop < 1)
                         {
                             Log("expected value greater than 1 for '-chop'\n");
@@ -3133,7 +3133,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_texchop = atof(argv[++i]);
+                        g_texchop = std::atof(argv[++i]);
                         if (g_texchop < 1)
                         {
                             Log("expected value greater than 1 for '-texchop'\n");
@@ -3172,9 +3172,9 @@ int main(const int argc, char **argv)
                         // Changes by Adam Foster - afoster@compsoc.man.ac.uk
                         // Munge monochrome lightscale into colour one
                         i++;
-                        g_colour_lightscale[0] = (float)atof(argv[i]);
-                        g_colour_lightscale[1] = (float)atof(argv[i]);
-                        g_colour_lightscale[2] = (float)atof(argv[i]);
+                        g_colour_lightscale[0] = (float)std::atof(argv[i]);
+                        g_colour_lightscale[1] = (float)std::atof(argv[i]);
+                        g_colour_lightscale[2] = (float)std::atof(argv[i]);
                         // ------------------------------------------------------------------------
                     }
                     else
@@ -3186,7 +3186,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_fade = (float)atof(argv[++i]);
+                        g_fade = (float)std::atof(argv[++i]);
                         if (g_fade < 0.0)
                         {
                             Log("-fade must be a positive number\n");
@@ -3202,9 +3202,9 @@ int main(const int argc, char **argv)
                 {
                     if (i + 3 < argc)
                     {
-                        g_ambient[0] = (float)atof(argv[++i]) * 128;
-                        g_ambient[1] = (float)atof(argv[++i]) * 128;
-                        g_ambient[2] = (float)atof(argv[++i]) * 128;
+                        g_ambient[0] = (float)std::atof(argv[++i]) * 128;
+                        g_ambient[1] = (float)std::atof(argv[++i]) * 128;
+                        g_ambient[2] = (float)std::atof(argv[++i]) * 128;
                     }
                     else
                     {
@@ -3215,7 +3215,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_limitthreshold = atof(argv[++i]);
+                        g_limitthreshold = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3273,9 +3273,9 @@ int main(const int argc, char **argv)
                         // Changes by Adam Foster - afoster@compsoc.man.ac.uk
                         // Munge values from original, monochrome gamma into colour gamma
                         i++;
-                        g_colour_qgamma[0] = (float)atof(argv[i]);
-                        g_colour_qgamma[1] = (float)atof(argv[i]);
-                        g_colour_qgamma[2] = (float)atof(argv[i]);
+                        g_colour_qgamma[0] = (float)std::atof(argv[i]);
+                        g_colour_qgamma[1] = (float)std::atof(argv[i]);
+                        g_colour_qgamma[2] = (float)std::atof(argv[i]);
                         // ------------------------------------------------------------------------
                     }
                     else
@@ -3287,7 +3287,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_dlight_threshold = (float)atof(argv[++i]);
+                        g_dlight_threshold = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3302,7 +3302,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_indirect_sun = (float)atof(argv[++i]);
+                        g_indirect_sun = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3313,7 +3313,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_smoothing_value = atof(argv[++i]);
+                        g_smoothing_value = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3324,7 +3324,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_smoothing_value_2 = atof(argv[++i]);
+                        g_smoothing_value_2 = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3335,7 +3335,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_coring = (float)atof(argv[++i]);
+                        g_coring = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3413,7 +3413,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_direct_scale = (float)atof(argv[++i]);
+                        g_direct_scale = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3427,9 +3427,9 @@ int main(const int argc, char **argv)
                 {
                     if (i + 3 < argc)
                     {
-                        g_colour_qgamma[0] = (float)atof(argv[++i]);
-                        g_colour_qgamma[1] = (float)atof(argv[++i]);
-                        g_colour_qgamma[2] = (float)atof(argv[++i]);
+                        g_colour_qgamma[0] = (float)std::atof(argv[++i]);
+                        g_colour_qgamma[1] = (float)std::atof(argv[++i]);
+                        g_colour_qgamma[2] = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3440,9 +3440,9 @@ int main(const int argc, char **argv)
                 {
                     if (i + 3 < argc)
                     {
-                        g_colour_lightscale[0] = (float)atof(argv[++i]);
-                        g_colour_lightscale[1] = (float)atof(argv[++i]);
-                        g_colour_lightscale[2] = (float)atof(argv[++i]);
+                        g_colour_lightscale[0] = (float)std::atof(argv[++i]);
+                        g_colour_lightscale[1] = (float)std::atof(argv[++i]);
+                        g_colour_lightscale[2] = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3454,9 +3454,9 @@ int main(const int argc, char **argv)
                 {
                     if (i + 3 < argc)
                     {
-                        g_colour_jitter_hack[0] = (float)atof(argv[++i]);
-                        g_colour_jitter_hack[1] = (float)atof(argv[++i]);
-                        g_colour_jitter_hack[2] = (float)atof(argv[++i]);
+                        g_colour_jitter_hack[0] = (float)std::atof(argv[++i]);
+                        g_colour_jitter_hack[1] = (float)std::atof(argv[++i]);
+                        g_colour_jitter_hack[2] = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3467,9 +3467,9 @@ int main(const int argc, char **argv)
                 {
                     if (i + 3 < argc)
                     {
-                        g_jitter_hack[0] = (float)atof(argv[++i]);
-                        g_jitter_hack[1] = (float)atof(argv[++i]);
-                        g_jitter_hack[2] = (float)atof(argv[++i]);
+                        g_jitter_hack[0] = (float)std::atof(argv[++i]);
+                        g_jitter_hack[1] = (float)std::atof(argv[++i]);
+                        g_jitter_hack[2] = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3493,7 +3493,7 @@ int main(const int argc, char **argv)
                     Error("'-bscale' is obsolete.");
                     if (i + 1 < argc)
                     {
-                        g_transtotal_hack = (float)atof(argv[++i]);
+                        g_transtotal_hack = (float)std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3536,10 +3536,10 @@ int main(const int argc, char **argv)
                     g_drawsample = true;
                     if (i + 4 < argc)
                     {
-                        g_drawsample_origin[0] = atof(argv[++i]);
-                        g_drawsample_origin[1] = atof(argv[++i]);
-                        g_drawsample_origin[2] = atof(argv[++i]);
-                        g_drawsample_radius = atof(argv[++i]);
+                        g_drawsample_origin[0] = std::atof(argv[++i]);
+                        g_drawsample_origin[1] = std::atof(argv[++i]);
+                        g_drawsample_origin[2] = std::atof(argv[++i]);
+                        g_drawsample_radius = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3589,7 +3589,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_translucentdepth = atof(argv[++i]);
+                        g_translucentdepth = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3626,7 +3626,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_texreflectgamma = atof(argv[++i]);
+                        g_texreflectgamma = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3637,7 +3637,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_texreflectscale = atof(argv[++i]);
+                        g_texreflectscale = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3648,7 +3648,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_blur = atof(argv[++i]);
+                        g_blur = std::atof(argv[++i]);
                     }
                     else
                     {
@@ -3667,7 +3667,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_texlightgap = atof(argv[++i]);
+                        g_texlightgap = std::atof(argv[++i]);
                     }
                     else
                     {
