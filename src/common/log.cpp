@@ -645,7 +645,7 @@ int loadlangfileline(char *line, int n, FILE *f)
     bool special = false;
     while (1)
     {
-        c = fgetc(f);
+        c = std::fgetc(f);
         if (c == '\r')
             continue;
         if (c == '\n' || c == EOF)

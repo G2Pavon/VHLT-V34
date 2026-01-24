@@ -274,7 +274,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
         if (s)
         {
             int i, j;
-            for (i = 0; j = fgetc(f), i < len && j != EOF; i++)
+            for (i = 0; j = std::fgetc(f), i < len && j != EOF; i++)
                 s[i] = j;
             s[i] = '\0';
         }

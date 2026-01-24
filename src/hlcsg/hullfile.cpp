@@ -42,7 +42,7 @@ void LoadHullfile(const char *filename)
 
     FILE *file = std::fopen(filename, "r");
 
-    char magic = (char)fgetc(file);
+    char magic = (char)std::fgetc(file);
     rewind(file);
 
     if (magic == '(')
