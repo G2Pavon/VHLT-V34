@@ -267,7 +267,7 @@ void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
     va_list argptr;
 
     va_start(argptr, error);
-    vsnprintf(message, MAX_ERROR, Localize(error), argptr);
+    std::vsnprintf(message, MAX_ERROR, Localize(error), argptr);
     va_end(argptr);
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", Localize("Error: "), message);
@@ -292,7 +292,7 @@ void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warnin
     va_list argptr;
 
     va_start(argptr, warning);
-    vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
+    std::vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
     va_end(argptr);
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", Localize("Error: "), message);
@@ -328,7 +328,7 @@ void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
     count++;
 
     va_start(argptr, warning);
-    vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
+    std::vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
     va_end(argptr);
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", Localize("Error: "), message);
@@ -349,7 +349,7 @@ void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
     va_list argptr;
 
     va_start(argptr, warning);
-    vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
+    std::vsnprintf(message, MAX_WARNING, Localize(warning), argptr);
     va_end(argptr);
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", Localize("Warning: "), message);
@@ -369,7 +369,7 @@ void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const warning, ...)
         va_list argptr;
 
         va_start(argptr, warning);
-        vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
+        std::vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
         va_end(argptr);
 
         WriteLog(message);
@@ -389,7 +389,7 @@ void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *co
         va_list argptr;
 
         va_start(argptr, warning);
-        vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
+        std::vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
         va_end(argptr);
 
         WriteLog(message);
@@ -446,7 +446,7 @@ void CDECL FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
     va_list argptr;
 
     va_start(argptr, warning);
-    vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
+    std::vsnprintf(message, MAX_MESSAGE, Localize(warning), argptr);
     va_end(argptr);
 
     WriteLog(message);
@@ -625,7 +625,7 @@ void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 
     va_start(argptr, warning);
     //ZHLT_LANGFILE: don't call function Localize here because of performance issue
-    vsnprintf(message, MAX_MESSAGE, warning, argptr);
+    std::vsnprintf(message, MAX_MESSAGE, warning, argptr);
     va_end(argptr);
 
     if (useconsole)

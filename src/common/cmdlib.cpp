@@ -1,8 +1,8 @@
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include "cmdlib.h"
 #include "messages.h"
@@ -274,7 +274,7 @@ bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t coun
     hlassert(count > 0);
 
     va_start(argptr, args);
-    size_t amt = vsnprintf(dest, count, args, argptr);
+    size_t amt = std::vsnprintf(dest, count, args, argptr);
     va_end(argptr);
 
     // truncated (bad!, snprintf doesn't null terminate the string when this happens)
