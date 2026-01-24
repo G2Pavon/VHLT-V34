@@ -1343,7 +1343,7 @@ static void Usage()
     Log("    -dev #         : compile with developer message\n\n");
     Log("    mapfile        : The mapfile to compile\n\n");
 
-    exit(1);
+    std::exit(1);
 }
 
 // =====================================================================================

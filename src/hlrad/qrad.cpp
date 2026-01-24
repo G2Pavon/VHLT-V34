@@ -2649,7 +2649,7 @@ static void Usage()
 
     Log("    mapfile       : The mapfile to compile\n\n");
 
-    exit(1);
+    std::exit(1);
 }
 
 // =====================================================================================

@@ -128,7 +128,7 @@ void CheckForErrorLog()
             Log(">> There was a problem compiling the map.\n"
                 ">> Check the file %s.log for the cause.\n",
                 g_Mapname);
-            exit(1);
+            std::exit(1);
         }
     }
 }
@@ -249,7 +249,7 @@ void CheckFatal()
     if (fatal)
     {
         hlassert(false);
-        exit(1);
+        std::exit(1);
     }
 }
 

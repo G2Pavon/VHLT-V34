@@ -1447,7 +1447,7 @@ static void Usage()
     Log("    -scale #         : Scale the world. Use at your own risk.\n");
     Log("    mapfile          : The mapfile to compile\n\n");
 
-    exit(1);
+    std::exit(1);
 }
 
 // =====================================================================================

@@ -796,7 +796,7 @@ static void Usage(void)
 
     Log("    mapfile         : The mapfile to process\n\n");
 
-    exit(1);
+    std::exit(1);
 }
 
 void pause()
