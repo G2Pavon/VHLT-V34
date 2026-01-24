@@ -493,7 +493,7 @@ void PairEdges()
     }
 }
 
-#define MAX_SINGLEMAP ((MAX_SURFACE_EXTENT + 1) * (MAX_SURFACE_EXTENT + 1)) //#define	MAX_SINGLEMAP	(18*18*4) //--vluzacn
+constexpr int MAX_SINGLEMAP = ((MAX_SURFACE_EXTENT + 1) * (MAX_SURFACE_EXTENT + 1)); //#define	MAX_SINGLEMAP	(18*18*4) //--vluzacn
 
 typedef enum
 {

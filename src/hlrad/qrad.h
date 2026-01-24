@@ -8,27 +8,27 @@
 #pragma warning(disable : 4142 4028)
 #pragma warning(default : 4142 4028)
 
-#define DEFAULT_FASTMODE false
+constexpr bool DEFAULT_FASTMODE = false;
 #define DEFAULT_METHOD eMethodSparseVismatrix
-#define DEFAULT_LERP_ENABLED true
-#define DEFAULT_FADE 1.0
-#define DEFAULT_BOUNCE 8
-#define DEFAULT_DUMPPATCHES false
-#define DEFAULT_AMBIENT_RED 0.0
-#define DEFAULT_AMBIENT_GREEN 0.0
-#define DEFAULT_AMBIENT_BLUE 0.0
+constexpr bool DEFAULT_LERP_ENABLED = true;
+constexpr float DEFAULT_FADE = 1.0;
+constexpr int DEFAULT_BOUNCE = 8;
+constexpr bool DEFAULT_DUMPPATCHES = false;
+constexpr float DEFAULT_AMBIENT_RED = 0.0;
+constexpr float DEFAULT_AMBIENT_GREEN = 0.0;
+constexpr float DEFAULT_AMBIENT_BLUE = 0.0;
 // 188 is the fullbright threshold for Goldsrc, regardless of the brightness and gamma settings in the graphic options.
 // However, hlrad can only control the light values of each single light style. So the final in-game brightness may exceed 188 if you have set a high value in the "custom appearance" of the light, or if the face receives light from different styles.
-#define DEFAULT_LIMITTHRESHOLD 188.0
-#define DEFAULT_TEXSCALE true
-#define DEFAULT_CHOP 64.0
-#define DEFAULT_TEXCHOP 32.0
-#define DEFAULT_LIGHTSCALE 2.0 //1.0 //vluzacn
-#define DEFAULT_DLIGHT_THRESHOLD 10.0
-#define DEFAULT_DLIGHT_SCALE 1.0 //2.0 //vluzacn
-#define DEFAULT_SMOOTHING_VALUE 50.0
-#define DEFAULT_SMOOTHING2_VALUE -1.0
-#define DEFAULT_INCREMENTAL false
+constexpr float DEFAULT_LIMITTHRESHOLD = 188.0;
+constexpr bool DEFAULT_TEXSCALE = true;
+constexpr float DEFAULT_CHOP = 64.0;
+constexpr float DEFAULT_TEXCHOP = 32.0;
+constexpr float DEFAULT_LIGHTSCALE = 2.0; //1.0 //vluzacn
+constexpr float DEFAULT_DLIGHT_THRESHOLD = 10.0;
+constexpr float DEFAULT_DLIGHT_SCALE = 1.0; //2.0 //vluzacn
+constexpr float DEFAULT_SMOOTHING_VALUE = 50.0;
+constexpr float DEFAULT_SMOOTHING2_VALUE = -1.0;
+constexpr bool DEFAULT_INCREMENTAL = false;
 
 // ------------------------------------------------------------------------
 // Changes by Adam Foster - afoster@compsoc.man.ac.uk
@@ -38,35 +38,35 @@
 // superseded by DEFAULT_COLOUR_GAMMA_*
 // ------------------------------------------------------------------------
 
-#define DEFAULT_INDIRECT_SUN 1.0
-#define DEFAULT_EXTRA false
-#define DEFAULT_SKY_LIGHTING_FIX true
-#define DEFAULT_CIRCUS false
-#define DEFAULT_CORING 0.01
-#define DEFAULT_SUBDIVIDE true
-#define DEFAULT_CHART false
-#define DEFAULT_INFO true
-#define DEFAULT_ALLOW_OPAQUES true
-#define DEFAULT_ALLOW_SPREAD true
+constexpr float DEFAULT_INDIRECT_SUN = 1.0;
+constexpr bool DEFAULT_EXTRA = false;
+constexpr bool DEFAULT_SKY_LIGHTING_FIX = true;
+constexpr bool DEFAULT_CIRCUS = false;
+constexpr float DEFAULT_CORING = 0.01;
+constexpr bool DEFAULT_SUBDIVIDE = true;
+constexpr bool DEFAULT_CHART = false;
+constexpr bool DEFAULT_INFO = true;
+constexpr bool DEFAULT_ALLOW_OPAQUES = true;
+constexpr bool DEFAULT_ALLOW_SPREAD = true;
 
 // ------------------------------------------------------------------------
 // Changes by Adam Foster - afoster@compsoc.man.ac.uk
 
-#define DEFAULT_COLOUR_GAMMA_RED 0.55
-#define DEFAULT_COLOUR_GAMMA_GREEN 0.55
-#define DEFAULT_COLOUR_GAMMA_BLUE 0.55
+constexpr float DEFAULT_COLOUR_GAMMA_RED = 0.55;
+constexpr float DEFAULT_COLOUR_GAMMA_GREEN = 0.55;
+constexpr float DEFAULT_COLOUR_GAMMA_BLUE = 0.55;
 
-#define DEFAULT_COLOUR_LIGHTSCALE_RED 2.0   //1.0 //vluzacn
-#define DEFAULT_COLOUR_LIGHTSCALE_GREEN 2.0 //1.0 //vluzacn
-#define DEFAULT_COLOUR_LIGHTSCALE_BLUE 2.0  //1.0 //vluzacn
+constexpr float DEFAULT_COLOUR_LIGHTSCALE_RED = 2.0;   //1.0 //vluzacn
+constexpr float DEFAULT_COLOUR_LIGHTSCALE_GREEN = 2.0; //1.0 //vluzacn
+constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
 
-#define DEFAULT_COLOUR_JITTER_HACK_RED 0.0
-#define DEFAULT_COLOUR_JITTER_HACK_GREEN 0.0
-#define DEFAULT_COLOUR_JITTER_HACK_BLUE 0.0
+constexpr float DEFAULT_COLOUR_JITTER_HACK_RED = 0.0;
+constexpr float DEFAULT_COLOUR_JITTER_HACK_GREEN = 0.0;
+constexpr float DEFAULT_COLOUR_JITTER_HACK_BLUE = 0.0;
 
-#define DEFAULT_JITTER_HACK_RED 0.0
-#define DEFAULT_JITTER_HACK_GREEN 0.0
-#define DEFAULT_JITTER_HACK_BLUE 0.0
+constexpr float DEFAULT_JITTER_HACK_RED = 0.0;
+constexpr float DEFAULT_JITTER_HACK_GREEN = 0.0;
+constexpr float DEFAULT_JITTER_HACK_BLUE = 0.0;
 
 // ------------------------------------------------------------------------
 
@@ -75,53 +75,53 @@
 // Transparency light support for bounced light(transfers) is extreamly slow
 // for 'vismatrix' and 'sparse' atm.
 // Only recommended to be used with 'nomatrix' mode
-#define DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT false
+constexpr bool DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT = false;
 
 // RGB Transfers support for HLRAD .. to be used with -customshadowwithbounce
-#define DEFAULT_RGB_TRANSFERS false
+constexpr bool DEFAULT_RGB_TRANSFERS = false;
 // o_O ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define DEFAULT_TRANSTOTAL_HACK 0.2 //0.5 //vluzacn
-#define DEFAULT_MINLIGHT 0
-#define DEFAULT_TRANSFER_COMPRESS_TYPE FLOAT16
-#define DEFAULT_RGBTRANSFER_COMPRESS_TYPE VECTOR32
-#define DEFAULT_SOFTSKY true
-#define DEFAULT_BLOCKOPAQUE 1
-#define DEFAULT_TRANSLUCENTDEPTH 2.0f
-#define DEFAULT_NOTEXTURES false
-#define DEFAULT_TEXREFLECTGAMMA 1.76f // 2.0(texgamma cvar) / 2.5 (gamma cvar) * 2.2 (screen gamma) = 1.76
-#define DEFAULT_TEXREFLECTSCALE 0.7f  // arbitrary (This is lower than 1.0, because textures are usually brightened in order to look better in Goldsrc. Textures are made brightened because Goldsrc is only able to darken the texture when combining the texture with the lightmap.)
-#define DEFAULT_BLUR 1.5              // classic lighting is equivalent to "-blur 1.0"
-#define DEFAULT_NOEMITTERRANGE false
-#define DEFAULT_BLEEDFIX true
-#define DEFAULT_EMBEDLIGHTMAP_POWEROFTWO true
-#define DEFAULT_EMBEDLIGHTMAP_DENOMINATOR 188.0
-#define DEFAULT_EMBEDLIGHTMAP_GAMMA 1.05
-#define DEFAULT_EMBEDLIGHTMAP_RESOLUTION 1
-#define DEFAULT_TEXLIGHTGAP 0.0
+constexpr float DEFAULT_TRANSTOTAL_HACK = 0.2; //0.5 //vluzacn
+constexpr unsigned int DEFAULT_MINLIGHT = 0;
+constexpr float_type DEFAULT_TRANSFER_COMPRESS_TYPE = FLOAT16;
+constexpr vector_type DEFAULT_RGBTRANSFER_COMPRESS_TYPE = VECTOR32;
+constexpr bool DEFAULT_SOFTSKY = true;
+constexpr int DEFAULT_BLOCKOPAQUE = 1;
+constexpr float DEFAULT_TRANSLUCENTDEPTH = 2.0f;
+constexpr bool DEFAULT_NOTEXTURES = false;
+constexpr float DEFAULT_TEXREFLECTGAMMA = 1.76f; // 2.0(texgamma cvar) / 2.5 (gamma cvar) * 2.2 (screen gamma) = 1.76
+constexpr float DEFAULT_TEXREFLECTSCALE = 0.7f;  // arbitrary (This is lower than 1.0, because textures are usually brightened in order to look better in Goldsrc. Textures are made brightened because Goldsrc is only able to darken the texture when combining the texture with the lightmap.)
+constexpr float DEFAULT_BLUR = 1.5;              // classic lighting is equivalent to "-blur 1.0"
+constexpr bool DEFAULT_NOEMITTERRANGE = false;
+constexpr bool DEFAULT_BLEEDFIX = true;
+constexpr bool DEFAULT_EMBEDLIGHTMAP_POWEROFTWO = true;
+constexpr float DEFAULT_EMBEDLIGHTMAP_DENOMINATOR = 188.0;
+constexpr float DEFAULT_EMBEDLIGHTMAP_GAMMA = 1.05;
+constexpr int DEFAULT_EMBEDLIGHTMAP_RESOLUTION = 1;
+constexpr float DEFAULT_TEXLIGHTGAP = 0.0;
 
-#define DEFAULT_ESTIMATE false
+constexpr bool DEFAULT_ESTIMATE = false;
 
 // Ideally matches what is in the FGD :)
 #define SPAWNFLAG_NOBLEEDADJUST (1 << 0)
 
 // DEFAULT_HUNT_OFFSET is how many units in front of the plane to place the samples
 // Unit of '1' causes the 1 unit crate trick to cause extra shadows
-#define DEFAULT_HUNT_OFFSET 0.5
+constexpr float DEFAULT_HUNT_OFFSET = 0.5;
 // DEFAULT_HUNT_SIZE number of iterations (one based) of radial search in HuntForWorld
-#define DEFAULT_HUNT_SIZE 11
+constexpr int DEFAULT_HUNT_SIZE = 11;
 // DEFAULT_HUNT_SCALE amount to grow from origin point per iteration of DEFAULT_HUNT_SIZE in HuntForWorld
-#define DEFAULT_HUNT_SCALE 0.1
-#define DEFAULT_EDGE_WIDTH 0.8
+constexpr float DEFAULT_HUNT_SCALE = 0.1;
+constexpr float DEFAULT_EDGE_WIDTH = 0.8;
 
-#define PATCH_HUNT_OFFSET 0.5              //--vluzacn
-#define HUNT_WALL_EPSILON (3 * ON_EPSILON) // place sample at least this distance away from any wall //--vluzacn
+constexpr float PATCH_HUNT_OFFSET = 0.5;              //--vluzacn
+constexpr float HUNT_WALL_EPSILON = (3 * ON_EPSILON); // place sample at least this distance away from any wall //--vluzacn
 
-#define MINIMUM_PATCH_DISTANCE ON_EPSILON
-#define ACCURATEBOUNCE_THRESHOLD 4.0      // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
-#define ACCURATEBOUNCE_DEFAULT_SKYLEVEL 5 // sample 1026 normals
+constexpr float MINIMUM_PATCH_DISTANCE = ON_EPSILON;
+constexpr float ACCURATEBOUNCE_THRESHOLD = 4.0; // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
+#define ACCURATEBOUNCE_DEFAULT_SKYLEVEL 5       // sample 1026 normals
 
-#define ALLSTYLES 64 // HL limit. //--vluzacn
+constexpr int ALLSTYLES = 64; // HL limit. //--vluzacn
 
 #define BOGUS_RANGE 131072
 
@@ -195,9 +195,9 @@ typedef unsigned char rgb_transfer_data_t;
 
 #define MAX_COMPRESSED_TRANSFER_INDEX_SIZE ((1 << 12) - 1)
 
-#define MAX_PATCHES (65535 * 16) // limited by transfer_index_t
-#define MAX_VISMATRIX_PATCHES 65535
-#define MAX_SPARSE_VISMATRIX_PATCHES MAX_PATCHES
+constexpr int MAX_PATCHES = (65535 * 16); // limited by transfer_index_t
+constexpr int MAX_VISMATRIX_PATCHES = 65535;
+constexpr int MAX_SPARSE_VISMATRIX_PATCHES = MAX_PATCHES;
 
 typedef enum
 {
@@ -297,7 +297,7 @@ typedef struct
 
 } opaqueList_t;
 
-#define OPAQUE_ARRAY_GROWTH_SIZE 1024
+constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 
 typedef struct
 {
@@ -408,10 +408,10 @@ extern vec_t g_texlightgap;
 extern void MakeTnodes(dmodel_t *bm);
 extern void PairEdges();
 #define SKYLEVELMAX 8
-#define SKYLEVEL_SOFTSKYON 7
-#define SKYLEVEL_SOFTSKYOFF 4
-#define SUNSPREAD_SKYLEVEL 7
-#define SUNSPREAD_THRESHOLD 15.0
+constexpr int SKYLEVEL_SOFTSKYON = 7;
+constexpr int SKYLEVEL_SOFTSKYOFF = 4;
+constexpr int SUNSPREAD_SKYLEVEL = 7;
+constexpr float SUNSPREAD_THRESHOLD = 15.0;
 extern int g_numskynormals[SKYLEVELMAX + 1];     // 0, 6, 18, 66, 258, 1026, 4098, 16386, 65538
 extern vec3_t *g_skynormals[SKYLEVELMAX + 1];    //[numskynormals]
 extern vec_t *g_skynormalsizes[SKYLEVELMAX + 1]; // the weight of each normal

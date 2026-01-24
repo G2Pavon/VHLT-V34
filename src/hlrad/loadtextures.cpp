@@ -409,7 +409,7 @@ void LoadTextures()
 
 // color quantization algorithm
 
-#define CQ_DIM 3
+constexpr int CQ_DIM = 3;
 
 template <class T, class T2, class T3>
 inline void CQ_VectorSubtract(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
@@ -842,7 +842,7 @@ static int CQ_MapPoint(const unsigned char point[CQ_DIM], const unsigned char (*
 //      check for "zhlt_embedlightmap" and update g_dfaces, g_texinfo, g_dtexdata and g_dlightdata
 // =====================================================================================
 
-#define RADTEXTURES_MAX 2048 // should be smaller than 62 * 62 and smaller than MAX_MAP_TEXTURES
+constexpr int RADTEXTURES_MAX = 2048; // should be smaller than 62 * 62 and smaller than MAX_MAP_TEXTURES
 static int g_newtextures_num = 0;
 static byte *g_newtextures_data[RADTEXTURES_MAX];
 static int g_newtextures_size[RADTEXTURES_MAX];

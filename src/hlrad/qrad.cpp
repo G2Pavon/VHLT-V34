@@ -705,7 +705,7 @@ static void UpdateEmitterInfo(patch_t *patch)
 // =====================================================================================
 
 // misc
-#define MAX_SUBDIVIDE 16384
+constexpr int MAX_SUBDIVIDE = 16384;
 static Winding *windingArray[MAX_SUBDIVIDE];
 static unsigned g_numwindings = 0;
 

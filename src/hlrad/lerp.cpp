@@ -1028,7 +1028,7 @@ static bool TestFarPatch(const localtriangulation_t *lt, const vec3_t p2, const 
     return dist > 1.4 * (size1 + size2);
 }
 
-#define TRIANGLE_SHAPE_THRESHOLD (115.0 * Q_PI / 180)
+constexpr double TRIANGLE_SHAPE_THRESHOLD = (115.0 * Q_PI / 180);
 // If one of the angles in a triangle exceeds this threshold, the most distant point will be removed or the triangle will break into a convex-type wedge.
 
 static void GatherPatches(localtriangulation_t *lt, const facetriangulation_t *facetrian)
