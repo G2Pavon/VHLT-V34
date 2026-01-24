@@ -220,9 +220,9 @@ void Safe_WriteLog(const char *const message)
             return; // end of string
 
         if (*c == '\n')
-            fputc('\r', CompileLog);
+            std::fputc('\r', CompileLog);
 
-        fputc(*c, CompileLog);
+        std::fputc(*c, CompileLog);
 
         c++;
     }
