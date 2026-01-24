@@ -638,13 +638,13 @@ void WriteExtentFile(const char *const filename)
     {
         Error("Error opening %s: %s", filename, strerror(errno));
     }
-    fprintf(f, "%i\n", g_numfaces);
+    std::fprintf(f, "%i\n", g_numfaces);
     for (int i = 0; i < g_numfaces; i++)
     {
         int mins[2];
         int maxs[2];
         GetFaceExtents(i, mins, maxs);
-        fprintf(f, "%i %i %i %i\n", mins[0], mins[1], maxs[0], maxs[1]);
+        std::fprintf(f, "%i %i %i %i\n", mins[0], mins[1], maxs[0], maxs[1]);
     }
     fclose(f);
 }

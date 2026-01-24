@@ -4580,7 +4580,7 @@ void FinalLightFace(const int facenum)
                     if (DotProduct(dist, dist) < g_drawsample_radius * g_drawsample_radius)
                     {
                         for (int k = 0; k < pos_count; ++k)
-                            fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
+                            std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
                     }
                 }
             }

@@ -2438,7 +2438,7 @@ static void RadWorld()
                     continue;
                 VectorCopy(patch->origin, v);
                 for (int k = 0; k < pos_count; ++k)
-                    fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
+                    std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
             }
             fclose(f);
             Log("OK.\n");
@@ -2472,7 +2472,7 @@ static void RadWorld()
                     VectorAdd(v, es->interface_normal, v);
                     VectorAdd(v, g_face_offset[es->faces[0] - g_dfaces], v);
                     for (int k = 0; k < pos_count; ++k)
-                        fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
+                        std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
                 }
             }
             fclose(f);

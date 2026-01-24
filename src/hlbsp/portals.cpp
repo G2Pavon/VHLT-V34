@@ -201,18 +201,18 @@ static void WritePortalFile_r(const node_t *const node)
                         Warning("Backward portal @");
                         w->Print();
                     }
-                    fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
+                    std::fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
                 }
                 else
                 {
-                    fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
+                    std::fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
                 }
 
                 for (int i = 0; i < w->m_NumPoints; i++)
                 {
-                    fprintf(pf, "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+                    std::fprintf(pf, "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
                 }
-                fprintf(pf, "\n");
+                std::fprintf(pf, "\n");
                 if (g_viewportal)
                 {
                     vec3_t center, center1, center2;
@@ -220,16 +220,16 @@ static void WritePortalFile_r(const node_t *const node)
                     w->getCenter(center);
                     VectorMA(center, 0.5, p->plane.normal, center1);
                     VectorMA(center, -0.5, p->plane.normal, center2);
-                    fprintf(pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
-                    fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                    std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
+                    std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
                     for (int i = 0; i < w->m_NumPoints; i++)
                     {
                         vec_t *p1 = w->m_Points[i];
                         vec_t *p2 = w->m_Points[(i + 1) % w->m_NumPoints];
-                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
-                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
-                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
-                        fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
+                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
+                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
+                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
                     }
                 }
             }
@@ -321,7 +321,7 @@ static void WriteLeafCount_r(node_t *node)
             return;
         }
         int count = CountChildLeafs_r(node);
-        fprintf(pf, "%i\n", count);
+        std::fprintf(pf, "%i\n", count);
     }
 }
 /*
@@ -354,8 +354,8 @@ void WritePortalfile(node_t *headnode)
         Log("Writing '%s' ...\n", filename);
     }
 
-    fprintf(pf, "%i\n", num_visleafs);
-    fprintf(pf, "%i\n", num_visportals);
+    std::fprintf(pf, "%i\n", num_visleafs);
+    std::fprintf(pf, "%i\n", num_visportals);
 
     WriteLeafCount_r(headnode);
     WritePortalFile_r(headnode);

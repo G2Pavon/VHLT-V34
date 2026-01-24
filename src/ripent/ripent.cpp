@@ -11,6 +11,7 @@
 // csg4.c
 
 #include <cstdlib>
+#include <cstdio>
 #include <conio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -532,7 +533,7 @@ static void WriteTextures(const char *const name)
         info = (lumpinfo_t *)malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t)); // might be more than needed
         hlassume(info != NULL, assume_NoMemory);
 
-        fprintf(texfile, "%d\r\n", ((dmiptexlump_t *)g_dtexdata)->nummiptex);
+        std::fprintf(texfile, "%d\r\n", ((dmiptexlump_t *)g_dtexdata)->nummiptex);
         fseek(wadfile, sizeof(wadinfo_t), SEEK_SET);
 
         for (int itex = 0; itex < ((dmiptexlump_t *)g_dtexdata)->nummiptex; ++itex)
@@ -541,7 +542,7 @@ static void WriteTextures(const char *const name)
             miptex_t *tex = (miptex_t *)(g_dtexdata + ofs);
             if (ofs < 0)
             {
-                fprintf(texfile, "[-1]\r\n");
+                std::fprintf(texfile, "[-1]\r\n");
             }
             else
             {
@@ -565,9 +566,9 @@ static void WriteTextures(const char *const name)
                     strcpy(info[header.numlumps].name, tex->name);
                     header.numlumps++;
                 }
-                fprintf(texfile, "[%d]", (int)strlen(tex->name));
+                std::fprintf(texfile, "[%d]", (int)strlen(tex->name));
                 SafeWrite(texfile, tex->name, strlen(tex->name));
-                fprintf(texfile, " %d %d\r\n", tex->width, tex->height);
+                std::fprintf(texfile, " %d %d\r\n", tex->width, tex->height);
             }
         }
         header.infotableofs = ftell(wadfile);

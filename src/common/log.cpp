@@ -146,18 +146,18 @@ void LogError(const char *const message)
 
         if (ErrorLog)
         {
-            fprintf(ErrorLog, "%s: %s\n", g_Program, message);
+            std::fprintf(ErrorLog, "%s: %s\n", g_Program, message);
             fflush(ErrorLog);
             fclose(ErrorLog);
             ErrorLog = NULL;
         }
         else
         {
-            fprintf(stderr, Localize("ERROR: Could not open error logfile %s"), logfilename);
+            std::fprintf(stderr, Localize("ERROR: Could not open error logfile %s"), logfilename);
             fflush(stderr);
             if (twice)
             {
-                fprintf(conout, Localize("ERROR: Could not open error logfile %s"), logfilename);
+                std::fprintf(conout, Localize("ERROR: Could not open error logfile %s"), logfilename);
                 fflush(conout);
             }
         }
@@ -176,11 +176,11 @@ void CDECL OpenLog(const int clientid)
 
         if (!CompileLog)
         {
-            fprintf(stderr, Localize("ERROR: Could not open logfile %s"), logfilename);
+            std::fprintf(stderr, Localize("ERROR: Could not open logfile %s"), logfilename);
             fflush(stderr);
             if (twice)
             {
-                fprintf(conout, Localize("ERROR: Could not open logfile %s"), logfilename);
+                std::fprintf(conout, Localize("ERROR: Could not open logfile %s"), logfilename);
                 fflush(conout);
             }
         }
@@ -231,11 +231,11 @@ void Safe_WriteLog(const char *const message)
 void WriteLog(const char *const message)
 {
     Safe_WriteLog(message);
-    fprintf(stdout, "%s", message); //fprintf(stdout, message); //--vluzacn
+    std::fprintf(stdout, "%s", message); //std::fprintf(stdout, message); //--vluzacn
     fflush(stdout);
     if (twice)
     {
-        fprintf(conout, "%s", message);
+        std::fprintf(conout, "%s", message);
         fflush(conout);
     }
 }
@@ -630,12 +630,12 @@ void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 
     if (useconsole)
     {
-        fprintf(conout, "%s", message);
+        std::fprintf(conout, "%s", message);
         fflush(conout);
     }
     else
     {
-        fprintf(stdout, "%s", message);
+        std::fprintf(stdout, "%s", message);
     }
 }
 

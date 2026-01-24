@@ -84,10 +84,10 @@ static void MarkLeakTrail(portal_t *n2)
     n2->winding->getCenter(p2);
 
     // Linefile
-    fprintf(linefile, "%f %f %f - %f %f %f\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
+    std::fprintf(linefile, "%f %f %f - %f %f %f\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
 
     // Pointfile
-    fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
+    std::fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
 
     VectorSubtract(p2, p1, dir);
     float len = VectorLength(dir);
@@ -95,7 +95,7 @@ static void MarkLeakTrail(portal_t *n2)
 
     while (len > 2)
     {
-        fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
+        std::fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
         for (int i = 0; i < 3; i++)
             p1[i] += dir[i] * 2;
         len -= 2;

@@ -10,6 +10,7 @@
     
 */
 #include <cstdlib>
+#include <cstdio>
 #include <cmath>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
@@ -293,17 +294,17 @@ void WriteFace(const int hull, const bface_t *const f, int detaillevel)
     Winding *w = f->w;
 
     // plane summary
-    fprintf(out[hull], "%i %i %i %i %u\n", detaillevel, f->planenum, f->texinfo, f->contents, w->m_NumPoints);
+    std::fprintf(out[hull], "%i %i %i %i %u\n", detaillevel, f->planenum, f->texinfo, f->contents, w->m_NumPoints);
 
     // for each of the points on the face
     for (unsigned int i = 0; i < w->m_NumPoints; i++)
     {
         // write the co-ords
-        fprintf(out[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+        std::fprintf(out[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
     }
 
     // put in an extra line break
-    fprintf(out[hull], "\n");
+    std::fprintf(out[hull], "\n");
     if (g_viewsurface)
     {
         static bool side = false;
@@ -313,17 +314,17 @@ void WriteFace(const int hull, const bface_t *const f, int detaillevel)
             vec3_t center, center2;
             w->getCenter(center);
             VectorAdd(center, f->plane->normal, center2);
-            fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
+            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
             for (unsigned int i = 0; i < w->m_NumPoints; i++)
             {
                 vec_t *p1 = w->m_Points[i];
                 vec_t *p2 = w->m_Points[(i + 1) % w->m_NumPoints];
-                fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-                fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
-                fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
+                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
+                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
             }
-            fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-            fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
+            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
         }
     }
 
@@ -332,17 +333,17 @@ void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 void WriteDetailBrush(int hull, const bface_t *faces)
 {
     ThreadLock();
-    fprintf(out_detailbrush[hull], "0\n");
+    std::fprintf(out_detailbrush[hull], "0\n");
     for (const bface_t *f = faces; f; f = f->next)
     {
         Winding *w = f->w;
-        fprintf(out_detailbrush[hull], "%i %u\n", f->planenum, w->m_NumPoints);
+        std::fprintf(out_detailbrush[hull], "%i %u\n", f->planenum, w->m_NumPoints);
         for (int i = 0; i < w->m_NumPoints; i++)
         {
-            fprintf(out_detailbrush[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+            std::fprintf(out_detailbrush[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
         }
     }
-    fprintf(out_detailbrush[hull], "-1 -1\n");
+    std::fprintf(out_detailbrush[hull], "-1 -1\n");
     ThreadUnlock();
 }
 
@@ -1330,8 +1331,8 @@ static void ProcessModels()
         // write end of model marker
         for (int j = 0; j < NUM_HULLS; j++)
         {
-            fprintf(out[j], "-1 -1 -1 -1 -1\n");
-            fprintf(out_detailbrush[j], "-1\n");
+            std::fprintf(out[j], "-1 -1 -1 -1 -1\n");
+            std::fprintf(out_detailbrush[j], "-1\n");
         }
     }
 }
@@ -2199,7 +2200,7 @@ int main(const int argc, char **argv)
                     float x2 = g_hull_size[i][1][0];
                     float y2 = g_hull_size[i][1][1];
                     float z2 = g_hull_size[i][1][2];
-                    fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
+                    std::fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
                 }
                 fclose(f);
             }
