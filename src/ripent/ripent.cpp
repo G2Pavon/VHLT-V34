@@ -534,7 +534,7 @@ static void WriteTextures(const char *const name)
         hlassume(info != NULL, assume_NoMemory);
 
         std::fprintf(texfile, "%d\r\n", ((dmiptexlump_t *)g_dtexdata)->nummiptex);
-        fseek(wadfile, sizeof(wadinfo_t), SEEK_SET);
+        std::fseek(wadfile, sizeof(wadinfo_t), SEEK_SET);
 
         for (int itex = 0; itex < ((dmiptexlump_t *)g_dtexdata)->nummiptex; ++itex)
         {
@@ -573,7 +573,7 @@ static void WriteTextures(const char *const name)
         }
         header.infotableofs = std::ftell(wadfile);
         SafeWrite(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
-        fseek(wadfile, 0, SEEK_SET);
+        std::fseek(wadfile, 0, SEEK_SET);
         SafeWrite(wadfile, &header, sizeof(wadinfo_t));
 
         std::fclose(texfile);
@@ -624,7 +624,7 @@ static void ReadTextures(const char *name)
 
         wadinfo_t header;
         SafeRead(wadfile, &header, sizeof(wadinfo_t));
-        fseek(wadfile, header.infotableofs, SEEK_SET);
+        std::fseek(wadfile, header.infotableofs, SEEK_SET);
 
         lumpinfo_t *info;
         info = (lumpinfo_t *)malloc(header.numlumps * sizeof(lumpinfo_t));
@@ -677,7 +677,7 @@ static void ReadTextures(const char *name)
                 }
                 else
                 {
-                    fseek(wadfile, info[j].filepos, SEEK_SET);
+                    std::fseek(wadfile, info[j].filepos, SEEK_SET);
                     g_texdatasize += info[j].disksize;
                     hlassume(g_texdatasize < g_max_map_miptex, assume_MAX_MAP_MIPTEX);
                     SafeRead(wadfile, tex, info[j].disksize);

@@ -520,7 +520,7 @@ void WriteBSPFile(const char *const filename)
     AddLump(LUMP_ENTITIES, g_dentdata, g_entdatasize, header, bspfile);
     AddLump(LUMP_TEXTURES, g_dtexdata, g_texdatasize, header, bspfile);
 
-    fseek(bspfile, 0, SEEK_SET);
+    std::fseek(bspfile, 0, SEEK_SET);
     SafeWrite(bspfile, header, sizeof(dheader_t));
 
     std::fclose(bspfile);

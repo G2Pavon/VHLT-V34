@@ -279,7 +279,7 @@ bool TEX_InitFromWad()
         wadinfo.infotableofs = LittleLong(wadinfo.infotableofs);
 
         // read in lump
-        if (fseek(texfile, wadinfo.infotableofs, SEEK_SET))
+        if (std::fseek(texfile, wadinfo.infotableofs, SEEK_SET))
             Warning("fseek to %d in wadfile %s failed\n", wadinfo.infotableofs, pszWadFile);
 
         // memalloc for this lump
@@ -409,7 +409,7 @@ int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_
     *texsize = 0;
     if (source->filepos)
     {
-        if (fseek(texfiles[source->iTexFile], source->filepos, SEEK_SET))
+        if (std::fseek(texfiles[source->iTexFile], source->filepos, SEEK_SET))
         {
             Warning("fseek to %d failed\n", source->filepos);
             Error("File read failure");
@@ -428,7 +428,7 @@ int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_
                 miptex->offsets[i] = 0;
             writewad_data = (byte *)malloc(source->disksize);
             hlassume(writewad_data != NULL, assume_NoMemory);
-            if (fseek(texfiles[source->iTexFile], source->filepos, SEEK_SET))
+            if (std::fseek(texfiles[source->iTexFile], source->filepos, SEEK_SET))
                 Error("File read failure");
             SafeRead(texfiles[source->iTexFile], writewad_data, source->disksize);
             writewad_datasize = source->disksize;
@@ -630,7 +630,7 @@ void WriteMiptex()
         writewad_header.identification[2] = 'D';
         writewad_header.identification[3] = '3';
         writewad_header.numlumps = 0;
-        if (fseek(writewad_file, sizeof(wadinfo_t), SEEK_SET))
+        if (std::fseek(writewad_file, sizeof(wadinfo_t), SEEK_SET))
             Error("File write failure");
         for (int i = 0; i < nummiptex; i++)
         {
@@ -669,7 +669,7 @@ void WriteMiptex()
         g_texdatasize = data - g_dtexdata;
         writewad_header.infotableofs = std::ftell(writewad_file);
         SafeWrite(writewad_file, writewad_lumpinfos, writewad_header.numlumps * sizeof(dlumpinfo_t));
-        if (fseek(writewad_file, 0, SEEK_SET))
+        if (std::fseek(writewad_file, 0, SEEK_SET))
             Error("File write failure");
         SafeWrite(writewad_file, &writewad_header, sizeof(wadinfo_t));
         if (std::fclose(writewad_file))

@@ -123,7 +123,7 @@ void OpenWadFile(const char *name, bool fullpath = false)
     }
     wad->lumpinfos = (lumpinfo_t *)malloc(wad->numlumps * sizeof(lumpinfo_t));
     hlassume(wad->lumpinfos != NULL, assume_NoMemory);
-    if (fseek(wad->file, wadinfo.infotableofs, SEEK_SET))
+    if (std::fseek(wad->file, wadinfo.infotableofs, SEEK_SET))
         Error("File read failure: %s", wad->path);
     for (int i = 0; i < wad->numlumps; i++)
     {
@@ -302,7 +302,7 @@ void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
             }
             miptex_t *mt = (miptex_t *)malloc(found->disksize);
             hlassume(mt != NULL, assume_NoMemory);
-            if (fseek(wad->file, found->filepos, SEEK_SET))
+            if (std::fseek(wad->file, found->filepos, SEEK_SET))
                 Error("File read failure");
             SafeRead(wad->file, mt, found->disksize);
             if (!TerminatedString(mt->name, 16))

@@ -14,9 +14,9 @@
 int q_filelength(FILE *f)
 {
     int pos = std::ftell(f);
-    fseek(f, 0, SEEK_END);
+    std::fseek(f, 0, SEEK_END);
     int end = std::ftell(f);
-    fseek(f, pos, SEEK_SET);
+    std::fseek(f, pos, SEEK_SET);
 
     return end;
 }
