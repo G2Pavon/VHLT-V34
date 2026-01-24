@@ -18,7 +18,7 @@ void writetransfers(const char *const transferfile, const long total_patches)
 
         Log("Writing transfers file [%s]\n", transferfile);
 
-        unsigned amtwritten = fwrite(&total_patches, sizeof(total_patches), 1, file);
+        unsigned amtwritten = std::fwrite(&total_patches, sizeof(total_patches), 1, file);
         if (amtwritten != 1)
         {
             goto FailedWrite;
@@ -27,7 +27,7 @@ void writetransfers(const char *const transferfile, const long total_patches)
         long patchcount = total_patches;
         for (patch_t *patch = g_patches; patchcount-- > 0; patch++)
         {
-            amtwritten = fwrite(&patch->iIndex, sizeof(patch->iIndex), 1, file);
+            amtwritten = std::fwrite(&patch->iIndex, sizeof(patch->iIndex), 1, file);
             if (amtwritten != 1)
             {
                 goto FailedWrite;
@@ -35,14 +35,14 @@ void writetransfers(const char *const transferfile, const long total_patches)
 
             if (patch->iIndex)
             {
-                amtwritten = fwrite(patch->tIndex, sizeof(transfer_index_t), patch->iIndex, file);
+                amtwritten = std::fwrite(patch->tIndex, sizeof(transfer_index_t), patch->iIndex, file);
                 if (amtwritten != patch->iIndex)
                 {
                     goto FailedWrite;
                 }
             }
 
-            amtwritten = fwrite(&patch->iData, sizeof(patch->iData), 1, file);
+            amtwritten = std::fwrite(&patch->iData, sizeof(patch->iData), 1, file);
             if (amtwritten != 1)
             {
                 goto FailedWrite;
@@ -51,11 +51,11 @@ void writetransfers(const char *const transferfile, const long total_patches)
             {
                 if (g_rgb_transfers)
                 {
-                    amtwritten = fwrite(patch->tRGBData, vector_size[g_rgbtransfer_compress_type], patch->iData, file);
+                    amtwritten = std::fwrite(patch->tRGBData, vector_size[g_rgbtransfer_compress_type], patch->iData, file);
                 }
                 else
                 {
-                    amtwritten = fwrite(patch->tData, float_size[g_transfer_compress_type], patch->iData, file);
+                    amtwritten = std::fwrite(patch->tData, float_size[g_transfer_compress_type], patch->iData, file);
                 }
                 if (amtwritten != patch->iData)
                 {
