@@ -582,7 +582,7 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const 
     }
 }
 
-#define PORTALSEE_SIZE (MAX_PORTALS * 2)
+constexpr int PORTALSEE_SIZE = (MAX_PORTALS * 2);
 
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter

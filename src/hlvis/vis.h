@@ -2,22 +2,22 @@
 
 #include "bspfile.h"
 
-#define DEFAULT_MAXDISTANCE_RANGE 0
+constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 
-#define DEFAULT_FULLVIS false
-#define DEFAULT_CHART false
-#define DEFAULT_INFO true
-#define DEFAULT_ESTIMATE false
+constexpr bool DEFAULT_FULLVIS = false;
+constexpr bool DEFAULT_CHART = false;
+constexpr bool DEFAULT_INFO = true;
+constexpr bool DEFAULT_ESTIMATE = false;
 
-#define DEFAULT_FASTVIS false
-#define DEFAULT_NETVIS_PORT 21212
-#define DEFAULT_NETVIS_RATE 60
+constexpr bool DEFAULT_FASTVIS = false;
+constexpr int DEFAULT_NETVIS_PORT = 21212;
+constexpr int DEFAULT_NETVIS_RATE = 60;
 
-#define MAX_PORTALS 32768
+constexpr int MAX_PORTALS = 32768;
 
-#define PORTALFILE "PRT1" // WTF?
+constexpr const char *PORTALFILE = "PRT1"; // WTF?
 
-#define MAX_POINTS_ON_FIXED_WINDING 32
+constexpr int MAX_POINTS_ON_FIXED_WINDING = 32;
 
 typedef struct
 {
@@ -64,7 +64,7 @@ typedef struct passage_s
     sep_t *planes;
 } passage_t;
 
-#define MAX_PORTALS_ON_LEAF 256
+constexpr int MAX_PORTALS_ON_LEAF = 256;
 typedef struct leaf_s
 {
     unsigned numportals;
