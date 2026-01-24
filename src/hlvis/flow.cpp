@@ -530,7 +530,7 @@ void PortalFlow(portal_t *p)
 
     p->visbits = (byte *)calloc(1, g_bitbytes);
 
-    memset(&data, 0, sizeof(data));
+    std::memset(&data, 0, sizeof(data));
     data.leafvis = p->visbits;
     data.base = p;
 
@@ -607,7 +607,7 @@ void BasePortalVis(int unused)
 
         p->mightsee = (byte *)calloc(1, g_bitbytes);
 
-        memset(portalsee, 0, portalsize);
+        std::memset(portalsee, 0, portalsize);
 
         for (j = 0, tp = g_portals; j < portalsize; j++, tp++)
         {

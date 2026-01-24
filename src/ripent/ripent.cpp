@@ -494,7 +494,7 @@ static void WriteTextures(const char *const name)
         lumpinfo_t *info;
         info = (lumpinfo_t *)malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t));
         hlassume(info != NULL, assume_NoMemory);
-        memset(info, 0, header.numlumps * sizeof(lumpinfo_t));
+        std::memset(info, 0, header.numlumps * sizeof(lumpinfo_t));
 
         for (int i = 0; i < header.numlumps; i++)
         {
@@ -557,7 +557,7 @@ static void WriteTextures(const char *const name)
                     included = true;
                 if (included)
                 {
-                    memset(&info[header.numlumps], 0, sizeof(lumpinfo_t));
+                    std::memset(&info[header.numlumps], 0, sizeof(lumpinfo_t));
                     info[header.numlumps].filepos = std::ftell(wadfile);
                     SafeWrite(wadfile, tex, size);
                     info[header.numlumps].disksize = std::ftell(wadfile) - info[header.numlumps].filepos;
@@ -652,7 +652,7 @@ static void ReadTextures(const char *name)
                 char name[16];
                 if (len > 15)
                     Error("Texture name is too long");
-                memset(name, '\0', 16);
+                std::memset(name, '\0', 16);
                 SafeRead(texfile, name, len);
                 ((dmiptexlump_t *)g_dtexdata)->dataofs[itex] = g_texdatasize;
                 miptex_t *tex = (miptex_t *)(g_dtexdata + g_texdatasize);
@@ -669,7 +669,7 @@ static void ReadTextures(const char *name)
                         Error("File read failure");
                     g_texdatasize += sizeof(miptex_t);
                     hlassume(g_texdatasize < g_max_map_miptex, assume_MAX_MAP_MIPTEX);
-                    memset(tex, 0, sizeof(miptex_t));
+                    std::memset(tex, 0, sizeof(miptex_t));
                     strcpy(tex->name, name);
                     tex->width = w;
                     tex->height = h;

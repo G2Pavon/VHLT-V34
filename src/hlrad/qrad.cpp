@@ -926,7 +926,7 @@ static void SubdividePatch(patch_t *patch)
     dplane_t *plA = &planes[0];
     dplane_t *plB = &planes[1];
 
-    memset(windingArray, 0, sizeof(windingArray));
+    std::memset(windingArray, 0, sizeof(windingArray));
     g_numwindings = 0;
 
     getGridPlanes(patch, planes);
@@ -1284,7 +1284,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 
         patch_t *patch = &g_patches[g_num_patches];
         hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
-        memset(patch, 0, sizeof(patch_t));
+        std::memset(patch, 0, sizeof(patch_t));
 
         patch->winding = w;
 
@@ -1843,7 +1843,7 @@ static void SortPatches()
     qsort((void *)g_patches, (size_t)g_num_patches, sizeof(patch_t), patch_sorter);
 
     // Fixup g_face_patches & Fixup patch->next
-    memset(g_face_patches, 0, sizeof(g_face_patches));
+    std::memset(g_face_patches, 0, sizeof(g_face_patches));
     {
         patch_t *patch = g_patches + 1;
         patch_t *prev = g_patches;
@@ -1885,7 +1885,7 @@ static void FreePatches()
     {
         delete patch->winding;
     }
-    memset(g_patches, 0, sizeof(patch_t) * g_num_patches);
+    std::memset(g_patches, 0, sizeof(patch_t) * g_num_patches);
     FreeBlock(g_patches);
     g_patches = NULL;
 }
@@ -1982,7 +1982,7 @@ static void GatherLight(int threadnum)
         {
             break;
         }
-        memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
+        std::memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
 
         patch_t *patch = &g_patches[j];
 
@@ -2133,7 +2133,7 @@ static void GatherRGBLight(int threadnum)
         {
             break;
         }
-        memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
+        std::memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
 
         patch_t *patch = &g_patches[j];
 
@@ -2402,7 +2402,7 @@ static void ExtendLightmapBuffer()
     if (maxsize >= g_lightdatasize)
     {
         hlassume(maxsize <= g_max_map_lightdata, assume_MAX_MAP_LIGHTING);
-        memset(&g_dlightdata[g_lightdatasize], 0, maxsize - g_lightdatasize);
+        std::memset(&g_dlightdata[g_lightdatasize], 0, maxsize - g_lightdatasize);
         g_lightdatasize = maxsize;
     }
 }
@@ -2908,7 +2908,7 @@ void LoadRadFiles(const char *const mapname, const char *const user_rad, const c
     // try looking in the directory we were run from
     {
         char tmp[_MAX_PATH];
-        memset(tmp, 0, sizeof(tmp));
+        std::memset(tmp, 0, sizeof(tmp));
 
         GetModuleFileName(NULL, tmp, _MAX_PATH);
         ExtractFilePath(tmp, appdir);

@@ -284,7 +284,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
     {
         c = s;
         execute_t e;
-        memset(&e, 0, sizeof(e));
+        std::memset(&e, 0, sizeof(e));
         strcpy(words, "");
         strcpy(token, "");
         parsearg(argc, argv, cmdline, MAXTOKEN);

@@ -271,7 +271,7 @@ Winding::Winding(UINT32 numpoints)
     m_MaxPoints = (m_NumPoints + 3) & ~3; // groups of 4
 
     m_Points = new vec3_t[m_MaxPoints];
-    memset(m_Points, 0, sizeof(vec3_t) * m_NumPoints);
+    std::memset(m_Points, 0, sizeof(vec3_t) * m_NumPoints);
 }
 
 Winding::Winding(const Winding &other)
@@ -685,7 +685,7 @@ bool Winding::Clip(const dplane_t &split, bool keepon, vec_t epsilon)
     unsigned maxpts = m_NumPoints + 4; // can't use counts[0]+2 because of fp grouping errors
     unsigned newNumPoints = 0;
     vec3_t *newPoints = new vec3_t[maxpts];
-    memset(newPoints, 0, sizeof(vec3_t) * maxpts);
+    std::memset(newPoints, 0, sizeof(vec3_t) * maxpts);
 
     for (i = 0; i < m_NumPoints; i++)
     {

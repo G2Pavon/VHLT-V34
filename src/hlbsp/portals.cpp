@@ -1,5 +1,6 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 #include <cstdio>
+#include <cstring>
 
 #include "bsp5.h"
 #include "cmdlib.h"
@@ -114,7 +115,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
             portals[n] = p;
 
             dplane_t *pl = &bplanes[n];
-            memset(pl, 0, sizeof(*pl));
+            std::memset(pl, 0, sizeof(*pl));
             if (j)
             {
                 pl->normal[i] = -1;

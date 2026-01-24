@@ -1,3 +1,4 @@
+#include <cstring>
 #include <io.h>
 
 #include "qrad.h"
@@ -149,7 +150,7 @@ static void BuildVisLeafs(int threadnum)
         dleaf_t *srcleaf = &g_dleafs[i];
         if (!g_visdatasize)
         {
-            memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
+            std::memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
         }
         else
         {

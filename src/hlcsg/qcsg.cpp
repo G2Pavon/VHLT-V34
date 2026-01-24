@@ -1072,7 +1072,7 @@ void LoadWadValue()
     epair_t *e;
     entity_t ent0;
     entity_t *mapent = &ent0;
-    memset(mapent, 0, sizeof(entity_t));
+    std::memset(mapent, 0, sizeof(entity_t));
     if (!GetToken(true))
     {
         wadvalue = strdup("");

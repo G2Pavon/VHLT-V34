@@ -93,7 +93,7 @@ void DeleteCurrentEntity(entity_t *entity)
             Error("DeleteCurrentEntity: internal error. (Entity %i, Brush %i)",
                   b->originalentitynum, b->originalbrushnum);
         }
-        memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
+        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
         g_numbrushsides -= b->numsides;
         for (int h = 0; h < NUM_HULLS; h++)
         {
@@ -103,13 +103,13 @@ void DeleteCurrentEntity(entity_t *entity)
             }
         }
     }
-    memset(&g_mapbrushes[entity->firstbrush], 0, entity->numbrushes * sizeof(brush_t));
+    std::memset(&g_mapbrushes[entity->firstbrush], 0, entity->numbrushes * sizeof(brush_t));
     g_nummapbrushes -= entity->numbrushes;
     while (entity->epairs)
     {
         DeleteKey(entity, entity->epairs->key);
     }
-    memset(entity, 0, sizeof(entity_t));
+    std::memset(entity, 0, sizeof(entity_t));
     g_numentities--;
 }
 // =====================================================================================
@@ -533,7 +533,7 @@ static void ParseBrush(entity_t *mapent)
     }
     if (*ValueForKey(&g_entities[b->entitynum], "zhlt_usemodel"))
     {
-        memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
+        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
         g_numbrushsides -= b->numsides;
         for (int h = 0; h < NUM_HULLS; h++)
         {
@@ -542,7 +542,7 @@ static void ParseBrush(entity_t *mapent)
                 free(b->hullshapes[h]);
             }
         }
-        memset(b, 0, sizeof(brush_t));
+        std::memset(b, 0, sizeof(brush_t));
         g_nummapbrushes--;
         mapent->numbrushes--;
         return;
@@ -958,7 +958,7 @@ bool ParseMapEntity()
         {
             g_entities[i].firstbrush += newbrushes;
         }
-        memset(mapent, 0, sizeof(*mapent));
+        std::memset(mapent, 0, sizeof(*mapent));
         Free(temp);
         return true;
     }

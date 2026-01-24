@@ -4,6 +4,7 @@
 #include <istream>
 #include <set>
 #include <string>
+#include <cstring>
 
 #include "filelib.h"
 #include "log.h"
@@ -37,7 +38,7 @@ void properties_initialize(const char *filename)
 
     //begin reading list of items
     char line[MAX_VAL]; //MAX_VALUE //vluzacn
-    memset(line, 0, sizeof(char) * 4096);
+    std::memset(line, 0, sizeof(char) * 4096);
     while (!file.eof())
     {
         std::string str;

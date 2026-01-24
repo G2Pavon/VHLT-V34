@@ -195,7 +195,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
     vec3_t origin;
 
     bool *axialbevel = (bool *)malloc(hb->numfaces * sizeof(bool));
-    memset(axialbevel, 0, hb->numfaces * sizeof(bool));
+    std::memset(axialbevel, 0, hb->numfaces * sizeof(bool));
     bool warned = false;
 
     // check for collisions of face-vertex type. face-edge type is also permitted. face-face type is excluded.

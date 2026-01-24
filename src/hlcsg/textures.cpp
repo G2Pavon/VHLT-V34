@@ -699,7 +699,7 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
     {
         return -1;
     }
-    memset(&tx, 0, sizeof(tx));
+    std::memset(&tx, 0, sizeof(tx));
     FindMiptex(bt->name);
 
     // set the special flag

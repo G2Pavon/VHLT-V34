@@ -159,7 +159,7 @@ static void InitHash()
 {
     vec3_t size;
 
-    memset(hashverts, 0, sizeof(hashverts));
+    std::memset(hashverts, 0, sizeof(hashverts));
 
     for (int i = 0; i < 3; i++)
     {

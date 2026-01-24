@@ -41,7 +41,7 @@ void fail()
 void compress_compatability_test()
 {
     unsigned char *v = (unsigned char *)malloc(16u);
-    memset(v, 0, 16u);
+    std::memset(v, 0, 16u);
     if (sizeof(char) != 1 || sizeof(unsigned int) != 4 || sizeof(float) != 4)
         fail();
     *(float *)(v + 1) = 0.123f;
@@ -51,7 +51,7 @@ void compress_compatability_test()
     if (*(unsigned int *)v != 1744830464u || *(unsigned int *)(v + 1) != 3261595648u)
         fail();
     float f[5] = {0.123f, 1.f, 0.f, 0.123f, 0.f};
-    memset(v, ~0, 16u);
+    std::memset(v, ~0, 16u);
     vector_compress(VECTOR24, v, &f[0], &f[1], &f[2]);
     float_compress(FLOAT16, v + 6, &f[3]);
     float_compress(FLOAT16, v + 4, &f[4]);

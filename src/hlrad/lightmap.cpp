@@ -254,7 +254,7 @@ void PairEdges()
 {
     edgeshare_t *e;
 
-    memset(&g_edgeshare, 0, sizeof(g_edgeshare));
+    std::memset(&g_edgeshare, 0, sizeof(g_edgeshare));
 
     dface_t *f = g_dfaces;
     for (int i = 0; i < g_numfaces; i++, f++)
@@ -1552,7 +1552,7 @@ void CreateDirectLights()
 
     numdlights = 0;
     int styleused[ALLSTYLES];
-    memset(styleused, 0, ALLSTYLES * sizeof(styleused[0]));
+    std::memset(styleused, 0, ALLSTYLES * sizeof(styleused[0]));
     styleused[0] = true;
     int numstyles = 1;
 
@@ -2362,7 +2362,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
     vec3_t testline_origin;
     vec3_t adds[ALLSTYLES];
     int style;
-    memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
+    std::memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
     bool lighting_diversify;
     vec_t lighting_power = g_lightingconeinfo[miptex][0];
     vec_t lighting_scale = g_lightingconeinfo[miptex][1];
@@ -3090,7 +3090,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
     int lastoffset2;
 
     int facenum = l->surfnum;
-    memset(l->lmcache, 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
+    std::memset(l->lmcache, 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
 
     // for each sample whose light we need to calculate
     for (int i = 0; i < l->lmcachewidth * l->lmcacheheight; i++)
@@ -3231,7 +3231,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
             {
                 if (i == 0)
                 {
-                    memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
+                    std::memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
                 }
             }
             else
@@ -3242,7 +3242,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
                 {
                     if (thisoffset == -1)
                     {
-                        memset(pvs, 0, (g_dmodels[0].visleafs + 7) / 8);
+                        std::memset(pvs, 0, (g_dmodels[0].visleafs + 7) / 8);
                     }
                     else
                     {
@@ -3257,7 +3257,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
                 {
                     if (i == 0)
                     {
-                        memset(pvs2, 255, (g_dmodels[0].visleafs + 7) / 8);
+                        std::memset(pvs2, 255, (g_dmodels[0].visleafs + 7) / 8);
                     }
                 }
                 else
@@ -3268,7 +3268,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
                     {
                         if (thisoffset2 == -1)
                         {
-                            memset(pvs2, 0, (g_dmodels[0].visleafs + 7) / 8);
+                            std::memset(pvs2, 0, (g_dmodels[0].visleafs + 7) / 8);
                         }
                         else
                         {
@@ -3288,7 +3288,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
             if (l->translucent_b)
             {
                 vec3_t sampled2[ALLSTYLES];
-                memset(sampled2, 0, ALLSTYLES * sizeof(vec3_t));
+                std::memset(sampled2, 0, ALLSTYLES * sizeof(vec3_t));
                 if (!blocked)
                 {
                     GatherSampleLight(spot2, pvs2, pointnormal2, sampled2, styles, 0, l->miptex, surface);
@@ -3367,7 +3367,7 @@ void BuildFacelights(const int facenum)
         f_styles[1] = g_face_patches[facenum]->emitstyle;
     }
 
-    memset(&l, 0, sizeof(l));
+    std::memset(&l, 0, sizeof(l));
 
     l.surfnum = facenum;
     l.face = f;
@@ -3575,7 +3575,7 @@ void BuildFacelights(const int facenum)
         // get the PVS for the pos to limit the number of checks
         if (!g_visdatasize)
         {
-            memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
+            std::memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
             lastoffset = -1;
         }
         else
@@ -3587,7 +3587,7 @@ void BuildFacelights(const int facenum)
             {
                 if (thisoffset == -1)
                 {
-                    memset(pvs, 0, (g_dmodels[0].visleafs + 7) / 8);
+                    std::memset(pvs, 0, (g_dmodels[0].visleafs + 7) / 8);
                 }
                 else
                 {
@@ -3600,7 +3600,7 @@ void BuildFacelights(const int facenum)
         {
             if (!g_visdatasize)
             {
-                memset(pvs2, 255, (g_dmodels[0].visleafs + 7) / 8);
+                std::memset(pvs2, 255, (g_dmodels[0].visleafs + 7) / 8);
                 lastoffset2 = -1;
             }
             else
@@ -3613,7 +3613,7 @@ void BuildFacelights(const int facenum)
                 {
                     if (thisoffset2 == -1)
                     {
-                        memset(pvs2, 0, (g_dmodels[0].visleafs + 7) / 8);
+                        std::memset(pvs2, 0, (g_dmodels[0].visleafs + 7) / 8);
                     }
                     else
                     {

@@ -1,5 +1,6 @@
-#include <io.h>
 #include <cstdlib>
+#include <cstring>
+#include <io.h>
 
 #include "qrad.h"
 #include "blockmem.h"
@@ -300,7 +301,7 @@ static void BuildVisLeafs(int threadnum)
         dleaf_t *srcleaf = &g_dleafs[i];
         if (!g_visdatasize)
         {
-            memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
+            std::memset(pvs, 255, (g_dmodels[0].visleafs + 7) / 8);
         }
         else
         {
@@ -391,7 +392,7 @@ static void DumpVismatrixInfo()
     sparse_column_t *column_end = s_vismatrix + g_num_patches;
     sparse_column_t *column = s_vismatrix;
 
-    memset(totals, 0, sizeof(totals));
+    std::memset(totals, 0, sizeof(totals));
 
     while (column < column_end)
     {

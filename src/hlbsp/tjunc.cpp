@@ -52,7 +52,7 @@ static void InitHash(const vec3_t mins, const vec3_t maxs)
     // Let's ignore the parameters and make things more predictable, so there won't be strange cases such as division by 0 or extreme scaling values.
     VectorFill(hash_min, -8000);
     VectorFill(size, 16000);
-    memset(wedge_hash, 0, sizeof(wedge_hash));
+    std::memset(wedge_hash, 0, sizeof(wedge_hash));
 
     vec_t volume = size[0] * size[1];
 

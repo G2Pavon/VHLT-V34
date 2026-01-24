@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstring>
 #include <cmath>
 
 #include "qrad.h"
@@ -343,7 +344,7 @@ int MergeOpaqueFaces(int firstface, int numfaces)
     int newnum = j;
     for (; j < numfaces; j++)
     {
-        memset(&faces[j], 0, sizeof(opaqueface_t));
+        std::memset(&faces[j], 0, sizeof(opaqueface_t));
     }
     return newnum;
 }

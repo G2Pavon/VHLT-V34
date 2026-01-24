@@ -493,7 +493,7 @@ void WriteBSPFile(const char *const filename)
 {
     dheader_t outheader;
     dheader_t *header = &outheader;
-    memset(header, 0, sizeof(dheader_t));
+    std::memset(header, 0, sizeof(dheader_t));
 
     SwapBSPFile(true);
 
@@ -708,7 +708,7 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
             }
             block->next = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
             hlassume(block->next != NULL, assume_NoMemory);
-            memset(block->next, 0, sizeof(lightmapblock_t));
+            std::memset(block->next, 0, sizeof(lightmapblock_t));
         }
     }
 }
@@ -716,7 +716,7 @@ int CountBlocks()
 {
     lightmapblock_t *blocks = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
     hlassume(blocks != NULL, assume_NoMemory);
-    memset(blocks, 0, sizeof(lightmapblock_t));
+    std::memset(blocks, 0, sizeof(lightmapblock_t));
 
     for (int k = 0; k < g_numfaces; k++)
     {
@@ -1224,7 +1224,7 @@ bool ParseEntity()
         {
             DeleteKey(mapent, mapent->epairs->key);
         }
-        memset(mapent, 0, sizeof(entity_t));
+        std::memset(mapent, 0, sizeof(entity_t));
         g_numentities--;
         return true;
     }
@@ -1401,7 +1401,7 @@ void UnparseEntities()
         int count = 0;
         bool *lightneedcompare = (bool *)malloc(g_numentities * sizeof(bool));
         hlassume(lightneedcompare != NULL, assume_NoMemory);
-        memset(lightneedcompare, 0, g_numentities * sizeof(bool));
+        std::memset(lightneedcompare, 0, g_numentities * sizeof(bool));
         for (int i = g_numentities - 1; i > -1; i--)
         {
             entity_t *ent = &g_entities[i];

@@ -267,7 +267,7 @@ static void LeafFlow(const int leafnum)
     //
     // flow through all portals, collecting visible bits
     //
-    memset(compressed, 0, sizeof(compressed));
+    std::memset(compressed, 0, sizeof(compressed));
     byte *outbuffer = g_uncompressed + leafnum * g_bitbytes;
     leaf_t *leaf = &g_leafs[leafnum];
     int tmp = 0;
@@ -338,7 +338,7 @@ static void LeafFlow(const int leafnum)
 
     byte buffer2[MAX_MAP_LEAFS / 8];
     int diskbytes = (g_leafcount_all + 7) >> 3;
-    memset(buffer2, 0, diskbytes);
+    std::memset(buffer2, 0, diskbytes);
     for (unsigned i = 0; i < g_portalleafs; i++)
     {
         for (unsigned j = 0; j < g_leafcounts[i]; j++)
