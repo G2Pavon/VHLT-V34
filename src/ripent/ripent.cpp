@@ -557,9 +557,9 @@ static void WriteTextures(const char *const name)
                 if (included)
                 {
                     memset(&info[header.numlumps], 0, sizeof(lumpinfo_t));
-                    info[header.numlumps].filepos = ftell(wadfile);
+                    info[header.numlumps].filepos = std::ftell(wadfile);
                     SafeWrite(wadfile, tex, size);
-                    info[header.numlumps].disksize = ftell(wadfile) - info[header.numlumps].filepos;
+                    info[header.numlumps].disksize = std::ftell(wadfile) - info[header.numlumps].filepos;
                     info[header.numlumps].size = info[header.numlumps].disksize;
                     info[header.numlumps].type = 67;
                     info[header.numlumps].compression = 0;
@@ -571,7 +571,7 @@ static void WriteTextures(const char *const name)
                 std::fprintf(texfile, " %d %d\r\n", tex->width, tex->height);
             }
         }
-        header.infotableofs = ftell(wadfile);
+        header.infotableofs = std::ftell(wadfile);
         SafeWrite(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
         fseek(wadfile, 0, SEEK_SET);
         SafeWrite(wadfile, &header, sizeof(wadinfo_t));

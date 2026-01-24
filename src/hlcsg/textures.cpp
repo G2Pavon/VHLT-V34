@@ -641,7 +641,7 @@ void WriteMiptex()
             if (writewad_data)
             {
                 dlumpinfo_t *writewad_lumpinfo = &writewad_lumpinfos[writewad_header.numlumps];
-                writewad_lumpinfo->filepos = ftell(writewad_file);
+                writewad_lumpinfo->filepos = std::ftell(writewad_file);
                 writewad_lumpinfo->disksize = writewad_datasize;
                 writewad_lumpinfo->size = miptex[i].size;
                 writewad_lumpinfo->type = miptex[i].type;
@@ -667,7 +667,7 @@ void WriteMiptex()
             data += len;
         }
         g_texdatasize = data - g_dtexdata;
-        writewad_header.infotableofs = ftell(writewad_file);
+        writewad_header.infotableofs = std::ftell(writewad_file);
         SafeWrite(writewad_file, writewad_lumpinfos, writewad_header.numlumps * sizeof(dlumpinfo_t));
         if (fseek(writewad_file, 0, SEEK_SET))
             Error("File write failure");

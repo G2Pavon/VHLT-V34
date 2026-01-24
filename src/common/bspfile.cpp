@@ -479,7 +479,7 @@ void LoadBSPImage(dheader_t *const header)
 static void AddLump(int lumpnum, void *data, int len, dheader_t *header, FILE *bspfile)
 {
     lump_t *lump = &header->lumps[lumpnum];
-    lump->fileofs = LittleLong(ftell(bspfile));
+    lump->fileofs = LittleLong(std::ftell(bspfile));
     lump->filelen = LittleLong(len);
     SafeWrite(bspfile, data, (len + 3) & ~3);
 }
