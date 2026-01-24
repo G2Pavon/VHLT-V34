@@ -977,7 +977,7 @@ int ParseImplicitTexinfoFromTexture(int miptex)
         return -1;
     }
 
-    int texinfo = atoi(&name[5]);
+    int texinfo = std::atoi(&name[5]);
     if (texinfo < 0 || texinfo >= g_numtexinfo)
     {
         Warning("Invalid index of original texinfo: %d parsed from texture name '%s'.", texinfo, name);
@@ -1529,7 +1529,7 @@ const char *ValueForKey(const entity_t *const ent, const char *const key)
 // =====================================================================================
 int IntForKey(const entity_t *const ent, const char *const key)
 {
-    return atoi(ValueForKey(ent, key));
+    return std::atoi(ValueForKey(ent, key));
 }
 
 // =====================================================================================

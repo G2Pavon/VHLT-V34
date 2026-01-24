@@ -11,9 +11,9 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <cmath>
 
 #include "vis.h"
 #include "filelib.h"
@@ -832,7 +832,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_numthreads = atoi(argv[++i]);
+                        g_numthreads = std::atoi(argv[++i]);
                         if (g_numthreads < 1)
                         {
                             Log("Expected value of at least 1 for '-threads'\n");
@@ -869,7 +869,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_developer = (developer_level_t)atoi(argv[++i]);
+                        g_developer = (developer_level_t)std::atoi(argv[++i]);
                     }
                     else
                     {
@@ -905,7 +905,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_miptex) //--vluzacn
                         {
@@ -921,7 +921,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_lightdata) //--vluzacn
                         {
@@ -939,7 +939,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_maxdistance = std::abs(atoi(argv[++i]));
+                        g_maxdistance = std::abs(std::atoi(argv[++i]));
                     }
                     else
                     {

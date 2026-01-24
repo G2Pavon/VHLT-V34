@@ -991,7 +991,7 @@ static void SetLightStyles()
             //LRC:
             // if it's not a normal light entity, allocate it a new style if necessary.
             t = ValueForKey(e, "style");
-            switch (atoi(t))
+            switch (std::atoi(t))
             {
             case 0: // not a light, no style, generally pretty boring
                 continue;
@@ -1236,7 +1236,7 @@ static void CheckForNoClip()
         entity_t *ent = &g_entities[i];
 
         strcpy_s(entclassname, ValueForKey(ent, "classname"));
-        int spawnflags = atoi(ValueForKey(ent, "spawnflags"));
+        int spawnflags = std::atoi(ValueForKey(ent, "spawnflags"));
         int skin = IntForKey(ent, "skin"); //vluzacn
 
         if ((skin != -16) &&
@@ -1616,7 +1616,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_numthreads = atoi(argv[++i]);
+                        g_numthreads = std::atoi(argv[++i]);
                         if (g_numthreads < 1)
                         {
                             Log("Expected value of at least 1 for '-threads'\n");
@@ -1645,7 +1645,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_developer = (developer_level_t)atoi(argv[++i]);
+                        g_developer = (developer_level_t)std::atoi(argv[++i]);
                     }
                     else
                     {
@@ -1773,7 +1773,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_miptex) //--vluzacn
                         {
@@ -1789,7 +1789,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_lightdata) //--vluzacn
                         {

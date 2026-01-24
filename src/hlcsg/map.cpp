@@ -682,7 +682,7 @@ bool ParseMapEntity()
 
             if (!strcmp(e->key, "mapversion"))
             {
-                g_nMapFileVersion = atoi(e->value);
+                g_nMapFileVersion = std::atoi(e->value);
             }
 
             SetKeyValue(mapent, e->key, e->value);
@@ -1009,7 +1009,7 @@ unsigned int CountEngineEntities()
                 const char *targetname = ValueForKey(mapent, "targetname");
 
                 // lightspots and lightenviroments dont have a targetname or style
-                if (!strlen(targetname) && !atoi(style))
+                if (!strlen(targetname) && !std::atoi(style))
                 {
                     continue;
                 }

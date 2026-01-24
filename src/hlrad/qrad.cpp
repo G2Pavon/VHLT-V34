@@ -1687,7 +1687,7 @@ static void MakePatches()
 
         if (*(s = ValueForKey(ent, "zhlt_lightflags")))
         {
-            lightmode = (eModelLightmodes)atoi(s);
+            lightmode = (eModelLightmodes)std::atoi(s);
         }
 
         // models with origin brushes need to be offset into their in-use position
@@ -1750,7 +1750,7 @@ static void MakePatches()
         //LRC:
         if (*(s = ValueForKey(ent, "style")))
         {
-            style = atoi(s);
+            style = std::atoi(s);
             if (style < 0)
                 style = -style;
         }
@@ -3050,7 +3050,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_numbounce = atoi(argv[++i]);
+                        g_numbounce = std::atoi(argv[++i]);
                         if (g_numbounce > 1000)
                         {
                             Log("Unexpectedly large value (>1000) for '-bounce'\n");
@@ -3066,7 +3066,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_developer = (developer_level_t)atoi(argv[++i]);
+                        g_developer = (developer_level_t)std::atoi(argv[++i]);
                     }
                     else
                     {
@@ -3085,7 +3085,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_numthreads = atoi(argv[++i]);
+                        g_numthreads = std::atoi(argv[++i]);
                         if (g_numthreads < 1)
                         {
                             Log("Expected value of at least 1 for '-threads'\n");
@@ -3346,7 +3346,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_miptex) //--vluzacn
                         {
@@ -3362,7 +3362,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_lightdata) //--vluzacn
                         {
@@ -3505,7 +3505,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        int v = atoi(argv[++i]);
+                        int v = std::atoi(argv[++i]);
                         v = qmax(0, qmin(v, 255));
                         g_minlight = (unsigned char)v;
                     }
@@ -3519,7 +3519,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_softsky = (bool)atoi(argv[++i]);
+                        g_softsky = (bool)std::atoi(argv[++i]);
                     }
                     else
                     {
@@ -3563,7 +3563,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_transfer_compress_type = (float_type)atoi(argv[++i]);
+                        g_transfer_compress_type = (float_type)std::atoi(argv[++i]);
                         if (g_transfer_compress_type < 0 || g_transfer_compress_type >= float_type_count)
                             Usage();
                     }
@@ -3576,7 +3576,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_rgbtransfer_compress_type = (vector_type)atoi(argv[++i]);
+                        g_rgbtransfer_compress_type = (vector_type)std::atoi(argv[++i]);
                         if (g_rgbtransfer_compress_type < 0 || g_rgbtransfer_compress_type >= vector_type_count)
                             Usage();
                     }
@@ -3600,7 +3600,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc)
                     {
-                        g_blockopaque = atoi(argv[++i]);
+                        g_blockopaque = std::atoi(argv[++i]);
                     }
                     else
                     {

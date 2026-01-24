@@ -7,11 +7,11 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
 
 */
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <cstdlib>
 #include <cstdio>
 #include <cmath>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include "bsp5.h"
 #include "cmdlib.h"
@@ -1567,7 +1567,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int g_numthreads = atoi(argv[++i]);
+                        int g_numthreads = std::atoi(argv[++i]);
 
                         if (g_numthreads < 1)
                         {
@@ -1616,7 +1616,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_developer = (developer_level_t)atoi(argv[++i]);
+                        g_developer = (developer_level_t)std::atoi(argv[++i]);
                     }
                     else
                     {
@@ -1674,7 +1674,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_subdivide_size = atoi(argv[++i]);
+                        g_subdivide_size = std::atoi(argv[++i]);
                         if (g_subdivide_size > MAX_SUBDIVIDE_SIZE)
                         {
                             Warning("Maximum value for subdivide size is %i, '-subdivide %i' ignored",
@@ -1697,7 +1697,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        g_maxnode_size = atoi(argv[++i]);
+                        g_maxnode_size = std::atoi(argv[++i]);
                         if (g_maxnode_size > MAX_MAXNODE_SIZE)
                         {
                             Warning("Maximum value for max node size is %i, '-maxnodesize %i' ignored",
@@ -1724,7 +1724,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_miptex) //--vluzacn
                         {
@@ -1740,7 +1740,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_lightdata) //--vluzacn
                         {

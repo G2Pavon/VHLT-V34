@@ -10,6 +10,7 @@
 
 // csg4.c
 
+#include <cstdlib>
 #include <conio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -920,7 +921,7 @@ int main(int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_miptex) //--vluzacn
                         {
@@ -936,7 +937,7 @@ int main(int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        int x = atoi(argv[++i]) * 1024;
+                        int x = std::atoi(argv[++i]) * 1024;
 
                         //if (x > g_max_map_lightdata) //--vluzacn
                         {
