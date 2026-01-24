@@ -6,24 +6,24 @@
 
 // upper design bounds
 
-#define MAX_MAP_HULLS 4
+constexpr int MAX_MAP_HULLS = 4;
 // hard limit
 
-#define MAX_MAP_MODELS 512 //400 //vluzacn
+constexpr int MAX_MAP_MODELS = 512; //400 //vluzacn
 // variable, but 400 brush entities is very stressful on the engine and network code as it is
 
-#define MAX_MAP_BRUSHES 32768
+constexpr int MAX_MAP_BRUSHES = 32768;
 // arbitrary, but large numbers of brushes generally require more lightmap's than the compiler can handle
 
-#define MAX_ENGINE_ENTITIES 16384 //1024 //vluzacn
-#define MAX_MAP_ENTITIES 16384    //2048 //vluzacn
+constexpr int MAX_ENGINE_ENTITIES = 16384; //1024 //vluzacn
+constexpr int MAX_MAP_ENTITIES = 16384;    //2048 //vluzacn
 // hard limit, in actuallity it is too much, as temporary entities in the game plus static map entities can overflow
 
-#define MAX_MAP_ENTSTRING (2048 * 1024) //(512*1024) //vluzacn
+constexpr int MAX_MAP_ENTSTRING = (2048 * 1024); //(512*1024) //vluzacn
 // abitrary, 512Kb of string data should be plenty even with TFC FGD's
 
-#define MAX_MAP_PLANES 32768 // TODO: This can be larger, because although faces can only use plane 0~32767, clipnodes can use plane 0-65535. --vluzacn
-#define MAX_INTERNAL_MAP_PLANES (256 * 1024)
+constexpr int MAX_MAP_PLANES = 32768; // TODO: This can be larger, because although faces can only use plane 0~32767, clipnodes can use plane 0-65535. --vluzacn
+constexpr int MAX_INTERNAL_MAP_PLANES = (256 * 1024);
 // (from email): I have been building a rather complicated map, and using your latest
 // tools (1.61) it seemed to compile fine.  However, in game, the engine was dropping
 // a lot of faces from almost every FUNC_WALL, and also caused a strange texture
@@ -31,64 +31,64 @@
 // I noticed that it hit the MAX_MAP_PLANES limit of 32k.  After deleting some brushes
 // I was able to bring the map under the limit, and all of the previous errors went away.
 
-#define MAX_MAP_NODES 32767
+constexpr int MAX_MAP_NODES = 32767;
 // hard limit (negative short's are used as contents values)
-#define MAX_MAP_CLIPNODES 32767
+constexpr int MAX_MAP_CLIPNODES = 32767;
 // hard limit (negative short's are used as contents values)
 
-#define MAX_MAP_LEAFS 32760
-#define MAX_MAP_LEAFS_ENGINE 8192
+constexpr int MAX_MAP_LEAFS = 32760;
+constexpr int MAX_MAP_LEAFS_ENGINE = 8192;
 // No problem has been observed in testmap or reported, except when viewing the map from outside (some leafs missing, no crash).
 // This problem indicates that engine's MAX_MAP_LEAFS is 8192 (for reason, see: Quake - gl_model.c - Mod_Init).
 // I don't know if visleafs > 8192 will cause Mod_DecompressVis overflow.
 
-#define MAX_MAP_VERTS 65535
-#define MAX_MAP_FACES 65535 // This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
-#define MAX_MAP_WORLDFACES 32768
-#define MAX_MAP_MARKSURFACES 65535
+constexpr int MAX_MAP_VERTS = 65535;
+constexpr int MAX_MAP_FACES = 65535; // This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
+constexpr int MAX_MAP_WORLDFACES = 32768;
+constexpr int MAX_MAP_MARKSURFACES = 65535;
 // hard limit (data structures store them as unsigned shorts)
 
-#define MAX_MAP_TEXTURES 4096 //512 //vluzacn
+constexpr int MAX_MAP_TEXTURES = 4096; //512 //vluzacn
 // hard limit (halflife limitation) // I used 2048 different textures in a test map and everything looks fine in both opengl and d3d mode.
 
-#define MAX_MAP_TEXINFO 32767
+constexpr int MAX_MAP_TEXINFO = 32767;
 // hard limit (face.texinfo is signed short)
-#define MAX_INTERNAL_MAP_TEXINFO 262144
+constexpr int MAX_INTERNAL_MAP_TEXINFO = 262144;
 
-#define MAX_MAP_EDGES 256000
-#define MAX_MAP_SURFEDGES 512000
+constexpr int MAX_MAP_EDGES = 256000;
+constexpr int MAX_MAP_SURFEDGES = 512000;
 // arbtirary
 
-#define DEFAULT_MAX_MAP_MIPTEX 0x2000000 //0x400000 //vluzacn
+constexpr int DEFAULT_MAX_MAP_MIPTEX = 0x2000000; //0x400000 //vluzacn
 // 4Mb of textures is enough especially considering the number of people playing the game
 // still with voodoo1 and 2 class cards with limited local memory.
 
-#define DEFAULT_MAX_MAP_LIGHTDATA 0x3000000 //0x600000 //vluzacn
+constexpr int DEFAULT_MAX_MAP_LIGHTDATA = 0x3000000; //0x600000 //vluzacn
 // arbitrary
 
-#define MAX_MAP_VISIBILITY 0x800000 //0x200000 //vluzacn
+constexpr int MAX_MAP_VISIBILITY = 0x800000; //
 // arbitrary
 
 // these are for entity key:value pairs
-#define MAX_KEY 128  //32 //vluzacn
-#define MAX_VAL 4096 // the name used to be MAX_VALUE //vluzacn
+constexpr int MAX_KEY = 128;  //32 //vluzacn
+constexpr int MAX_VAL = 4096; // the name used to be MAX_VALUE //vluzacn
 // quote from yahn: 'probably can raise these values if needed'
 
 // texture size limit
 
-#define MAX_TEXTURE_SIZE 348972 //((256 * 256 * sizeof(short) * 3) / 2) //stop compiler from warning 512*512 texture. --vluzacn
+constexpr int MAX_TEXTURE_SIZE = 348972; //((256 * 256 * sizeof(short) * 3) / 2) //stop compiler from warning 512*512 texture. --vluzacn
 // this is arbitrary, and needs space for the largest realistic texture plus
 // room for its mipmaps.'  This value is primarily used to catch damanged or invalid textures
 // in a wad file
 
-#define TEXTURE_STEP 16       // this constant was previously defined in lightmap.cpp. --vluzacn
-#define MAX_SURFACE_EXTENT 16 // if lightmap extent exceeds 16, the map will not be able to load in 'Software' renderer and HLDS. //--vluzacn
+constexpr int TEXTURE_STEP = 16;       // this constant was previously defined in lightmap.cpp. --vluzacn
+constexpr int MAX_SURFACE_EXTENT = 16; // if lightmap extent exceeds 16, the map will not be able to load in 'Software' renderer and HLDS. //--vluzacn
 
-#define ENGINE_ENTITY_RANGE 4096.0
+constexpr int ENGINE_ENTITY_RANGE = 4096.0;
 //=============================================================================
 
-#define BSPVERSION 30
-#define TOOLVERSION 2
+constexpr int BSPVERSION = 30;
+constexpr int TOOLVERSION = 2;
 
 //
 // BSP File Structures
@@ -99,22 +99,22 @@ typedef struct
     int fileofs, filelen;
 } lump_t;
 
-#define LUMP_ENTITIES 0
-#define LUMP_PLANES 1
-#define LUMP_TEXTURES 2
-#define LUMP_VERTEXES 3
-#define LUMP_VISIBILITY 4
-#define LUMP_NODES 5
-#define LUMP_TEXINFO 6
-#define LUMP_FACES 7
-#define LUMP_LIGHTING 8
-#define LUMP_CLIPNODES 9
-#define LUMP_LEAFS 10
-#define LUMP_MARKSURFACES 11
-#define LUMP_EDGES 12
-#define LUMP_SURFEDGES 13
-#define LUMP_MODELS 14
-#define HEADER_LUMPS 15
+constexpr int LUMP_ENTITIES = 0;
+constexpr int LUMP_PLANES = 1;
+constexpr int LUMP_TEXTURES = 2;
+constexpr int LUMP_VERTEXES = 3;
+constexpr int LUMP_VISIBILITY = 4;
+constexpr int LUMP_NODES = 5;
+constexpr int LUMP_TEXINFO = 6;
+constexpr int LUMP_FACES = 7;
+constexpr int LUMP_LIGHTING = 8;
+constexpr int LUMP_CLIPNODES = 9;
+constexpr int LUMP_LEAFS = 10;
+constexpr int LUMP_MARKSURFACES = 11;
+constexpr int LUMP_EDGES = 12;
+constexpr int LUMP_SURFEDGES = 13;
+constexpr int LUMP_MODELS = 14;
+constexpr int HEADER_LUMPS = 15;
 
 typedef struct
 {
@@ -137,7 +137,7 @@ typedef struct
     int dataofs[4]; // [nummiptex]
 } dmiptexlump_t;
 
-#define MIPLEVELS 4
+constexpr int MIPLEVELS = 4;
 typedef struct miptex_s
 {
     char name[16];
@@ -208,7 +208,7 @@ typedef struct texinfo_s
     int flags;
 } texinfo_t;
 
-#define TEX_SPECIAL 1 // sky or slime or null, no lightmap or 256 subdivision
+constexpr int TEX_SPECIAL = 1; // sky or slime or null, no lightmap or 256 subdivision
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
@@ -217,7 +217,7 @@ typedef struct
     unsigned short v[2]; // vertex numbers
 } dedge_t;
 
-#define MAXLIGHTMAPS 4
+constexpr int MAXLIGHTMAPS = 4;
 typedef struct
 {
     unsigned short planenum;
@@ -232,12 +232,12 @@ typedef struct
     int lightofs; // start of [numstyles*surfsize] samples
 } dface_t;
 
-#define AMBIENT_WATER 0
-#define AMBIENT_SKY 1
-#define AMBIENT_SLIME 2
-#define AMBIENT_LAVA 3
+constexpr int AMBIENT_WATER = 0;
+constexpr int AMBIENT_SKY = 1;
+constexpr int AMBIENT_SLIME = 2;
+constexpr int AMBIENT_LAVA = 3;
 
-#define NUM_AMBIENTS 4 // automatic ambient sounds
+constexpr int NUM_AMBIENTS = 4; // automatic ambient sounds
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
@@ -257,8 +257,8 @@ typedef struct
 
 //============================================================================
 
-#define ANGLE_UP -1.0   //--vluzacn
-#define ANGLE_DOWN -2.0 //--vluzacn
+constexpr float ANGLE_UP = -1.0f;   //--vluzacn
+constexpr float ANGLE_DOWN = -2.0f; //--vluzacn
 
 //
 // BSP File Data
