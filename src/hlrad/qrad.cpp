@@ -423,7 +423,7 @@ static void ReadLightFile(const char *const filename)
         Log("Reading texlights from '%s'\n", filename);
     }
 
-    while (fgets(scan, sizeof(scan), f))
+    while (std::fgets(scan, sizeof(scan), f))
     {
         char szTexlight[_MAX_PATH];
         vec_t r;
