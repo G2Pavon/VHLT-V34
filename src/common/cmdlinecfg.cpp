@@ -210,7 +210,7 @@ const char *nextword(const char *s, char *token, unsigned int n)
 }
 void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
 {
-    strcpy(cmdline, "");
+    std::strcpy(cmdline, "");
     strcat(cmdline, "<");
     strcat(cmdline, g_Program);
     strcat(cmdline, ">");
@@ -285,8 +285,8 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
         c = s;
         execute_t e;
         std::memset(&e, 0, sizeof(e));
-        strcpy(words, "");
-        strcpy(token, "");
+        std::strcpy(words, "");
+        std::strcpy(token, "");
         parsearg(argc, argv, cmdline, MAXTOKEN);
         while (1)
         {
@@ -300,7 +300,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
                 break;
             if (std::strlen(token) + std::strlen(SEPSTR) + 1 <= MAXTOKEN)
             {
-                strcpy(words, token);
+                std::strcpy(words, token);
                 strcat(words, SEPSTR);
             }
             else

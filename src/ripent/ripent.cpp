@@ -513,7 +513,7 @@ static void WriteTextures(const char *const name)
             info[i].size = size;
             info[i].type = (ofs >= 0 && ((miptex_t *)(g_dtexdata + ofs))->offsets[0] > 0) ? 67 : 0; // prevent invalid texture from being processed by Wally
             info[i].compression = 0;
-            strcpy(info[i].name, ofs >= 0 ? ((miptex_t *)(g_dtexdata + ofs))->name : "\rTEXTUREMISSING");
+            std::strcpy(info[i].name, ofs >= 0 ? ((miptex_t *)(g_dtexdata + ofs))->name : "\rTEXTUREMISSING");
         }
         SafeWrite(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
         std::free(info);
@@ -564,7 +564,7 @@ static void WriteTextures(const char *const name)
                     info[header.numlumps].size = info[header.numlumps].disksize;
                     info[header.numlumps].type = 67;
                     info[header.numlumps].compression = 0;
-                    strcpy(info[header.numlumps].name, tex->name);
+                    std::strcpy(info[header.numlumps].name, tex->name);
                     header.numlumps++;
                 }
                 std::fprintf(texfile, "[%d]", (int)std::strlen(tex->name));
@@ -670,7 +670,7 @@ static void ReadTextures(const char *name)
                     g_texdatasize += sizeof(miptex_t);
                     hlassume(g_texdatasize < g_max_map_miptex, assume_MAX_MAP_MIPTEX);
                     std::memset(tex, 0, sizeof(miptex_t));
-                    strcpy(tex->name, name);
+                    std::strcpy(tex->name, name);
                     tex->width = w;
                     tex->height = h;
                     for (int k = 0; k < MIPLEVELS; k++)

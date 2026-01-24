@@ -1558,11 +1558,11 @@ static void Settings()
         if (g_scalesize > 0)
             safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_scalesize);
         else
-            strcpy(buf1, "None");
+            std::strcpy(buf1, "None");
         if (DEFAULT_SCALESIZE > 0)
             safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_SCALESIZE);
         else
-            strcpy(buf2, "None");
+            std::strcpy(buf2, "None");
         Log("map scaling           [ %7s ] [ %7s ]\n", buf1, buf2);
     }
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");

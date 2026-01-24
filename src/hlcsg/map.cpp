@@ -288,17 +288,17 @@ static void ParseBrush(entity_t *mapent)
         {
             if (!strncasecmp(g_token, "NOCLIP", 6) || !strncasecmp(g_token, "NULLNOCLIP", 10))
             {
-                strcpy(g_token, "NULL");
+                std::strcpy(g_token, "NULL");
                 b->noclip = true;
             }
             if (!strncasecmp(g_token, "BEVELBRUSH", 10))
             {
-                strcpy(g_token, "NULL");
+                std::strcpy(g_token, "NULL");
                 b->bevel = true;
             }
             if (!strncasecmp(g_token, "BEVEL", 5))
             {
-                strcpy(g_token, "NULL");
+                std::strcpy(g_token, "NULL");
                 side->bevel = true;
             }
             if (!strncasecmp(g_token, "CLIP", 4))
@@ -317,7 +317,7 @@ static void ParseBrush(entity_t *mapent)
                 {
                     b->bevel = true;
                 }
-                strcpy(g_token, "SKIP");
+                std::strcpy(g_token, "SKIP");
             }
         }
         safe_strncpy(side->td.name, g_token, sizeof(side->td.name));
@@ -475,7 +475,7 @@ static void ParseBrush(entity_t *mapent)
         side_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "SPLITFACE", 9))
         {
-            strcpy(side->td.name, "SKIP");
+            std::strcpy(side->td.name, "SKIP");
         }
     }
     for (int j = 0; j < b->numsides; j++)
@@ -483,7 +483,7 @@ static void ParseBrush(entity_t *mapent)
         side_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "CONTENT", 7))
         {
-            strcpy(side->td.name, "NULL");
+            std::strcpy(side->td.name, "NULL");
         }
     }
     if (g_nullifytrigger)
@@ -493,7 +493,7 @@ static void ParseBrush(entity_t *mapent)
             side_t *side = &g_brushsides[b->firstside + j];
             if (!strncasecmp(side->td.name, "AAATRIGGER", 10))
             {
-                strcpy(side->td.name, "NULL");
+                std::strcpy(side->td.name, "NULL");
             }
         }
     }
@@ -601,7 +601,7 @@ static void ParseBrush(entity_t *mapent)
         for (int j = 0; j < newb->numsides; j++)
         {
             side_t *side = &g_brushsides[newb->firstside + j];
-            strcpy(side->td.name, "NULL");
+            std::strcpy(side->td.name, "NULL");
         }
     }
     if (b->cliphull != 0 && b->contents == CONTENTS_TOEMPTY)
@@ -613,7 +613,7 @@ static void ParseBrush(entity_t *mapent)
             side_t *side = &g_brushsides[b->firstside + j];
             if (!strncasecmp(side->td.name, "NULL", 4))
             { // this is not supposed to be a HINT brush, so remove all invisible faces from hull 0.
-                strcpy(side->td.name, "SKIP");
+                std::strcpy(side->td.name, "SKIP");
             }
             if (strncasecmp(side->td.name, "SKIP", 4))
                 mixed = true;
@@ -627,7 +627,7 @@ static void ParseBrush(entity_t *mapent)
         for (int j = 0; j < b->numsides; j++)
         {
             side_t *side = &g_brushsides[b->firstside + j];
-            strcpy(side->td.name, "NULL");
+            std::strcpy(side->td.name, "NULL");
         }
     }
 }
