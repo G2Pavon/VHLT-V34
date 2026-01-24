@@ -2,7 +2,7 @@
 // AJM: added file in
 #include <cstdlib>
 
-#define MAX_WADPATHS 128 // arbitrary
+constexpr int MAX_WADPATHS = 128; // arbitrary
 
 typedef struct
 {

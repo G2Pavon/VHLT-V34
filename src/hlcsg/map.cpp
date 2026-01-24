@@ -135,7 +135,7 @@ void TextureAxisFromPlane(const plane_t *const pln, vec3_t xv, vec3_t yv)
     VectorCopy(s_baseaxis[bestaxis * 3 + 2], yv);
 }
 
-#define ScaleCorrection (1.0 / 128.0)
+constexpr double ScaleCorrection(1.0 / 128.0);
 
 // =====================================================================================
 //  CheckForInvisible

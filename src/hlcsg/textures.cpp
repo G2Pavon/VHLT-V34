@@ -13,8 +13,8 @@
 #include "log.h"
 #include "bspfile.h"
 
-#define MAXWADNAME 16
-#define MAX_TEXFILES 128
+constexpr int MAXWADNAME = 16;
+constexpr int MAX_TEXFILES = 128;
 
 //  FindMiptex
 //  TEX_InitFromWad

@@ -968,8 +968,8 @@ void ReuseModel()
 // =====================================================================================
 //  SetLightStyles
 // =====================================================================================
-#define MAX_SWITCHED_LIGHTS 32
-#define MAX_LIGHTTARGETS_NAME 64
+constexpr int MAX_SWITCHED_LIGHTS = 32;
+constexpr int MAX_LIGHTTARGETS_NAME = 64;
 
 static void SetLightStyles()
 {

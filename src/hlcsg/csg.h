@@ -17,40 +17,39 @@
 #error you must add -dDOUBLEVEC_T to the project!
 #endif
 
-#define DEFAULT_BRUSH_UNION_THRESHOLD 0.0f
-#define DEFAULT_TINY_THRESHOLD 0.0
-#define DEFAULT_NOCLIP false
-#define DEFAULT_ONLYENTS false
-#define DEFAULT_WADTEXTURES true
-#define DEFAULT_SKYCLIP true
-#define DEFAULT_CHART false
-#define DEFAULT_INFO true
+constexpr float DEFAULT_BRUSH_UNION_THRESHOLD = 0.0f;
+constexpr vec_t DEFAULT_TINY_THRESHOLD = 0.0;
+constexpr bool DEFAULT_NOCLIP = false;
+constexpr bool DEFAULT_ONLYENTS = false;
+constexpr bool DEFAULT_WADTEXTURES = true;
+constexpr bool DEFAULT_SKYCLIP = true;
+constexpr bool DEFAULT_CHART = false;
+constexpr bool DEFAULT_INFO = true;
 
-#define FLOOR_Z 0.7                  // Quake default
-#define DEFAULT_CLIPTYPE clip_simple //clip_legacy //--vluzacn
+constexpr vec_t FLOOR_Z = 0.7; // Quake default
 
-#define DEFAULT_NULLTEX true
+constexpr bool DEFAULT_NULLTEX = true;
 
-#define DEFAULT_CLIPNAZI false
+constexpr bool DEFAULT_CLIPNAZI = false;
 
-#define DEFAULT_WADAUTODETECT false
+constexpr bool DEFAULT_WADAUTODETECT = false;
 
-#define DEFAULT_SCALESIZE -1.0 //dont scale
-#define DEFAULT_RESETLOG true
-#define DEFAULT_NOLIGHTOPT false
+constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
+constexpr bool DEFAULT_RESETLOG = true;
+constexpr bool DEFAULT_NOLIGHTOPT = false;
 
-#define DEFAULT_NOUTF8 false
+constexpr bool DEFAULT_NOUTF8 = false;
 
-#define DEFAULT_NULLIFYTRIGGER true
+constexpr bool DEFAULT_NULLIFYTRIGGER = true;
 
 // AJM: added in
 #define UNLESS(a) if (!(a))
 
-#define DEFAULT_ESTIMATE false
+constexpr bool DEFAULT_ESTIMATE = false;
 
 #define BOGUS_RANGE 65534
 
-#define MAX_HULLSHAPES 128 // arbitrary
+constexpr int MAX_HULLSHAPES = 128; // arbitrary
 
 typedef struct
 {
@@ -111,7 +110,7 @@ typedef struct bface_s
 } bface_t;
 
 // NUM_HULLS should be no larger than MAX_MAP_HULLS
-#define NUM_HULLS 4
+constexpr int NUM_HULLS = 4;
 
 typedef struct
 {
@@ -192,7 +191,7 @@ extern char *ANSItoUTF8(const char *);
 extern int g_nummapbrushes;
 extern brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 
-#define MAX_MAP_SIDES (MAX_MAP_BRUSHES * 6)
+constexpr int MAX_MAP_SIDES = (MAX_MAP_BRUSHES * 6);
 
 extern int g_numbrushsides;
 extern side_t g_brushsides[MAX_MAP_SIDES];
@@ -249,6 +248,9 @@ typedef enum
     clip_legacy
 } cliptype;
 extern cliptype g_cliptype;
+
+constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
+
 extern const char *GetClipTypeString(cliptype);
 
 extern vec_t g_scalesize;
