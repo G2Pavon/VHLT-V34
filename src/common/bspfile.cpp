@@ -476,7 +476,7 @@ void LoadBSPImage(dheader_t *const header)
 //  AddLump
 //      balh
 // =====================================================================================
-static void AddLump(int lumpnum, void *data, int len, dheader_t *header, FILE *bspfile)
+static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile)
 {
     lump_t *lump = &header->lumps[lumpnum];
     lump->fileofs = LittleLong(std::ftell(bspfile));
@@ -498,7 +498,7 @@ void WriteBSPFile(const char *const filename)
 
     header->version = LittleLong(BSPVERSION);
 
-    FILE *bspfile = SafeOpenWrite(filename);
+    std::FILE *bspfile = SafeOpenWrite(filename);
     SafeWrite(bspfile, header, sizeof(dheader_t)); // overwritten later
 
     //      LUMP TYPE       DATA            LENGTH                              HEADER  BSPFILE
@@ -633,7 +633,7 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 // =====================================================================================
 void WriteExtentFile(const char *const filename)
 {
-    FILE *f = std::fopen(filename, "w");
+    std::FILE *f = std::fopen(filename, "w");
     if (!f)
     {
         Error("Error opening %s: %s", filename, strerror(errno));

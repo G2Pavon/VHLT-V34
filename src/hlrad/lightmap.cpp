@@ -4564,7 +4564,7 @@ void FinalLightFace(const int facenum)
         std::sprintf(name, "%s_sample.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
 
-        FILE *f = std::fopen(name, "w");
+        std::FILE *f = std::fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;

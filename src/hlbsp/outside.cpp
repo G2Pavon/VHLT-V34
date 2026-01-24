@@ -65,8 +65,8 @@ static bool PlaceOccupant(const int num, const vec3_t point, node_t *headnode)
 //  MarkLeakTrail
 // =====================================================================================
 static portal_t *prevleaknode;
-static FILE *pointfile;
-static FILE *linefile;
+static std::FILE *pointfile;
+static std::FILE *linefile;
 
 static void MarkLeakTrail(portal_t *n2)
 {

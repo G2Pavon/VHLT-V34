@@ -33,9 +33,9 @@
 
 */
 
-static FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
-static FILE *out_view[NUM_HULLS];
-static FILE *out_detailbrush[NUM_HULLS];
+static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
+static std::FILE *out_view[NUM_HULLS];
+static std::FILE *out_detailbrush[NUM_HULLS];
 static int c_tiny;
 static int c_tiny_clip;
 static int c_outfaces;
@@ -880,7 +880,7 @@ static void EmitPlanes()
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", g_Mapname);
-        FILE *planeout = std::fopen(name, "wb");
+        std::FILE *planeout = std::fopen(name, "wb");
         if (!planeout)
             Error("Couldn't open %s", name);
         SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(plane_t));
@@ -2189,7 +2189,7 @@ int main(const int argc, char **argv)
             {
                 char name[_MAX_PATH];
                 safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
-                FILE *f = std::fopen(name, "w");
+                std::FILE *f = std::fopen(name, "w");
                 if (!f)
                     Error("Couldn't open %s", name);
                 for (int i = 0; i < NUM_HULLS; i++)

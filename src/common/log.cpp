@@ -21,12 +21,12 @@ bool g_log = DEFAULT_LOG;
 unsigned long g_clientid = 0;
 unsigned long g_nextclientid = 0;
 
-static FILE *CompileLog = NULL;
+static std::FILE *CompileLog = NULL;
 static bool fatal = false;
 
 bool twice = false;
 bool useconsole = false;
-FILE *conout = NULL;
+std::FILE *conout = NULL;
 
 int g_lang_count = 0;
 const int g_lang_max = 1024;
@@ -139,7 +139,7 @@ void LogError(const char *const message)
     if (g_log && CompileLog)
     {
         char logfilename[_MAX_PATH];
-        FILE *ErrorLog = NULL;
+        std::FILE *ErrorLog = NULL;
 
         safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
         ErrorLog = std::fopen(logfilename, "a");
@@ -639,7 +639,7 @@ void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
     }
 }
 
-int loadlangfileline(char *line, int n, FILE *f)
+int loadlangfileline(char *line, int n, std::FILE *f)
 {
     int i = 0, c = 0;
     bool special = false;
@@ -728,7 +728,7 @@ void LoadLangFile(const char *name, const char *programpath)
     char filepath[_MAX_PATH];
     char line1[MAXTOKEN];
     char line2[MAXTOKEN];
-    FILE *f = NULL;
+    std::FILE *f = NULL;
     if (!f)
     {
         strcpy(filepath, name);

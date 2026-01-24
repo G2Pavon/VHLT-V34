@@ -435,7 +435,7 @@ typedef struct
 	size += 256 * 3 + 4;
 	return size;
 }
-void WriteEmptyTexture(FILE *outwad, const miptex_t *tex)
+void WriteEmptyTexture(std::FILE *outwad, const miptex_t *tex)
 {
 	miptex_t outtex;
 	int start, end;
@@ -464,14 +464,14 @@ void WriteEmptyTexture(FILE *outwad, const miptex_t *tex)
 static void WriteTextures(const char *const name)
 {
     char wadfilename[_MAX_PATH];
-    FILE *wadfile;
+    std::FILE *wadfile;
     safe_snprintf(wadfilename, _MAX_PATH, "%s.wad", name);
     _unlink(wadfilename);
     wadfile = SafeOpenWrite(wadfilename);
     Log("\nWriting %s.\n", wadfilename);
 
     char texfilename[_MAX_PATH];
-    FILE *texfile;
+    std::FILE *texfile;
     safe_snprintf(texfilename, _MAX_PATH, "%s.tex", name);
     _unlink(texfilename);
     if (!g_textureparse)
@@ -581,18 +581,18 @@ static void WriteTextures(const char *const name)
     }
     std::fclose(wadfile);
 }
-inline void skipspace(FILE *f) { std::fscanf(f, "%*[ \t\r\n]s"); }
-inline void skipline(FILE *f) { std::fscanf(f, "%*[^\r\n]s"); }
+inline void skipspace(std::FILE *f) { std::fscanf(f, "%*[ \t\r\n]s"); }
+inline void skipline(std::FILE *f) { std::fscanf(f, "%*[^\r\n]s"); }
 static void ReadTextures(const char *name)
 {
     char wadfilename[_MAX_PATH];
-    FILE *wadfile;
+    std::FILE *wadfile;
     safe_snprintf(wadfilename, _MAX_PATH, "%s.wad", name);
     wadfile = SafeOpenRead(wadfilename);
     Log("\nReading %s.\n", wadfilename);
 
     char texfilename[_MAX_PATH];
-    FILE *texfile;
+    std::FILE *texfile;
     safe_snprintf(texfilename, _MAX_PATH, "%s.tex", name);
     if (!g_textureparse)
     {
@@ -711,7 +711,7 @@ static void WriteEntities(const char *const name)
             ParseEntityData("  ", 2, "\r\n", 2, "", 0);
         }
 
-        FILE *f = SafeOpenWrite(filename);
+        std::FILE *f = SafeOpenWrite(filename);
         Log("\nWriting %s.\n", filename); // Added by Nem.
         SafeWrite(f, g_dentdata, g_entdatasize);
         std::fclose(f);
@@ -731,7 +731,7 @@ static void ReadEntities(const char *const name)
     safe_snprintf(filename, _MAX_PATH, "%s.ent", name);
 
     {
-        FILE *f = SafeOpenRead(filename);
+        std::FILE *f = SafeOpenRead(filename);
         Log("\nReading %s.\n", filename); // Added by Nem.
 
         g_entdatasize = q_filelength(f);

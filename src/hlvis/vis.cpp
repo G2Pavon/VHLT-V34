@@ -395,7 +395,7 @@ static void CalcPortalVis()
 // =====================================================================================
 void SaveVisData(const char *filename)
 {
-    FILE *fp = std::fopen(filename, "wb");
+    std::FILE *fp = std::fopen(filename, "wb");
 
     if (!fp)
         return;

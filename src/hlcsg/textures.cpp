@@ -48,7 +48,7 @@ static lumpinfo_t miptex[MAX_MAP_TEXTURES];
 static int nTexLumps = 0;
 static lumpinfo_t *lumpinfo = NULL;
 static int nTexFiles = 0;
-static FILE *texfiles[MAX_TEXFILES];
+static std::FILE *texfiles[MAX_TEXFILES];
 static wadpath_t *texwadpathes[MAX_TEXFILES]; // maps index of the wad to its path
 
 // The old buggy code in effect limit the number of brush sides to MAX_MAP_BRUSHES
@@ -203,7 +203,7 @@ bool TEX_InitFromWad()
     // for eachwadpath
     for (int i = 0; i < g_iNumWadPaths; i++)
     {
-        FILE *texfile; // temporary used in this loop
+        std::FILE *texfile; // temporary used in this loop
 
         wadpath_t *currentwad = g_pWadPaths[i];
         char *pszWadFile = currentwad->path;
@@ -621,7 +621,7 @@ void WriteMiptex()
 
         wadinfo_t writewad_header;
         safe_snprintf(writewad_name, _MAX_PATH, "%s.wa_", g_Mapname);
-        FILE *writewad_file = SafeOpenWrite(writewad_name);
+        std::FILE *writewad_file = SafeOpenWrite(writewad_name);
         int writewad_maxlumpinfos = nummiptex;
         dlumpinfo_t *writewad_lumpinfos = (dlumpinfo_t *)malloc(writewad_maxlumpinfos * sizeof(dlumpinfo_t));
         hlassume(writewad_lumpinfos != NULL, assume_NoMemory);

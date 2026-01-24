@@ -45,7 +45,7 @@ typedef struct wadfile_s
 {
     struct wadfile_s *next;
     char path[_MAX_PATH];
-    FILE *file;
+    std::FILE *file;
     int filesize;
     int numlumps;
     lumpinfo_t *lumpinfos;

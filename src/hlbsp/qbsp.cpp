@@ -41,8 +41,8 @@ vec3_t g_hull_size[NUM_HULLS][2] =
         {// 32x32x36
          {-16, -16, -18},
          {16, 16, 18}}};
-static FILE *polyfiles[NUM_HULLS];
-static FILE *brushfiles[NUM_HULLS];
+static std::FILE *polyfiles[NUM_HULLS];
+static std::FILE *brushfiles[NUM_HULLS];
 int g_hullnum = 0;
 
 static face_t *validfaces[MAX_INTERNAL_MAP_PLANES];
@@ -909,7 +909,7 @@ static facestyle_e SetFaceType(face_t *f)
 // =====================================================================================
 //  ReadSurfs
 // =====================================================================================
-static surfchain_t *ReadSurfs(FILE *file)
+static surfchain_t *ReadSurfs(std::FILE *file)
 {
     int detaillevel;
     int planenum, g_texinfo, contents, numpoints;
@@ -1006,7 +1006,7 @@ static surfchain_t *ReadSurfs(FILE *file)
 
     return SurflistFromValidFaces();
 }
-static brush_t *ReadBrushes(FILE *file)
+static brush_t *ReadBrushes(std::FILE *file)
 {
     brush_t *brushes = NULL;
     while (1)
@@ -1445,7 +1445,7 @@ static void ProcessFile(const char *const filename)
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.hsz", filename);
-        FILE *f = std::fopen(name, "r");
+        std::FILE *f = std::fopen(name, "r");
         if (!f)
         {
             Warning("Couldn't open %s", name);
@@ -1482,7 +1482,7 @@ static void ProcessFile(const char *const filename)
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", filename);
-        FILE *planefile = std::fopen(name, "rb");
+        std::FILE *planefile = std::fopen(name, "rb");
         if (!planefile)
         {
             Warning("Couldn't open %s", name);

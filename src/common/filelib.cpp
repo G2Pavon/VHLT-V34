@@ -11,7 +11,7 @@
  * filelength
  * ================
  */
-int q_filelength(FILE *f)
+int q_filelength(std::FILE *f)
 {
     int pos = std::ftell(f);
     std::fseek(f, 0, SEEK_END);
@@ -28,7 +28,7 @@ int q_filelength(FILE *f)
  */
 bool q_exists(const char *const filename)
 {
-    FILE *f = std::fopen(filename, "rb");
+    std::FILE *f = std::fopen(filename, "rb");
 
     if (!f)
     {
@@ -43,9 +43,9 @@ bool q_exists(const char *const filename)
     }
 }
 
-FILE *SafeOpenWrite(const char *const filename)
+std::FILE *SafeOpenWrite(const char *const filename)
 {
-    FILE *f = std::fopen(filename, "wb");
+    std::FILE *f = std::fopen(filename, "wb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -53,9 +53,9 @@ FILE *SafeOpenWrite(const char *const filename)
     return f;
 }
 
-FILE *SafeOpenRead(const char *const filename)
+std::FILE *SafeOpenRead(const char *const filename)
 {
-    FILE *f = std::fopen(filename, "rb");
+    std::FILE *f = std::fopen(filename, "rb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -63,13 +63,13 @@ FILE *SafeOpenRead(const char *const filename)
     return f;
 }
 
-void SafeRead(FILE *f, void *buffer, int count)
+void SafeRead(std::FILE *f, void *buffer, int count)
 {
     if (std::fread(buffer, 1, count, f) != (size_t)count)
         Error("File read failure");
 }
 
-void SafeWrite(FILE *f, const void *const buffer, int count)
+void SafeWrite(std::FILE *f, const void *const buffer, int count)
 {
     if (fwrite(buffer, 1, count, f) != (size_t)count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
@@ -82,7 +82,7 @@ void SafeWrite(FILE *f, const void *const buffer, int count)
  */
 int LoadFile(const char *const filename, char **bufferptr)
 {
-    FILE *f = SafeOpenRead(filename);
+    std::FILE *f = SafeOpenRead(filename);
     int length = q_filelength(f);
     char *buffer = (char *)Alloc(length + 1);
     SafeRead(f, buffer, length);

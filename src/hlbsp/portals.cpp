@@ -153,8 +153,8 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
  * ==============================================================================
  */
 
-static FILE *pf;
-static FILE *pf_view;
+static std::FILE *pf;
+static std::FILE *pf_view;
 extern bool g_viewportal;
 static int num_visleafs; // leafs the player can be in
 static int num_visportals;

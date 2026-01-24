@@ -266,7 +266,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
     GetModuleFileName(NULL, tmp, _MAX_PATH);
     ExtractFilePath(tmp, filepath);
     strcat(filepath, paramfilename);
-    FILE *f = std::fopen(filepath, "r");
+    std::FILE *f = std::fopen(filepath, "r");
     if (f)
     {
         int len = 0x100000;
