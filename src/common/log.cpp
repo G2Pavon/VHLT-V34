@@ -738,7 +738,7 @@ void LoadLangFile(const char *name, const char *programpath)
     if (!f)
     {
         ExtractFilePath(programpath, filepath);
-        strcat(filepath, name);
+        std::strcat(filepath, name);
         f = std::fopen(filepath, "r");
     }
     if (!f)

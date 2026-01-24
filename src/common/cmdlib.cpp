@@ -123,7 +123,7 @@ void DefaultExtension(char *path, const char *extension)
     getFilePositions(path, &extension_pos, &directory_pos);
     if (extension_pos == -1)
     {
-        strcat(path, extension);
+        std::strcat(path, extension);
     }
 }
 

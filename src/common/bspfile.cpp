@@ -1445,16 +1445,16 @@ void UnparseEntities()
             continue; // ent got removed
         }
 
-        strcat(end, "{\n");
+        std::strcat(end, "{\n");
         end += 2;
 
         for (ep = g_entities[i].epairs; ep; ep = ep->next)
         {
             std::sprintf(line, "\"%s\" \"%s\"\n", ep->key, ep->value);
-            strcat(end, line);
+            std::strcat(end, line);
             end += std::strlen(line);
         }
-        strcat(end, "}\n");
+        std::strcat(end, "}\n");
         end += 2;
 
         if (end > buf + MAX_MAP_ENTSTRING)

@@ -82,7 +82,7 @@ char *findparams(char *cmdlineparams, char *params)
 void addparams(char *cmdline, char *params, unsigned int n)
 {
     if (std::strlen(cmdline) + std::strlen(params) + 1 <= n)
-        strcat(cmdline, params);
+        std::strcat(cmdline, params);
     else
         error = true;
 }
@@ -211,16 +211,16 @@ const char *nextword(const char *s, char *token, unsigned int n)
 void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
 {
     std::strcpy(cmdline, "");
-    strcat(cmdline, "<");
-    strcat(cmdline, g_Program);
-    strcat(cmdline, ">");
-    strcat(cmdline, SEPSTR);
+    std::strcat(cmdline, "<");
+    std::strcat(cmdline, g_Program);
+    std::strcat(cmdline, ">");
+    std::strcat(cmdline, SEPSTR);
     for (int i = 1; i < argc; ++i)
     {
         if (std::strlen(cmdline) + std::strlen(argv[i]) + std::strlen(SEPSTR) + 1 <= n)
         {
-            strcat(cmdline, argv[i]);
-            strcat(cmdline, SEPSTR);
+            std::strcat(cmdline, argv[i]);
+            std::strcat(cmdline, SEPSTR);
         }
         else
             error = true;
@@ -265,7 +265,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
 
     GetModuleFileName(NULL, tmp, _MAX_PATH);
     ExtractFilePath(tmp, filepath);
-    strcat(filepath, paramfilename);
+    std::strcat(filepath, paramfilename);
     std::FILE *f = std::fopen(filepath, "r");
     if (f)
     {
@@ -301,7 +301,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
             if (std::strlen(token) + std::strlen(SEPSTR) + 1 <= MAXTOKEN)
             {
                 std::strcpy(words, token);
-                strcat(words, SEPSTR);
+                std::strcat(words, SEPSTR);
             }
             else
             {
@@ -319,8 +319,8 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
                 }
                 if (std::strlen(words) + std::strlen(token) + std::strlen(SEPSTR) + 1 <= MAXTOKEN)
                 {
-                    strcat(words, token);
-                    strcat(words, SEPSTR);
+                    std::strcat(words, token);
+                    std::strcat(words, SEPSTR);
                 }
                 else
                 {
