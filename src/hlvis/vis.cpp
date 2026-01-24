@@ -109,12 +109,12 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
     // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!strcmp(ValueForKey(mapent, "priority"), "1"))
+    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
     {
         g_threadpriority = eThreadPriorityHigh;
         Log("%30s [ %-9s ]\n", "Thread Priority", "high");
     }
-    else if (!strcmp(ValueForKey(mapent, "priority"), "-1"))
+    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
     {
         g_threadpriority = eThreadPriorityLow;
         Log("%30s [ %-9s ]\n", "Thread Priority", "low");
@@ -1035,7 +1035,7 @@ int main(const int argc, char **argv)
                 int i;
                 for (i = 0; i < g_numentities; i++)
                 {
-                    if (!strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
+                    if (!std::strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
                     {
                         if (g_overview_count < g_overview_max)
                         {

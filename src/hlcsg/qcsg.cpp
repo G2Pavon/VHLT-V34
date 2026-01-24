@@ -110,12 +110,12 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
     // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!strcmp(ValueForKey(mapent, "priority"), "1"))
+    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
     {
         g_threadpriority = eThreadPriorityHigh;
         Log("%30s [ %-9s ]\n", "Thread Priority", "high");
     }
-    else if (!strcmp(ValueForKey(mapent, "priority"), "-1"))
+    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
     {
         g_threadpriority = eThreadPriorityLow;
         Log("%30s [ %-9s ]\n", "Thread Priority", "low");
@@ -138,7 +138,7 @@ void GetParamsFromEnt(entity_t *mapent)
     }
 
     // wadautodetect(choices) : "Wad Auto Detect" : 0 =	[ 0 : "Off" 1 : "On" ]
-    if (!strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
+    if (!std::strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
     {
         g_bWadAutoDetect = true;
     }
@@ -939,7 +939,7 @@ void ReuseModel()
             {
                 continue;
             }
-            if (!strcmp(name, ValueForKey(&g_entities[j], "targetname")))
+            if (!std::strcmp(name, ValueForKey(&g_entities[j], "targetname")))
             {
                 break;
             }
@@ -1031,7 +1031,7 @@ static void SetLightStyles()
         // find this targetname
         for (j = 0; j < stylenum; j++)
         {
-            if (!strcmp(lighttargets[j], t))
+            if (!std::strcmp(lighttargets[j], t))
             {
                 break;
             }
@@ -1079,7 +1079,7 @@ void LoadWadValue()
     }
     else
     {
-        if (strcmp(g_token, "{"))
+        if (std::strcmp(g_token, "{"))
         {
             Error("ParseEntity: { not found");
         }
@@ -1089,7 +1089,7 @@ void LoadWadValue()
             {
                 Error("ParseEntity: EOF without closing brace");
             }
-            if (!strcmp(g_token, "}"))
+            if (!std::strcmp(g_token, "}"))
             {
                 break;
             }
@@ -1242,10 +1242,10 @@ static void CheckForNoClip()
         int skin = IntForKey(ent, "skin"); //vluzacn
 
         if ((skin != -16) &&
-            (!strcmp(entclassname, "env_bubbles") || !strcmp(entclassname, "func_illusionary") || (spawnflags & 8) && (/* NOTE: func_doors as far as i can tell may need clipnodes for their
+            (!std::strcmp(entclassname, "env_bubbles") || !std::strcmp(entclassname, "func_illusionary") || (spawnflags & 8) && (/* NOTE: func_doors as far as i can tell may need clipnodes for their
 							player collision detection, so for now, they stay out of it. */
-                                                                                                                       !strcmp(entclassname, "func_train") || !strcmp(entclassname, "func_door") || !strcmp(entclassname, "func_water") || !strcmp(entclassname, "func_door_rotating") || !strcmp(entclassname, "func_pendulum") || !strcmp(entclassname, "func_train") || !strcmp(entclassname, "func_tracktrain") || !strcmp(entclassname, "func_vehicle")) ||
-             (skin != 0) && (!strcmp(entclassname, "func_door") || !strcmp(entclassname, "func_water")) || (spawnflags & 2) && (!strcmp(entclassname, "func_conveyor")) || (spawnflags & 1) && (!strcmp(entclassname, "func_rot_button")) || (spawnflags & 64) && (!strcmp(entclassname, "func_rotating"))))
+                                                                                                                                 !std::strcmp(entclassname, "func_train") || !std::strcmp(entclassname, "func_door") || !std::strcmp(entclassname, "func_water") || !std::strcmp(entclassname, "func_door_rotating") || !std::strcmp(entclassname, "func_pendulum") || !std::strcmp(entclassname, "func_train") || !std::strcmp(entclassname, "func_tracktrain") || !std::strcmp(entclassname, "func_vehicle")) ||
+             (skin != 0) && (!std::strcmp(entclassname, "func_door") || !std::strcmp(entclassname, "func_water")) || (spawnflags & 2) && (!std::strcmp(entclassname, "func_conveyor")) || (spawnflags & 1) && (!std::strcmp(entclassname, "func_rot_button")) || (spawnflags & 64) && (!std::strcmp(entclassname, "func_rotating"))))
         {
             MarkEntForNoclip(ent);
             count++;
@@ -2062,7 +2062,7 @@ int main(const int argc, char **argv)
                 {
                     entity_t *ent = &g_entities[i];
 
-                    if (strcmp(ValueForKey(ent, "classname"), "game_text"))
+                    if (std::strcmp(ValueForKey(ent, "classname"), "game_text"))
                     {
                         continue;
                     }
@@ -2071,7 +2071,7 @@ int main(const int argc, char **argv)
                     if (*value)
                     {
                         char *newvalue = ANSItoUTF8(value);
-                        if (strcmp(newvalue, value))
+                        if (std::strcmp(newvalue, value))
                         {
                             SetKeyValue(ent, "message", newvalue);
                             count++;

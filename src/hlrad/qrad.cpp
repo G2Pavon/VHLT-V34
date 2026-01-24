@@ -190,12 +190,12 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
     // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!strcmp(ValueForKey(mapent, "priority"), "1"))
+    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
     {
         g_threadpriority = eThreadPriorityHigh;
         Log("%30s [ %-9s ]\n", "Thread Priority", "high");
     }
-    else if (!strcmp(ValueForKey(mapent, "priority"), "-1"))
+    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
     {
         g_threadpriority = eThreadPriorityLow;
         Log("%30s [ %-9s ]\n", "Thread Priority", "low");
@@ -465,9 +465,9 @@ static void ReadLightFile(const char *const filename)
 
         for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
         {
-            if (strcmp(it->name.c_str(), szTexlight) == 0)
+            if (std::strcmp(it->name.c_str(), szTexlight) == 0)
             {
-                if (strcmp(it->filename, filename) == 0)
+                if (std::strcmp(it->filename, filename) == 0)
                 {
                     Warning("Duplication of texlight '%s' in file '%s'!", it->name.c_str(), it->filename);
                 }
@@ -987,7 +987,7 @@ void ReadCustomChopValue()
     for (int k = 0; k < g_numentities; k++)
     {
         entity_t *mapent = &g_entities[k];
-        if (strcmp(ValueForKey(mapent, "classname"), "info_chopscale"))
+        if (std::strcmp(ValueForKey(mapent, "classname"), "info_chopscale"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_chopscale entity detected.\n");
         for (int i = 0; i < num; i++)
@@ -1023,7 +1023,7 @@ void ReadCustomSmoothValue()
     for (int k = 0; k < g_numentities; k++)
     {
         entity_t *mapent = &g_entities[k];
-        if (strcmp(ValueForKey(mapent, "classname"), "info_smoothvalue"))
+        if (std::strcmp(ValueForKey(mapent, "classname"), "info_smoothvalue"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_smoothvalue entity detected.\n");
         for (int i = 0; i < num; i++)
@@ -1052,7 +1052,7 @@ void ReadTranslucentTextures()
     for (int k = 0; k < g_numentities; k++)
     {
         entity_t *mapent = &g_entities[k];
-        if (strcmp(ValueForKey(mapent, "classname"), "info_translucent"))
+        if (std::strcmp(ValueForKey(mapent, "classname"), "info_translucent"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_translucent entity detected.\n");
         for (int i = 0; i < num; i++)
@@ -1109,7 +1109,7 @@ void ReadLightingCone()
     for (int k = 0; k < g_numentities; k++)
     {
         entity_t *mapent = &g_entities[k];
-        if (strcmp(ValueForKey(mapent, "classname"), "info_angularfade"))
+        if (std::strcmp(ValueForKey(mapent, "classname"), "info_angularfade"))
             continue;
         Developer(DEVELOPER_LEVEL_MESSAGE, "info_angularfade entity detected.\n");
         for (int i = 0; i < num; i++)
@@ -1502,7 +1502,7 @@ static void LoadOpaqueEntities()
         for (int entnum = 0; entnum < g_numentities; entnum++)
         {
             entity_t *ent = &g_entities[entnum];
-            if (strcmp(ValueForKey(ent, "model"), stringmodel))
+            if (std::strcmp(ValueForKey(ent, "model"), stringmodel))
                 continue;
             vec3_t origin;
             {
@@ -1563,7 +1563,7 @@ static void LoadOpaqueEntities()
                 for (int j = 0; j < g_numentities; j++)
                 {
                     entity_t *lightent = &g_entities[j];
-                    if (!strcmp(ValueForKey(lightent, "classname"), "light_shadow") && *ValueForKey(lightent, "target") && !strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
+                    if (!std::strcmp(ValueForKey(lightent, "classname"), "light_shadow") && *ValueForKey(lightent, "target") && !std::strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
                     {
                         opaquestyle = IntForKey(lightent, "style");
                         if (opaquestyle < 0)
@@ -1628,7 +1628,7 @@ static entity_t *FindTexlightEntity(int facenum)
     for (int i = 0; i < g_numentities; i++)
     {
         entity_t *ent = &g_entities[i];
-        if (strcmp(ValueForKey(ent, "classname"), "light_surface"))
+        if (std::strcmp(ValueForKey(ent, "classname"), "light_surface"))
             continue;
         if (strcasecmp(ValueForKey(ent, "_tex"), texname))
             continue;
@@ -1648,12 +1648,12 @@ static entity_t *FindTexlightEntity(int facenum)
         }
         if (*ValueForKey(ent, "_fclass"))
         {
-            if (strcmp(ValueForKey(faceent, "classname"), ValueForKey(ent, "_fclass")))
+            if (std::strcmp(ValueForKey(faceent, "classname"), ValueForKey(ent, "_fclass")))
                 continue;
         }
         if (*ValueForKey(ent, "_fname"))
         {
-            if (strcmp(ValueForKey(faceent, "targetname"), ValueForKey(ent, "_fname")))
+            if (std::strcmp(ValueForKey(faceent, "targetname"), ValueForKey(ent, "_fname")))
                 continue;
         }
         if (bestdist >= 0 && dist > bestdist)
@@ -1771,7 +1771,7 @@ static void MakePatches()
             for (int j = 0; j < g_numentities; j++)
             {
                 entity_t *lightent = &g_entities[j];
-                if (!strcmp(ValueForKey(lightent, "classname"), "light_bounce") && *ValueForKey(lightent, "target") && !strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
+                if (!std::strcmp(ValueForKey(lightent, "classname"), "light_bounce") && *ValueForKey(lightent, "target") && !std::strcmp(ValueForKey(lightent, "target"), ValueForKey(ent, "targetname")))
                 {
                     bouncestyle = IntForKey(lightent, "style");
                     if (bouncestyle < 0)
@@ -2851,14 +2851,14 @@ void ReadInfoTexlights()
     {
         entity_t *mapent = &g_entities[k];
 
-        if (strcmp(ValueForKey(mapent, "classname"), "info_texlights"))
+        if (std::strcmp(ValueForKey(mapent, "classname"), "info_texlights"))
             continue;
 
         Log("Reading texlights from info_texlights map entity\n");
 
         for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
         {
-            if (!strcmp(ep->key, "classname") || !strcmp(ep->key, "origin"))
+            if (!std::strcmp(ep->key, "classname") || !std::strcmp(ep->key, "origin"))
                 continue; // we dont care about these keyvalues
 
             int values = std::sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);

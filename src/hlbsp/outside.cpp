@@ -459,7 +459,7 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
                 // nudge playerstart around if needed so clipping hulls allways
                 // have a vlaid point
-                if (!strcmp(cl, "info_player_start"))
+                if (!std::strcmp(cl, "info_player_start"))
                 {
                     int x, y;
 

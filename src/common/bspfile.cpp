@@ -1172,7 +1172,7 @@ bool ParseEntity()
         return false;
     }
 
-    if (strcmp(g_token, "{"))
+    if (std::strcmp(g_token, "{"))
     {
         Error("ParseEntity: { not found");
     }
@@ -1191,7 +1191,7 @@ bool ParseEntity()
         {
             Error("ParseEntity: EOF without closing brace");
         }
-        if (!strcmp(g_token, "}"))
+        if (!std::strcmp(g_token, "}"))
         {
             break;
         }
@@ -1200,7 +1200,7 @@ bool ParseEntity()
         mapent->epairs = e;
     }
 
-    if (!strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
+    if (!std::strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
     {
         Log("Map entity info_compile_parameters detected, using compile settings\n");
         GetParamsFromEnt(mapent);
@@ -1211,14 +1211,14 @@ bool ParseEntity()
         SetKeyValue(mapent, "convertto", ValueForKey(mapent, "classname"));
         SetKeyValue(mapent, "classname", "light_surface");
     }
-    if (!strcmp(ValueForKey(mapent, "convertfrom"), "light_shadow") || !strcmp(ValueForKey(mapent, "convertfrom"), "light_bounce"))
+    if (!std::strcmp(ValueForKey(mapent, "convertfrom"), "light_shadow") || !std::strcmp(ValueForKey(mapent, "convertfrom"), "light_bounce"))
     {
         SetKeyValue(mapent, "convertto", ValueForKey(mapent, "classname"));
         SetKeyValue(mapent, "classname", ValueForKey(mapent, "convertfrom"));
         SetKeyValue(mapent, "convertfrom", "");
     }
-    if (!strcmp(ValueForKey(mapent, "classname"), "light_environment") &&
-        !strcmp(ValueForKey(mapent, "convertfrom"), "info_sunlight"))
+    if (!std::strcmp(ValueForKey(mapent, "classname"), "light_environment") &&
+        !std::strcmp(ValueForKey(mapent, "convertfrom"), "info_sunlight"))
     {
         while (mapent->epairs)
         {
@@ -1228,7 +1228,7 @@ bool ParseEntity()
         g_numentities--;
         return true;
     }
-    if (!strcmp(ValueForKey(mapent, "classname"), "light_environment") &&
+    if (!std::strcmp(ValueForKey(mapent, "classname"), "light_environment") &&
         IntForKey(mapent, "_fake"))
     {
         SetKeyValue(mapent, "classname", "info_sunlight");
@@ -1314,8 +1314,8 @@ void UnparseEntities()
     for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
-        if (!strcmp(ValueForKey(mapent, "classname"), "info_sunlight") ||
-            !strcmp(ValueForKey(mapent, "classname"), "light_environment"))
+        if (!std::strcmp(ValueForKey(mapent, "classname"), "info_sunlight") ||
+            !std::strcmp(ValueForKey(mapent, "classname"), "light_environment"))
         {
             float vec[3] = {0, 0, 0};
             {
@@ -1343,7 +1343,7 @@ void UnparseEntities()
             SetKeyValue(mapent, "angles", stmp);
             DeleteKey(mapent, "pitch");
 
-            if (!strcmp(ValueForKey(mapent, "classname"), "info_sunlight"))
+            if (!std::strcmp(ValueForKey(mapent, "classname"), "info_sunlight"))
             {
                 if (g_numentities == MAX_MAP_ENTITIES)
                 {
@@ -1360,7 +1360,7 @@ void UnparseEntities()
     for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
-        if (!strcmp(ValueForKey(mapent, "classname"), "light_shadow") || !strcmp(ValueForKey(mapent, "classname"), "light_bounce"))
+        if (!std::strcmp(ValueForKey(mapent, "classname"), "light_shadow") || !std::strcmp(ValueForKey(mapent, "classname"), "light_bounce"))
         {
             SetKeyValue(mapent, "convertfrom", ValueForKey(mapent, "classname"));
             SetKeyValue(mapent, "classname", (*ValueForKey(mapent, "convertto") ? ValueForKey(mapent, "convertto") : "light"));
@@ -1371,7 +1371,7 @@ void UnparseEntities()
     for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
-        if (!strcmp(ValueForKey(mapent, "classname"), "light_surface"))
+        if (!std::strcmp(ValueForKey(mapent, "classname"), "light_surface"))
         {
             if (!*ValueForKey(mapent, "_tex"))
             {
@@ -1408,7 +1408,7 @@ void UnparseEntities()
             const char *classname = ValueForKey(ent, "classname");
             const char *targetname = ValueForKey(ent, "targetname");
             int style = IntForKey(ent, "style");
-            if (!targetname[0] || strcmp(classname, "light") && strcmp(classname, "light_spot") && strcmp(classname, "light_environment"))
+            if (!targetname[0] || std::strcmp(classname, "light") && std::strcmp(classname, "light_spot") && std::strcmp(classname, "light_environment"))
                 continue;
             for (j = i + 1; j < g_numentities; j++)
             {
@@ -1417,7 +1417,7 @@ void UnparseEntities()
                 entity_t *ent2 = &g_entities[j];
                 const char *targetname2 = ValueForKey(ent2, "targetname");
                 int style2 = IntForKey(ent2, "style");
-                if (style == style2 && !strcmp(targetname, targetname2))
+                if (style == style2 && !std::strcmp(targetname, targetname2))
                     break;
             }
             if (j < g_numentities)
@@ -1473,7 +1473,7 @@ void DeleteKey(entity_t *ent, const char *const key)
 {
     for (epair_t **pep = &ent->epairs; *pep; pep = &(*pep)->next)
     {
-        if (!strcmp((*pep)->key, key))
+        if (!std::strcmp((*pep)->key, key))
         {
             epair_t *ep = *pep;
             *pep = ep->next;
@@ -1495,7 +1495,7 @@ void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
     }
     for (ep = ent->epairs; ep; ep = ep->next)
     {
-        if (!strcmp(ep->key, key))
+        if (!std::strcmp(ep->key, key))
         {
             char *value2 = strdup(value);
             Free(ep->value);
@@ -1518,7 +1518,7 @@ const char *ValueForKey(const entity_t *const ent, const char *const key)
 {
     for (epair_t *ep = ent->epairs; ep; ep = ep->next)
     {
-        if (!strcmp(ep->key, key))
+        if (!std::strcmp(ep->key, key))
         {
             return ep->value;
         }
@@ -1568,7 +1568,7 @@ entity_t *FindTargetEntity(const char *const target)
     for (int i = 0; i < g_numentities; i++)
     {
         const char *n = ValueForKey(&g_entities[i], "targetname");
-        if (!strcmp(n, target))
+        if (!std::strcmp(n, target))
         {
             return &g_entities[i];
         }
@@ -1624,7 +1624,7 @@ entity_t *EntityForModel(const int modnum)
     for (int i = 0; i < g_numentities; i++)
     {
         const char *s = ValueForKey(&g_entities[i], "model");
-        if (!strcmp(s, name))
+        if (!std::strcmp(s, name))
         {
             return &g_entities[i];
         }

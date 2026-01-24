@@ -95,7 +95,7 @@ bool EndOfScript(const bool crossline)
     if (!crossline)
         Error("Line %i is incomplete (did you place a \" inside an entity string?) \n", s_scriptline);
 
-    if (!strcmp(s_script->filename, "memory buffer"))
+    if (!std::strcmp(s_script->filename, "memory buffer"))
     {
         s_endofscript = true;
         return false;
@@ -206,7 +206,7 @@ skipspace:
 
     *token_p = 0;
 
-    if (!strcmp(g_token, "$include"))
+    if (!std::strcmp(g_token, "$include"))
     {
         GetToken(false);
         AddScriptToStack(g_token);

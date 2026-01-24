@@ -129,7 +129,7 @@ static int CDECL lump_sorter_by_wad_and_name(const void *lump1, const void *lump
 
     if (plump1->iTexFile == plump2->iTexFile)
     {
-        return strcmp(plump1->name, plump2->name);
+        return std::strcmp(plump1->name, plump2->name);
     }
     else
     {
@@ -142,7 +142,7 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
     lumpinfo_t *plump1 = (lumpinfo_t *)lump1;
     lumpinfo_t *plump2 = (lumpinfo_t *)lump2;
 
-    return strcmp(plump1->name, plump2->name);
+    return std::strcmp(plump1->name, plump2->name);
 }
 
 // =====================================================================================
@@ -160,7 +160,7 @@ static int FindMiptex(const char *const name)
     ThreadLock();
     for (i = 0; i < nummiptex; i++)
     {
-        if (!strcmp(name, miptex[i].name))
+        if (!std::strcmp(name, miptex[i].name))
         {
             ThreadUnlock();
             return i;
@@ -342,7 +342,7 @@ lumpinfo_t *FindTexture(const lumpinfo_t *const source)
     if (!found)
     {
         Warning("::FindTexture() texture %s not found!", source->name);
-        if (!strcmp(source->name, "NULL") || !strcmp(source->name, "SKIP"))
+        if (!std::strcmp(source->name, "NULL") || !std::strcmp(source->name, "SKIP"))
         {
             Log("Are you sure you included zhlt.wad in your wadpath list?\n");
         }
@@ -481,7 +481,7 @@ void AddAnimatingTextures()
             // see if this name exists in the wadfile
             for (int k = 0; k < nTexLumps; k++)
             {
-                if (!strcmp(name, lumpinfo[k].name))
+                if (!std::strcmp(name, lumpinfo[k].name))
                 {
                     FindMiptex(name); // add to the miptex list
                     break;
@@ -835,7 +835,7 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
     for (i = 0; i < g_numtexinfo; i++, tc++)
     {
         // Sleazy hack 104, Pt 3 - Use strcmp on names to avoid dups
-        if (strcmp(texmap_retrieve(tc->miptex), bt->name) != 0)
+        if (std::strcmp(texmap_retrieve(tc->miptex), bt->name) != 0)
         {
             continue;
         }

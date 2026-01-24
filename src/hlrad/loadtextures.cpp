@@ -978,7 +978,7 @@ static bool GetValidTextureName(int miptex, char name[16])
     miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
     safe_strncpy(name, mt->name, 16);
 
-    if (strcmp(name, mt->name))
+    if (std::strcmp(name, mt->name))
     {
         return false;
     }

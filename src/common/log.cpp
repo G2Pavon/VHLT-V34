@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <cstdarg>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -716,7 +717,7 @@ const char *Localize(const char *s)
 {
     for (int i = 0; i < g_lang_count; i++)
     {
-        if (!strcmp(g_lang[i][0], s))
+        if (!std::strcmp(g_lang[i][0], s))
         {
             return g_lang[i][1];
         }

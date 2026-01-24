@@ -390,7 +390,7 @@ void ExpandBrush(brush_t *brush, const int hullnum)
             for (int i = 0; i < g_numhullshapes; i++)
             {
                 const hullshape_t *s = &g_hullshapes[i];
-                if (!strcmp(name, s->id))
+                if (!std::strcmp(name, s->id))
                 {
                     if (found)
                     {
@@ -1091,7 +1091,7 @@ contents_t CheckBrushContents(const brush_t *const b)
         contents = CONTENTS_SOLID;
 
     // check to make sure we dont have an origin brush as part of worldspawn
-    if ((b->entitynum == 0) || (strcmp("func_group", ValueForKey(&g_entities[b->entitynum], "classname")) == 0))
+    if ((b->entitynum == 0) || (std::strcmp("func_group", ValueForKey(&g_entities[b->entitynum], "classname")) == 0))
     {
         if (contents == CONTENTS_ORIGIN && b->entitynum == 0 || contents == CONTENTS_BOUNDINGBOX)
         {

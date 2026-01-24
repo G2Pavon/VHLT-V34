@@ -1678,7 +1678,7 @@ void CreateDirectLights()
                 g_corings[style] = FloatForKey(e, "zhlt_stylecoring");
             }
         }
-        if (!strcmp(name, "light_shadow") || !strcmp(name, "light_bounce"))
+        if (!std::strcmp(name, "light_shadow") || !std::strcmp(name, "light_bounce"))
         {
             int style = IntForKey(e, "style");
             if (style < 0)
@@ -1696,7 +1696,7 @@ void CreateDirectLights()
             }
             continue;
         }
-        if (!strcmp(name, "light_surface"))
+        if (!std::strcmp(name, "light_surface"))
         {
             continue;
         }
@@ -1782,7 +1782,7 @@ void CreateDirectLights()
 
         const char *target = ValueForKey(e, "target");
 
-        if (!strcmp(name, "light_spot") || !strcmp(name, "light_environment") || target[0])
+        if (!std::strcmp(name, "light_spot") || !std::strcmp(name, "light_environment") || target[0])
         {
             if (!VectorAvg(dl->intensity))
             {
@@ -1868,7 +1868,7 @@ void CreateDirectLights()
                 dl->normal[1] *= (float)std::cos(angle / 180 * Q_PI);
             }
 
-            if (FloatForKey(e, "_sky") || !strcmp(name, "light_environment"))
+            if (FloatForKey(e, "_sky") || !std::strcmp(name, "light_environment"))
             {
                 // -----------------------------------------------------------------------------------
                 // Changes by Adam Foster - afoster@compsoc.man.ac.uk
@@ -2151,11 +2151,11 @@ void CreateDirectLights()
         {
             entity_t *e = &g_entities[i];
             const char *classname = ValueForKey(e, "classname");
-            if (!strcmp(classname, "light_environment"))
+            if (!std::strcmp(classname, "light_environment"))
             {
                 countlightenvironment++;
             }
-            if (!strcmp(classname, "info_sunlight"))
+            if (!std::strcmp(classname, "info_sunlight"))
             {
                 countinfosunlight++;
             }
@@ -4368,7 +4368,7 @@ void MdlLightHack()
     {
         entity_t *ent1 = &g_entities[ient];
         const char *target = ValueForKey(ent1, "zhlt_copylight");
-        if (!strcmp(target, ""))
+        if (!std::strcmp(target, ""))
             continue;
         used = 1;
         entity_t *ent2 = FindTargetEntity(target);

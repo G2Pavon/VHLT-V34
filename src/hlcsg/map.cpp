@@ -155,7 +155,7 @@ static bool CheckForInvisible(entity_t *mapent)
     }
 
     keyval.assign(ValueForKey(mapent, "zhlt_invisible"));
-    if (!keyval.empty() && strcmp(keyval.c_str(), "0"))
+    if (!keyval.empty() && std::strcmp(keyval.c_str(), "0"))
     {
         return true;
     }
@@ -240,7 +240,7 @@ static void ParseBrush(entity_t *mapent)
     while (ok)
     {
         g_TXcommand = 0;
-        if (!strcmp(g_token, "}"))
+        if (!std::strcmp(g_token, "}"))
         {
             break;
         }
@@ -259,7 +259,7 @@ static void ParseBrush(entity_t *mapent)
             {
                 GetToken(true);
             }
-            if (strcmp(g_token, "("))
+            if (std::strcmp(g_token, "("))
             {
                 Error("Parsing Entity %i, Brush %i, Side %i : Expecting '(' got '%s'",
                       b->originalentitynum, b->originalbrushnum,
@@ -273,7 +273,7 @@ static void ParseBrush(entity_t *mapent)
             }
 
             GetToken(false);
-            if (strcmp(g_token, ")"))
+            if (std::strcmp(g_token, ")"))
             {
                 Error("Parsing	Entity %i, Brush %i, Side %i : Expecting ')' got '%s'",
                       b->originalentitynum, b->originalbrushnum,
@@ -338,7 +338,7 @@ static void ParseBrush(entity_t *mapent)
         {
             // texture U axis
             GetToken(false);
-            if (strcmp(g_token, "["))
+            if (std::strcmp(g_token, "["))
             {
                 hlassume(false, assume_MISSING_BRACKET_IN_TEXTUREDEF);
             }
@@ -353,14 +353,14 @@ static void ParseBrush(entity_t *mapent)
             side->td.vects.valve.shift[0] = std::atof(g_token);
 
             GetToken(false);
-            if (strcmp(g_token, "]"))
+            if (std::strcmp(g_token, "]"))
             {
                 Error("missing ']' in texturedef (U)");
             }
 
             // texture V axis
             GetToken(false);
-            if (strcmp(g_token, "["))
+            if (std::strcmp(g_token, "["))
             {
                 Error("missing '[' in texturedef (V)");
             }
@@ -375,7 +375,7 @@ static void ParseBrush(entity_t *mapent)
             side->td.vects.valve.shift[1] = std::atof(g_token);
 
             GetToken(false);
-            if (strcmp(g_token, "]"))
+            if (std::strcmp(g_token, "]"))
             {
                 Error("missing ']' in texturedef (V)");
             }
@@ -547,7 +547,7 @@ static void ParseBrush(entity_t *mapent)
         mapent->numbrushes--;
         return;
     }
-    if (!strcmp(ValueForKey(&g_entities[b->entitynum], "classname"), "info_hullshape"))
+    if (!std::strcmp(ValueForKey(&g_entities[b->entitynum], "classname"), "info_hullshape"))
     {
         // all brushes should be erased, but not now.
         return;
@@ -647,7 +647,7 @@ bool ParseMapEntity()
 
     int this_entity = g_numentities;
 
-    if (strcmp(g_token, "{"))
+    if (std::strcmp(g_token, "{"))
     {
         Error("Parsing Entity %i, expected '{' got '%s'",
               g_numparsedentities,
@@ -666,10 +666,10 @@ bool ParseMapEntity()
         if (!GetToken(true))
             Error("ParseEntity: EOF without closing brace");
 
-        if (!strcmp(g_token, "}")) // end of our context
+        if (!std::strcmp(g_token, "}")) // end of our context
             break;
 
-        if (!strcmp(g_token, "{")) // must be a brush
+        if (!std::strcmp(g_token, "{")) // must be a brush
         {
             ParseBrush(mapent);
             g_numparsedbrushes++;
@@ -680,7 +680,7 @@ bool ParseMapEntity()
             if (mapent->numbrushes > 0)
                 Warning("Error: ParseEntity: Keyvalue comes after brushes."); //--vluzacn
 
-            if (!strcmp(e->key, "mapversion"))
+            if (!std::strcmp(e->key, "mapversion"))
             {
                 g_nMapFileVersion = std::atoi(e->value);
             }
@@ -709,7 +709,7 @@ bool ParseMapEntity()
                     g_numparsedentities);
         mapent->numbrushes = 0;
     }
-    if (strcmp(ValueForKey(mapent, "classname"), "info_hullshape")) // info_hullshape is not affected by '-scale'
+    if (std::strcmp(ValueForKey(mapent, "classname"), "info_hullshape")) // info_hullshape is not affected by '-scale'
     {
         bool ent_move_b = false;
         bool ent_scale_b = false;
@@ -920,14 +920,14 @@ bool ParseMapEntity()
         SetKeyValue(mapent, "compiler", versionstring);
     }
 
-    if (!strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
+    if (!std::strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
     {
         GetParamsFromEnt(mapent);
     }
 
     GetVectorForKey(mapent, "origin", mapent->origin);
 
-    if (!strcmp("func_group", ValueForKey(mapent, "classname")) || !strcmp("func_detail", ValueForKey(mapent, "classname")))
+    if (!std::strcmp("func_group", ValueForKey(mapent, "classname")) || !std::strcmp("func_detail", ValueForKey(mapent, "classname")))
     {
         // this is pretty gross, because the brushes are expected to be
         // in linear order for each entity
@@ -963,7 +963,7 @@ bool ParseMapEntity()
         return true;
     }
 
-    if (!strcmp(ValueForKey(mapent, "classname"), "info_hullshape"))
+    if (!std::strcmp(ValueForKey(mapent, "classname"), "info_hullshape"))
     {
         bool disabled = IntForKey(mapent, "disabled");
         const char *id = ValueForKey(mapent, "targetname");
