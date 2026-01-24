@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 #include <cmath>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -519,14 +520,14 @@ static void LoadPortals(char *portal_image)
 
     char *token = strtok(portal_image, seperators);
     CheckNullToken(token);
-    if (!sscanf(token, "%u", &g_portalleafs))
+    if (!std::sscanf(token, "%u", &g_portalleafs))
     {
         Error("LoadPortals: failed to read header: number of leafs");
     }
 
     token = strtok(NULL, seperators);
     CheckNullToken(token);
-    if (!sscanf(token, "%i", &g_numportals))
+    if (!std::sscanf(token, "%i", &g_numportals))
     {
         Error("LoadPortals: failed to read header: number of portals");
     }
@@ -559,7 +560,7 @@ static void LoadPortals(char *portal_image)
         unsigned rval = 0;
         token = strtok(NULL, seperators);
         CheckNullToken(token);
-        rval += sscanf(token, "%i", &g_leafcounts[i]);
+        rval += std::sscanf(token, "%i", &g_leafcounts[i]);
         if (rval != 1)
         {
             Error("LoadPortals: read leaf %i failed", i);
@@ -595,13 +596,13 @@ static void LoadPortals(char *portal_image)
 
         token = strtok(NULL, seperators);
         CheckNullToken(token);
-        rval += sscanf(token, "%i", &numpoints);
+        rval += std::sscanf(token, "%i", &numpoints);
         token = strtok(NULL, seperators);
         CheckNullToken(token);
-        rval += sscanf(token, "%i", &leafnums[0]);
+        rval += std::sscanf(token, "%i", &leafnums[0]);
         token = strtok(NULL, seperators);
         CheckNullToken(token);
-        rval += sscanf(token, "%i", &leafnums[1]);
+        rval += std::sscanf(token, "%i", &leafnums[1]);
 
         if (rval != 3)
         {
@@ -627,13 +628,13 @@ static void LoadPortals(char *portal_image)
 
             token = strtok(NULL, seperators);
             CheckNullToken(token);
-            rval += sscanf(token, "%lf", &v[0]);
+            rval += std::sscanf(token, "%lf", &v[0]);
             token = strtok(NULL, seperators);
             CheckNullToken(token);
-            rval += sscanf(token, "%lf", &v[1]);
+            rval += std::sscanf(token, "%lf", &v[1]);
             token = strtok(NULL, seperators);
             CheckNullToken(token);
-            rval += sscanf(token, "%lf", &v[2]);
+            rval += std::sscanf(token, "%lf", &v[2]);
 
             // scanf into double, then assign to vec_t
             if (rval != 3)

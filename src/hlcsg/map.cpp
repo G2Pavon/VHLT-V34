@@ -727,7 +727,7 @@ bool ParseMapEntity()
         double v[4] = {0, 0, 0, 0};
         if (*ValueForKey(mapent, "zhlt_transform"))
         {
-            switch (sscanf(ValueForKey(mapent, "zhlt_transform"), "%lf %lf %lf %lf", v, v + 1, v + 2, v + 3))
+            switch (std::sscanf(ValueForKey(mapent, "zhlt_transform"), "%lf %lf %lf %lf", v, v + 1, v + 2, v + 3))
             {
             case 1:
                 ent_scale_b = true;
@@ -882,7 +882,7 @@ bool ParseMapEntity()
                 }
                 {
                     double b[2][3];
-                    if (sscanf(ValueForKey(mapent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &b[0][0], &b[0][1], &b[0][2], &b[1][0], &b[1][1], &b[1][2]) == 6)
+                    if (std::sscanf(ValueForKey(mapent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &b[0][0], &b[0][1], &b[0][2], &b[1][0], &b[1][1], &b[1][2]) == 6)
                     {
                         for (int i = 0; i < 2; i++)
                         {

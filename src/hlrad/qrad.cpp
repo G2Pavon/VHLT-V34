@@ -8,6 +8,7 @@
     
 */
 #include <cstdlib>
+#include <cstdio>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -228,7 +229,7 @@ void GetParamsFromEnt(entity_t *mapent)
         float red = 0;
         float green = 0;
         float blue = 0;
-        if (sscanf(pszTmp, "%f %f %f", &red, &green, &blue))
+        if (std::sscanf(pszTmp, "%f %f %f", &red, &green, &blue))
         {
             if (red < 0 || red > 1 || green < 0 || green > 1 || blue < 0 || blue > 1)
             {
@@ -438,7 +439,7 @@ static void ReadLightFile(const char *const filename)
             comment[1] = 0;
         }
 
-        short argCnt = sscanf(scan, "%s %f %f %f %f", szTexlight, &r, &g, &b, &i);
+        short argCnt = std::sscanf(scan, "%s %f %f %f %f", szTexlight, &r, &g, &b, &i);
 
         if (argCnt == 2)
         {
@@ -528,7 +529,7 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
         double g;
         double b;
         double scaler;
-        switch (sscanf(ValueForKey(g_face_texlights[fn], "_light"), "%lf %lf %lf %lf", &r, &g, &b, &scaler))
+        switch (std::sscanf(ValueForKey(g_face_texlights[fn], "_light"), "%lf %lf %lf %lf", &r, &g, &b, &scaler))
         {
         case -1:
         case 0:
@@ -1065,7 +1066,7 @@ void ReadTranslucentTextures()
                 double r;
                 double g;
                 double b;
-                int count = sscanf(ep->value, "%lf %lf %lf", &r, &g, &b);
+                int count = std::sscanf(ep->value, "%lf %lf %lf", &r, &g, &b);
                 if (count == 1)
                 {
                     g = b = r;
@@ -1121,7 +1122,7 @@ void ReadLightingCone()
                     continue;
                 double power;
                 double scale;
-                int count = sscanf(ep->value, "%lf %lf", &power, &scale);
+                int count = std::sscanf(ep->value, "%lf %lf", &power, &scale);
                 if (count == 1)
                 {
                     scale = 1.0;
@@ -1534,7 +1535,7 @@ static void LoadOpaqueEntities()
                     double g1 = 1.0;
                     double b1 = 1.0;
                     double tmp = 1.0;
-                    if (sscanf(s, "%lf %lf %lf", &r1, &g1, &b1) == 3) //RGB version
+                    if (std::sscanf(s, "%lf %lf %lf", &r1, &g1, &b1) == 3) //RGB version
                     {
                         if (r1 < 0.0)
                             r1 = 0.0;
@@ -1546,7 +1547,7 @@ static void LoadOpaqueEntities()
                         d_transparency[1] = g1;
                         d_transparency[2] = b1;
                     }
-                    else if (sscanf(s, "%lf", &tmp) == 1) //Greyscale version
+                    else if (std::sscanf(s, "%lf", &tmp) == 1) //Greyscale version
                     {
                         if (tmp < 0.0)
                             tmp = 0.0;
@@ -1695,7 +1696,7 @@ static void MakePatches()
         {
             double v1, v2, v3;
 
-            if (sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
+            if (std::sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
             {
                 origin[0] = v1;
                 origin[1] = v2;
@@ -1714,7 +1715,7 @@ static void MakePatches()
                 {
                     double v1, v2, v3;
 
-                    if (sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
+                    if (std::sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
                     {
                         light_origin[0] = v1;
                         light_origin[1] = v2;
@@ -1731,7 +1732,7 @@ static void MakePatches()
         {
             double v1, v2, v3;
 
-            if (sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
+            if (std::sscanf(s, "%lf %lf %lf", &v1, &v2, &v3) == 3)
             {
                 model_center[0] = v1;
                 model_center[1] = v2;
@@ -2859,7 +2860,7 @@ void ReadInfoTexlights()
             if (!strcmp(ep->key, "classname") || !strcmp(ep->key, "origin"))
                 continue; // we dont care about these keyvalues
 
-            int values = sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);
+            int values = std::sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);
 
             if (values == 1)
             {

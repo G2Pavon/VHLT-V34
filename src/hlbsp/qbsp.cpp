@@ -1261,8 +1261,8 @@ skipclip:
     {
         double origin[3], mins[3], maxs[3];
         VectorClear(origin);
-        sscanf(ValueForKey(ent, "origin"), "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
-        if (sscanf(ValueForKey(ent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]) == 6)
+        std::sscanf(ValueForKey(ent, "origin"), "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
+        if (std::sscanf(ValueForKey(ent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]) == 6)
         {
             VectorSubtract(mins, origin, model->mins);
             VectorSubtract(maxs, origin, model->maxs);

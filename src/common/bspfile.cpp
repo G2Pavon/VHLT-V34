@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstdio>
 #include <cmath>
 
 #include "filelib.h"
@@ -1317,7 +1318,7 @@ void UnparseEntities()
         {
             float vec[3] = {0, 0, 0};
             {
-                sscanf(ValueForKey(mapent, "angles"), "%f %f %f", &vec[0], &vec[1], &vec[2]);
+                std::sscanf(ValueForKey(mapent, "angles"), "%f %f %f", &vec[0], &vec[1], &vec[2]);
                 float pitch = FloatForKey(mapent, "pitch");
                 if (pitch)
                     vec[0] = pitch;
@@ -1329,8 +1330,8 @@ void UnparseEntities()
                     if (targetent)
                     {
                         float origin1[3] = {0, 0, 0}, origin2[3] = {0, 0, 0}, normal[3];
-                        sscanf(ValueForKey(mapent, "origin"), "%f %f %f", &origin1[0], &origin1[1], &origin1[2]);
-                        sscanf(ValueForKey(targetent, "origin"), "%f %f %f", &origin2[0], &origin2[1], &origin2[2]);
+                        std::sscanf(ValueForKey(mapent, "origin"), "%f %f %f", &origin1[0], &origin1[1], &origin1[2]);
+                        std::sscanf(ValueForKey(targetent, "origin"), "%f %f %f", &origin2[0], &origin2[1], &origin2[2]);
                         VectorSubtract(origin2, origin1, normal);
                         anglesforvector(vec, normal);
                     }
@@ -1551,7 +1552,7 @@ void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t ve
     double v1 = 0.0;
     double v2 = 0.0;
     double v3 = 0.0;
-    sscanf(k, "%lf %lf %lf", &v1, &v2, &v3);
+    std::sscanf(k, "%lf %lf %lf", &v1, &v2, &v3);
     vec[0] = v1;
     vec[1] = v2;
     vec[2] = v3;

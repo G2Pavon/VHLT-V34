@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cmath>
 
 #include "qrad.h"
@@ -1743,7 +1744,7 @@ void CreateDirectLights()
         double g = 0;
         double b = 0;
         double scaler = 0;
-        int argCnt = sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
+        int argCnt = std::sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
         dl->intensity[0] = (float)r;
         if (argCnt == 1)
         {
@@ -1877,7 +1878,7 @@ void CreateDirectLights()
                 // -----------------------------------------------------------------------------------
                 pLight = ValueForKey(e, "_diffuse_light");
                 r = g = b = scaler = 0;
-                argCnt = sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
+                argCnt = std::sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
                 dl->diffuse_intensity[0] = (float)r;
                 if (argCnt == 1)
                 {
@@ -1910,7 +1911,7 @@ void CreateDirectLights()
                 // -----------------------------------------------------------------------------------
                 pLight = ValueForKey(e, "_diffuse_light2");
                 r = g = b = scaler = 0;
-                argCnt = sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
+                argCnt = std::sscanf(pLight, "%lf %lf %lf %lf", &r, &g, &b, &scaler);
                 dl->diffuse_intensity2[0] = (float)r;
                 if (argCnt == 1)
                 {
