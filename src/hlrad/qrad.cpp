@@ -9,6 +9,7 @@
 */
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -952,7 +953,7 @@ static void SubdividePatch(patch_t *patch)
     {
         if (*winding)
         {
-            memcpy(new_patch, patch, sizeof(patch_t));
+            std::memcpy(new_patch, patch, sizeof(patch_t));
 
             new_patch->winding = *winding;
             new_patch->area = new_patch->winding->getArea();
@@ -1837,7 +1838,7 @@ static void SortPatches()
     // SortPatches is the ideal place to do this, because the address of the patches are going to be invalidated.
     patch_t *old_patches = g_patches;
     g_patches = (patch_t *)AllocBlock((g_num_patches + 1) * sizeof(patch_t)); // allocate one extra slot considering how terribly the code were written
-    memcpy(g_patches, old_patches, g_num_patches * sizeof(patch_t));
+    std::memcpy(g_patches, old_patches, g_num_patches * sizeof(patch_t));
     FreeBlock(old_patches);
     qsort((void *)g_patches, (size_t)g_num_patches, sizeof(patch_t), patch_sorter);
 

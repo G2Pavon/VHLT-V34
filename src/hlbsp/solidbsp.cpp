@@ -22,6 +22,7 @@
 
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
+#include <cstring>
 #include <vector>
 #include <cmath>
 
@@ -1224,7 +1225,7 @@ static void MakeLeaf(node_t *leafnode)
         nummarkfaces++;
 
         leafnode->markfaces = (face_t **)malloc(nummarkfaces * sizeof(*leafnode->markfaces));
-        memcpy(leafnode->markfaces, markfaces, nummarkfaces * sizeof(*leafnode->markfaces));
+        std::memcpy(leafnode->markfaces, markfaces, nummarkfaces * sizeof(*leafnode->markfaces));
     }
 
     FreeLeafSurfs(leafnode);

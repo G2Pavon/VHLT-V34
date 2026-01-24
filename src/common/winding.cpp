@@ -237,7 +237,7 @@ Winding::Winding(vec3_t *points, UINT32 numpoints)
     m_MaxPoints = (m_NumPoints + 3) & ~3; // groups of 4
 
     m_Points = new vec3_t[m_MaxPoints];
-    memcpy(m_Points, points, sizeof(vec3_t) * m_NumPoints);
+    std::memcpy(m_Points, points, sizeof(vec3_t) * m_NumPoints);
 }
 
 void Winding::initFromPoints(vec3_t *points, UINT32 numpoints)
@@ -250,7 +250,7 @@ void Winding::initFromPoints(vec3_t *points, UINT32 numpoints)
     m_MaxPoints = (m_NumPoints + 3) & ~3; // groups of 4
 
     m_Points = new vec3_t[m_MaxPoints];
-    memcpy(m_Points, points, sizeof(vec3_t) * m_NumPoints);
+    std::memcpy(m_Points, points, sizeof(vec3_t) * m_NumPoints);
 }
 
 Winding &Winding::operator=(const Winding &other)
@@ -260,7 +260,7 @@ Winding &Winding::operator=(const Winding &other)
     m_MaxPoints = (m_NumPoints + 3) & ~3; // groups of 4
 
     m_Points = new vec3_t[m_MaxPoints];
-    memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
+    std::memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
     return *this;
 }
 
@@ -280,7 +280,7 @@ Winding::Winding(const Winding &other)
     m_MaxPoints = (m_NumPoints + 3) & ~3; // groups of 4
 
     m_Points = new vec3_t[m_MaxPoints];
-    memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
+    std::memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
 }
 
 Winding::~Winding()
@@ -956,7 +956,7 @@ void Winding::resize(UINT32 newsize)
 
     vec3_t *newpoints = new vec3_t[newsize];
     m_NumPoints = qmin(newsize, m_NumPoints);
-    memcpy(newpoints, m_Points, m_NumPoints);
+    std::memcpy(newpoints, m_Points, m_NumPoints);
     delete[] m_Points;
     m_Points = newpoints;
     m_MaxPoints = newsize;
@@ -970,7 +970,7 @@ void Winding::CopyPoints(vec3_t *points, int &numpoints)
         return;
     }
 
-    memcpy(points, m_Points, sizeof(vec3_t) * m_NumPoints);
+    std::memcpy(points, m_Points, sizeof(vec3_t) * m_NumPoints);
 
     numpoints = m_NumPoints;
 }

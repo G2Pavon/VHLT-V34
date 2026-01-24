@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <cmath>
 
 #include "filelib.h"
@@ -395,7 +396,7 @@ static int CopyLump(int lump, void *dest, int size, const dheader_t *const heade
         hlassume(g_max_map_lightdata > length, assume_MAX_MAP_LIGHTING);
     }
 
-    memcpy(dest, (byte *)header + ofs, length);
+    std::memcpy(dest, (byte *)header + ofs, length);
 
     return length / size;
 }
@@ -842,7 +843,7 @@ char *FindWadValue()
                 int len = quotes[3] - (quotes[2] + 1);
                 char *value = (char *)malloc(len + 1);
                 hlassume(value != NULL, assume_NoMemory);
-                memcpy(value, &g_dentdata[quotes[2] + 1], len);
+                std::memcpy(value, &g_dentdata[quotes[2] + 1], len);
                 value[len] = '\0';
                 return value;
             }

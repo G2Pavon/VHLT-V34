@@ -64,7 +64,7 @@ void GetUsedWads()
         if (j - i > 0)
         {
             int count = qmin(j - i, _MAX_PATH - 1);
-            memcpy(szTmp, &pszWadPaths[i], count);
+            std::memcpy(szTmp, &pszWadPaths[i], count);
             szTmp[count] = '\0';
 
             if (g_iNumWadPaths >= MAX_WADPATHS)

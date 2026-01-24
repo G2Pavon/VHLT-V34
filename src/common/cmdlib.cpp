@@ -156,7 +156,7 @@ void ExtractFilePath(const char *const path, char *dest)
     getFilePositions(path, &extension_pos, &directory_pos);
     if (directory_pos != -1)
     {
-        memcpy(dest, path, directory_pos + 1); //include directory slash
+        std::memcpy(dest, path, directory_pos + 1); //include directory slash
         dest[directory_pos + 1] = 0;
     }
     else
@@ -174,7 +174,7 @@ void ExtractFile(const char *const path, char *dest)
 
     length -= directory_pos + 1;
 
-    memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
+    std::memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
     dest[length] = 0;
 }
 
@@ -186,7 +186,7 @@ void ExtractFileBase(const char *const path, char *dest)
 
     length -= directory_pos + 1;
 
-    memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
+    std::memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
     dest[length] = 0;
 }
 
@@ -197,7 +197,7 @@ void ExtractFileExtension(const char *const path, char *dest)
     if (extension_pos != -1)
     {
         int length = strlen(path) - extension_pos;
-        memcpy(dest, path + extension_pos, length); //include extension '.'
+        std::memcpy(dest, path + extension_pos, length); //include extension '.'
         dest[length] = 0;
     }
     else

@@ -1,3 +1,4 @@
+#include <cstring>
 #include <list>
 #include <map>
 #include <vector>
@@ -1143,7 +1144,7 @@ void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headn
     ExpandClipnodes_r(bclipnodes, info->numclipnodes, clipnodes, headnode);
     info->clipnodes = (bclipnode_t *)malloc(info->numclipnodes * sizeof(bclipnode_t));
     hlassume(info->clipnodes != NULL, assume_NoMemory);
-    memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
+    std::memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
     for (int i = 0; i < info->numclipnodes; i++)
     {
         for (int k = 0; k < 2; k++)

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <cmath>
 
 #include "qrad.h"
@@ -604,7 +605,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
     unsigned char (*pointarray)[CQ_DIM];
     pointarray = (unsigned char (*)[CQ_DIM])malloc(numpoints * sizeof(unsigned char[CQ_DIM]));
     hlassume(pointarray != NULL, assume_NoMemory);
-    memcpy(pointarray, points, numpoints * sizeof(unsigned char[CQ_DIM]));
+    std::memcpy(pointarray, points, numpoints * sizeof(unsigned char[CQ_DIM]));
 
     cq_searchnode_t *s;
     int numnodes = 0;
@@ -859,7 +860,7 @@ void NewTextures_PushTexture(int size, void *data)
     }
     g_newtextures_data[g_newtextures_num] = (byte *)malloc(size);
     hlassume(g_newtextures_data[g_newtextures_num] != NULL, assume_NoMemory);
-    memcpy(g_newtextures_data[g_newtextures_num], data, size);
+    std::memcpy(g_newtextures_data[g_newtextures_num], data, size);
     g_newtextures_size[g_newtextures_num] = size;
     g_newtextures_num++;
 }
@@ -892,7 +893,7 @@ void NewTextures_Write()
     for (int i = 0; i < g_newtextures_num; i++)
     {
         hlassume(g_texdatasize + g_newtextures_size[i] <= g_max_map_miptex, assume_MAX_MAP_MIPTEX);
-        memcpy(g_dtexdata + g_texdatasize, g_newtextures_data[i], g_newtextures_size[i]);
+        std::memcpy(g_dtexdata + g_texdatasize, g_newtextures_data[i], g_newtextures_size[i]);
         texdata->dataofs[texdata->nummiptex + i] = g_texdatasize;
         g_texdatasize += g_newtextures_size[i];
     }
@@ -1388,7 +1389,7 @@ void EmbedLightmapInTextures()
         }
         *(short *)p = 256;
         p += 2;
-        memcpy(p, palette, 256 * 3);
+        std::memcpy(p, palette, 256 * 3);
         p += 256 * 3;
         *(short *)p = 0;
         p += 2;

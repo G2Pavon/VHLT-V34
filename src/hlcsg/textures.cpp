@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <deque>
 #include <cmath>
@@ -648,7 +649,7 @@ void WriteMiptex()
                 writewad_lumpinfo->compression = miptex[i].compression;
                 writewad_lumpinfo->pad1 = miptex[i].pad1;
                 writewad_lumpinfo->pad2 = miptex[i].pad2;
-                memcpy(writewad_lumpinfo->name, miptex[i].name, MAXWADNAME);
+                std::memcpy(writewad_lumpinfo->name, miptex[i].name, MAXWADNAME);
                 writewad_header.numlumps++;
                 SafeWrite(writewad_file, writewad_data, writewad_datasize);
                 free(writewad_data);
@@ -718,7 +719,7 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
 
     if (bt->txcommand)
     {
-        memcpy(tx.vecs, bt->vects.quark.vects, sizeof(tx.vecs));
+        std::memcpy(tx.vecs, bt->vects.quark.vects, sizeof(tx.vecs));
         if (origin[0] || origin[1] || origin[2])
         {
             tx.vecs[0][3] += DotProduct(origin, tx.vecs[0]);

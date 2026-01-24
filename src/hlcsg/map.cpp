@@ -54,11 +54,11 @@ brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
     brush_t *newb = &g_mapbrushes[g_nummapbrushes];
     g_nummapbrushes++;
     hlassume(g_nummapbrushes <= MAX_MAP_BRUSHES, assume_MAX_MAP_BRUSHES);
-    memcpy(newb, brush, sizeof(brush_t));
+    std::memcpy(newb, brush, sizeof(brush_t));
     newb->firstside = g_numbrushsides;
     g_numbrushsides += brush->numsides;
     hlassume(g_numbrushsides <= MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
-    memcpy(&g_brushsides[newb->firstside], &g_brushsides[brush->firstside], brush->numsides * sizeof(side_t));
+    std::memcpy(&g_brushsides[newb->firstside], &g_brushsides[brush->firstside], brush->numsides * sizeof(side_t));
     newb->entitynum = entity - g_entities;
     newb->brushnum = entity->numbrushes;
     entity->numbrushes++;
@@ -936,7 +936,7 @@ bool ParseMapEntity()
         int worldbrushes = g_entities[0].numbrushes;
 
         brush_t *temp = (brush_t *)Alloc(newbrushes * sizeof(brush_t));
-        memcpy(temp, g_mapbrushes + mapent->firstbrush, newbrushes * sizeof(brush_t));
+        std::memcpy(temp, g_mapbrushes + mapent->firstbrush, newbrushes * sizeof(brush_t));
 
         for (int i = 0; i < newbrushes; i++)
         {
@@ -949,7 +949,7 @@ bool ParseMapEntity()
                 g_mapbrushes + worldbrushes, sizeof(brush_t) * (g_nummapbrushes - worldbrushes - newbrushes));
 
         // copy the new brushes down
-        memcpy(g_mapbrushes + worldbrushes, temp, sizeof(brush_t) * newbrushes);
+        std::memcpy(g_mapbrushes + worldbrushes, temp, sizeof(brush_t) * newbrushes);
 
         // fix up indexes
         g_numentities--;

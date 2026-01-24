@@ -156,7 +156,7 @@ void CreateFinalTransparencyArrays(const char *print_name)
         s_sorted_list[i].data_index = s_raw_list[i].data_index;
     }
     //Second half have p1<p2
-    memcpy(&s_sorted_list[s_raw_count], s_raw_list, sizeof(transList_t) * s_raw_count);
+    std::memcpy(&s_sorted_list[s_raw_count], s_raw_list, sizeof(transList_t) * s_raw_count);
 
     //free old array
     free(s_raw_list);

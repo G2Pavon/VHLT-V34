@@ -368,7 +368,7 @@ static void LeafFlow(const int leafnum)
         g_dleafs[g_leafstarts[leafnum] + j + 1].visofs = dest - vismap;
     }
 
-    memcpy(dest, compressed, i);
+    std::memcpy(dest, compressed, i);
 }
 
 // =====================================================================================

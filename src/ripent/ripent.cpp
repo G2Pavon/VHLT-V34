@@ -12,6 +12,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <conio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -174,7 +175,7 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
                     // Extract the string.
                     int iLength = iEnd - iStart - 1;
                     char *cString = new char[iLength + 1];
-                    memcpy(cString, &g_dentdata[iStart + 1], iLength);
+                    std::memcpy(cString, &g_dentdata[iStart + 1], iLength);
                     cString[iLength] = '\0';
 
                     // Save it.
@@ -280,7 +281,7 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
             g_entdatasize += 1;
 
             // New line.
-            memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
+            std::memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
             g_entdatasize += iNewLineLength;
 
             CEntityPairList *EntityPairList = *i;
@@ -288,13 +289,13 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
             for (CEntityPairList::iterator j = EntityPairList->begin(); j != EntityPairList->end(); ++j)
             {
                 // Tab.
-                memcpy(&g_dentdata[g_entdatasize], cTab, iTabLength);
+                std::memcpy(&g_dentdata[g_entdatasize], cTab, iTabLength);
                 g_entdatasize += iTabLength;
 
                 // String.
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
-                memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
+                std::memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
                 g_entdatasize += (int)strlen(*j);
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
@@ -308,13 +309,13 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
                 // String.
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
-                memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
+                std::memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
                 g_entdatasize += (int)strlen(*j);
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
 
                 // New line.
-                memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
+                std::memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
                 g_entdatasize += iNewLineLength;
             }
 
@@ -323,12 +324,12 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
             g_entdatasize += 1;
 
             // New line.
-            memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
+            std::memcpy(&g_dentdata[g_entdatasize], cNewLine, iNewLineLength);
             g_entdatasize += iNewLineLength;
         }
 
         // Terminator.
-        memcpy(&g_dentdata[g_entdatasize], cTerminator, iTerminatorLength);
+        std::memcpy(&g_dentdata[g_entdatasize], cTerminator, iTerminatorLength);
         g_entdatasize += iTerminatorLength;
 
         //
@@ -707,7 +708,7 @@ static void WriteEntities(const char *const name)
             bak_entdatasize = g_entdatasize;
             bak_dentdata = (char *)malloc(g_entdatasize);
             hlassume(bak_dentdata != NULL, assume_NoMemory);
-            memcpy(bak_dentdata, g_dentdata, g_entdatasize);
+            std::memcpy(bak_dentdata, g_dentdata, g_entdatasize);
             ParseEntityData("  ", 2, "\r\n", 2, "", 0);
         }
 
@@ -718,7 +719,7 @@ static void WriteEntities(const char *const name)
         if (g_parse)
         {
             g_entdatasize = bak_entdatasize;
-            memcpy(g_dentdata, bak_dentdata, bak_entdatasize);
+            std::memcpy(g_dentdata, bak_dentdata, bak_entdatasize);
             free(bak_dentdata);
         }
     }

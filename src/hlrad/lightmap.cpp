@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <cmath>
 
 #include "qrad.h"
@@ -3789,7 +3790,7 @@ void BuildFacelights(const int facenum)
                 f->styles[k] = f_styles[bestindex];
                 fl->samples[k] = (sample_t *)malloc(fl->numsamples * sizeof(sample_t));
                 hlassume(fl->samples[k] != NULL, assume_NoMemory);
-                memcpy(fl->samples[k], fl_samples[bestindex], fl->numsamples * sizeof(sample_t));
+                std::memcpy(fl->samples[k], fl_samples[bestindex], fl->numsamples * sizeof(sample_t));
             }
             else
             {
@@ -4037,11 +4038,11 @@ void PrecompLightmapOffsets()
                     }
                     if (i < MAXLIGHTMAPS && oldstyles[i] != 255)
                     {
-                        memcpy(fl->samples[k], oldsamples[i], fl->numsamples * sizeof(sample_t));
+                        std::memcpy(fl->samples[k], oldsamples[i], fl->numsamples * sizeof(sample_t));
                     }
                     else
                     {
-                        memcpy(fl->samples[k], oldsamples[0], fl->numsamples * sizeof(sample_t)); // copy 'sample.pos' from style 0 to the new style - because 'sample.pos' is actually the same for all styles! (why did we decide to store it in many places?)
+                        std::memcpy(fl->samples[k], oldsamples[0], fl->numsamples * sizeof(sample_t)); // copy 'sample.pos' from style 0 to the new style - because 'sample.pos' is actually the same for all styles! (why did we decide to store it in many places?)
                         for (int j = 0; j < fl->numsamples; j++)
                         {
                             VectorClear(fl->samples[k][j].light);
@@ -4090,7 +4091,7 @@ void ReduceLightmap()
 {
     byte *oldlightdata = (byte *)malloc(g_lightdatasize);
     hlassume(oldlightdata != NULL, assume_NoMemory);
-    memcpy(oldlightdata, g_dlightdata, g_lightdatasize);
+    std::memcpy(oldlightdata, g_dlightdata, g_lightdatasize);
     g_lightdatasize = 0;
 
     for (int facenum = 0; facenum < g_numfaces; facenum++)
@@ -4140,7 +4141,7 @@ void ReduceLightmap()
             }
             f->styles[numstyles] = oldstyles[k];
             hlassume(g_lightdatasize + fl->numsamples * 3 * (numstyles + 1) <= g_max_map_lightdata, assume_MAX_MAP_LIGHTING);
-            memcpy(&g_dlightdata[f->lightofs + fl->numsamples * 3 * numstyles], &oldlightdata[oldofs + fl->numsamples * 3 * k], fl->numsamples * 3);
+            std::memcpy(&g_dlightdata[f->lightofs + fl->numsamples * 3 * numstyles], &oldlightdata[oldofs + fl->numsamples * 3 * k], fl->numsamples * 3);
             numstyles++;
         }
         g_lightdatasize += fl->numsamples * 3 * numstyles;
