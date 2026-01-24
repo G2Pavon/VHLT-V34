@@ -1793,7 +1793,7 @@ int main(const int argc, char **argv)
             FlipSlashes(g_Mapname);
             StripExtension(g_Mapname);
             OpenLog(g_clientid);
-            atexit(CloseLog);
+            std::atexit(CloseLog);
             ThreadSetDefault();
             ThreadSetPriority(g_threadpriority);
             LogStart(argcold, argvold);
@@ -1819,7 +1819,7 @@ int main(const int argc, char **argv)
             hlassume(CalcFaceExtents_test(), assume_first);
 
             dtexdata_init();
-            atexit(dtexdata_free);
+            std::atexit(dtexdata_free);
             //Settings();
             // END INIT
 

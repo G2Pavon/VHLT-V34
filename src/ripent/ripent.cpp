@@ -881,7 +881,7 @@ int main(int argc, char **argv)
 
     g_Program = "ripent";
 
-    atexit(&pause);
+    std::atexit(&pause);
     int argcold = argc;
     char **argvold = argv;
     {
@@ -1035,12 +1035,12 @@ int main(int argc, char **argv)
                 }
                 Log("\n");
             }
-            atexit(LogEnd);
+            std::atexit(LogEnd);
 
             Settings();
 
             dtexdata_init();
-            atexit(dtexdata_free);
+            std::atexit(dtexdata_free);
 
             // BEGIN RipEnt
             start = I_FloatTime();

@@ -1941,7 +1941,7 @@ int main(const int argc, char **argv)
             if (!g_onlyents && g_resetlog)
                 ResetLog();
             OpenLog(g_clientid);
-            atexit(CloseLog);
+            std::atexit(CloseLog);
             LogStart(argcold, argvold);
             {
                 Log("Arguments: ");
@@ -1961,9 +1961,9 @@ int main(const int argc, char **argv)
 
             hlassume(CalcFaceExtents_test(), assume_first);
 
-            atexit(CSGCleanup); // AJM
+            std::atexit(CSGCleanup); // AJM
             dtexdata_init();
-            atexit(dtexdata_free);
+            std::atexit(dtexdata_free);
 
             // START CSG
             // AJM: re-arranged some stuff up here so that the mapfile is loaded

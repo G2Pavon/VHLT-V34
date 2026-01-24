@@ -612,7 +612,7 @@ int InitConsole(int argc, char **argv)
         }
     }
     if (twice)
-        atexit(&wait);
+        std::atexit(&wait);
     if (wrong)
         return -1;
     return 0;
