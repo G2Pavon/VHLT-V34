@@ -330,7 +330,7 @@ static node_t *ClearOutFaces_r(node_t *node)
 // =====================================================================================
 //  isClassnameAllowableOutside
 // =====================================================================================
-#define MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE 64
+constexpr int MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE = 64;
 
 unsigned g_nAllowableOutside = 0;
 unsigned g_maxAllowableOutside = 0;

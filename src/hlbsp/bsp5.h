@@ -4,47 +4,47 @@
 #include "mathtypes.h"
 #include "bspfile.h"
 
-#define ENTITIES_VOID "entities.void"
+constexpr const char *ENTITIES_VOID = "entities.void";
 #define ENTITIES_VOID_EXT ".void"
 
 #define BOGUS_RANGE 144000
 
 // the exact bounding box of the brushes is expanded some for the headnode
 // volume.  is this still needed?
-#define SIDESPACE 24
+constexpr int SIDESPACE = 24;
 
 //============================================================================
 
-#define MIN_SUBDIVIDE_SIZE 64
+constexpr int MIN_SUBDIVIDE_SIZE = 64;
 
-#define MAX_SUBDIVIDE_SIZE 512
+constexpr int MAX_SUBDIVIDE_SIZE = 512;
 
-#define DEFAULT_SUBDIVIDE_SIZE ((MAX_SURFACE_EXTENT - 1) * TEXTURE_STEP) //#define DEFAULT_SUBDIVIDE_SIZE  240 //--vluzacn
+constexpr int DEFAULT_SUBDIVIDE_SIZE = ((MAX_SURFACE_EXTENT - 1) * TEXTURE_STEP); //#define DEFAULT_SUBDIVIDE_SIZE  240 //--vluzacn
 
-#define MIN_MAXNODE_SIZE 64
-#define MAX_MAXNODE_SIZE 65536
-#define DEFAULT_MAXNODE_SIZE 1024
+constexpr int MIN_MAXNODE_SIZE = 64;
+constexpr int MAX_MAXNODE_SIZE = 65536;
+constexpr int DEFAULT_MAXNODE_SIZE = 1024;
 
-#define DEFAULT_NOFILL false
-#define DEFAULT_NOINSIDEFILL false
-#define DEFAULT_NOTJUNC false
-#define DEFAULT_NOBRINK false
-#define DEFAULT_NOCLIP false
-#define DEFAULT_NOOPT false
-#define DEFAULT_NOCLIPNODEMERGE false
-#define DEFAULT_LEAKONLY false
-#define DEFAULT_WATERVIS false
-#define DEFAULT_CHART false
-#define DEFAULT_INFO true
+constexpr bool DEFAULT_NOFILL = false;
+constexpr bool DEFAULT_NOINSIDEFILL = false;
+constexpr bool DEFAULT_NOTJUNC = false;
+constexpr bool DEFAULT_NOBRINK = false;
+constexpr bool DEFAULT_NOCLIP = false;
+constexpr bool DEFAULT_NOOPT = false;
+constexpr bool DEFAULT_NOCLIPNODEMERGE = false;
+constexpr bool DEFAULT_LEAKONLY = false;
+constexpr bool DEFAULT_WATERVIS = false;
+constexpr bool DEFAULT_CHART = false;
+constexpr bool DEFAULT_INFO = true;
 
-#define DEFAULT_NULLTEX true
+constexpr bool DEFAULT_NULLTEX = true;
 
-#define DEFAULT_ESTIMATE false
+constexpr bool DEFAULT_ESTIMATE = false;
 
-#define MAXEDGES 48      // 32
-#define MAXPOINTS 28     // don't let a base face get past this \
+constexpr int MAXEDGES = 48;      // 32
+constexpr int MAXPOINTS = 28;     // don't let a base face get past this \
                          // because it can be split more later
-#define MAXNODESIZE 1024 // Valve default is 1024
+constexpr int MAXNODESIZE = 1024; // Valve default is 1024
 
 typedef enum
 {
@@ -108,8 +108,8 @@ typedef struct brush_s
 //
 // there is a node_t structure for every node and leaf in the bsp tree
 //
-#define PLANENUM_LEAF -1
-#define BOUNDS_EXPANSION 1.0 // expand the bounds of detail leafs when clipping its boundsbrush, to prevent some strange brushes in the func_detail from clipping away the entire boundsbrush making the func_detail invisible.
+constexpr int PLANENUM_LEAF = -1;
+constexpr vec_t BOUNDS_EXPANSION = 1.0; // expand the bounds of detail leafs when clipping its boundsbrush, to prevent some strange brushes in the func_detail from clipping away the entire boundsbrush making the func_detail invisible.
 
 typedef struct node_s
 {
@@ -138,7 +138,7 @@ typedef struct node_s
     int empty;
 } node_t;
 
-#define NUM_HULLS 4
+constexpr int NUM_HULLS = 4; // engine constant
 
 //=============================================================================
 // solidbsp.c

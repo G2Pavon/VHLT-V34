@@ -1064,7 +1064,7 @@ static void FreeLeafBrushes(node_t *leaf)
 //      Determines the contents of the leaf and creates the final list of original faces
 //      that have some fragment inside this leaf
 // =====================================================================================
-#define MAX_LEAF_FACES 16384
+constexpr int MAX_LEAF_FACES = 16384;
 
 const char *ContentsToString(int contents)
 {

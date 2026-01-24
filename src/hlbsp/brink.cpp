@@ -1108,7 +1108,7 @@ typedef struct bbrinkinfo_s
     bbrink_t **brinks;
 } bbrinkinfo_t;
 
-#define MAXCLIPNODES (MAX_MAP_CLIPNODES * 8)
+constexpr int MAXCLIPNODES = (MAX_MAP_CLIPNODES * 8);
 
 bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnodes, const dclipnode_t *clipnodes, int headnode)
 {
@@ -1286,7 +1286,7 @@ typedef struct bsurface_s
     bwedge_s *next;
 } bsurface_t;
 
-#define MAXBRINKWEDGES 64
+constexpr int MAXBRINKWEDGES = 64;
 
 typedef struct
 {

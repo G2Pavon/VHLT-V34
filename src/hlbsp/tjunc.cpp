@@ -26,15 +26,15 @@ static int numwverts;
 static int tjuncs;
 static int tjuncfaces;
 
-#define MAX_WVERTS 0x40000
-#define MAX_WEDGES 0x20000
+constexpr int MAX_WVERTS = 0x40000;
+constexpr int MAX_WEDGES = 0x20000;
 
 static wvert_t wverts[MAX_WVERTS];
 static wedge_t wedges[MAX_WEDGES];
 
 //============================================================================
 
-#define NUM_HASH 4096
+constexpr int NUM_HASH = 4096;
 
 wedge_t *wedge_hash[NUM_HASH];
 
@@ -43,7 +43,7 @@ static vec3_t hash_scale;
 // It's okay if the coordinates go under hash_min, because they are hashed in a cyclic way (modulus by hash_numslots)
 // So please don't change the hardcoded hash_min and scale
 static int hash_numslots[3];
-#define MAX_HASH_NEIGHBORS 4
+constexpr int MAX_HASH_NEIGHBORS = 4;
 
 static void InitHash(const vec3_t mins, const vec3_t maxs)
 {

@@ -141,7 +141,7 @@ static int firstmodelface;
 
 //============================================================================
 
-#define NUM_HASH 4096
+constexpr int NUM_HASH = 4096;
 
 static hashvert_t *hashverts[NUM_HASH];
 
@@ -150,7 +150,7 @@ static vec3_t hash_scale;
 // It's okay if the coordinates go under hash_min, because they are hashed in a cyclic way (modulus by hash_numslots)
 // So please don't change the hardcoded hash_min and scale
 static int hash_numslots[3];
-#define MAX_HASH_NEIGHBORS 4
+constexpr int MAX_HASH_NEIGHBORS = 4;
 
 // =====================================================================================
 //  InitHash
