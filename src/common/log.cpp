@@ -147,18 +147,18 @@ void LogError(const char *const message)
         if (ErrorLog)
         {
             std::fprintf(ErrorLog, "%s: %s\n", g_Program, message);
-            fflush(ErrorLog);
+            std::fflush(ErrorLog);
             std::fclose(ErrorLog);
             ErrorLog = NULL;
         }
         else
         {
             std::fprintf(stderr, Localize("ERROR: Could not open error logfile %s"), logfilename);
-            fflush(stderr);
+            std::fflush(stderr);
             if (twice)
             {
                 std::fprintf(conout, Localize("ERROR: Could not open error logfile %s"), logfilename);
-                fflush(conout);
+                std::fflush(conout);
             }
         }
     }
@@ -177,11 +177,11 @@ void CDECL OpenLog(const int clientid)
         if (!CompileLog)
         {
             std::fprintf(stderr, Localize("ERROR: Could not open logfile %s"), logfilename);
-            fflush(stderr);
+            std::fflush(stderr);
             if (twice)
             {
                 std::fprintf(conout, Localize("ERROR: Could not open logfile %s"), logfilename);
-                fflush(conout);
+                std::fflush(conout);
             }
         }
     }
@@ -192,7 +192,7 @@ void CDECL CloseLog()
     if (g_log && CompileLog)
     {
         LogEnd();
-        fflush(CompileLog);
+        std::fflush(CompileLog);
         std::fclose(CompileLog);
         CompileLog = NULL;
     }
@@ -232,11 +232,11 @@ void WriteLog(const char *const message)
 {
     Safe_WriteLog(message);
     std::fprintf(stdout, "%s", message); //std::fprintf(stdout, message); //--vluzacn
-    fflush(stdout);
+    std::fflush(stdout);
     if (twice)
     {
         std::fprintf(conout, "%s", message);
-        fflush(conout);
+        std::fflush(conout);
     }
 }
 
@@ -631,7 +631,7 @@ void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
     if (useconsole)
     {
         std::fprintf(conout, "%s", message);
-        fflush(conout);
+        std::fflush(conout);
     }
     else
     {
