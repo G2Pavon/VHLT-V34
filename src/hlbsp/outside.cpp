@@ -527,8 +527,8 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
     if (leakfile)
     {
-        fclose(pointfile);
-        fclose(linefile);
+        std::fclose(pointfile);
+        std::fclose(linefile);
     }
 
     if (ret)

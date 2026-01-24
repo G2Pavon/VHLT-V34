@@ -89,5 +89,5 @@ void LoadHullfile(const char *filename)
         }
     }
 
-    fclose(file);
+    std::fclose(file);
 }

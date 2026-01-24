@@ -523,7 +523,7 @@ void WriteBSPFile(const char *const filename)
     fseek(bspfile, 0, SEEK_SET);
     SafeWrite(bspfile, header, sizeof(dheader_t));
 
-    fclose(bspfile);
+    std::fclose(bspfile);
 }
 
 // =====================================================================================
@@ -646,7 +646,7 @@ void WriteExtentFile(const char *const filename)
         GetFaceExtents(i, mins, maxs);
         std::fprintf(f, "%i %i %i %i\n", mins[0], mins[1], maxs[0], maxs[1]);
     }
-    fclose(f);
+    std::fclose(f);
 }
 
 //

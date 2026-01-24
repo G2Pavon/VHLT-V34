@@ -37,7 +37,7 @@ bool q_exists(const char *const filename)
     }
     else
     {
-        fclose(f);
+        std::fclose(f);
         IfDebug(Developer(DEVELOPER_LEVEL_SPAM, "Checking for existance of file %s (success)\n", filename));
         return true;
     }
@@ -86,7 +86,7 @@ int LoadFile(const char *const filename, char **bufferptr)
     int length = q_filelength(f);
     char *buffer = (char *)Alloc(length + 1);
     SafeRead(f, buffer, length);
-    fclose(f);
+    std::fclose(f);
 
     *bufferptr = buffer;
     return length;

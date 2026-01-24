@@ -576,10 +576,10 @@ static void WriteTextures(const char *const name)
         fseek(wadfile, 0, SEEK_SET);
         SafeWrite(wadfile, &header, sizeof(wadinfo_t));
 
-        fclose(texfile);
+        std::fclose(texfile);
         free(info);
     }
-    fclose(wadfile);
+    std::fclose(wadfile);
 }
 inline void skipspace(FILE *f) { fscanf(f, "%*[ \t\r\n]s"); }
 inline void skipline(FILE *f) { fscanf(f, "%*[^\r\n]s"); }
@@ -686,10 +686,10 @@ static void ReadTextures(const char *name)
             skipline(texfile);
         }
 
-        fclose(texfile);
+        std::fclose(texfile);
         free(info);
     }
-    fclose(wadfile);
+    std::fclose(wadfile);
 }
 
 static void WriteEntities(const char *const name)
@@ -714,7 +714,7 @@ static void WriteEntities(const char *const name)
         FILE *f = SafeOpenWrite(filename);
         Log("\nWriting %s.\n", filename); // Added by Nem.
         SafeWrite(f, g_dentdata, g_entdatasize);
-        fclose(f);
+        std::fclose(f);
         if (g_parse)
         {
             g_entdatasize = bak_entdatasize;
@@ -741,7 +741,7 @@ static void ReadEntities(const char *const name)
 
         SafeRead(f, g_dentdata, g_entdatasize);
 
-        fclose(f);
+        std::fclose(f);
 
         if (g_dentdata[g_entdatasize - 1] != 0)
         {

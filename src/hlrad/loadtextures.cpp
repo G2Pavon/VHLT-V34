@@ -204,7 +204,7 @@ void TryCloseWadFiles()
         {
             next = wadfile->next;
             free(wadfile->lumpinfos);
-            fclose(wadfile->file);
+            std::fclose(wadfile->file);
             free(wadfile);
         }
         g_wadfiles = NULL;

@@ -672,7 +672,7 @@ void WriteMiptex()
         if (fseek(writewad_file, 0, SEEK_SET))
             Error("File write failure");
         SafeWrite(writewad_file, &writewad_header, sizeof(wadinfo_t));
-        if (fclose(writewad_file))
+        if (std::fclose(writewad_file))
             Error("File write failure");
     }
     end = I_FloatTime();

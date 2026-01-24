@@ -278,7 +278,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
                 s[i] = j;
             s[i] = '\0';
         }
-        fclose(f);
+        std::fclose(f);
     }
     if (s)
     {

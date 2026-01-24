@@ -409,7 +409,7 @@ void SaveVisData(const char *filename)
         SafeWrite(fp, &g_dleafs[i].visofs, sizeof(int));
     }
 
-    fclose(fp);
+    std::fclose(fp);
 }
 
 // AJM UNDONE HLVIS_MAXDIST THIS!!!!!!!!!!!!!

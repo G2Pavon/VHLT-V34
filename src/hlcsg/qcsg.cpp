@@ -884,7 +884,7 @@ static void EmitPlanes()
         if (!planeout)
             Error("Couldn't open %s", name);
         SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(plane_t));
-        fclose(planeout);
+        std::fclose(planeout);
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)
     {
@@ -2202,7 +2202,7 @@ int main(const int argc, char **argv)
                     float z2 = g_hull_size[i][1][2];
                     std::fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
                 }
-                fclose(f);
+                std::fclose(f);
             }
 
             ProcessModels();
@@ -2215,11 +2215,11 @@ int main(const int argc, char **argv)
             // close hull files
             for (int i = 0; i < NUM_HULLS; i++)
             {
-                fclose(out[i]);
-                fclose(out_detailbrush[i]);
+                std::fclose(out[i]);
+                std::fclose(out_detailbrush[i]);
                 if (g_viewsurface)
                 {
-                    fclose(out_view[i]);
+                    std::fclose(out_view[i]);
                 }
             }
 

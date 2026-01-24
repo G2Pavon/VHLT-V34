@@ -359,10 +359,10 @@ void WritePortalfile(node_t *headnode)
 
     WriteLeafCount_r(headnode);
     WritePortalFile_r(headnode);
-    fclose(pf);
+    std::fclose(pf);
     if (g_viewportal)
     {
-        fclose(pf_view);
+        std::fclose(pf_view);
     }
     Log("BSP generation successful, writing portal file '%s'\n", g_portfilename);
 }

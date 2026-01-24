@@ -730,7 +730,7 @@ void FreePositionMaps()
                     }
                 }
             }
-            fclose(f);
+            std::fclose(f);
             Log("OK.\n");
         }
         else

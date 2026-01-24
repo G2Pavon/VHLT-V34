@@ -64,7 +64,7 @@ void writetransfers(const char *const transferfile, const long total_patches)
             }
         }
 
-        fclose(file);
+        std::fclose(file);
     }
     else
     {
@@ -73,7 +73,7 @@ void writetransfers(const char *const transferfile, const long total_patches)
     return;
 
 FailedWrite:
-    fclose(file);
+    std::fclose(file);
     unlink(transferfile);
     //Warning("Failed to generate incremental file [%s] (probably ran out of disk space)\n");
     Warning("Failed to generate incremental file [%s] (probably ran out of disk space)\n", transferfile); //--vluzacn
@@ -150,7 +150,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
             }
         }
 
-        fclose(file);
+        std::fclose(file);
         //Warning("Finished reading transfers file [%s] %d\n", transferfile);
         Warning("Finished reading transfers file [%s]\n", transferfile); //--vluzacn
         return true;
@@ -172,7 +172,7 @@ FailedRead:
         patch->tIndex = NULL;
     }
 }
-    fclose(file);
+    std::fclose(file);
     unlink(transferfile);
     return false;
 }

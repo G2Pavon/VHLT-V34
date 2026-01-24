@@ -492,7 +492,7 @@ static void ReadLightFile(const char *const filename)
         file_texlights++;
         s_texlights.push_back(texlight);
     }
-    fclose(f); //--vluzacn
+    std::fclose(f); //--vluzacn
 }
 
 // =====================================================================================
@@ -1918,7 +1918,7 @@ static void WriteWorld(const char *const name)
         Log("\n");
     }
 
-    fclose(out);
+    std::fclose(out);
 }
 
 // =====================================================================================
@@ -2440,7 +2440,7 @@ static void RadWorld()
                 for (int k = 0; k < pos_count; ++k)
                     std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
             }
-            fclose(f);
+            std::fclose(f);
             Log("OK.\n");
         }
         else
@@ -2475,7 +2475,7 @@ static void RadWorld()
                         std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
                 }
             }
-            fclose(f);
+            std::fclose(f);
             Log("OK.\n");
         }
         else

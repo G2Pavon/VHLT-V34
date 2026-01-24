@@ -4584,7 +4584,7 @@ void FinalLightFace(const int facenum)
                     }
                 }
             }
-            fclose(f);
+            std::fclose(f);
             Log("OK.\n");
         }
         else

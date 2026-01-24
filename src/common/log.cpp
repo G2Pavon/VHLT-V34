@@ -148,7 +148,7 @@ void LogError(const char *const message)
         {
             std::fprintf(ErrorLog, "%s: %s\n", g_Program, message);
             fflush(ErrorLog);
-            fclose(ErrorLog);
+            std::fclose(ErrorLog);
             ErrorLog = NULL;
         }
         else
@@ -193,7 +193,7 @@ void CDECL CloseLog()
     {
         LogEnd();
         fflush(CompileLog);
-        fclose(CompileLog);
+        std::fclose(CompileLog);
         CompileLog = NULL;
     }
 }
@@ -762,6 +762,6 @@ void LoadLangFile(const char *name, const char *programpath)
             break;
         }
     }
-    fclose(f);
+    std::fclose(f);
     Log("Localization file: '%s'\n", filepath);
 }

@@ -1468,7 +1468,7 @@ static void ProcessFile(const char *const filename)
                 g_hull_size[i][1][1] = y2;
                 g_hull_size[i][1][2] = z2;
             }
-            fclose(f);
+            std::fclose(f);
         }
     }
 
@@ -1506,7 +1506,7 @@ static void ProcessFile(const char *const filename)
                 Error("Invalid plane data");
             }
             SafeRead(planefile, g_dplanes, g_numplanes * sizeof(dplane_t));
-            fclose(planefile);
+            std::fclose(planefile);
         }
     }
     // init the tables to be shared by all models
@@ -1523,11 +1523,11 @@ static void ProcessFile(const char *const filename)
     for (int i = 0; i < NUM_HULLS; i++)
     {
         std::sprintf(name, "%s.p%i", filename, i);
-        fclose(polyfiles[i]);
+        std::fclose(polyfiles[i]);
         polyfiles[i] = NULL;
         unlink(name);
         std::sprintf(name, "%s.b%i", filename, i);
-        fclose(brushfiles[i]);
+        std::fclose(brushfiles[i]);
         brushfiles[i] = NULL;
         unlink(name);
     }
