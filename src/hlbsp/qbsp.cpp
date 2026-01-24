@@ -923,7 +923,7 @@ static surfchain_t *ReadSurfs(FILE *file)
         if (file == polyfiles[2] && g_nohull2)
             break;
         line++;
-        int r = fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &g_texinfo, &contents, &numpoints);
+        int r = std::fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &g_texinfo, &contents, &numpoints);
         if (r == 0 || r == -1)
         {
             return NULL;
@@ -962,13 +962,13 @@ static surfchain_t *ReadSurfs(FILE *file)
             {
                 line++;
                 //Verbose("skipping line %d", line);
-                r = fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
+                r = std::fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
                 if (r != 3)
                 {
                     Error("::ReadSurfs (face_skip), fscanf of points failed at line %i", line);
                 }
             }
-            fscanf(file, "\n");
+            std::fscanf(file, "\n");
             continue;
         }
 
@@ -986,7 +986,7 @@ static surfchain_t *ReadSurfs(FILE *file)
         for (int i = 0; i < f->numpoints; i++)
         {
             line++;
-            r = fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
+            r = std::fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
             if (r != 3)
             {
                 Error("::ReadSurfs (face_normal), fscanf of points failed at line %i", line);
@@ -1001,7 +1001,7 @@ static surfchain_t *ReadSurfs(FILE *file)
                 inaccuracy_max = qmax(inaccuracy, inaccuracy_max);
             }
         }
-        fscanf(file, "\n");
+        std::fscanf(file, "\n");
     }
 
     return SurflistFromValidFaces();
@@ -1014,7 +1014,7 @@ static brush_t *ReadBrushes(FILE *file)
         if (file == brushfiles[2] && g_nohull2)
             break;
         int brushinfo;
-        int r = fscanf(file, "%i\n", &brushinfo);
+        int r = std::fscanf(file, "%i\n", &brushinfo);
         if (r == 0 || r == -1)
         {
             if (brushes == NULL)
@@ -1038,7 +1038,7 @@ static brush_t *ReadBrushes(FILE *file)
         {
             int planenum;
             int numpoints;
-            r = fscanf(file, "%i %u\n", &planenum, &numpoints);
+            r = std::fscanf(file, "%i %u\n", &planenum, &numpoints);
             if (r != 2)
             {
                 Error("ReadBrushes: get side failed");
@@ -1053,7 +1053,7 @@ static brush_t *ReadBrushes(FILE *file)
             for (int x = 0; x < numpoints; x++)
             {
                 double v[3];
-                r = fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
+                r = std::fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
                 if (r != 3)
                 {
                     Error("ReadBrushes: get point failed");
@@ -1456,7 +1456,7 @@ static void ProcessFile(const char *const filename)
             float x2, y2, z2;
             for (int i = 0; i < NUM_HULLS; i++)
             {
-                int count = fscanf(f, "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
+                int count = std::fscanf(f, "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
                 if (count != 6)
                 {
                     Error("Load hull size (line %i): scanf failure", i + 1);

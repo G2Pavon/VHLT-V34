@@ -50,7 +50,7 @@ void LoadHullfile(const char *filename)
 
         for (int i = 0; i < NUM_HULLS; i++)
         {
-            int count = fscanf(file, "( %f %f %f ) ( %f %f %f )\n", &x1, &y1, &z1, &x2, &y2, &z2);
+            int count = std::fscanf(file, "( %f %f %f ) ( %f %f %f )\n", &x1, &y1, &z1, &x2, &y2, &z2);
             if (count != 6)
             {
                 Error("Could not parse old hull definition file '%s' (%d, %d)\n", filename, i, count);
@@ -70,7 +70,7 @@ void LoadHullfile(const char *filename)
         // Skip hull 0 (visibile polygons)
         for (int i = 1; i < NUM_HULLS; i++)
         {
-            int count = fscanf(file, "%f %f %f\n", &x1, &y1, &z1);
+            int count = std::fscanf(file, "%f %f %f\n", &x1, &y1, &z1);
             if (count != 3)
             {
                 Error("Could not parse new hull definition file '%s' (%d, %d)\n", filename, i, count);

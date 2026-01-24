@@ -581,8 +581,8 @@ static void WriteTextures(const char *const name)
     }
     std::fclose(wadfile);
 }
-inline void skipspace(FILE *f) { fscanf(f, "%*[ \t\r\n]s"); }
-inline void skipline(FILE *f) { fscanf(f, "%*[^\r\n]s"); }
+inline void skipspace(FILE *f) { std::fscanf(f, "%*[ \t\r\n]s"); }
+inline void skipline(FILE *f) { std::fscanf(f, "%*[^\r\n]s"); }
 static void ReadTextures(const char *name)
 {
     char wadfilename[_MAX_PATH];
@@ -632,7 +632,7 @@ static void ReadTextures(const char *name)
         SafeRead(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
 
         int nummiptex = 0;
-        if (skipspace(texfile), fscanf(texfile, "%d", &nummiptex) != 1)
+        if (skipspace(texfile), std::fscanf(texfile, "%d", &nummiptex) != 1)
             Error("File read failure");
         ((dmiptexlump_t *)g_dtexdata)->nummiptex = nummiptex;
         g_texdatasize = (byte *)(&((dmiptexlump_t *)g_dtexdata)->dataofs[nummiptex]) - g_dtexdata;
@@ -640,7 +640,7 @@ static void ReadTextures(const char *name)
         for (int itex = 0; itex < nummiptex; ++itex)
         {
             int len;
-            if (skipspace(texfile), fscanf(texfile, "[%d]", &len) != 1)
+            if (skipspace(texfile), std::fscanf(texfile, "[%d]", &len) != 1)
                 Error("File read failure");
             if (len < 0)
             {
@@ -662,9 +662,9 @@ static void ReadTextures(const char *name)
                 if (j == header.numlumps)
                 {
                     int w, h;
-                    if (skipspace(texfile), fscanf(texfile, "%d", &w) != 1)
+                    if (skipspace(texfile), std::fscanf(texfile, "%d", &w) != 1)
                         Error("File read failure");
-                    if (skipspace(texfile), fscanf(texfile, "%d", &h) != 1)
+                    if (skipspace(texfile), std::fscanf(texfile, "%d", &h) != 1)
                         Error("File read failure");
                     g_texdatasize += sizeof(miptex_t);
                     hlassume(g_texdatasize < g_max_map_miptex, assume_MAX_MAP_MIPTEX);
