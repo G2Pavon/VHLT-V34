@@ -43,7 +43,7 @@ void LoadHullfile(const char *filename)
     FILE *file = std::fopen(filename, "r");
 
     char magic = (char)std::fgetc(file);
-    rewind(file);
+    std::rewind(file);
 
     if (magic == '(')
     { // Test for old-style hull-file
