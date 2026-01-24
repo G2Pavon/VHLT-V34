@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -195,9 +196,9 @@ const char *nextword(const char *s, char *token, unsigned int n)
             comment = false;
         if (!quote && c[0] == '/' && c[1] == '/')
             comment = true;
-        if (!comment && !(c[0] == '\n' || isspace(c[0])))
+        if (!comment && !(c[0] == '\n' || std::isspace(c[0])))
             content = true;
-        if (!quote && !comment && content && (c[0] == '\n' || isspace(c[0])))
+        if (!quote && !comment && content && (c[0] == '\n' || std::isspace(c[0])))
             break;
         if (content && c[0] != '\"')
             if (i < n - 1)

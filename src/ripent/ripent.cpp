@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
 #include <conio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -74,7 +75,7 @@ bool ScanForToken(char cToken, int &iIndex, int &iLine, bool bIgnoreWhiteSpace, 
         }
 
         // Ignore white space, if we are ignoring it.
-        if (!bIgnoreWhiteSpace && isspace(g_dentdata[iIndex]))
+        if (!bIgnoreWhiteSpace && std::isspace(g_dentdata[iIndex]))
         {
             continue;
         }
