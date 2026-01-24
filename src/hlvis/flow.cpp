@@ -818,8 +818,8 @@ vec_t WindingDist(const winding_t *w[2])
             continue;
         }
         vec_t planedist = DotProduct(planenormal, w[!side]->points[0]);
-        hlassume(boundnormals = (vec3_t *)malloc(w[!side]->numpoints * sizeof(vec3_t)), assume_NoMemory);
-        hlassume(bounddists = (vec_t *)malloc(w[!side]->numpoints * sizeof(vec_t)), assume_NoMemory);
+        hlassume(boundnormals = (vec3_t *)std::malloc(w[!side]->numpoints * sizeof(vec3_t)), assume_NoMemory);
+        hlassume(bounddists = (vec_t *)std::malloc(w[!side]->numpoints * sizeof(vec_t)), assume_NoMemory);
         // build boundaries
         for (b = 0; b < w[!side]->numpoints; b++)
         {

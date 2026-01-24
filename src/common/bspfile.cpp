@@ -706,7 +706,7 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
                 Warning("CountBlocks: invalid extents %dx%d", w, h);
                 return;
             }
-            block->next = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
+            block->next = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
             hlassume(block->next != NULL, assume_NoMemory);
             std::memset(block->next, 0, sizeof(lightmapblock_t));
         }
@@ -714,7 +714,7 @@ void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 }
 int CountBlocks()
 {
-    lightmapblock_t *blocks = (lightmapblock_t *)malloc(sizeof(lightmapblock_t));
+    lightmapblock_t *blocks = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
     hlassume(blocks != NULL, assume_NoMemory);
     std::memset(blocks, 0, sizeof(lightmapblock_t));
 
@@ -841,7 +841,7 @@ char *FindWadValue()
             if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !std::strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
             {
                 int len = quotes[3] - (quotes[2] + 1);
-                char *value = (char *)malloc(len + 1);
+                char *value = (char *)std::malloc(len + 1);
                 hlassume(value != NULL, assume_NoMemory);
                 std::memcpy(value, &g_dentdata[quotes[2] + 1], len);
                 value[len] = '\0';
@@ -1036,7 +1036,7 @@ void DeleteEmbeddedLightmaps()
 
     // Step 2: remove redundant texinfo
     {
-        bool *texinfoused = (bool *)malloc(g_numtexinfo * sizeof(bool));
+        bool *texinfoused = (bool *)std::malloc(g_numtexinfo * sizeof(bool));
         hlassume(texinfoused != NULL, assume_NoMemory);
 
         for (i = 0; i < g_numtexinfo; i++)
@@ -1077,7 +1077,7 @@ void DeleteEmbeddedLightmaps()
 
     // Step 3: remove redundant textures
     {
-        bool *textureused = (bool *)malloc(numtextures * sizeof(bool));
+        bool *textureused = (bool *)std::malloc(numtextures * sizeof(bool));
         hlassume(textureused != NULL, assume_NoMemory);
 
         for (i = 0; i < numtextures; i++)
@@ -1399,7 +1399,7 @@ void UnparseEntities()
     {
         int j;
         int count = 0;
-        bool *lightneedcompare = (bool *)malloc(g_numentities * sizeof(bool));
+        bool *lightneedcompare = (bool *)std::malloc(g_numentities * sizeof(bool));
         hlassume(lightneedcompare != NULL, assume_NoMemory);
         std::memset(lightneedcompare, 0, g_numentities * sizeof(bool));
         for (int i = g_numentities - 1; i > -1; i--)

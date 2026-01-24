@@ -1280,7 +1280,7 @@ static void ProcessModels()
 
         // sort the contents down so stone bites water, etc
         int first = g_entities[i].firstbrush;
-        brush_t *temps = (brush_t *)malloc(g_entities[i].numbrushes * sizeof(brush_t));
+        brush_t *temps = (brush_t *)std::malloc(g_entities[i].numbrushes * sizeof(brush_t));
         hlassume(temps, assume_NoMemory);
         for (int j = 0; j < g_entities[i].numbrushes; j++)
         {

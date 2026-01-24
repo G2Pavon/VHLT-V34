@@ -492,7 +492,7 @@ static void WriteTextures(const char *const name)
         SafeWrite(wadfile, (byte *)g_dtexdata + dataofs, g_texdatasize - dataofs);
 
         lumpinfo_t *info;
-        info = (lumpinfo_t *)malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t));
+        info = (lumpinfo_t *)std::malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t));
         hlassume(info != NULL, assume_NoMemory);
         std::memset(info, 0, header.numlumps * sizeof(lumpinfo_t));
 
@@ -531,7 +531,7 @@ static void WriteTextures(const char *const name)
         header.numlumps = 0;
 
         lumpinfo_t *info;
-        info = (lumpinfo_t *)malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t)); // might be more than needed
+        info = (lumpinfo_t *)std::malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t)); // might be more than needed
         hlassume(info != NULL, assume_NoMemory);
 
         std::fprintf(texfile, "%d\r\n", ((dmiptexlump_t *)g_dtexdata)->nummiptex);
@@ -607,7 +607,7 @@ static void ReadTextures(const char *name)
         SafeRead(wadfile, (byte *)g_dtexdata + dataofs, g_texdatasize - dataofs);
 
         lumpinfo_t *info;
-        info = (lumpinfo_t *)malloc(header.numlumps * sizeof(lumpinfo_t));
+        info = (lumpinfo_t *)std::malloc(header.numlumps * sizeof(lumpinfo_t));
         hlassume(info != NULL, assume_NoMemory);
         SafeRead(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
 
@@ -628,7 +628,7 @@ static void ReadTextures(const char *name)
         std::fseek(wadfile, header.infotableofs, SEEK_SET);
 
         lumpinfo_t *info;
-        info = (lumpinfo_t *)malloc(header.numlumps * sizeof(lumpinfo_t));
+        info = (lumpinfo_t *)std::malloc(header.numlumps * sizeof(lumpinfo_t));
         hlassume(info != NULL, assume_NoMemory);
         SafeRead(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
 
@@ -706,7 +706,7 @@ static void WriteEntities(const char *const name)
         if (g_parse) // Added by Nem.
         {
             bak_entdatasize = g_entdatasize;
-            bak_dentdata = (char *)malloc(g_entdatasize);
+            bak_dentdata = (char *)std::malloc(g_entdatasize);
             hlassume(bak_dentdata != NULL, assume_NoMemory);
             std::memcpy(bak_dentdata, g_dentdata, g_entdatasize);
             ParseEntityData("  ", 2, "\r\n", 2, "", 0);

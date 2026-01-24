@@ -681,7 +681,7 @@ void FindFacePositions(int facenum)
         return;
     }
 
-    map->grid = (position_t *)malloc(map->w * map->h * sizeof(position_t));
+    map->grid = (position_t *)std::malloc(map->w * map->h * sizeof(position_t));
     hlassume(map->grid != NULL, assume_NoMemory);
 
     for (int it = 0; it < map->h; it++)

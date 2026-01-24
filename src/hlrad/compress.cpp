@@ -40,7 +40,7 @@ void fail()
 
 void compress_compatability_test()
 {
-    unsigned char *v = (unsigned char *)malloc(16u);
+    unsigned char *v = (unsigned char *)std::malloc(16u);
     std::memset(v, 0, 16u);
     if (sizeof(char) != 1 || sizeof(unsigned int) != 4 || sizeof(float) != 4)
         fail();

@@ -19,7 +19,7 @@ void PushWadPath(const char *const path, bool inuse)
 {
     hlassume(g_iNumWadPaths < MAX_WADPATHS, assume_MAX_TEXFILES);
 
-    wadpath_t *current = (wadpath_t *)malloc(sizeof(wadpath_t));
+    wadpath_t *current = (wadpath_t *)std::malloc(sizeof(wadpath_t));
 
     safe_strncpy(current->path, path, _MAX_PATH);
     current->usedbymap = inuse;

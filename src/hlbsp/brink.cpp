@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <cstring>
 #include <list>
 #include <map>
@@ -77,7 +78,7 @@ typedef struct
 bbrink_t *CopyBrink(bbrink_t *other)
 {
     bbrink_t *b;
-    hlassume(b = (bbrink_t *)malloc(sizeof(bbrink_t)), assume_NoMemory);
+    hlassume(b = (bbrink_t *)std::malloc(sizeof(bbrink_t)), assume_NoMemory);
     VectorCopy(other->direction, b->direction);
     VectorCopy(other->start, b->start);
     VectorCopy(other->stop, b->stop);
@@ -95,7 +96,7 @@ void DeleteBrink(bbrink_t *b)
 bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 {
     bbrink_t *b;
-    hlassume(b = (bbrink_t *)malloc(sizeof(bbrink_t)), assume_NoMemory);
+    hlassume(b = (bbrink_t *)std::malloc(sizeof(bbrink_t)), assume_NoMemory);
 
     VectorCopy(start, b->start);
     VectorCopy(stop, b->stop);
@@ -297,7 +298,7 @@ typedef struct btreeleaf_s
 btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreepoint_t *tp = (btreepoint_t *)malloc(sizeof(btreepoint_t));
+    btreepoint_t *tp = (btreepoint_t *)std::malloc(sizeof(btreepoint_t));
     hlassume(tp != NULL, assume_NoMemory);
     tp->edges = new btreeedge_l();
     tp->infinite = infinite;
@@ -307,7 +308,7 @@ btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeedge_t *te = (btreeedge_t *)malloc(sizeof(btreeedge_t));
+    btreeedge_t *te = (btreeedge_t *)std::malloc(sizeof(btreeedge_t));
     hlassume(te != NULL, assume_NoMemory);
     te->points[0].p = NULL;
     te->points[0].side = false;
@@ -348,7 +349,7 @@ void SetEdgePoints(btreeedge_t *te, btreepoint_t *tp0, btreepoint_t *tp1)
 btreeface_t *AllocTreeface(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeface_t *tf = (btreeface_t *)malloc(sizeof(btreeface_t));
+    btreeface_t *tf = (btreeface_t *)std::malloc(sizeof(btreeface_t));
     hlassume(tf != NULL, assume_NoMemory);
     tf->edges = new btreeedge_l();
     tf->leafs[0].l = NULL;
@@ -406,7 +407,7 @@ void SetFaceLeafs(btreeface_t *tf, btreeleaf_t *tl0, btreeleaf_t *tl1)
 btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeleaf_t *tl = (btreeleaf_t *)malloc(sizeof(btreeleaf_t));
+    btreeleaf_t *tl = (btreeleaf_t *)std::malloc(sizeof(btreeleaf_t));
     hlassume(tl != NULL, assume_NoMemory);
     tl->faces = new btreeface_l();
     tl->infinite = infinite;
@@ -1138,11 +1139,11 @@ bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnodes, cons
 
 void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headnode)
 {
-    bclipnode_t *bclipnodes = (bclipnode_t *)malloc(MAXCLIPNODES * sizeof(bclipnode_t)); // 262144 * 30byte = 7.5MB
+    bclipnode_t *bclipnodes = (bclipnode_t *)std::malloc(MAXCLIPNODES * sizeof(bclipnode_t)); // 262144 * 30byte = 7.5MB
     hlassume(bclipnodes != NULL, assume_NoMemory);
     info->numclipnodes = 0;
     ExpandClipnodes_r(bclipnodes, info->numclipnodes, clipnodes, headnode);
-    info->clipnodes = (bclipnode_t *)malloc(info->numclipnodes * sizeof(bclipnode_t));
+    info->clipnodes = (bclipnode_t *)std::malloc(info->numclipnodes * sizeof(bclipnode_t));
     hlassume(info->clipnodes != NULL, assume_NoMemory);
     std::memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
     for (int i = 0; i < info->numclipnodes; i++)
@@ -1254,7 +1255,7 @@ void CollectBrinks(bbrinkinfo_t *info)
     info->numbrinks = 0;
     ClearMarks_r(&info->clipnodes[0]);
     CollectBrinks_r(&info->clipnodes[0], info->numbrinks, NULL);
-    hlassume(info->brinks = (bbrink_t **)malloc(info->numbrinks * sizeof(bbrink_t *)), assume_NoMemory);
+    hlassume(info->brinks = (bbrink_t **)std::malloc(info->numbrinks * sizeof(bbrink_t *)), assume_NoMemory);
     info->numbrinks = 0;
     ClearMarks_r(&info->clipnodes[0]);
     CollectBrinks_r(&info->clipnodes[0], info->numbrinks, info->brinks);
@@ -1449,7 +1450,7 @@ bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, int conte
     {
         return false; // the whole leaf is on the plane, or the leaf doesn't consist of any vertex
     }
-    bpartition_t *p = (bpartition_t *)malloc(sizeof(bpartition_t));
+    bpartition_t *p = (bpartition_t *)std::malloc(sizeof(bpartition_t));
     hlassume(p != NULL, assume_NoMemory);
     p->next = clipnode->partitions;
     p->planenum = planenum;
@@ -1770,7 +1771,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     bbrinkinfo_t *info;
     try
     {
-        hlassume(info = (bbrinkinfo_t *)malloc(sizeof(bbrinkinfo_t)), assume_NoMemory);
+        hlassume(info = (bbrinkinfo_t *)std::malloc(sizeof(bbrinkinfo_t)), assume_NoMemory);
         ExpandClipnodes(info, clipnodes, headnode);
         BuildTreeCells(info);
         CollectBrinks(info);

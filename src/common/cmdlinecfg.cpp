@@ -234,7 +234,7 @@ void unparsearg(int &argc, char **&argv, char *cmdline)
     for (c = cmdline; pvalid(c); c = pnext(c))
         i++;
     argc = i;
-    argv = (char **)malloc(argc * sizeof(char *));
+    argv = (char **)std::malloc(argc * sizeof(char *));
     if (!argv)
     {
         error = true;
@@ -242,7 +242,7 @@ void unparsearg(int &argc, char **&argv, char *cmdline)
     }
     for (c = cmdline, i = 0; pvalid(c); c = pnext(c), i++)
     {
-        argv[i] = (char *)malloc(plen(c) + 1);
+        argv[i] = (char *)std::malloc(plen(c) + 1);
         if (!argv[i])
         {
             error = true;
@@ -270,7 +270,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
     if (f)
     {
         int len = 0x100000;
-        s = (char *)malloc(len + 1);
+        s = (char *)std::malloc(len + 1);
         if (s)
         {
             int i, j;

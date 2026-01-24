@@ -102,7 +102,7 @@ static void SetVisColumn(int patchnum, bool uncompressedcolumn[MAX_SPARSE_VISMAT
     {
         return;
     }
-    column->row = (sparse_row_t *)malloc(column->count * sizeof(sparse_row_t));
+    column->row = (sparse_row_t *)std::malloc(column->count * sizeof(sparse_row_t));
     hlassume(column->row != NULL, assume_NoMemory);
 
     int i = 0;
@@ -283,7 +283,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const in
 static void BuildVisLeafs(int threadnum)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
-    bool *uncompressedcolumn = (bool *)malloc(MAX_SPARSE_VISMATRIX_PATCHES * sizeof(bool));
+    bool *uncompressedcolumn = (bool *)std::malloc(MAX_SPARSE_VISMATRIX_PATCHES * sizeof(bool));
     hlassume(uncompressedcolumn != NULL, assume_NoMemory);
 
     while (1)

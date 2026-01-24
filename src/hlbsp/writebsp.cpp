@@ -7,6 +7,7 @@
 //  WriteDrawNodes
 //  BeginBSPFile
 //  FinishBSPFile
+#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <utility>
@@ -417,7 +418,7 @@ void OutputEdges_face(face_t *f)
     {
         return;
     }
-    f->outputedges = (int *)malloc(f->numpoints * sizeof(int));
+    f->outputedges = (int *)std::malloc(f->numpoints * sizeof(int));
     hlassume(f->outputedges != NULL, assume_NoMemory);
     for (int i = 0; i < f->numpoints; i++)
     {
@@ -572,12 +573,12 @@ void FinishBSPFile()
             int &g_nummiptex = l->nummiptex;
             bool *Used = (bool *)calloc(g_nummiptex, sizeof(bool));
             int Num = 0, Size = 0;
-            int *Map = (int *)malloc(g_nummiptex * sizeof(int));
+            int *Map = (int *)std::malloc(g_nummiptex * sizeof(int));
 
             hlassume(Used != NULL && Map != NULL, assume_NoMemory);
-            int *lumpsizes = (int *)malloc(g_nummiptex * sizeof(int));
+            int *lumpsizes = (int *)std::malloc(g_nummiptex * sizeof(int));
             const int newdatasizemax = g_texdatasize - ((byte *)&l->dataofs[g_nummiptex] - (byte *)l);
-            byte *newdata = (byte *)malloc(newdatasizemax);
+            byte *newdata = (byte *)std::malloc(newdatasizemax);
             int newdatasize = 0;
             hlassume(lumpsizes != NULL && newdata != NULL, assume_NoMemory);
             int total = 0;
@@ -709,13 +710,13 @@ void FinishBSPFile()
     {
         Log("FixBrinks:\n");
         int numclipnodes;
-        dclipnode_t *clipnodes = (dclipnode_t *)malloc(MAX_MAP_CLIPNODES * sizeof(dclipnode_t)); //[MAX_MAP_CLIPNODES]
+        dclipnode_t *clipnodes = (dclipnode_t *)std::malloc(MAX_MAP_CLIPNODES * sizeof(dclipnode_t)); //[MAX_MAP_CLIPNODES]
         hlassume(clipnodes != NULL, assume_NoMemory);
         void *(*brinkinfo)[NUM_HULLS]; //[MAX_MAP_MODELS]
         int (*headnode)[NUM_HULLS];    //[MAX_MAP_MODELS]
-        brinkinfo = (void *(*)[NUM_HULLS])malloc(MAX_MAP_MODELS * sizeof(void *[NUM_HULLS]));
+        brinkinfo = (void *(*)[NUM_HULLS])std::malloc(MAX_MAP_MODELS * sizeof(void *[NUM_HULLS]));
         hlassume(brinkinfo != NULL, assume_NoMemory);
-        headnode = (int (*)[NUM_HULLS])malloc(MAX_MAP_MODELS * sizeof(int[NUM_HULLS]));
+        headnode = (int (*)[NUM_HULLS])std::malloc(MAX_MAP_MODELS * sizeof(int[NUM_HULLS]));
         hlassume(headnode != NULL, assume_NoMemory);
 
         int i, j, level;

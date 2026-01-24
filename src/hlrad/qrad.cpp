@@ -979,7 +979,7 @@ vec_t *chopscales; //[nummiptex]
 void ReadCustomChopValue()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
-    chopscales = (vec_t *)malloc(num * sizeof(vec_t));
+    chopscales = (vec_t *)std::malloc(num * sizeof(vec_t));
     for (int i = 0; i < num; i++)
     {
         chopscales[i] = 1.0;
@@ -1015,7 +1015,7 @@ vec_t *g_smoothvalues; //[nummiptex]
 void ReadCustomSmoothValue()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
-    g_smoothvalues = (vec_t *)malloc(num * sizeof(vec_t));
+    g_smoothvalues = (vec_t *)std::malloc(num * sizeof(vec_t));
     for (int i = 0; i < num; i++)
     {
         g_smoothvalues[i] = g_smoothing_threshold;
@@ -1044,7 +1044,7 @@ void ReadCustomSmoothValue()
 void ReadTranslucentTextures()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
-    g_translucenttextures = (vec3_t *)malloc(num * sizeof(vec3_t));
+    g_translucenttextures = (vec3_t *)std::malloc(num * sizeof(vec3_t));
     for (int i = 0; i < num; i++)
     {
         VectorClear(g_translucenttextures[i]);
@@ -1100,7 +1100,7 @@ static vec_t DefaultScaleForPower(vec_t power)
 void ReadLightingCone()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
-    g_lightingconeinfo = (vec3_t *)malloc(num * sizeof(vec3_t));
+    g_lightingconeinfo = (vec3_t *)std::malloc(num * sizeof(vec3_t));
     for (int i = 0; i < num; i++)
     {
         g_lightingconeinfo[i][0] = 1.0; // default power

@@ -22,6 +22,7 @@
 
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 #include <cmath>
@@ -210,9 +211,9 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
     // Most faces should be passed to a child node, faces left in the parent node are the ones whose dimensions are large enough to be comparable to the dimension of the parent node.
     node->nodefaces = new std::vector<face_t *>;
     node->nodefaces_discardablesize = 0;
-    node->children[0] = (surfacetreenode_t *)malloc(sizeof(surfacetreenode_t));
+    node->children[0] = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
     node->children[0]->leaffaces = new std::vector<face_t *>;
-    node->children[1] = (surfacetreenode_t *)malloc(sizeof(surfacetreenode_t));
+    node->children[1] = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
     node->children[1]->leaffaces = new std::vector<face_t *>;
     for (std::vector<face_t *>::iterator i = node->leaffaces->begin(); i != node->leaffaces->end(); ++i)
     {
@@ -270,10 +271,10 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
 
 surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
 {
-    surfacetree_t *tree = (surfacetree_t *)malloc(sizeof(surfacetree_t));
+    surfacetree_t *tree = (surfacetree_t *)std::malloc(sizeof(surfacetree_t));
     tree->epsilon = epsilon;
     tree->result.middle = new std::vector<face_t *>;
-    tree->headnode = (surfacetreenode_t *)malloc(sizeof(surfacetreenode_t));
+    tree->headnode = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
     tree->headnode->leaffaces = new std::vector<face_t *>;
     {
         for (surface_t *p2 = surfaces; p2; p2 = p2->next)
@@ -509,7 +510,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
 
     double planecount = 0.0;
     double totalsplit = 0.0;
-    tmpvalue = (double (*)[2])malloc(g_numplanes * sizeof(double[2]));
+    tmpvalue = (double (*)[2])std::malloc(g_numplanes * sizeof(double[2]));
     surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
 
     //
@@ -1224,7 +1225,7 @@ static void MakeLeaf(node_t *leafnode)
         markfaces[nummarkfaces] = NULL; // end marker
         nummarkfaces++;
 
-        leafnode->markfaces = (face_t **)malloc(nummarkfaces * sizeof(*leafnode->markfaces));
+        leafnode->markfaces = (face_t **)std::malloc(nummarkfaces * sizeof(*leafnode->markfaces));
         std::memcpy(leafnode->markfaces, markfaces, nummarkfaces * sizeof(*leafnode->markfaces));
     }
 

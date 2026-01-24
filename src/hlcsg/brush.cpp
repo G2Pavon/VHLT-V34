@@ -194,7 +194,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
     vec3_t normal;
     vec3_t origin;
 
-    bool *axialbevel = (bool *)malloc(hb->numfaces * sizeof(bool));
+    bool *axialbevel = (bool *)std::malloc(hb->numfaces * sizeof(bool));
     std::memset(axialbevel, 0, hb->numfaces * sizeof(bool));
     bool warned = false;
 
@@ -719,13 +719,13 @@ void SortSides(brushhull_t *h)
     {
         numsides++;
     }
-    bface_t **sides = (bface_t **)malloc(numsides * sizeof(bface_t *));
+    bface_t **sides = (bface_t **)std::malloc(numsides * sizeof(bface_t *));
     hlassume(sides != NULL, assume_NoMemory);
-    vec3_t *normals = (vec3_t *)malloc(numsides * sizeof(vec3_t));
+    vec3_t *normals = (vec3_t *)std::malloc(numsides * sizeof(vec3_t));
     hlassume(normals != NULL, assume_NoMemory);
-    bool *isused = (bool *)malloc(numsides * sizeof(bool));
+    bool *isused = (bool *)std::malloc(numsides * sizeof(bool));
     hlassume(isused != NULL, assume_NoMemory);
-    int *sorted = (int *)malloc(numsides * sizeof(int));
+    int *sorted = (int *)std::malloc(numsides * sizeof(int));
     hlassume(sorted != NULL, assume_NoMemory);
     for (i = 0, f = h->faces; f; i++, f = f->next)
     {
@@ -1377,11 +1377,11 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
 
     if (!failed)
     {
-        hb = (hullbrush_t *)malloc(sizeof(hullbrush_t));
+        hb = (hullbrush_t *)std::malloc(sizeof(hullbrush_t));
         hlassume(hb != NULL, assume_NoMemory);
 
         hb->numfaces = numplanes;
-        hb->faces = (hullbrushface_t *)malloc(hb->numfaces * sizeof(hullbrushface_t));
+        hb->faces = (hullbrushface_t *)std::malloc(hb->numfaces * sizeof(hullbrushface_t));
         hlassume(hb->faces != NULL, assume_NoMemory);
         for (int i = 0; i < numplanes; i++)
         {
@@ -1389,7 +1389,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
             VectorCopy(planes[i].normal, f->normal);
             VectorCopy(w[i]->m_Points[0], f->point);
             f->numvertexes = w[i]->m_NumPoints;
-            f->vertexes = (vec3_t *)malloc(f->numvertexes * sizeof(vec3_t));
+            f->vertexes = (vec3_t *)std::malloc(f->numvertexes * sizeof(vec3_t));
             hlassume(f->vertexes != NULL, assume_NoMemory);
             for (int k = 0; k < w[i]->m_NumPoints; k++)
             {
@@ -1398,12 +1398,12 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
         }
 
         hb->numedges = numedges;
-        hb->edges = (hullbrushedge_t *)malloc(hb->numedges * sizeof(hullbrushedge_t));
+        hb->edges = (hullbrushedge_t *)std::malloc(hb->numedges * sizeof(hullbrushedge_t));
         hlassume(hb->edges != NULL, assume_NoMemory);
         std::memcpy(hb->edges, edges, hb->numedges * sizeof(hullbrushedge_t));
 
         hb->numvertexes = numvertexes;
-        hb->vertexes = (hullbrushvertex_t *)malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
+        hb->vertexes = (hullbrushvertex_t *)std::malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
         hlassume(hb->vertexes != NULL, assume_NoMemory);
         std::memcpy(hb->vertexes, vertexes, hb->numvertexes * sizeof(hullbrushvertex_t));
 
@@ -1426,23 +1426,23 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
 
 hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
 {
-    hullbrush_t *hb2 = (hullbrush_t *)malloc(sizeof(hullbrush_t));
+    hullbrush_t *hb2 = (hullbrush_t *)std::malloc(sizeof(hullbrush_t));
     hlassume(hb2 != NULL, assume_NoMemory);
     std::memcpy(hb2, hb, sizeof(hullbrush_t));
-    hb2->faces = (hullbrushface_t *)malloc(hb->numfaces * sizeof(hullbrushface_t));
+    hb2->faces = (hullbrushface_t *)std::malloc(hb->numfaces * sizeof(hullbrushface_t));
     hlassume(hb2->faces != NULL, assume_NoMemory);
     std::memcpy(hb2->faces, hb->faces, hb->numfaces * sizeof(hullbrushface_t));
-    hb2->edges = (hullbrushedge_t *)malloc(hb->numedges * sizeof(hullbrushedge_t));
+    hb2->edges = (hullbrushedge_t *)std::malloc(hb->numedges * sizeof(hullbrushedge_t));
     hlassume(hb2->edges != NULL, assume_NoMemory);
     std::memcpy(hb2->edges, hb->edges, hb->numedges * sizeof(hullbrushedge_t));
-    hb2->vertexes = (hullbrushvertex_t *)malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
+    hb2->vertexes = (hullbrushvertex_t *)std::malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
     hlassume(hb2->vertexes != NULL, assume_NoMemory);
     std::memcpy(hb2->vertexes, hb->vertexes, hb->numvertexes * sizeof(hullbrushvertex_t));
     for (int i = 0; i < hb->numfaces; i++)
     {
         hullbrushface_t *f2 = &hb2->faces[i];
         const hullbrushface_t *f = &hb->faces[i];
-        f2->vertexes = (vec3_t *)malloc(f->numvertexes * sizeof(vec3_t));
+        f2->vertexes = (vec3_t *)std::malloc(f->numvertexes * sizeof(vec3_t));
         hlassume(f2->vertexes != NULL, assume_NoMemory);
         std::memcpy(f2->vertexes, f->vertexes, f->numvertexes * sizeof(vec3_t));
     }
@@ -1472,7 +1472,7 @@ void InitDefaultHulls()
         hs->id = _strdup("");
         hs->disabled = true;
         hs->numbrushes = 0;
-        hs->brushes = (hullbrush_t **)malloc(0 * sizeof(hullbrush_t *));
+        hs->brushes = (hullbrush_t **)std::malloc(0 * sizeof(hullbrush_t *));
         hlassume(hs->brushes != NULL, assume_NoMemory);
     }
 }
@@ -1494,7 +1494,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
     hs->id = _strdup(id);
     hs->disabled = disabled;
     hs->numbrushes = 0;
-    hs->brushes = (hullbrush_t **)malloc(entity->numbrushes * sizeof(hullbrush_t *));
+    hs->brushes = (hullbrush_t **)std::malloc(entity->numbrushes * sizeof(hullbrush_t *));
     for (int i = 0; i < entity->numbrushes; i++)
     {
         brush_t *b = &g_mapbrushes[entity->firstbrush + i];
@@ -1526,7 +1526,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
             target->id = _strdup(hs->id);
             target->disabled = hs->disabled;
             target->numbrushes = hs->numbrushes;
-            target->brushes = (hullbrush_t **)malloc(hs->numbrushes * sizeof(hullbrush_t *));
+            target->brushes = (hullbrush_t **)std::malloc(hs->numbrushes * sizeof(hullbrush_t *));
             hlassume(target->brushes != NULL, assume_NoMemory);
             for (int i = 0; i < hs->numbrushes; i++)
             {

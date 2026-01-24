@@ -431,7 +431,7 @@ void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t *
 // =====================================================================================
 face_t *AllocFace()
 {
-    face_t *f = (face_t *)malloc(sizeof(face_t));
+    face_t *f = (face_t *)std::malloc(sizeof(face_t));
     std::memset(f, 0, sizeof(face_t));
 
     f->planenum = -1;
@@ -452,7 +452,7 @@ void FreeFace(face_t *f)
 // =====================================================================================
 surface_t *AllocSurface()
 {
-    surface_t *s = (surface_t *)malloc(sizeof(surface_t));
+    surface_t *s = (surface_t *)std::malloc(sizeof(surface_t));
     std::memset(s, 0, sizeof(surface_t));
 
     return s;
@@ -471,7 +471,7 @@ void FreeSurface(surface_t *s)
 // =====================================================================================
 portal_t *AllocPortal()
 {
-    portal_t *p = (portal_t *)malloc(sizeof(portal_t));
+    portal_t *p = (portal_t *)std::malloc(sizeof(portal_t));
     std::memset(p, 0, sizeof(portal_t));
 
     return p;
@@ -487,7 +487,7 @@ void FreePortal(portal_t *p) // consider: inline
 
 side_t *AllocSide()
 {
-    side_t *s = (side_t *)malloc(sizeof(side_t));
+    side_t *s = (side_t *)std::malloc(sizeof(side_t));
     std::memset(s, 0, sizeof(side_t));
     return s;
 }
@@ -512,7 +512,7 @@ side_t *NewSideFromSide(const side_t *s)
 
 brush_t *AllocBrush()
 {
-    brush_t *b = (brush_t *)malloc(sizeof(brush_t));
+    brush_t *b = (brush_t *)std::malloc(sizeof(brush_t));
     std::memset(b, 0, sizeof(brush_t));
     return b;
 }
@@ -690,7 +690,7 @@ void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs)
 // =====================================================================================
 node_t *AllocNode()
 {
-    node_t *n = (node_t *)malloc(sizeof(node_t));
+    node_t *n = (node_t *)std::malloc(sizeof(node_t));
     std::memset(n, 0, sizeof(node_t));
 
     return n;
@@ -743,7 +743,7 @@ static surfchain_t *SurflistFromValidFaces()
 {
     face_t *next;
 
-    surfchain_t *sc = (surfchain_t *)malloc(sizeof(*sc));
+    surfchain_t *sc = (surfchain_t *)std::malloc(sizeof(*sc));
     ClearBounds(sc->mins, sc->maxs);
     sc->surfaces = NULL;
 
