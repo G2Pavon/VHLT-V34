@@ -95,7 +95,7 @@ void delparams(char *cmdline, char *params)
     {
         for (c = cmdline, p = params; pvalid(p); c = pnext(c), p = pnext(p))
             ;
-        memmove(cmdline, c, strlen(c) + 1);
+        std::memmove(cmdline, c, strlen(c) + 1);
     }
 }
 typedef enum

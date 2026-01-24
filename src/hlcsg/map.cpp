@@ -945,8 +945,8 @@ bool ParseMapEntity()
         }
 
         // make space to move the brushes (overlapped copy)
-        memmove(g_mapbrushes + worldbrushes + newbrushes,
-                g_mapbrushes + worldbrushes, sizeof(brush_t) * (g_nummapbrushes - worldbrushes - newbrushes));
+        std::memmove(g_mapbrushes + worldbrushes + newbrushes,
+                     g_mapbrushes + worldbrushes, sizeof(brush_t) * (g_nummapbrushes - worldbrushes - newbrushes));
 
         // copy the new brushes down
         std::memcpy(g_mapbrushes + worldbrushes, temp, sizeof(brush_t) * newbrushes);

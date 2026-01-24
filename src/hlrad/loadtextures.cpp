@@ -878,7 +878,7 @@ void NewTextures_Write()
     int datasize = (g_dtexdata + g_texdatasize) - dataaddr;
     byte *newdataaddr = (byte *)&texdata->dataofs[texdata->nummiptex + g_newtextures_num];
     hlassume(g_texdatasize + (newdataaddr - dataaddr) <= g_max_map_miptex, assume_MAX_MAP_MIPTEX);
-    memmove(newdataaddr, dataaddr, datasize);
+    std::memmove(newdataaddr, dataaddr, datasize);
     g_texdatasize += newdataaddr - dataaddr;
     for (int i = 0; i < texdata->nummiptex; i++)
     {

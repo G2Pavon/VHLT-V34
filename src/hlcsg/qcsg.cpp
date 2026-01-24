@@ -11,6 +11,7 @@
 */
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <cmath>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
@@ -958,7 +959,7 @@ void ReuseModel()
             // move this entity backward
             // to prevent precache error in case of .mdl/.spr and wrong result of EntityForModel in case of map model
             entity_t tmp = g_entities[i];
-            memmove(&g_entities[i], &g_entities[i + 1], ((j + 1) - (i + 1)) * sizeof(entity_t));
+            std::memmove(&g_entities[i], &g_entities[i + 1], ((j + 1) - (i + 1)) * sizeof(entity_t));
             g_entities[j] = tmp;
         }
     }

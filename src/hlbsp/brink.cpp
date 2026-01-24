@@ -1329,8 +1329,8 @@ bool CalculateCircle(bbrink_t *b, bcircle_t *c)
                 bbrinknode_t *node = &(*b->nodes)[nodenum];
                 if (!node->isleaf)
                 {
-                    memmove(&c->wedges[side][i + 1], &c->wedges[side][i], (c->numwedges[side] - i) * sizeof(bwedge_t));
-                    memmove(&c->surfaces[side][i + 2], &c->surfaces[side][i + 1], (c->numwedges[side] - 1 - i) * sizeof(bsurface_t));
+                    std::memmove(&c->wedges[side][i + 1], &c->wedges[side][i], (c->numwedges[side] - i) * sizeof(bwedge_t));
+                    std::memmove(&c->surfaces[side][i + 2], &c->surfaces[side][i + 1], (c->numwedges[side] - 1 - i) * sizeof(bsurface_t));
                     c->numwedges[side]++;
                     bool flipnode = (DotProduct(node->plane->normal, facing) < 0);
                     c->wedges[side][i].nodenum = node->children[flipnode];

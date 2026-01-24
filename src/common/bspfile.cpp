@@ -1111,7 +1111,7 @@ void DeleteEmbeddedLightmaps()
             byte *dataaddr = (byte *)&texdata->dataofs[texdata->nummiptex];
             int datasize = (g_dtexdata + texdata->dataofs[numremaining]) - dataaddr;
             byte *newdataaddr = (byte *)&texdata->dataofs[numremaining];
-            memmove(newdataaddr, dataaddr, datasize);
+            std::memmove(newdataaddr, dataaddr, datasize);
             g_texdatasize = (newdataaddr + datasize) - g_dtexdata;
             texdata->nummiptex = numremaining;
             for (i = 0; i < numremaining; i++)
