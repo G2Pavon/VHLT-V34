@@ -142,7 +142,7 @@ void LogError(const char *const message)
         FILE *ErrorLog = NULL;
 
         safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
-        ErrorLog = fopen(logfilename, "a");
+        ErrorLog = std::fopen(logfilename, "a");
 
         if (ErrorLog)
         {
@@ -172,7 +172,7 @@ void CDECL OpenLog(const int clientid)
         {
             safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
         }
-        CompileLog = fopen(logfilename, "a");
+        CompileLog = std::fopen(logfilename, "a");
 
         if (!CompileLog)
         {
@@ -600,7 +600,7 @@ int InitConsole(int argc, char **argv)
         twice = AllocConsole();
     if (useconsole)
     {
-        conout = fopen("CONOUT$", "w");
+        conout = std::fopen("CONOUT$", "w");
         if (!conout)
         {
             useconsole = false;
@@ -732,13 +732,13 @@ void LoadLangFile(const char *name, const char *programpath)
     if (!f)
     {
         strcpy(filepath, name);
-        f = fopen(filepath, "r");
+        f = std::fopen(filepath, "r");
     }
     if (!f)
     {
         ExtractFilePath(programpath, filepath);
         strcat(filepath, name);
-        f = fopen(filepath, "r");
+        f = std::fopen(filepath, "r");
     }
     if (!f)
     {

@@ -510,13 +510,13 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
     if (leakfile)
     {
-        pointfile = fopen(g_pointfilename, "w");
+        pointfile = std::fopen(g_pointfilename, "w");
         if (!pointfile)
         {
             Error("Couldn't open pointfile %s\n", g_pointfilename);
         }
 
-        linefile = fopen(g_linefilename, "w");
+        linefile = std::fopen(g_linefilename, "w");
         if (!linefile)
         {
             Error("Couldn't open linefile %s\n", g_linefilename);

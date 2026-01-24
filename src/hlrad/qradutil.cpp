@@ -702,7 +702,7 @@ void FreePositionMaps()
         char name[_MAX_PATH + 20];
         std::sprintf(name, "%s_positions.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
-        FILE *f = fopen(name, "w");
+        FILE *f = std::fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;

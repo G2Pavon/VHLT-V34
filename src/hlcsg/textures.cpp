@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <string>
 #include <deque>
 #include <cmath>
@@ -208,7 +209,7 @@ bool TEX_InitFromWad()
         char *pszWadFile = currentwad->path;
 
         texwadpathes[nTexFiles] = currentwad;
-        texfiles[nTexFiles] = fopen(pszWadFile, "rb");
+        texfiles[nTexFiles] = std::fopen(pszWadFile, "rb");
 
         if (!texfiles[nTexFiles])
         {
@@ -216,7 +217,7 @@ bool TEX_InitFromWad()
             if (pszWadFile[1] == ':')
             {
                 pszWadFile += 2; // skip past the drive
-                texfiles[nTexFiles] = fopen(pszWadFile, "rb");
+                texfiles[nTexFiles] = std::fopen(pszWadFile, "rb");
             }
         }
 
@@ -233,7 +234,7 @@ bool TEX_InitFromWad()
 
             // szSubdir will have a trailing separator
             safe_snprintf(szTmp, _MAX_PATH, "%s" SYSTEM_SLASH_STR "%s%s", pszWadroot, szSubdir, szFile);
-            texfiles[nTexFiles] = fopen(szTmp, "rb");
+            texfiles[nTexFiles] = std::fopen(szTmp, "rb");
         }
 
         if (!texfiles[nTexFiles] && pszWadFile[0] == '\\')
@@ -242,7 +243,7 @@ bool TEX_InitFromWad()
             for (int l = 'C'; l <= 'Z'; ++l)
             {
                 safe_snprintf(tmp, _MAX_PATH, "%c:%s", l, pszWadFile);
-                texfiles[nTexFiles] = fopen(tmp, "rb");
+                texfiles[nTexFiles] = std::fopen(tmp, "rb");
                 if (texfiles[nTexFiles])
                 {
                     Developer(DEVELOPER_LEVEL_MESSAGE, "wad file found in drive '%c:' : %s\n", l, pszWadFile);

@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cerrno>
 #include <cstring>
 
@@ -27,7 +28,7 @@ int q_filelength(FILE *f)
  */
 bool q_exists(const char *const filename)
 {
-    FILE *f = fopen(filename, "rb");
+    FILE *f = std::fopen(filename, "rb");
 
     if (!f)
     {
@@ -44,7 +45,7 @@ bool q_exists(const char *const filename)
 
 FILE *SafeOpenWrite(const char *const filename)
 {
-    FILE *f = fopen(filename, "wb");
+    FILE *f = std::fopen(filename, "wb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));
@@ -54,7 +55,7 @@ FILE *SafeOpenWrite(const char *const filename)
 
 FILE *SafeOpenRead(const char *const filename)
 {
-    FILE *f = fopen(filename, "rb");
+    FILE *f = std::fopen(filename, "rb");
 
     if (!f)
         Error("Error opening %s: %s", filename, strerror(errno));

@@ -12,7 +12,7 @@
 
 void writetransfers(const char *const transferfile, const long total_patches)
 {
-    FILE *file = fopen(transferfile, "w+b");
+    FILE *file = std::fopen(transferfile, "w+b");
     if (file != NULL)
     {
 
@@ -89,7 +89,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
 {
     long total_patches;
 
-    FILE *file = fopen(transferfile, "rb");
+    FILE *file = std::fopen(transferfile, "rb");
     if (file != NULL)
     {
 

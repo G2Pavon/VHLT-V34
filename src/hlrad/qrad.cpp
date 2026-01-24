@@ -412,7 +412,7 @@ static void ReadLightFile(const char *const filename)
     char scan[MAXTOKEN];
     unsigned int file_texlights = 0;
 
-    FILE *f = fopen(filename, "r");
+    FILE *f = std::fopen(filename, "r");
     if (!f)
     {
         Warning("Could not open texlight file %s", filename);
@@ -1899,7 +1899,7 @@ static void WriteWorld(const char *const name)
     unsigned j;
     patch_t *patch;
 
-    FILE *out = fopen(name, "w");
+    FILE *out = std::fopen(name, "w");
 
     if (!out)
         Error("Couldn't open %s", name);
@@ -2424,7 +2424,7 @@ static void RadWorld()
         char name[_MAX_PATH + 20];
         std::sprintf(name, "%s_patch.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
-        FILE *f = fopen(name, "w");
+        FILE *f = std::fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;
@@ -2454,7 +2454,7 @@ static void RadWorld()
         char name[_MAX_PATH + 20];
         std::sprintf(name, "%s_edge.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
-        FILE *f = fopen(name, "w");
+        FILE *f = std::fopen(name, "w");
         if (f)
         {
             const int pos_count = 15;

@@ -633,7 +633,7 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 // =====================================================================================
 void WriteExtentFile(const char *const filename)
 {
-    FILE *f = fopen(filename, "w");
+    FILE *f = std::fopen(filename, "w");
     if (!f)
     {
         Error("Error opening %s: %s", filename, strerror(errno));

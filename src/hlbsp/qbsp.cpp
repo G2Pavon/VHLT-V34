@@ -1433,19 +1433,19 @@ static void ProcessFile(const char *const filename)
     {
         //mapname.p[0-3]
         std::sprintf(name, "%s.p%i", filename, i);
-        polyfiles[i] = fopen(name, "r");
+        polyfiles[i] = std::fopen(name, "r");
 
         if (!polyfiles[i])
             Error("Can't open %s", name);
         std::sprintf(name, "%s.b%i", filename, i);
-        brushfiles[i] = fopen(name, "r");
+        brushfiles[i] = std::fopen(name, "r");
         if (!brushfiles[i])
             Error("Can't open %s", name);
     }
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.hsz", filename);
-        FILE *f = fopen(name, "r");
+        FILE *f = std::fopen(name, "r");
         if (!f)
         {
             Warning("Couldn't open %s", name);
@@ -1482,7 +1482,7 @@ static void ProcessFile(const char *const filename)
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", filename);
-        FILE *planefile = fopen(name, "rb");
+        FILE *planefile = std::fopen(name, "rb");
         if (!planefile)
         {
             Warning("Couldn't open %s", name);

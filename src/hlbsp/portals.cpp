@@ -337,7 +337,7 @@ void WritePortalfile(node_t *headnode)
     NumberLeafs_r(headnode);
 
     // write the file
-    pf = fopen(g_portfilename, "w");
+    pf = std::fopen(g_portfilename, "w");
     if (!pf)
     {
         Error("Error writing portal file %s", g_portfilename);
@@ -346,7 +346,7 @@ void WritePortalfile(node_t *headnode)
     {
         char filename[_MAX_PATH];
         safe_snprintf(filename, _MAX_PATH, "%s_portal.pts", g_Mapname);
-        pf_view = fopen(filename, "w");
+        pf_view = std::fopen(filename, "w");
         if (!pf_view)
         {
             Error("Couldn't open %s", filename);

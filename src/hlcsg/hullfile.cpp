@@ -40,7 +40,7 @@ void LoadHullfile(const char *filename)
     float x1, y1, z1;
     float x2, y2, z2;
 
-    FILE *file = fopen(filename, "r");
+    FILE *file = std::fopen(filename, "r");
 
     char magic = (char)fgetc(file);
     rewind(file);

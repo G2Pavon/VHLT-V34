@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cmath>
 
 #include "qrad.h"
@@ -74,7 +75,7 @@ void OpenWadFile(const char *name, bool fullpath = false)
     if (fullpath)
     {
         safe_snprintf(wad->path, _MAX_PATH, "%s", name);
-        wad->file = fopen(wad->path, "rb");
+        wad->file = std::fopen(wad->path, "rb");
         if (!wad->file)
         {
             Error("Couldn't open %s", wad->path);
@@ -86,7 +87,7 @@ void OpenWadFile(const char *name, bool fullpath = false)
         for (dir = g_waddirs; dir; dir = dir->next)
         {
             safe_snprintf(wad->path, _MAX_PATH, "%s\\%s", dir->path, name);
-            wad->file = fopen(wad->path, "rb");
+            wad->file = std::fopen(wad->path, "rb");
             if (wad->file)
             {
                 break;

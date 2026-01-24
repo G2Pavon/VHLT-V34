@@ -880,7 +880,7 @@ static void EmitPlanes()
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", g_Mapname);
-        FILE *planeout = fopen(name, "wb");
+        FILE *planeout = std::fopen(name, "wb");
         if (!planeout)
             Error("Couldn't open %s", name);
         SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(plane_t));
@@ -2170,18 +2170,18 @@ int main(const int argc, char **argv)
 
                 safe_snprintf(name, _MAX_PATH, "%s.p%i", g_Mapname, i);
 
-                out[i] = fopen(name, "w");
+                out[i] = std::fopen(name, "w");
 
                 if (!out[i])
                     Error("Couldn't open %s", name);
                 safe_snprintf(name, _MAX_PATH, "%s.b%i", g_Mapname, i);
-                out_detailbrush[i] = fopen(name, "w");
+                out_detailbrush[i] = std::fopen(name, "w");
                 if (!out_detailbrush[i])
                     Error("Couldn't open %s", name);
                 if (g_viewsurface)
                 {
                     safe_snprintf(name, _MAX_PATH, "%s_surface%i.pts", g_Mapname, i);
-                    out_view[i] = fopen(name, "w");
+                    out_view[i] = std::fopen(name, "w");
                     if (!out[i])
                         Error("Counldn't open %s", name);
                 }
@@ -2189,7 +2189,7 @@ int main(const int argc, char **argv)
             {
                 char name[_MAX_PATH];
                 safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
-                FILE *f = fopen(name, "w");
+                FILE *f = std::fopen(name, "w");
                 if (!f)
                     Error("Couldn't open %s", name);
                 for (int i = 0; i < NUM_HULLS; i++)
