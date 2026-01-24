@@ -11,8 +11,6 @@ extern void LoadScriptFile(const char *const filename);
 extern void ParseFromMemory(char *buffer, int size);
 
 extern bool GetToken(bool crossline);
-extern void UnGetToken();
-extern bool TokenAvailable();
 
 #define MAX_WAD_PATHS 42
 extern char g_szWadPaths[MAX_WAD_PATHS][_MAX_PATH];

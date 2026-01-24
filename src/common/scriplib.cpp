@@ -25,7 +25,6 @@ static script_t s_scriptstack[MAX_INCLUDES];
 script_t *s_script;
 int s_scriptline;
 bool s_endofscript;
-bool s_tokenready; // only true if UnGetToken was just called
 
 //  AddScriptToStack
 //  LoadScriptFile
@@ -65,7 +64,6 @@ void LoadScriptFile(const char *const filename)
     AddScriptToStack(filename);
 
     s_endofscript = false;
-    s_tokenready = false;
 }
 
 // =====================================================================================
@@ -87,25 +85,6 @@ void ParseFromMemory(char *buffer, const int size)
     s_script->end_p = s_script->buffer + size;
 
     s_endofscript = false;
-    s_tokenready = false;
-}
-
-// =====================================================================================
-//  UnGetToken
-/*
- * Signals that the current g_token was not used, and should be reported
- * for the next GetToken.  Note that
- * 
- * GetToken (true);
- * UnGetToken ();
- * GetToken (false);
- * 
- * could cross a line boundary.
- */
-// =====================================================================================
-void UnGetToken()
-{
-    s_tokenready = true;
 }
 
 // =====================================================================================
@@ -144,12 +123,6 @@ bool EndOfScript(const bool crossline)
 bool GetToken(const bool crossline)
 {
     char *token_p;
-
-    if (s_tokenready) // is a g_token allready waiting?
-    {
-        s_tokenready = false;
-        return true;
-    }
 
     if (s_script->script_p >= s_script->end_p)
         return EndOfScript(crossline);
@@ -239,34 +212,6 @@ skipspace:
         AddScriptToStack(g_token);
         return GetToken(crossline);
     }
-
-    return true;
-}
-
-// =====================================================================================
-//  TokenAvailable
-//      returns true if there is another token on the line
-// =====================================================================================
-bool TokenAvailable()
-{
-    char *search_p = s_script->script_p;
-
-    if (search_p >= s_script->end_p)
-        return false;
-
-    while (*search_p <= 32)
-    {
-        if (*search_p == '\n')
-            return false;
-
-        search_p++;
-
-        if (search_p == s_script->end_p)
-            return false;
-    }
-
-    if (*search_p == ';')
-        return false;
 
     return true;
 }
