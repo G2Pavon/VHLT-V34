@@ -86,7 +86,7 @@ inline void getFilePositions(const char *path, int *extension_position, int *dir
         }
 
         //cover the case where we were passed a directory - get 2nd-to-last slash
-        if (*directory_position == (int)strlen(path) - 1)
+        if (*directory_position == (int)std::strlen(path) - 1)
         {
             do
             {
@@ -170,7 +170,7 @@ void ExtractFile(const char *const path, char *dest)
     int extension_pos, directory_pos;
     getFilePositions(path, &extension_pos, &directory_pos);
 
-    int length = strlen(path);
+    int length = std::strlen(path);
 
     length -= directory_pos + 1;
 
@@ -182,7 +182,7 @@ void ExtractFileBase(const char *const path, char *dest)
 {
     int extension_pos, directory_pos;
     getFilePositions(path, &extension_pos, &directory_pos);
-    int length = extension_pos == -1 ? strlen(path) : extension_pos;
+    int length = extension_pos == -1 ? std::strlen(path) : extension_pos;
 
     length -= directory_pos + 1;
 
@@ -196,7 +196,7 @@ void ExtractFileExtension(const char *const path, char *dest)
     getFilePositions(path, &extension_pos, &directory_pos);
     if (extension_pos != -1)
     {
-        int length = strlen(path) - extension_pos;
+        int length = std::strlen(path) - extension_pos;
         std::memcpy(dest, path + extension_pos, length); //include extension '.'
         dest[length] = 0;
     }

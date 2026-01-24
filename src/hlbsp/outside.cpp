@@ -1,6 +1,7 @@
 #pragma warning(disable : 4267) // 'size_t' to 'unsigned int', possible loss of data
 
 #include <cstdio>
+#include <cstring>
 
 #include "bsp5.h"
 #include "bspfile.h"
@@ -383,7 +384,7 @@ void LoadAllowableOutsideList(const char *const filename)
     }
     else
     {
-        unsigned len = strlen(filename) + 5;
+        unsigned len = std::strlen(filename) + 5;
 
         fname = (char *)Alloc(len);
         safe_snprintf(fname, len, "%s", filename);
@@ -400,7 +401,7 @@ void LoadAllowableOutsideList(const char *const filename)
                 if ((pData[x] == '\n') || (pData[x] == '\r'))
                 {
                     pData[x] = 0;
-                    if (strlen(pszData))
+                    if (std::strlen(pszData))
                     {
                         if (g_nAllowableOutside == g_maxAllowableOutside)
                         {

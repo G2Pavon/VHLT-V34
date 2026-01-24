@@ -152,7 +152,7 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
 static int FindMiptex(const char *const name)
 {
     int i;
-    if (strlen(name) >= MAXWADNAME)
+    if (std::strlen(name) >= MAXWADNAME)
     {
         Error("Texture name is too long (%s)\n", name);
     }

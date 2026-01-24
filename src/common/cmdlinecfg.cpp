@@ -81,7 +81,7 @@ char *findparams(char *cmdlineparams, char *params)
 }
 void addparams(char *cmdline, char *params, unsigned int n)
 {
-    if (strlen(cmdline) + strlen(params) + 1 <= n)
+    if (std::strlen(cmdline) + std::strlen(params) + 1 <= n)
         strcat(cmdline, params);
     else
         error = true;
@@ -95,7 +95,7 @@ void delparams(char *cmdline, char *params)
     {
         for (c = cmdline, p = params; pvalid(p); c = pnext(c), p = pnext(p))
             ;
-        std::memmove(cmdline, c, strlen(c) + 1);
+        std::memmove(cmdline, c, std::strlen(c) + 1);
     }
 }
 typedef enum
@@ -217,7 +217,7 @@ void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
     strcat(cmdline, SEPSTR);
     for (int i = 1; i < argc; ++i)
     {
-        if (strlen(cmdline) + strlen(argv[i]) + strlen(SEPSTR) + 1 <= n)
+        if (std::strlen(cmdline) + std::strlen(argv[i]) + std::strlen(SEPSTR) + 1 <= n)
         {
             strcat(cmdline, argv[i]);
             strcat(cmdline, SEPSTR);
@@ -298,7 +298,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
             }
             if (!c)
                 break;
-            if (strlen(token) + strlen(SEPSTR) + 1 <= MAXTOKEN)
+            if (std::strlen(token) + std::strlen(SEPSTR) + 1 <= MAXTOKEN)
             {
                 strcpy(words, token);
                 strcat(words, SEPSTR);
@@ -317,7 +317,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
                     c = c0;
                     break;
                 }
-                if (strlen(words) + strlen(token) + strlen(SEPSTR) + 1 <= MAXTOKEN)
+                if (std::strlen(words) + std::strlen(token) + std::strlen(SEPSTR) + 1 <= MAXTOKEN)
                 {
                     strcat(words, token);
                     strcat(words, SEPSTR);

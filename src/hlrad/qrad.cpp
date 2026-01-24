@@ -456,7 +456,7 @@ static void ReadLightFile(const char *const filename)
         }
         else if (argCnt != 4)
         {
-            if (strlen(scan) > 4)
+            if (std::strlen(scan) > 4)
             {
                 Warning("ignoring bad texlight '%s' in %s", scan, filename);
             }

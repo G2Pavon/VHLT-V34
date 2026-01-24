@@ -1009,7 +1009,7 @@ unsigned int CountEngineEntities()
                 const char *targetname = ValueForKey(mapent, "targetname");
 
                 // lightspots and lightenviroments dont have a targetname or style
-                if (!strlen(targetname) && !std::atoi(style))
+                if (!std::strlen(targetname) && !std::atoi(style))
                 {
                     continue;
                 }

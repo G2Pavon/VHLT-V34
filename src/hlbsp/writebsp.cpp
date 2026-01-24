@@ -231,7 +231,7 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
             bool ishidden = false;
             {
                 const char *name = GetTextureByNumber(f->texturenum);
-                if (strlen(name) >= 7 && !strcasecmp(&name[strlen(name) - 7], "_HIDDEN"))
+                if (std::strlen(name) >= 7 && !strcasecmp(&name[std::strlen(name) - 7], "_HIDDEN"))
                 {
                     ishidden = true;
                 }

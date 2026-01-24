@@ -838,7 +838,7 @@ char *FindWadValue()
             {
                 return NULL;
             }
-            if (quotes[1] - (quotes[0] + 1) == (int)strlen("wad") && !strncmp(&g_dentdata[quotes[0] + 1], "wad", strlen("wad")))
+            if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
             {
                 int len = quotes[3] - (quotes[2] + 1);
                 char *value = (char *)malloc(len + 1);
@@ -974,7 +974,7 @@ int ParseImplicitTexinfoFromTexture(int miptex)
     miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
     safe_strncpy(name, mt->name, 16);
 
-    if (!(strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
+    if (!(std::strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
     {
         return -1;
     }
@@ -1142,14 +1142,14 @@ epair_t *ParseEpair()
 {
     epair_t *e = (epair_t *)Alloc(sizeof(epair_t));
 
-    if (strlen(g_token) >= MAX_KEY - 1)
-        Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)strlen(g_token));
+    if (std::strlen(g_token) >= MAX_KEY - 1)
+        Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)std::strlen(g_token));
 
     e->key = _strdup(g_token);
     GetToken(false);
 
-    if (strlen(g_token) >= MAX_VAL - 1) //MAX_VALUE //vluzacn
-        Error("ParseEpar: Value token too long (%i > MAX_VALUE)", (int)strlen(g_token));
+    if (std::strlen(g_token) >= MAX_VAL - 1) //MAX_VALUE //vluzacn
+        Error("ParseEpar: Value token too long (%i > MAX_VALUE)", (int)std::strlen(g_token));
 
     e->value = _strdup(g_token);
 
@@ -1452,7 +1452,7 @@ void UnparseEntities()
         {
             std::sprintf(line, "\"%s\" \"%s\"\n", ep->key, ep->value);
             strcat(end, line);
-            end += strlen(line);
+            end += std::strlen(line);
         }
         strcat(end, "}\n");
         end += 2;

@@ -228,7 +228,7 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
 
                 // String.
                 iNewLength += 1;
-                iNewLength += (int)strlen(*j);
+                iNewLength += (int)std::strlen(*j);
                 iNewLength += 1;
 
                 // String seperator.
@@ -238,7 +238,7 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
 
                 // String.
                 iNewLength += 1;
-                iNewLength += (int)strlen(*j);
+                iNewLength += (int)std::strlen(*j);
                 iNewLength += 1;
 
                 // New line.
@@ -295,8 +295,8 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
                 // String.
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
-                std::memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
-                g_entdatasize += (int)strlen(*j);
+                std::memcpy(&g_dentdata[g_entdatasize], *j, std::strlen(*j));
+                g_entdatasize += (int)std::strlen(*j);
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
 
@@ -309,8 +309,8 @@ void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int
                 // String.
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
-                std::memcpy(&g_dentdata[g_entdatasize], *j, strlen(*j));
-                g_entdatasize += (int)strlen(*j);
+                std::memcpy(&g_dentdata[g_entdatasize], *j, std::strlen(*j));
+                g_entdatasize += (int)std::strlen(*j);
                 g_dentdata[g_entdatasize] = '\"';
                 g_entdatasize += 1;
 
@@ -567,8 +567,8 @@ static void WriteTextures(const char *const name)
                     strcpy(info[header.numlumps].name, tex->name);
                     header.numlumps++;
                 }
-                std::fprintf(texfile, "[%d]", (int)strlen(tex->name));
-                SafeWrite(texfile, tex->name, strlen(tex->name));
+                std::fprintf(texfile, "[%d]", (int)std::strlen(tex->name));
+                SafeWrite(texfile, tex->name, std::strlen(tex->name));
                 std::fprintf(texfile, " %d %d\r\n", tex->width, tex->height);
             }
         }
