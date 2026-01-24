@@ -432,7 +432,7 @@ static void ReadLightFile(const char *const filename)
         vec_t b;
         vec_t i = 1;
 
-        char *comment = strstr(scan, "//");
+        char *comment = std::strstr(scan, "//");
         if (comment)
         {
             // Newline and Null terminate the string early if there is a c++ style single line comment

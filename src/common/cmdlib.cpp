@@ -40,7 +40,7 @@ const char *stristr(const char *const string, const char *const substring)
     char *substring_copy = _strdup(substring);
     _strlwr(substring_copy);
 
-    const char *match = strstr(string_copy, substring_copy);
+    const char *match = std::strstr(string_copy, substring_copy);
     if (match)
     {
         match = (string + (match - string_copy));
