@@ -11,7 +11,7 @@
 
 q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
 
-#define THREADTIMES_SIZE 100
+constexpr int THREADTIMES_SIZE = 100;
 #define THREADTIMES_SIZEf (float)(THREADTIMES_SIZE)
 
 static int dispatch = 0;

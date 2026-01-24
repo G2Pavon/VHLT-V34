@@ -2,7 +2,7 @@
 
 #include "log.h"
 
-#define MAX_THREADS 64
+constexpr int MAX_THREADS = 64;
 
 typedef enum
 {
@@ -13,9 +13,9 @@ typedef enum
 
 typedef void (*q_threadfunction)(int);
 
-#define DEFAULT_NUMTHREADS -1
+constexpr int DEFAULT_NUMTHREADS = -1;
 
-#define DEFAULT_THREAD_PRIORITY eThreadPriorityNormal
+constexpr q_threadpriority DEFAULT_THREAD_PRIORITY = eThreadPriorityNormal;
 
 extern int g_numthreads;
 extern q_threadpriority g_threadpriority;

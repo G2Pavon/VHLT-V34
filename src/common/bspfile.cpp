@@ -653,8 +653,8 @@ void WriteExtentFile(const char *const filename)
 //
 // =====================================================================================
 //
-const int BLOCK_WIDTH = 128;
-const int BLOCK_HEIGHT = 128;
+constexpr int BLOCK_WIDTH = 128;
+constexpr int BLOCK_HEIGHT = 128;
 typedef struct lightmapblock_s
 {
     lightmapblock_s *next;

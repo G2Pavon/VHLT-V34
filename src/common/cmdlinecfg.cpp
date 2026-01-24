@@ -11,8 +11,8 @@
 #include "log.h"
 #include "cmdlib.h"
 
-const char paramfilename[_MAX_PATH] = "settings.txt";
-const char sepchr = '\n';
+constexpr char PARAMFILENAME[_MAX_PATH] = "settings.txt";
+constexpr char SEPCHR = '\n';
 bool error = false;
 #define SEPSTR "\n"
 
@@ -22,7 +22,7 @@ int plen(const char *p)
     {
         if (p[l] == '\0')
             return -1;
-        if (p[l] == sepchr)
+        if (p[l] == SEPCHR)
             return l;
     }
 }
@@ -266,7 +266,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
 
     GetModuleFileName(NULL, tmp, _MAX_PATH);
     ExtractFilePath(tmp, filepath);
-    std::strcat(filepath, paramfilename);
+    std::strcat(filepath, PARAMFILENAME);
     std::FILE *f = std::fopen(filepath, "r");
     if (f)
     {

@@ -19,7 +19,7 @@ typedef struct
     int line;
 } script_t;
 
-#define MAX_INCLUDES 8
+constexpr int MAX_INCLUDES = 8;
 
 static script_t s_scriptstack[MAX_INCLUDES];
 script_t *s_script;
