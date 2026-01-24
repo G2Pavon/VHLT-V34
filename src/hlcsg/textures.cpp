@@ -270,7 +270,7 @@ bool TEX_InitFromWad()
         SafeRead(texfile, &wadinfo, sizeof(wadinfo));
 
         // make sure its a valid format
-        if (strncmp(wadinfo.identification, "WAD2", 4) && strncmp(wadinfo.identification, "WAD3", 4))
+        if (std::strncmp(wadinfo.identification, "WAD2", 4) && std::strncmp(wadinfo.identification, "WAD3", 4))
         {
             Log(" - ");
             Error("%s isn't a Wadfile!", pszWadFile);

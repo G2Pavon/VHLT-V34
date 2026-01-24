@@ -977,7 +977,7 @@ bool ParseMapEntity()
         std::abs(mapent->origin[2]) > ENGINE_ENTITY_RANGE + ON_EPSILON)
     {
         const char *classname = ValueForKey(mapent, "classname");
-        if (strncmp(classname, "light", 5))
+        if (std::strncmp(classname, "light", 5))
         {
             Warning("Entity %i (classname \"%s\"): origin outside +/-%.0f: (%.0f,%.0f,%.0f)",
                     g_numparsedentities,

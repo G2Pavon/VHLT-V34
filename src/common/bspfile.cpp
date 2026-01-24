@@ -722,9 +722,9 @@ int CountBlocks()
     {
         dface_t *f = &g_dfaces[k];
         const char *texname = GetTextureByNumber(ParseTexinfoForFace(f));
-        if (!strncmp(texname, "sky", 3)                                                                            //sky, no lightmap allocation.
-            || !strncmp(texname, "!", 1) || !strncasecmp(texname, "water", 5) || !strncasecmp(texname, "laser", 5) //water, no lightmap allocation.
-            || (g_texinfo[ParseTexinfoForFace(f)].flags & TEX_SPECIAL)                                             //aaatrigger, I don't know.
+        if (!std::strncmp(texname, "sky", 3)                                                                            //sky, no lightmap allocation.
+            || !std::strncmp(texname, "!", 1) || !strncasecmp(texname, "water", 5) || !strncasecmp(texname, "laser", 5) //water, no lightmap allocation.
+            || (g_texinfo[ParseTexinfoForFace(f)].flags & TEX_SPECIAL)                                                  //aaatrigger, I don't know.
         )
         {
             continue;
@@ -838,7 +838,7 @@ char *FindWadValue()
             {
                 return NULL;
             }
-            if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
+            if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !std::strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
             {
                 int len = quotes[3] - (quotes[2] + 1);
                 char *value = (char *)malloc(len + 1);
@@ -1206,7 +1206,7 @@ bool ParseEntity()
         GetParamsFromEnt(mapent);
     }
     // ugly code
-    if (!strncmp(ValueForKey(mapent, "classname"), "light", 5) && *ValueForKey(mapent, "_tex"))
+    if (!std::strncmp(ValueForKey(mapent, "classname"), "light", 5) && *ValueForKey(mapent, "_tex"))
     {
         SetKeyValue(mapent, "convertto", ValueForKey(mapent, "classname"));
         SetKeyValue(mapent, "classname", "light_surface");
@@ -1382,7 +1382,7 @@ void UnparseEntities()
             {
                 SetKeyValue(mapent, "classname", "light");
             }
-            else if (strncmp(newclassname, "light", 5))
+            else if (std::strncmp(newclassname, "light", 5))
             {
                 Error("New classname for 'light_surface' should begin with 'light' not '%s'.\n", newclassname);
             }

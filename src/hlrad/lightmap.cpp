@@ -1664,7 +1664,7 @@ void CreateDirectLights()
 
         entity_t *e = &g_entities[i];
         const char *name = ValueForKey(e, "classname");
-        if (strncmp(name, "light", 5))
+        if (std::strncmp(name, "light", 5))
             continue;
         {
             int style = IntForKey(e, "style");
@@ -4285,7 +4285,7 @@ void MLH_GetSamples_r(mdllight_t *ml, int nodenum, const float *start, const flo
             dface_t *f = &g_dfaces[node->firstface + i];
             texinfo_t *tex = &g_texinfo[f->texinfo];
             const char *texname = GetTextureByNumber(f->texinfo);
-            if (!strncmp(texname, "sky", 3))
+            if (!std::strncmp(texname, "sky", 3))
             {
                 continue;
             }
