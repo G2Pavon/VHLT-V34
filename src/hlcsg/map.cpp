@@ -222,7 +222,7 @@ static void ParseBrush(entity_t *mapent)
     for (int h = 0; h < NUM_HULLS; h++)
     {
         char key[16];
-        sprintf(key, "zhlt_hull%d", h);
+        std::sprintf(key, "zhlt_hull%d", h);
         const char *value = ValueForKey(mapent, key);
         if (*value)
         {
@@ -916,7 +916,7 @@ bool ParseMapEntity()
     {
         // Let the map tell which version of the compiler it comes from, to help tracing compiler bugs.
         char versionstring[128];
-        sprintf(versionstring, "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (%s)", __DATE__);
+        std::sprintf(versionstring, "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (%s)", __DATE__);
         SetKeyValue(mapent, "compiler", versionstring);
     }
 

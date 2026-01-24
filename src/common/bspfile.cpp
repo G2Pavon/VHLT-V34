@@ -1449,7 +1449,7 @@ void UnparseEntities()
 
         for (ep = g_entities[i].epairs; ep; ep = ep->next)
         {
-            sprintf(line, "\"%s\" \"%s\"\n", ep->key, ep->value);
+            std::sprintf(line, "\"%s\" \"%s\"\n", ep->key, ep->value);
             strcat(end, line);
             end += strlen(line);
         }
@@ -1618,7 +1618,7 @@ entity_t *EntityForModel(const int modnum)
 {
     char name[16];
 
-    sprintf(name, "*%i", modnum);
+    std::sprintf(name, "*%i", modnum);
     // search the entities for one using modnum
     for (int i = 0; i < g_numentities; i++)
     {

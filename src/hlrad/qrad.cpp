@@ -1497,7 +1497,7 @@ static void LoadOpaqueEntities()
     {
         dmodel_t *model = &g_dmodels[modelnum];
         char stringmodel[16];
-        sprintf(stringmodel, "*%i", modelnum);
+        std::sprintf(stringmodel, "*%i", modelnum);
         for (int entnum = 0; entnum < g_numentities; entnum++)
         {
             entity_t *ent = &g_entities[entnum];
@@ -2300,7 +2300,7 @@ static void BounceLight()
 
         if (g_dumppatches)
         {
-            sprintf(name, "bounce%u.txt", i);
+            std::sprintf(name, "bounce%u.txt", i);
             WriteWorld(name);
         }
     }
@@ -2422,7 +2422,7 @@ static void RadWorld()
     if (g_drawpatch)
     {
         char name[_MAX_PATH + 20];
-        sprintf(name, "%s_patch.pts", g_Mapname);
+        std::sprintf(name, "%s_patch.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
         FILE *f = fopen(name, "w");
         if (f)
@@ -2452,7 +2452,7 @@ static void RadWorld()
     if (g_drawedge)
     {
         char name[_MAX_PATH + 20];
-        sprintf(name, "%s_edge.pts", g_Mapname);
+        std::sprintf(name, "%s_edge.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
         FILE *f = fopen(name, "w");
         if (f)
@@ -2808,11 +2808,11 @@ static void Settings()
     Log("rgb transfers        [ %17s ] [ %17s ]\n", g_rgb_transfers ? "on" : "off", DEFAULT_RGB_TRANSFERS ? "on" : "off");
 
     Log("minimum final light  [ %17d ] [ %17d ]\n", (int)g_minlight, (int)DEFAULT_MINLIGHT);
-    sprintf(buf1, "%d (%s)", g_transfer_compress_type, float_type_string[g_transfer_compress_type]);
-    sprintf(buf2, "%d (%s)", DEFAULT_TRANSFER_COMPRESS_TYPE, float_type_string[DEFAULT_TRANSFER_COMPRESS_TYPE]);
+    std::sprintf(buf1, "%d (%s)", g_transfer_compress_type, float_type_string[g_transfer_compress_type]);
+    std::sprintf(buf2, "%d (%s)", DEFAULT_TRANSFER_COMPRESS_TYPE, float_type_string[DEFAULT_TRANSFER_COMPRESS_TYPE]);
     Log("size of transfer     [ %17s ] [ %17s ]\n", buf1, buf2);
-    sprintf(buf1, "%d (%s)", g_rgbtransfer_compress_type, vector_type_string[g_rgbtransfer_compress_type]);
-    sprintf(buf2, "%d (%s)", DEFAULT_RGBTRANSFER_COMPRESS_TYPE, vector_type_string[DEFAULT_RGBTRANSFER_COMPRESS_TYPE]);
+    std::sprintf(buf1, "%d (%s)", g_rgbtransfer_compress_type, vector_type_string[g_rgbtransfer_compress_type]);
+    std::sprintf(buf2, "%d (%s)", DEFAULT_RGBTRANSFER_COMPRESS_TYPE, vector_type_string[DEFAULT_RGBTRANSFER_COMPRESS_TYPE]);
     Log("size of rgbtransfer  [ %17s ] [ %17s ]\n", buf1, buf2);
     Log("soft sky             [ %17s ] [ %17s ]\n", g_softsky ? "on" : "off", DEFAULT_SOFTSKY ? "on" : "off");
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_translucentdepth);

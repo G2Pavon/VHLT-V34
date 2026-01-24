@@ -4561,7 +4561,7 @@ void FinalLightFace(const int facenum)
     if (facenum == 0 && g_drawsample)
     {
         char name[_MAX_PATH + 20];
-        sprintf(name, "%s_sample.pts", g_Mapname);
+        std::sprintf(name, "%s_sample.pts", g_Mapname);
         Log("Writing '%s' ...\n", name);
 
         FILE *f = fopen(name, "w");
