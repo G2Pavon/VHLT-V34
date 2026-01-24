@@ -90,7 +90,7 @@ static void texmap_clear()
     ThreadLock();
     for (int i = 0; i < numtexmap; i++)
     {
-        free(texmap[i]);
+        std::free(texmap[i]);
     }
     numtexmap = 0;
     ThreadUnlock();
@@ -653,7 +653,7 @@ void WriteMiptex()
                 std::memcpy(writewad_lumpinfo->name, miptex[i].name, MAXWADNAME);
                 writewad_header.numlumps++;
                 SafeWrite(writewad_file, writewad_data, writewad_datasize);
-                free(writewad_data);
+                std::free(writewad_data);
             }
 
             if (!len)

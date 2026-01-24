@@ -444,7 +444,7 @@ face_t *AllocFace()
 // =====================================================================================
 void FreeFace(face_t *f)
 {
-    free(f);
+    std::free(f);
 }
 
 // =====================================================================================
@@ -463,7 +463,7 @@ surface_t *AllocSurface()
 // =====================================================================================
 void FreeSurface(surface_t *s)
 {
-    free(s);
+    std::free(s);
 }
 
 // =====================================================================================
@@ -482,7 +482,7 @@ portal_t *AllocPortal()
 // =====================================================================================
 void FreePortal(portal_t *p) // consider: inline
 {
-    free(p);
+    std::free(p);
 }
 
 side_t *AllocSide()
@@ -498,7 +498,7 @@ void FreeSide(side_t *s)
     {
         delete s->w;
     }
-    free(s);
+    std::free(s);
     return;
 }
 
@@ -528,7 +528,7 @@ void FreeBrush(brush_t *b)
             FreeSide(s);
         }
     }
-    free(b);
+    std::free(b);
     return;
 }
 

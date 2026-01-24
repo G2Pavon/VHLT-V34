@@ -1102,9 +1102,9 @@ void LoadWadValue()
         for (e = mapent->epairs; e; e = next)
         {
             next = e->next;
-            free(e->key);
-            free(e->value);
-            free(e);
+            std::free(e->key);
+            std::free(e->value);
+            std::free(e);
         }
     }
     if (*wadvalue)
@@ -1116,7 +1116,7 @@ void LoadWadValue()
         Log("Wad files required to run the map: (None)\n");
     }
     SetKeyValue(&g_entities[0], "wad", wadvalue);
-    free(wadvalue);
+    std::free(wadvalue);
 }
 void WriteBSP(const char *const name)
 {
@@ -1313,7 +1313,7 @@ static void ProcessModels()
             b_placedcontents = true;
             placedcontents = contents;
         }
-        free(temps);
+        std::free(temps);
 
         // csg them in order
         if (i == 0) // if its worldspawn....
@@ -2076,7 +2076,7 @@ int main(const int argc, char **argv)
                             SetKeyValue(ent, "message", newvalue);
                             count++;
                         }
-                        free(newvalue);
+                        std::free(newvalue);
                     }
                 }
 

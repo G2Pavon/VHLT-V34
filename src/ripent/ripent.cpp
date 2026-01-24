@@ -516,7 +516,7 @@ static void WriteTextures(const char *const name)
             strcpy(info[i].name, ofs >= 0 ? ((miptex_t *)(g_dtexdata + ofs))->name : "\rTEXTUREMISSING");
         }
         SafeWrite(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
-        free(info);
+        std::free(info);
     }
     else
     {
@@ -578,7 +578,7 @@ static void WriteTextures(const char *const name)
         SafeWrite(wadfile, &header, sizeof(wadinfo_t));
 
         std::fclose(texfile);
-        free(info);
+        std::free(info);
     }
     std::fclose(wadfile);
 }
@@ -616,7 +616,7 @@ static void ReadTextures(const char *name)
             ((dmiptexlump_t *)g_dtexdata)->dataofs[i] = info[i].filepos - wadofs + dataofs;
         }
 
-        free(info);
+        std::free(info);
     }
     else
     {
@@ -688,7 +688,7 @@ static void ReadTextures(const char *name)
         }
 
         std::fclose(texfile);
-        free(info);
+        std::free(info);
     }
     std::fclose(wadfile);
 }
@@ -720,7 +720,7 @@ static void WriteEntities(const char *const name)
         {
             g_entdatasize = bak_entdatasize;
             std::memcpy(g_dentdata, bak_dentdata, bak_entdatasize);
-            free(bak_dentdata);
+            std::free(bak_dentdata);
         }
     }
 }

@@ -100,7 +100,7 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     {
         if (node->contents == CONTENTS_SOLID)
         {
-            free(node);
+            std::free(node);
             return CONTENTS_SOLID;
         }
         else
@@ -119,8 +119,8 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
         {
             num = portalleaf->contents;
         }
-        free(node->markfaces);
-        free(node);
+        std::free(node->markfaces);
+        std::free(node);
         return num;
     }
 
@@ -156,7 +156,7 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
         c = output->second; // use existing clipnode
     }
 
-    free(node);
+    std::free(node);
     return c;
 }
 
@@ -248,7 +248,7 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
             f = f->original; // grab tjunction split faces
         } while (f);
     }
-    free(node->markfaces);
+    std::free(node->markfaces);
 
     leaf_p->nummarksurfaces = g_nummarksurfaces - leaf_p->firstmarksurface;
     return leafnum;
@@ -294,7 +294,7 @@ static void WriteFace(face_t *f)
         g_dsurfedges[g_numsurfedges] = e;
         g_numsurfedges++;
     }
-    free(f->outputedges);
+    std::free(f->outputedges);
     f->outputedges = NULL;
 }
 
@@ -319,7 +319,7 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     {
         if (node->iscontentsdetail)
         {
-            free(node->markfaces);
+            std::free(node->markfaces);
             return -1;
         }
         else
@@ -402,7 +402,7 @@ static void FreeDrawNodes_r(node_t *node)
         FreeFace(f);
     }
 
-    free(node);
+    std::free(node);
 }
 
 // =====================================================================================
@@ -687,10 +687,10 @@ void FinishBSPFile()
             g_nummiptex = Num;
             g_texdatasize = Size;
         skipReduceTexdata:;
-            free(lumpsizes);
-            free(newdata);
-            free(Used);
-            free(Map);
+            std::free(lumpsizes);
+            std::free(newdata);
+            std::free(Used);
+            std::free(Map);
         }
         Log("Reduced %d planes to %d\n", g_numplanes, gNumMappedPlanes);
 
@@ -782,9 +782,9 @@ void FinishBSPFile()
                 }
             }
         }
-        free(brinkinfo);
-        free(headnode);
-        free(clipnodes);
+        std::free(brinkinfo);
+        std::free(headnode);
+        std::free(clipnodes);
     }
 
     WriteExtentFile(g_extentfilename);

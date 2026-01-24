@@ -37,7 +37,7 @@ void FreeWadPaths()
     for (int i = 0; i < g_iNumWadPaths; i++)
     {
         wadpath_t *current = g_pWadPaths[i];
-        free(current);
+        std::free(current);
     }
 }
 

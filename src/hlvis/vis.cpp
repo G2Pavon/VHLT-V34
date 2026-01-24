@@ -474,7 +474,7 @@ static void CalcVis()
         SaveVisData(visdatafile);
 
         // We need to reset the uncompressed variable and portal visbits
-        free(g_uncompressed);
+        std::free(g_uncompressed);
         g_uncompressed = (byte *)calloc(g_portalleafs, g_bitbytes);
 
         vismap_p = g_dvisdata;
@@ -694,7 +694,7 @@ static void LoadPortalsByFilename(const char *const filename)
     }
     LoadFile(filename, &file_image);
     LoadPortals(file_image);
-    free(file_image);
+    std::free(file_image);
 }
 
 // =====================================================================================
@@ -1068,7 +1068,7 @@ int main(const int argc, char **argv)
             double end = I_FloatTime();
             LogTimeElapsed(end - start);
 
-            free(g_uncompressed);
+            std::free(g_uncompressed);
             // END VIS
         }
     }

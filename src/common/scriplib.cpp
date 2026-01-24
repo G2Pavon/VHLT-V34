@@ -101,7 +101,7 @@ bool EndOfScript(const bool crossline)
         return false;
     }
 
-    free(s_script->buffer);
+    std::free(s_script->buffer);
 
     if (s_script == s_scriptstack + 1)
     {

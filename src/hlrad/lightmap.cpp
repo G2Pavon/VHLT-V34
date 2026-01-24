@@ -82,8 +82,8 @@ intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
 }
 void FreeIntersectTest(intersecttest_t *t)
 {
-    free(t->clipplanes);
-    free(t);
+    std::free(t->clipplanes);
+    std::free(t);
 }
 void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgeend, dface_t *const f)
 {
@@ -1043,7 +1043,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         if (!len)
         {
             Developer(DEVELOPER_LEVEL_MEGASPAM, "couldn't translate sample boundaries on face %d", frag->facenum);
-            free(frag);
+            std::free(frag);
             return NULL;
         }
         VectorScale(frag->myrect.planes[x].normal, 1 / len, frag->myrect.planes[x].normal);
@@ -1058,8 +1058,8 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         // empty
         delete frag->mywinding;
         delete frag->winding;
-        free(frag->edges);
-        free(frag);
+        std::free(frag->edges);
+        std::free(frag);
         return NULL;
     }
 
@@ -1094,14 +1094,14 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         }
         delete w;
     }
-    free(clipplanes);
+    std::free(clipplanes);
     if (overlap)
     {
         // in the original texture plane, this fragment overlaps with some existing fragments
         delete frag->mywinding;
         delete frag->winding;
-        free(frag->edges);
-        free(frag);
+        std::free(frag->edges);
+        std::free(frag);
         return NULL;
     }
 
@@ -1207,8 +1207,8 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
         // empty
         delete info->head->mywinding;
         delete info->head->winding;
-        free(info->head->edges);
-        free(info->head);
+        std::free(info->head->edges);
+        std::free(info->head);
         info->head = NULL;
         info->size = 0;
     }
@@ -1282,10 +1282,10 @@ static void DeleteSampleFrag(samplefraginfo_t *fraginfo)
         fraginfo->head = f->next;
         delete f->mywinding;
         delete f->winding;
-        free(f->edges);
-        free(f);
+        std::free(f->edges);
+        std::free(f);
     }
-    free(fraginfo);
+    std::free(fraginfo);
 }
 
 static light_flag_t SetSampleFromST(vec_t *const point,
@@ -2140,7 +2140,7 @@ void CreateDirectLights()
         {
             // since they are in leaf 0, they won't emit a light anyway
             directlights[0] = dl->next;
-            free(dl);
+            std::free(dl);
         }
         directlights[0] = skylights;
     }
@@ -2180,7 +2180,7 @@ void DeleteDirectLights()
         while (dl)
         {
             directlights[l] = dl->next;
-            free(dl);
+            std::free(dl);
             dl = directlights[l];
         }
     }
@@ -2349,9 +2349,9 @@ void BuildDiffuseNormals()
         }
         CopyToSkynormals(i + 1, numpoints, points, numedges, edges, numtriangles, triangles);
     }
-    free(points);
-    free(edges);
-    free(triangles);
+    std::free(points);
+    std::free(edges);
+    std::free(triangles);
 }
 static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec3_t normal, vec3_t *sample, byte *styles, int step, int miptex, int texlightgap_surfacenum)
 {
@@ -2915,7 +2915,7 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
     {
         delete texwindings[j];
     }
-    free(texwindings);
+    std::free(texwindings);
 }
 
 // =====================================================================================
@@ -3549,7 +3549,7 @@ void BuildFacelights(const int facenum)
             }
         }
     } // end of i loop
-    free(sample_wallflags);
+    std::free(sample_wallflags);
 
     // average up the direct light on each patch for radiosity
     AddSamplesToPatches((const sample_t **)fl_samples, f_styles, facenum, &l);
@@ -3814,7 +3814,7 @@ void BuildFacelights(const int facenum)
         }
         for (j = 0; j < ALLSTYLES; j++)
         {
-            free(fl_samples[j]);
+            std::free(fl_samples[j]);
         }
     }
     // patches
@@ -3915,20 +3915,20 @@ void BuildFacelights(const int facenum)
                 ThreadUnlock();
             }
         }
-        free(patch->totalstyle_all);
+        std::free(patch->totalstyle_all);
         patch->totalstyle_all = NULL;
-        free(patch->samplelight_all);
+        std::free(patch->samplelight_all);
         patch->samplelight_all = NULL;
-        free(patch->totallight_all);
+        std::free(patch->totallight_all);
         patch->totallight_all = NULL;
-        free(patch->directlight_all);
+        std::free(patch->directlight_all);
         patch->directlight_all = NULL;
     }
-    free(l.lmcache);
-    free(l.lmcache_normal);
-    free(l.lmcache_wallflags);
-    free(l.surfpt_position);
-    free(l.surfpt_surface);
+    std::free(l.lmcache);
+    std::free(l.lmcache_normal);
+    std::free(l.lmcache_wallflags);
+    std::free(l.surfpt_position);
+    std::free(l.surfpt_surface);
 }
 
 // =====================================================================================
@@ -4066,7 +4066,7 @@ void PrecompLightmapOffsets()
             }
             for (int k = 0; k < MAXLIGHTMAPS && oldstyles[k] != 255; k++)
             {
-                free(oldsamples[k]);
+                std::free(oldsamples[k]);
             }
         }
 
@@ -4147,7 +4147,7 @@ void ReduceLightmap()
         }
         g_lightdatasize += fl->numsamples * 3 * numstyles;
     }
-    free(oldlightdata);
+    std::free(oldlightdata);
 }
 
 // Change the sample light right under a mdl file entity's origin.
@@ -4464,7 +4464,7 @@ void FreeFacelightDependencyList()
         {
             facelightlist_t *item = g_dependentfacelights[i];
             g_dependentfacelights[i] = item->next;
-            free(item);
+            std::free(item);
         }
     }
 }
@@ -4760,8 +4760,8 @@ void FinalLightFace(const int facenum)
             }
         }
     }
-    free(original_basiclight);
-    free(final_basiclight);
+    std::free(original_basiclight);
+    std::free(final_basiclight);
 }
 
 //LRC

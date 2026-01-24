@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 #include "bsp5.h"
 #include "bspfile.h"
@@ -114,7 +115,7 @@ static void FreeDetailNode_r(node_t *n)
     {
         if (!(n->isportalleaf && n->contents == CONTENTS_SOLID))
         {
-            free(n->markfaces);
+            std::free(n->markfaces);
             n->markfaces = NULL;
         }
         return;
@@ -122,7 +123,7 @@ static void FreeDetailNode_r(node_t *n)
     for (int i = 0; i < 2; i++)
     {
         FreeDetailNode_r(n->children[i]);
-        free(n->children[i]);
+        std::free(n->children[i]);
         n->children[i] = NULL;
     }
     face_t *next;
@@ -363,7 +364,7 @@ void FreeAllowableOutsideList()
 {
     if (g_strAllowableOutsideList)
     {
-        free(g_strAllowableOutsideList);
+        std::free(g_strAllowableOutsideList);
         g_strAllowableOutsideList = NULL;
     }
 }

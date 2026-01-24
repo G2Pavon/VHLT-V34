@@ -885,8 +885,8 @@ vec_t WindingDist(const winding_t *w[2])
                 minsqrdist = 0;
             }
         }
-        free(boundnormals);
-        free(bounddists);
+        std::free(boundnormals);
+        std::free(bounddists);
     }
     return (std::sqrt(minsqrdist));
 }

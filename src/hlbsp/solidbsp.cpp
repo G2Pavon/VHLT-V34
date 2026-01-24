@@ -258,8 +258,8 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
         Warning("BuildSurfaceTree_r: didn't split node with bound (%f,%f,%f)-(%f,%f,%f)", node->mins[0], node->mins[1], node->mins[2], node->maxs[0], node->maxs[1], node->maxs[2]);
         delete node->children[0]->leaffaces;
         delete node->children[1]->leaffaces;
-        free(node->children[0]);
-        free(node->children[1]);
+        std::free(node->children[0]);
+        std::free(node->children[1]);
         delete node->nodefaces;
         node->isleaf = true;
         return;
@@ -373,9 +373,9 @@ void DeleteSurfaceTree_r(surfacetreenode_t *node)
     else
     {
         DeleteSurfaceTree_r(node->children[0]);
-        free(node->children[0]);
+        std::free(node->children[0]);
         DeleteSurfaceTree_r(node->children[1]);
-        free(node->children[1]);
+        std::free(node->children[1]);
         delete node->nodefaces;
     }
 }
@@ -383,9 +383,9 @@ void DeleteSurfaceTree_r(surfacetreenode_t *node)
 void DeleteSurfaceTree(surfacetree_t *tree)
 {
     DeleteSurfaceTree_r(tree->headnode);
-    free(tree->headnode);
+    std::free(tree->headnode);
     delete tree->result.middle;
-    free(tree);
+    std::free(tree);
 }
 
 // =====================================================================================
@@ -615,7 +615,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
 
     if (!bestsurface)
         Error("ChoosePlaneFromList: no valid planes");
-    free(tmpvalue);
+    std::free(tmpvalue);
     DeleteSurfaceTree(surfacetree);
     return bestsurface;
 }

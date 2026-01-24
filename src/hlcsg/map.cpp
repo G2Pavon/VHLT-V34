@@ -99,7 +99,7 @@ void DeleteCurrentEntity(entity_t *entity)
         {
             if (b->hullshapes[h])
             {
-                free(b->hullshapes[h]);
+                std::free(b->hullshapes[h]);
             }
         }
     }
@@ -539,7 +539,7 @@ static void ParseBrush(entity_t *mapent)
         {
             if (b->hullshapes[h])
             {
-                free(b->hullshapes[h]);
+                std::free(b->hullshapes[h]);
             }
         }
         std::memset(b, 0, sizeof(brush_t));
@@ -589,7 +589,7 @@ static void ParseBrush(entity_t *mapent)
         if (origin)
         {
             SetKeyValue(mapent, "origin", origin);
-            free(origin);
+            std::free(origin);
         }
     }
     if (g_skyclip && b->contents == CONTENTS_SKY && !b->noclip)

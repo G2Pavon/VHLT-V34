@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 #include <cstring>
+#include <cstdlib>
 
 #include "filelib.h"
 #include "log.h"
@@ -54,7 +55,7 @@ void properties_initialize(const char *filename)
                 }
             }
             str.assign(s);
-            free(s);
+            std::free(s);
         }
         if (str.size() < 1)
         {

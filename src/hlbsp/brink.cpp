@@ -90,7 +90,7 @@ bbrink_t *CopyBrink(bbrink_t *other)
 void DeleteBrink(bbrink_t *b)
 {
     delete b->nodes;
-    free(b);
+    std::free(b);
 }
 
 bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
@@ -540,7 +540,7 @@ void DeletePoint(int &numobjects, btreepoint_t *tp)
         hlassume(false, assume_first);
     }
     delete tp->edges;
-    free(tp);
+    std::free(tp);
     numobjects--;
 }
 
@@ -585,7 +585,7 @@ void DeleteEdge(int &numobjects, btreeedge_t *te) // warning: points in this edg
         }
     }
     delete te->faces;
-    free(te);
+    std::free(te);
     numobjects--;
 }
 
@@ -633,7 +633,7 @@ void DeleteFace(int &numobjects, btreeface_t *tf) // warning: edges in this face
         }
     }
     delete tf->edges;
-    free(tf);
+    std::free(tf);
     numobjects--;
 }
 
@@ -650,7 +650,7 @@ void DeleteLeaf(int &numobjects, btreeleaf_t *tl)
         }
     }
     delete tl->faces;
-    free(tl);
+    std::free(tl);
     numobjects--;
 }
 
@@ -1153,7 +1153,7 @@ void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headn
             info->clipnodes[i].children[k] = info->clipnodes + (bclipnodes[i].children[k] - bclipnodes);
         }
     }
-    free(bclipnodes);
+    std::free(bclipnodes);
 }
 
 void BuildTreeCells(bbrinkinfo_t *info)
@@ -1263,7 +1263,7 @@ void CollectBrinks(bbrinkinfo_t *info)
 
 void FreeBrinks(bbrinkinfo_t *info)
 {
-    free(info->brinks);
+    std::free(info->brinks);
 }
 
 struct bwedge_s;
@@ -1692,10 +1692,10 @@ void DeleteClipnodes(bbrinkinfo_t *info)
         while ((p = info->clipnodes[i].partitions) != NULL)
         {
             info->clipnodes[i].partitions = p->next;
-            free(p);
+            std::free(p);
         }
     }
-    free(info->clipnodes);
+    std::free(info->clipnodes);
 }
 
 void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes and compress clipnodes better if using HLBSP_MERGECLIPNODE
@@ -1734,7 +1734,7 @@ void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes and co
             if (*pp && (*pp)->planenum == current->planenum && (*pp)->planeside == current->planeside)
             {
                 (*pp)->type = qmin((*pp)->type, current->type); // pick the lowest (most important) level from the existing partition and the current partition
-                free(current);
+                std::free(current);
                 continue;
             }
             switch (current->type)
@@ -1909,5 +1909,5 @@ void DeleteBrinkinfo(void *brinkinfo)
 {
     bbrinkinfo_t *info = (bbrinkinfo_t *)brinkinfo;
     DeleteClipnodes(info);
-    free(info);
+    std::free(info);
 }

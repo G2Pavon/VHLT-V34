@@ -1,8 +1,6 @@
-
-
+#include <cstdlib>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <cstdlib>
 
 #include "cmdlib.h"
 #include "messages.h"
@@ -77,6 +75,6 @@ void *Alloc(const unsigned long size)
 // =====================================================================================
 bool Free(void *pointer)
 {
-    free(pointer);
+    std::free(pointer);
     return true;
 }

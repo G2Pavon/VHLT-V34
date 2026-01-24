@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
+#include <cstdlib>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -46,8 +47,8 @@ const char *stristr(const char *const string, const char *const substring)
         match = (string + (match - string_copy));
     }
 
-    free(string_copy);
-    free(substring_copy);
+    std::free(string_copy);
+    std::free(substring_copy);
     return match;
 }
 

@@ -337,7 +337,7 @@ void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&arg
             argcnew = argc;
         }
         argvnew[0] = argv[0];
-        free(s);
+        std::free(s);
     }
     else
     {

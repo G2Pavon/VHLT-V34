@@ -376,7 +376,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
         AddHullPlane(hull, normal, origin, true);
     }
 
-    free(axialbevel);
+    std::free(axialbevel);
 }
 
 void ExpandBrush(brush_t *brush, const int hullnum)
@@ -758,10 +758,10 @@ void SortSides(brushhull_t *h)
     {
         *(i >= 0 ? &sides[sorted[i]]->next : &h->faces) = (i + 1 < numsides ? sides[sorted[i + 1]] : NULL);
     }
-    free(sides);
-    free(normals);
-    free(isused);
-    free(sorted);
+    std::free(sides);
+    std::free(normals);
+    std::free(isused);
+    std::free(sorted);
 }
 void MakeHullFaces(const brush_t *const b, brushhull_t *h)
 {
@@ -1455,13 +1455,13 @@ void DeleteHullBrush(hullbrush_t *hb)
     {
         if (hbf->vertexes)
         {
-            free(hbf->vertexes);
+            std::free(hbf->vertexes);
         }
     }
-    free(hb->faces);
-    free(hb->edges);
-    free(hb->vertexes);
-    free(hb);
+    std::free(hb->faces);
+    std::free(hb->edges);
+    std::free(hb->vertexes);
+    std::free(hb);
 }
 
 void InitDefaultHulls()
@@ -1521,8 +1521,8 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
             {
                 DeleteHullBrush(target->brushes[i]);
             }
-            free(target->brushes);
-            free(target->id);
+            std::free(target->brushes);
+            std::free(target->id);
             target->id = _strdup(hs->id);
             target->disabled = hs->disabled;
             target->numbrushes = hs->numbrushes;

@@ -336,7 +336,7 @@ static void BuildVisLeafs(int threadnum)
             }
         }
     }
-    free(uncompressedcolumn);
+    std::free(uncompressedcolumn);
 }
 
 #pragma warning(pop)
@@ -370,7 +370,7 @@ static void FreeVisMatrix()
         {
             if (item->row)
             {
-                free(item->row);
+                std::free(item->row);
             }
         }
         if (FreeBlock(s_vismatrix))

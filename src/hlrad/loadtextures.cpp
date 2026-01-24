@@ -205,9 +205,9 @@ void TryCloseWadFiles()
         for (wadfile = g_wadfiles; wadfile; wadfile = next)
         {
             next = wadfile->next;
-            free(wadfile->lumpinfos);
+            std::free(wadfile->lumpinfos);
             std::fclose(wadfile->file);
-            free(wadfile);
+            std::free(wadfile);
         }
         g_wadfiles = NULL;
     }
@@ -310,7 +310,7 @@ void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
             if (!TerminatedString(mt->name, 16))
             {
                 Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path);
-                free(mt);
+                std::free(mt);
                 continue;
             }
             Developer(DEVELOPER_LEVEL_MESSAGE, "Texture '%s': name '%s', width %d, height %d.\n", tex->name, mt->name, mt->width, mt->height);
@@ -319,7 +319,7 @@ void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
                 Warning("Texture '%s': texture name '%s' differs from its reference name '%s' in '%s'.", tex->name, mt->name, tex->name, wad->path);
             }
             LoadTexture(tex, mt, found->disksize);
-            free(mt);
+            std::free(mt);
             break;
         }
     }
@@ -590,7 +590,7 @@ static cq_searchnode_t *CQ_AllocSearchTree(int maxcolors)
 
 static void CQ_FreeSearchTree(cq_searchnode_t *searchtree)
 {
-    free(searchtree);
+    std::free(searchtree);
 }
 
 static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM],
@@ -771,8 +771,8 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
         Error("CQ_CreatePalette: internal error");
     }
 
-    free(pointarray);
-    free(nodes);
+    std::free(pointarray);
+    std::free(nodes);
 }
 
 static void CQ_MapPoint_r(int *bestdist, int *best,
@@ -902,7 +902,7 @@ void NewTextures_Write()
 
     for (int i = 0; i < g_newtextures_num; i++)
     {
-        free(g_newtextures_data[i]);
+        std::free(g_newtextures_data[i]);
     }
     g_newtextures_num = 0;
 }
@@ -1322,7 +1322,7 @@ void EmbedLightmapInTextures()
                 VectorClear(palette[paletteoffset + j]);
             }
 
-            free(samplepoints);
+            std::free(samplepoints);
         }
 
         // emit a texinfo
@@ -1444,14 +1444,14 @@ void EmbedLightmapInTextures()
         count_bytes += miptexsize;
         Developer(DEVELOPER_LEVEL_MESSAGE, "Created texture '%s' for face (texture %s) at (%4.3f %4.3f %4.3f)\n", miptex->name, texname, g_face_centroids[i][0], g_face_centroids[i][1], g_face_centroids[i][2]);
 
-        free(miptex);
+        std::free(miptex);
 
         CQ_FreeSearchTree(palettetree);
 
-        free(texture);
+        std::free(texture);
         for (int miplevel = 0; miplevel < MIPLEVELS; miplevel++)
         {
-            free(texturemips[miplevel]);
+            std::free(texturemips[miplevel]);
         }
     }
     NewTextures_Write(); // update texdata now

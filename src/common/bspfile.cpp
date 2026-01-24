@@ -765,7 +765,7 @@ int CountBlocks()
             count++;
         }
         next = blocks->next;
-        free(blocks);
+        std::free(blocks);
     }
     return count;
 }
@@ -945,7 +945,7 @@ void PrintBSPFileSizes()
     }
     if (wadvalue)
     {
-        free(wadvalue);
+        std::free(wadvalue);
     }
 }
 
@@ -1072,7 +1072,7 @@ void DeleteEmbeddedLightmaps()
             countremovedtexinfos++;
         }
         g_numtexinfo = i + 1; // shrink g_texinfo
-        free(texinfoused);
+        std::free(texinfoused);
     }
 
     // Step 3: remove redundant textures
@@ -1103,7 +1103,7 @@ void DeleteEmbeddedLightmaps()
             countremovedtextures++;
         }
         int numremaining = i + 1; // number of remaining textures
-        free(textureused);
+        std::free(textureused);
 
         if (numremaining < numtextures)
         {
@@ -1434,7 +1434,7 @@ void UnparseEntities()
         {
             Log("%d redundant named lights optimized.\n", count);
         }
-        free(lightneedcompare);
+        std::free(lightneedcompare);
     }
 #endif
     for (int i = 0; i < g_numentities; i++)

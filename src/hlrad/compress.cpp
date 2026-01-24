@@ -64,5 +64,5 @@ void compress_compatability_test()
     for (int i = 0; i < 5; ++i)
         if (f[i] - ans[i] > 0.00001f || f[i] - ans[i] < -0.00001f)
             fail();
-    free(v);
+    std::free(v);
 }

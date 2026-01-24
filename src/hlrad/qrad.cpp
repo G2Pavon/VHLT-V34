@@ -1486,7 +1486,7 @@ static void FreeOpaqueFaceList()
     for (unsigned x = 0; x < g_opaque_face_count; x++, opaque++)
     {
     }
-    free(g_opaque_face_list);
+    std::free(g_opaque_face_list);
 
     g_opaque_face_list = NULL;
     g_opaque_face_count = 0;

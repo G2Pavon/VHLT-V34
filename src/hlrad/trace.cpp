@@ -449,11 +449,11 @@ void DeleteOpaqueNodes()
         if (of->winding)
             delete of->winding;
         if (of->edges)
-            free(of->edges);
+            std::free(of->edges);
     }
-    free(opaquefaces);
-    free(opaquenodes);
-    free(opaquemodels);
+    std::free(opaquefaces);
+    std::free(opaquenodes);
+    std::free(opaquemodels);
 }
 
 int TestLineOpaque_face(int facenum, const vec3_t hit)

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cmath>
+#include <cstdlib>
 
 #include "qrad.h"
 #include "log.h"
@@ -747,7 +748,7 @@ void FreePositionMaps()
             map->facewindingwithoffset = NULL;
             delete map->texwinding;
             map->texwinding = NULL;
-            free(map->grid);
+            std::free(map->grid);
             map->grid = NULL;
             map->valid = false;
         }
