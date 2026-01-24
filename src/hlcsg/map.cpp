@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
+#include <string>
 
 #include "csg.h"
 #include "cmdlib.h"
