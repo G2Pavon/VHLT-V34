@@ -528,7 +528,7 @@ void PortalFlow(portal_t *p)
     if (p->status != stat_working)
         Error("PortalFlow: reflowed");
 
-    p->visbits = (byte *)calloc(1, g_bitbytes);
+    p->visbits = (byte *)std::calloc(1, g_bitbytes);
 
     std::memset(&data, 0, sizeof(data));
     data.leafvis = p->visbits;
@@ -605,7 +605,7 @@ void BasePortalVis(int unused)
             break;
         portal_t *p = g_portals + i;
 
-        p->mightsee = (byte *)calloc(1, g_bitbytes);
+        p->mightsee = (byte *)std::calloc(1, g_bitbytes);
 
         std::memset(portalsee, 0, portalsize);
 

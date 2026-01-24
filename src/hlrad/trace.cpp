@@ -69,7 +69,7 @@ static void MakeTnode(const int nodenum)
 void MakeTnodes(dmodel_t * /*bm*/)
 {
     // 32 byte align the structs
-    tnodes = (tnode_t *)calloc((g_numnodes + 1), sizeof(tnode_t));
+    tnodes = (tnode_t *)std::calloc((g_numnodes + 1), sizeof(tnode_t));
 
     // The alignment doesn't have any effect at all. --vluzacn
     int ofs = 31 - (int)(((uintptr_t)tnodes + (uintptr_t)31) & (uintptr_t)31);
@@ -354,7 +354,7 @@ void BuildFaceEdges(opaqueface_t *f)
     if (!f->winding)
         return;
     f->numedges = f->winding->m_NumPoints;
-    f->edges = (dplane_t *)calloc(f->numedges, sizeof(dplane_t));
+    f->edges = (dplane_t *)std::calloc(f->numedges, sizeof(dplane_t));
     const vec_t *n = f->plane.normal;
     vec3_t e;
     for (int x = 0; x < f->winding->m_NumPoints; x++)
@@ -377,9 +377,9 @@ void BuildFaceEdges(opaqueface_t *f)
 
 void CreateOpaqueNodes()
 {
-    opaquemodels = (opaquemodel_t *)calloc(g_nummodels, sizeof(opaquemodel_t));
-    opaquenodes = (opaquenode_t *)calloc(g_numnodes, sizeof(opaquenode_t));
-    opaquefaces = (opaqueface_t *)calloc(g_numfaces, sizeof(opaqueface_t));
+    opaquemodels = (opaquemodel_t *)std::calloc(g_nummodels, sizeof(opaquemodel_t));
+    opaquenodes = (opaquenode_t *)std::calloc(g_numnodes, sizeof(opaquenode_t));
+    opaquefaces = (opaqueface_t *)std::calloc(g_numfaces, sizeof(opaqueface_t));
     for (int i = 0; i < g_numfaces; i++)
     {
         opaqueface_t *of = &opaquefaces[i];

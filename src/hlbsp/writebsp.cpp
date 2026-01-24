@@ -571,7 +571,7 @@ void FinishBSPFile()
         {
             dmiptexlump_t *l = (dmiptexlump_t *)g_dtexdata;
             int &g_nummiptex = l->nummiptex;
-            bool *Used = (bool *)calloc(g_nummiptex, sizeof(bool));
+            bool *Used = (bool *)std::calloc(g_nummiptex, sizeof(bool));
             int Num = 0, Size = 0;
             int *Map = (int *)std::malloc(g_nummiptex * sizeof(int));
 

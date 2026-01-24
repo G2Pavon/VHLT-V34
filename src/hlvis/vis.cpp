@@ -185,7 +185,7 @@ static winding_t *NewWinding(const int points)
     }
 
     int size = (int)(intptr_t)((winding_t *)0)->points[points];
-    winding_t *w = (winding_t *)calloc(1, size);
+    winding_t *w = (winding_t *)std::calloc(1, size);
 
     return w;
 }
@@ -475,7 +475,7 @@ static void CalcVis()
 
         // We need to reset the uncompressed variable and portal visbits
         std::free(g_uncompressed);
-        g_uncompressed = (byte *)calloc(g_portalleafs, g_bitbytes);
+        g_uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
 
         vismap_p = g_dvisdata;
 
@@ -539,11 +539,11 @@ static void LoadPortals(char *portal_image)
     g_bitlongs = g_bitbytes / sizeof(long);
 
     // each file portal is split into two memory portals
-    g_portals = (portal_t *)calloc(2 * g_numportals, sizeof(portal_t));
-    g_leafs = (leaf_t *)calloc(g_portalleafs, sizeof(leaf_t));
-    g_leafinfos = (leafinfo_t *)calloc(g_portalleafs, sizeof(leafinfo_t));
-    g_leafcounts = (int *)calloc(g_portalleafs, sizeof(int));
-    g_leafstarts = (int *)calloc(g_portalleafs, sizeof(int));
+    g_portals = (portal_t *)std::calloc(2 * g_numportals, sizeof(portal_t));
+    g_leafs = (leaf_t *)std::calloc(g_portalleafs, sizeof(leaf_t));
+    g_leafinfos = (leafinfo_t *)std::calloc(g_portalleafs, sizeof(leafinfo_t));
+    g_leafcounts = (int *)std::calloc(g_portalleafs, sizeof(int));
+    g_leafstarts = (int *)std::calloc(g_portalleafs, sizeof(int));
 
     originalvismapsize = g_portalleafs * ((g_portalleafs + 7) / 8);
 
@@ -1052,7 +1052,7 @@ int main(const int argc, char **argv)
             LoadPortalsByFilename(portalfile);
 
             Settings();
-            g_uncompressed = (byte *)calloc(g_portalleafs, g_bitbytes);
+            g_uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
 
             CalcVis();
             g_visdatasize = vismap_p - g_dvisdata;

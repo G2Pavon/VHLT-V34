@@ -67,7 +67,7 @@ bool FreeBlock(void *pointer)
 // HeapAlloc/HeapFree is thread safe by default
 void *Alloc(const unsigned long size)
 {
-    return calloc(1, size);
+    return std::calloc(1, size);
 }
 
 // =====================================================================================

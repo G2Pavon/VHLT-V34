@@ -1574,7 +1574,7 @@ void CreateDirectLights()
             DotProduct(p->baselight, p->texturereflectivity) / 3 > 0.0 && !(g_face_texlights[p->faceNumber] && *ValueForKey(g_face_texlights[p->faceNumber], "_scale") && FloatForKey(g_face_texlights[p->faceNumber], "_scale") <= 0)) //LRC
         {
             numdlights++;
-            dl = (directlight_t *)calloc(1, sizeof(directlight_t));
+            dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
 
             hlassume(dl != NULL, assume_NoMemory);
 
@@ -1642,7 +1642,7 @@ void CreateDirectLights()
             {
                 directlight_t *dl2;
                 numdlights++;
-                dl2 = (directlight_t *)calloc(1, sizeof(directlight_t));
+                dl2 = (directlight_t *)std::calloc(1, sizeof(directlight_t));
                 hlassume(dl2 != NULL, assume_NoMemory);
                 *dl2 = *dl;
                 VectorMA(dl->origin, -2, dl->normal, dl2->origin);
@@ -1703,7 +1703,7 @@ void CreateDirectLights()
         }
 
         numdlights++;
-        dl = (directlight_t *)calloc(1, sizeof(directlight_t));
+        dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
 
         hlassume(dl != NULL, assume_NoMemory);
 
@@ -3399,7 +3399,7 @@ void BuildFacelights(const int facenum)
 
     for (int k = 0; k < ALLSTYLES; k++)
     {
-        fl_samples[k] = (sample_t *)calloc(l.numsurfpt, sizeof(sample_t));
+        fl_samples[k] = (sample_t *)std::calloc(l.numsurfpt, sizeof(sample_t));
         hlassume(fl_samples[k] != NULL, assume_NoMemory);
     }
     for (patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next)
@@ -4632,8 +4632,8 @@ void FinalLightFace(const int facenum)
     //
     float minlight = FloatForKey(g_face_entity[facenum], "_minlight") * 128;
 
-    vec3_t *original_basiclight = (vec3_t *)calloc(fl->numsamples, sizeof(vec3_t));
-    final_basiclight = (int (*)[3])calloc(fl->numsamples, sizeof(int[3]));
+    vec3_t *original_basiclight = (vec3_t *)std::calloc(fl->numsamples, sizeof(vec3_t));
+    final_basiclight = (int (*)[3])std::calloc(fl->numsamples, sizeof(int[3]));
     hlassume(original_basiclight != NULL, assume_NoMemory);
     hlassume(final_basiclight != NULL, assume_NoMemory);
     for (int k = 0; k < lightstyles; k++)

@@ -1160,7 +1160,7 @@ static bool ProcessModel()
         nodes->children[0]->isportalleaf = true;
         nodes->children[0]->iscontentsdetail = false;
         nodes->children[0]->faces = NULL;
-        nodes->children[0]->markfaces = (face_t **)calloc(1, sizeof(face_t *));
+        nodes->children[0]->markfaces = (face_t **)std::calloc(1, sizeof(face_t *));
         VectorFill(nodes->children[0]->mins, 0);
         VectorFill(nodes->children[0]->maxs, 0);
         nodes->children[1] = AllocNode();
@@ -1170,7 +1170,7 @@ static bool ProcessModel()
         nodes->children[1]->isportalleaf = true;
         nodes->children[1]->iscontentsdetail = false;
         nodes->children[1]->faces = NULL;
-        nodes->children[1]->markfaces = (face_t **)calloc(1, sizeof(face_t *));
+        nodes->children[1]->markfaces = (face_t **)std::calloc(1, sizeof(face_t *));
         VectorFill(nodes->children[1]->mins, 0);
         VectorFill(nodes->children[1]->maxs, 0);
         nodes->contents = 0;
