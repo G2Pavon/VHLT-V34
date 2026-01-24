@@ -95,7 +95,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
 
         Log("Reading transfers file [%s]\n", transferfile);
 
-        unsigned amtread = fread(&total_patches, sizeof(total_patches), 1, file);
+        unsigned amtread = std::fread(&total_patches, sizeof(total_patches), 1, file);
         if (amtread != 1)
         {
             goto FailedRead;
@@ -108,7 +108,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
         long patchcount = total_patches;
         for (patch_t *patch = g_patches; patchcount-- > 0; patch++)
         {
-            amtread = fread(&patch->iIndex, sizeof(patch->iIndex), 1, file);
+            amtread = std::fread(&patch->iIndex, sizeof(patch->iIndex), 1, file);
             if (amtread != 1)
             {
                 goto FailedRead;
@@ -117,14 +117,14 @@ bool readtransfers(const char *const transferfile, const long numpatches)
             {
                 patch->tIndex = (transfer_index_t *)AllocBlock(patch->iIndex * sizeof(transfer_index_t *));
                 hlassume(patch->tIndex != NULL, assume_NoMemory);
-                amtread = fread(patch->tIndex, sizeof(transfer_index_t), patch->iIndex, file);
+                amtread = std::fread(patch->tIndex, sizeof(transfer_index_t), patch->iIndex, file);
                 if (amtread != patch->iIndex)
                 {
                     goto FailedRead;
                 }
             }
 
-            amtread = fread(&patch->iData, sizeof(patch->iData), 1, file);
+            amtread = std::fread(&patch->iData, sizeof(patch->iData), 1, file);
             if (amtread != 1)
             {
                 goto FailedRead;
@@ -135,13 +135,13 @@ bool readtransfers(const char *const transferfile, const long numpatches)
                 {
                     patch->tRGBData = (rgb_transfer_data_t *)AllocBlock(patch->iData * vector_size[g_rgbtransfer_compress_type] + unused_size);
                     hlassume(patch->tRGBData != NULL, assume_NoMemory);
-                    amtread = fread(patch->tRGBData, vector_size[g_rgbtransfer_compress_type], patch->iData, file);
+                    amtread = std::fread(patch->tRGBData, vector_size[g_rgbtransfer_compress_type], patch->iData, file);
                 }
                 else
                 {
                     patch->tData = (transfer_data_t *)AllocBlock(patch->iData * float_size[g_transfer_compress_type] + unused_size);
                     hlassume(patch->tData != NULL, assume_NoMemory);
-                    amtread = fread(patch->tData, float_size[g_transfer_compress_type], patch->iData, file);
+                    amtread = std::fread(patch->tData, float_size[g_transfer_compress_type], patch->iData, file);
                 }
                 if (amtread != patch->iData)
                 {
