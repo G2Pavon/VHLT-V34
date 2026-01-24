@@ -25,8 +25,22 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
 //
 // Vector Math
 //
+#define VectorAdd(a, b, c)        \
+    {                             \
+        (c)[0] = (a)[0] + (b)[0]; \
+        (c)[1] = (a)[1] + (b)[1]; \
+        (c)[2] = (a)[2] + (b)[2]; \
+    }
+
+#define VectorSubtract(a, b, c)   \
+    {                             \
+        (c)[0] = (a)[0] - (b)[0]; \
+        (c)[1] = (a)[1] - (b)[1]; \
+        (c)[2] = (a)[2] - (b)[2]; \
+    }
 
 #define DotProduct(x, y) ((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
+
 #define CrossProduct(a, b, dest)                       \
     {                                                  \
         (dest)[0] = (a)[1] * (b)[2] - (a)[2] * (b)[1]; \
@@ -42,20 +56,6 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
     }
 
 #define VectorAvg(a) (((a)[0] + (a)[1] + (a)[2]) / 3)
-
-#define VectorSubtract(a, b, c)   \
-    {                             \
-        (c)[0] = (a)[0] - (b)[0]; \
-        (c)[1] = (a)[1] - (b)[1]; \
-        (c)[2] = (a)[2] - (b)[2]; \
-    }
-
-#define VectorAdd(a, b, c)        \
-    {                             \
-        (c)[0] = (a)[0] + (b)[0]; \
-        (c)[1] = (a)[1] + (b)[1]; \
-        (c)[2] = (a)[2] + (b)[2]; \
-    }
 
 #define VectorMultiply(a, b, c)   \
     {                             \
@@ -97,6 +97,7 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
     }
 
 #define VectorMaximum(a) (qmax((a)[0], qmax((a)[1], (a)[2])))
+
 #define VectorMinimum(a) (qmin((a)[0], qmin((a)[1], (a)[2])))
 
 #define VectorInverse(a)    \
@@ -106,6 +107,7 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
         (a)[2] = -((a)[2]); \
     }
 #define VectorRound(a) std::floor((a) + 0.5)
+
 #define VectorMA(a, scale, b, dest)            \
     {                                          \
         (dest)[0] = (a)[0] + (scale) * (b)[0]; \
@@ -113,6 +115,7 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
         (dest)[2] = (a)[2] + (scale) * (b)[2]; \
     }
 #define VectorLength(a) std::sqrt((double)((double)((a)[0] * (a)[0]) + (double)((a)[1] * (a)[1]) + (double)((a)[2] * (a)[2])))
+
 #define VectorCompareMinimum(a, b, c)  \
     {                                  \
         (c)[0] = qmin((a)[0], (b)[0]); \
@@ -128,9 +131,7 @@ const vec3_t vec3_one = {1.0, 1.0, 1.0};
 
 inline vec_t VectorNormalize(vec3_t v)
 {
-    double length;
-
-    length = DotProduct(v, v);
+    double length = DotProduct(v, v);
     length = std::sqrt(length);
     if (length < NORMAL_EPSILON)
     {
@@ -147,9 +148,7 @@ inline vec_t VectorNormalize(vec3_t v)
 
 inline bool VectorCompare(const vec3_t v1, const vec3_t v2)
 {
-    int i;
-
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (std::abs(v1[i] - v2[i]) > EQUAL_EPSILON)
         {
@@ -191,11 +190,9 @@ typedef enum
 
 inline planetypes PlaneTypeForNormal(vec3_t normal)
 {
-    vec_t ax, ay, az;
-
-    ax = std::abs(normal[0]);
-    ay = std::abs(normal[1]);
-    az = std::abs(normal[2]);
+    vec_t ax = std::abs(normal[0]);
+    vec_t ay = std::abs(normal[1]);
+    vec_t az = std::abs(normal[2]);
     if (ax > 1.0 - DIR_EPSILON && ay < DIR_EPSILON && az < DIR_EPSILON)
     {
         return plane_x;
