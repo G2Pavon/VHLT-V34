@@ -63,7 +63,7 @@ const char *stristr(const char *const string, const char *const substring)
 //speed boost while we're at it.
 inline void getFilePositions(const char *path, int *extension_position, int *directory_position)
 {
-    const char *ptr = strrchr(path, '.');
+    const char *ptr = std::strrchr(path, '.');
     if (ptr == 0)
     {
         *extension_position = -1;
@@ -73,7 +73,7 @@ inline void getFilePositions(const char *path, int *extension_position, int *dir
         *extension_position = ptr - path;
     }
 
-    ptr = qmax(strrchr(path, '/'), strrchr(path, '\\'));
+    ptr = qmax(std::strrchr(path, '/'), std::strrchr(path, '\\'));
     if (ptr == 0)
     {
         *directory_position = -1;
@@ -297,7 +297,7 @@ bool safe_strncat(char *const dest, const char *const src, const size_t count)
 {
     if (count)
     {
-        strncat(dest, src, count);
+        std::strncat(dest, src, count);
 
         dest[count - 1] = 0; // Ensure it is null terminated
         return true;
