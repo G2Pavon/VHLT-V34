@@ -177,7 +177,7 @@ static int FindMiptex(const char *const name)
 // =====================================================================================
 //  TEX_InitFromWad
 // =====================================================================================
-bool TEX_InitFromWad()
+static bool TEX_InitFromWad()
 {
     wadinfo_t wadinfo;
 
@@ -332,7 +332,7 @@ bool TEX_InitFromWad()
 // =====================================================================================
 //  FindTexture
 // =====================================================================================
-lumpinfo_t *FindTexture(const lumpinfo_t *const source)
+static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 {
     //Log("** PnFNFUNC: FindTexture\n");
 
@@ -401,7 +401,7 @@ lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 // =====================================================================================
 //  LoadLump
 // =====================================================================================
-int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_maxsize, byte *&writewad_data, int &writewad_datasize)
+static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_maxsize, byte *&writewad_data, int &writewad_datasize)
 {
     writewad_data = NULL;
     writewad_datasize = -1;
@@ -452,7 +452,7 @@ int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_
 // =====================================================================================
 //  AddAnimatingTextures
 // =====================================================================================
-void AddAnimatingTextures()
+static void AddAnimatingTextures()
 {
     char name[MAX_TEXTURE_NAME_LENGTH];
 
