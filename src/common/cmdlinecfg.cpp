@@ -99,21 +99,7 @@ void delparams(char *cmdline, char *params)
         std::memmove(cmdline, c, std::strlen(c) + 1);
     }
 }
-typedef enum
-{
-    IFDEF,
-    IFNDEF,
-    ELSE,
-    ENDIF,
-    DEFINE,
-    UNDEF
-} command_t;
-typedef struct
-{
-    int stack;
-    bool skip;
-    int skipstack;
-} execute_t;
+
 void parsecommand(execute_t &e, char *cmdline, char *words, unsigned int n)
 {
     command_t t;
