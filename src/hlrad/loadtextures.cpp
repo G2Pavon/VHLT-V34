@@ -115,8 +115,8 @@ void OpenWadFile(const char *name, bool fullpath = false)
         Error("Invalid wad file '%s'.", wad->path);
     }
     SafeRead(wad->file, &wadinfo, sizeof(wadinfo));
-    wadinfo.numlumps = LittleLong(wadinfo.numlumps);
-    wadinfo.infotableofs = LittleLong(wadinfo.infotableofs);
+    wadinfo.numlumps = wadinfo.numlumps;
+    wadinfo.infotableofs = wadinfo.infotableofs;
     if (std::strncmp(wadinfo.identification, "WAD3", 4))
         Error("%s isn't a Wadfile!", wad->path);
     wad->numlumps = wadinfo.numlumps;
@@ -136,9 +136,9 @@ void OpenWadFile(const char *name, bool fullpath = false)
             wad->lumpinfos[i].name[MAX_TEXTURE_NAME_LENGTH - 1] = 0;
             Warning("Unterminated texture name : wad[%s] texture[%d] name[%s]\n", wad->path, i, wad->lumpinfos[i].name);
         }
-        wad->lumpinfos[i].filepos = LittleLong(wad->lumpinfos[i].filepos);
-        wad->lumpinfos[i].disksize = LittleLong(wad->lumpinfos[i].disksize);
-        wad->lumpinfos[i].size = LittleLong(wad->lumpinfos[i].size);
+        wad->lumpinfos[i].filepos = wad->lumpinfos[i].filepos;
+        wad->lumpinfos[i].disksize = wad->lumpinfos[i].disksize;
+        wad->lumpinfos[i].size = wad->lumpinfos[i].size;
     }
     qsort(wad->lumpinfos, wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
 }

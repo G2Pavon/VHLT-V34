@@ -53,8 +53,8 @@ const char *stristr(const char *const string, const char *const substring)
 }
 
 /*--------------------------------------------------------------------
-// New implementation of FlipSlashes, DefaultExtension, StripFilename, 
-// StripExtension, ExtractFilePath, ExtractFile, ExtractFileBase, etc.
+// New implementation of FlipSlashes, DefaultExtension, 
+// StripExtension, ExtractFilePath, ExtractFile, etc.
 ----------------------------------------------------------------------*/
 
 //Since all of these functions operate around either the extension
@@ -127,20 +127,6 @@ void DefaultExtension(char *path, const char *extension)
     }
 }
 
-void StripFilename(char *path)
-{
-    int extension_pos, directory_pos;
-    getFilePositions(path, &extension_pos, &directory_pos);
-    if (directory_pos == -1)
-    {
-        path[0] = 0;
-    }
-    else
-    {
-        path[directory_pos] = 0;
-    }
-}
-
 void StripExtension(char *path)
 {
     int extension_pos, directory_pos;
@@ -177,93 +163,6 @@ void ExtractFile(const char *const path, char *dest)
 
     std::memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
     dest[length] = 0;
-}
-
-void ExtractFileBase(const char *const path, char *dest)
-{
-    int extension_pos, directory_pos;
-    getFilePositions(path, &extension_pos, &directory_pos);
-    int length = extension_pos == -1 ? std::strlen(path) : extension_pos;
-
-    length -= directory_pos + 1;
-
-    std::memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
-    dest[length] = 0;
-}
-
-void ExtractFileExtension(const char *const path, char *dest)
-{
-    int extension_pos, directory_pos;
-    getFilePositions(path, &extension_pos, &directory_pos);
-    if (extension_pos != -1)
-    {
-        int length = std::strlen(path) - extension_pos;
-        std::memcpy(dest, path + extension_pos, length); //include extension '.'
-        dest[length] = 0;
-    }
-    else
-    {
-        dest[0] = 0;
-    }
-}
-//-------------------------------------------------------------------
-
-/*
- * ============================================================================
- * 
- * BYTE ORDER FUNCTIONS
- * 
- * ============================================================================
- */
-
-short BigShort(const short l)
-{
-    byte b1 = (byte)(l & 255);
-    byte b2 = (byte)((l >> 8) & 255);
-
-    return (short)((b1 << 8) + b2);
-}
-
-short LittleShort(const short l)
-{
-    return l;
-}
-
-int BigLong(const int l)
-{
-    byte b1 = (byte)(l & 255);
-    byte b2 = (byte)((l >> 8) & 255);
-    byte b3 = (byte)((l >> 16) & 255);
-    byte b4 = (byte)((l >> 24) & 255);
-
-    return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
-}
-
-int LittleLong(const int l)
-{
-    return l;
-}
-
-float BigFloat(const float l)
-{
-    union
-    {
-        byte b[4];
-        float f;
-    } in, out;
-
-    in.f = l;
-    out.b[0] = in.b[3];
-    out.b[1] = in.b[2];
-    out.b[2] = in.b[1];
-    out.b[3] = in.b[0];
-
-    return out.f;
-}
-
-float LittleFloat(const float l)
-{
-    return l;
 }
 
 //=============================================================================

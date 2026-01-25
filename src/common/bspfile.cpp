@@ -215,18 +215,18 @@ static void SwapBSPFile(const bool todisk)
 
         for (int j = 0; j < MAX_MAP_HULLS; j++)
         {
-            d->headnode[j] = LittleLong(d->headnode[j]);
+            d->headnode[j] = d->headnode[j];
         }
 
-        d->visleafs = LittleLong(d->visleafs);
-        d->firstface = LittleLong(d->firstface);
-        d->numfaces = LittleLong(d->numfaces);
+        d->visleafs = d->visleafs;
+        d->firstface = d->firstface;
+        d->numfaces = d->numfaces;
 
         for (int j = 0; j < 3; j++)
         {
-            d->mins[j] = LittleFloat(d->mins[j]);
-            d->maxs[j] = LittleFloat(d->maxs[j]);
-            d->origin[j] = LittleFloat(d->origin[j]);
+            d->mins[j] = d->mins[j];
+            d->maxs[j] = d->maxs[j];
+            d->origin[j] = d->origin[j];
         }
     }
 
@@ -237,7 +237,7 @@ static void SwapBSPFile(const bool todisk)
     {
         for (int j = 0; j < 3; j++)
         {
-            g_dvertexes[i].point[j] = LittleFloat(g_dvertexes[i].point[j]);
+            g_dvertexes[i].point[j] = g_dvertexes[i].point[j];
         }
     }
 
@@ -248,10 +248,10 @@ static void SwapBSPFile(const bool todisk)
     {
         for (int j = 0; j < 3; j++)
         {
-            g_dplanes[i].normal[j] = LittleFloat(g_dplanes[i].normal[j]);
+            g_dplanes[i].normal[j] = g_dplanes[i].normal[j];
         }
-        g_dplanes[i].dist = LittleFloat(g_dplanes[i].dist);
-        g_dplanes[i].type = (planetypes)LittleLong(g_dplanes[i].type);
+        g_dplanes[i].dist = g_dplanes[i].dist;
+        g_dplanes[i].type = (planetypes)g_dplanes[i].type;
     }
 
     //
@@ -261,10 +261,10 @@ static void SwapBSPFile(const bool todisk)
     {
         for (int j = 0; j < 8; j++)
         {
-            g_texinfo[i].vecs[0][j] = LittleFloat(g_texinfo[i].vecs[0][j]);
+            g_texinfo[i].vecs[0][j] = g_texinfo[i].vecs[0][j];
         }
-        g_texinfo[i].miptex = LittleLong(g_texinfo[i].miptex);
-        g_texinfo[i].flags = LittleLong(g_texinfo[i].flags);
+        g_texinfo[i].miptex = g_texinfo[i].miptex;
+        g_texinfo[i].flags = g_texinfo[i].flags;
     }
 
     //
@@ -272,12 +272,12 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numfaces; i++)
     {
-        g_dfaces[i].texinfo = LittleShort(g_dfaces[i].texinfo);
-        g_dfaces[i].planenum = LittleShort(g_dfaces[i].planenum);
-        g_dfaces[i].side = LittleShort(g_dfaces[i].side);
-        g_dfaces[i].lightofs = LittleLong(g_dfaces[i].lightofs);
-        g_dfaces[i].firstedge = LittleLong(g_dfaces[i].firstedge);
-        g_dfaces[i].numedges = LittleShort(g_dfaces[i].numedges);
+        g_dfaces[i].texinfo = g_dfaces[i].texinfo;
+        g_dfaces[i].planenum = g_dfaces[i].planenum;
+        g_dfaces[i].side = g_dfaces[i].side;
+        g_dfaces[i].lightofs = g_dfaces[i].lightofs;
+        g_dfaces[i].firstedge = g_dfaces[i].firstedge;
+        g_dfaces[i].numedges = g_dfaces[i].numedges;
     }
 
     //
@@ -285,16 +285,16 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numnodes; i++)
     {
-        g_dnodes[i].planenum = LittleLong(g_dnodes[i].planenum);
+        g_dnodes[i].planenum = g_dnodes[i].planenum;
         for (int j = 0; j < 3; j++)
         {
-            g_dnodes[i].mins[j] = LittleShort(g_dnodes[i].mins[j]);
-            g_dnodes[i].maxs[j] = LittleShort(g_dnodes[i].maxs[j]);
+            g_dnodes[i].mins[j] = g_dnodes[i].mins[j];
+            g_dnodes[i].maxs[j] = g_dnodes[i].maxs[j];
         }
-        g_dnodes[i].children[0] = LittleShort(g_dnodes[i].children[0]);
-        g_dnodes[i].children[1] = LittleShort(g_dnodes[i].children[1]);
-        g_dnodes[i].firstface = LittleShort(g_dnodes[i].firstface);
-        g_dnodes[i].numfaces = LittleShort(g_dnodes[i].numfaces);
+        g_dnodes[i].children[0] = g_dnodes[i].children[0];
+        g_dnodes[i].children[1] = g_dnodes[i].children[1];
+        g_dnodes[i].firstface = g_dnodes[i].firstface;
+        g_dnodes[i].numfaces = g_dnodes[i].numfaces;
     }
 
     //
@@ -302,16 +302,16 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numleafs; i++)
     {
-        g_dleafs[i].contents = LittleLong(g_dleafs[i].contents);
+        g_dleafs[i].contents = g_dleafs[i].contents;
         for (int j = 0; j < 3; j++)
         {
-            g_dleafs[i].mins[j] = LittleShort(g_dleafs[i].mins[j]);
-            g_dleafs[i].maxs[j] = LittleShort(g_dleafs[i].maxs[j]);
+            g_dleafs[i].mins[j] = g_dleafs[i].mins[j];
+            g_dleafs[i].maxs[j] = g_dleafs[i].maxs[j];
         }
 
-        g_dleafs[i].firstmarksurface = LittleShort(g_dleafs[i].firstmarksurface);
-        g_dleafs[i].nummarksurfaces = LittleShort(g_dleafs[i].nummarksurfaces);
-        g_dleafs[i].visofs = LittleLong(g_dleafs[i].visofs);
+        g_dleafs[i].firstmarksurface = g_dleafs[i].firstmarksurface;
+        g_dleafs[i].nummarksurfaces = g_dleafs[i].nummarksurfaces;
+        g_dleafs[i].visofs = g_dleafs[i].visofs;
     }
 
     //
@@ -319,9 +319,9 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numclipnodes; i++)
     {
-        g_dclipnodes[i].planenum = LittleLong(g_dclipnodes[i].planenum);
-        g_dclipnodes[i].children[0] = LittleShort(g_dclipnodes[i].children[0]);
-        g_dclipnodes[i].children[1] = LittleShort(g_dclipnodes[i].children[1]);
+        g_dclipnodes[i].planenum = g_dclipnodes[i].planenum;
+        g_dclipnodes[i].children[0] = g_dclipnodes[i].children[0];
+        g_dclipnodes[i].children[1] = g_dclipnodes[i].children[1];
     }
 
     //
@@ -337,12 +337,12 @@ static void SwapBSPFile(const bool todisk)
         }
         else
         {
-            c = LittleLong(mtl->nummiptex);
+            c = mtl->nummiptex;
         }
-        mtl->nummiptex = LittleLong(mtl->nummiptex);
+        mtl->nummiptex = mtl->nummiptex;
         for (int i = 0; i < c; i++)
         {
-            mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
+            mtl->dataofs[i] = mtl->dataofs[i];
         }
     }
 
@@ -351,7 +351,7 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_nummarksurfaces; i++)
     {
-        g_dmarksurfaces[i] = LittleShort(g_dmarksurfaces[i]);
+        g_dmarksurfaces[i] = g_dmarksurfaces[i];
     }
 
     //
@@ -359,7 +359,7 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numsurfedges; i++)
     {
-        g_dsurfedges[i] = LittleLong(g_dsurfedges[i]);
+        g_dsurfedges[i] = g_dsurfedges[i];
     }
 
     //
@@ -367,8 +367,8 @@ static void SwapBSPFile(const bool todisk)
     //
     for (int i = 0; i < g_numedges; i++)
     {
-        g_dedges[i].v[0] = LittleShort(g_dedges[i].v[0]);
-        g_dedges[i].v[1] = LittleShort(g_dedges[i].v[1]);
+        g_dedges[i].v[0] = g_dedges[i].v[0];
+        g_dedges[i].v[1] = g_dedges[i].v[1];
     }
 }
 
@@ -410,7 +410,7 @@ static void LoadBSPImage(dheader_t *const header)
     // swap the header
     for (unsigned int i = 0; i < sizeof(dheader_t) / 4; i++)
     {
-        ((int *)header)[i] = LittleLong(((int *)header)[i]);
+        ((int *)header)[i] = ((int *)header)[i];
     }
 
     if (header->version != BSPVERSION)
@@ -480,8 +480,8 @@ void LoadBSPFile(const char *const filename)
 static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile)
 {
     lump_t *lump = &header->lumps[lumpnum];
-    lump->fileofs = LittleLong(std::ftell(bspfile));
-    lump->filelen = LittleLong(len);
+    lump->fileofs = std::ftell(bspfile);
+    lump->filelen = len;
     SafeWrite(bspfile, data, (len + 3) & ~3);
 }
 
@@ -497,7 +497,7 @@ void WriteBSPFile(const char *const filename)
 
     SwapBSPFile(true);
 
-    header->version = LittleLong(BSPVERSION);
+    header->version = BSPVERSION;
 
     std::FILE *bspfile = SafeOpenWrite(filename);
     SafeWrite(bspfile, header, sizeof(dheader_t)); // overwritten later

@@ -276,8 +276,8 @@ bool TEX_InitFromWad()
             Error("%s isn't a Wadfile!", pszWadFile);
         }
 
-        wadinfo.numlumps = LittleLong(wadinfo.numlumps);
-        wadinfo.infotableofs = LittleLong(wadinfo.infotableofs);
+        wadinfo.numlumps = wadinfo.numlumps;
+        wadinfo.infotableofs = wadinfo.infotableofs;
 
         // read in lump
         if (std::fseek(texfile, wadinfo.infotableofs, SEEK_SET))
@@ -300,8 +300,8 @@ bool TEX_InitFromWad()
 
             CleanupName(lumpinfo[nTexLumps].name, lumpinfo[nTexLumps].name);
 
-            lumpinfo[nTexLumps].filepos = LittleLong(lumpinfo[nTexLumps].filepos);
-            lumpinfo[nTexLumps].disksize = LittleLong(lumpinfo[nTexLumps].disksize);
+            lumpinfo[nTexLumps].filepos = lumpinfo[nTexLumps].filepos;
+            lumpinfo[nTexLumps].disksize = lumpinfo[nTexLumps].disksize;
             lumpinfo[nTexLumps].iTexFile = nTexFiles;
 
             if (lumpinfo[nTexLumps].disksize > MAX_TEXTURE_SIZE)
