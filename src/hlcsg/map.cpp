@@ -46,7 +46,7 @@ static const vec3_t s_baseaxis[18] = {
 int g_numparsedentities;
 int g_numparsedbrushes;
 
-brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
+static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
 {
     if (entity->firstbrush + entity->numbrushes != g_nummapbrushes)
     {
@@ -76,7 +76,8 @@ brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
     }
     return newb;
 }
-void DeleteCurrentEntity(entity_t *entity)
+
+static void DeleteCurrentEntity(entity_t *entity)
 {
     if (entity != &g_entities[g_numentities - 1])
     {
@@ -546,7 +547,7 @@ static void ParseBrush(entity_t *mapent)
 //  ParseMapEntity
 //      parse an entity from script
 // =====================================================================================
-bool ParseMapEntity()
+static bool ParseMapEntity()
 {
     bool all_clip = true;
 
@@ -895,7 +896,7 @@ bool ParseMapEntity()
 // =====================================================================================
 //  CountEngineEntities
 // =====================================================================================
-unsigned int CountEngineEntities()
+static unsigned int CountEngineEntities()
 {
     unsigned num_engine_entities = 0;
     entity_t *mapent = g_entities;
@@ -932,8 +933,6 @@ unsigned int CountEngineEntities()
 //      wrapper for LoadScriptFile
 //      parse in script entities
 // =====================================================================================
-const char *ContentsToString(const contents_t type);
-
 void LoadMapFile(const char *const filename)
 {
     LoadScriptFile(filename);
