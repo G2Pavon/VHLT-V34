@@ -35,6 +35,24 @@
 
 */
 
+static constexpr vec_t DEFAULT_TINY_THRESHOLD = 0.0;
+static constexpr bool DEFAULT_NOCLIP = false;
+static constexpr bool DEFAULT_ONLYENTS = false;
+static constexpr bool DEFAULT_WADTEXTURES = true;
+static constexpr bool DEFAULT_SKYCLIP = true;
+static constexpr bool DEFAULT_CHART = false;
+static constexpr bool DEFAULT_INFO = true;
+static constexpr bool DEFAULT_NULLTEX = true;
+static constexpr bool DEFAULT_CLIPNAZI = false;
+static constexpr bool DEFAULT_WADAUTODETECT = false;
+static constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
+static constexpr bool DEFAULT_RESETLOG = true;
+static constexpr bool DEFAULT_NOLIGHTOPT = false;
+static constexpr bool DEFAULT_NOUTF8 = false;
+static constexpr bool DEFAULT_NULLIFYTRIGGER = true;
+static constexpr bool DEFAULT_ESTIMATE = false;
+static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
+
 static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
 static std::FILE *out_view[NUM_HULLS];
 static std::FILE *out_detailbrush[NUM_HULLS];

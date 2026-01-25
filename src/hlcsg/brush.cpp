@@ -12,6 +12,8 @@
 #include "common/win32fix.h"
 #include "common/winding.h"
 
+static constexpr vec_t FLOOR_Z = 0.7; // Quake default
+
 plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
 hullshape_t g_defaulthulls[NUM_HULLS];

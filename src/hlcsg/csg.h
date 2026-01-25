@@ -18,34 +18,9 @@
 #endif
 
 constexpr float DEFAULT_BRUSH_UNION_THRESHOLD = 0.0f;
-constexpr vec_t DEFAULT_TINY_THRESHOLD = 0.0;
-constexpr bool DEFAULT_NOCLIP = false;
-constexpr bool DEFAULT_ONLYENTS = false;
-constexpr bool DEFAULT_WADTEXTURES = true;
-constexpr bool DEFAULT_SKYCLIP = true;
-constexpr bool DEFAULT_CHART = false;
-constexpr bool DEFAULT_INFO = true;
-
-constexpr vec_t FLOOR_Z = 0.7; // Quake default
-
-constexpr bool DEFAULT_NULLTEX = true;
-
-constexpr bool DEFAULT_CLIPNAZI = false;
-
-constexpr bool DEFAULT_WADAUTODETECT = false;
-
-constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
-constexpr bool DEFAULT_RESETLOG = true;
-constexpr bool DEFAULT_NOLIGHTOPT = false;
-
-constexpr bool DEFAULT_NOUTF8 = false;
-
-constexpr bool DEFAULT_NULLIFYTRIGGER = true;
 
 // AJM: added in
 #define UNLESS(a) if (!(a))
-
-constexpr bool DEFAULT_ESTIMATE = false;
 
 #define BOGUS_RANGE 65534
 
@@ -235,8 +210,6 @@ typedef enum
     clip_legacy
 } cliptype;
 extern cliptype g_cliptype;
-
-constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
 const char *GetClipTypeString(cliptype);
 
