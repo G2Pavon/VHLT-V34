@@ -2,8 +2,8 @@
 
 #include <cstdio>
 
-bool q_exists(const char *const filename);
 int q_filelength(std::FILE *f);
+bool q_exists(const char *const filename);
 
 std::FILE *SafeOpenWrite(const char *const filename);
 std::FILE *SafeOpenRead(const char *const filename);
