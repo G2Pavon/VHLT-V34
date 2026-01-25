@@ -204,7 +204,7 @@ void CDECL CloseLog()
 //      all \n with \r automatically.
 //      NOTE: system load may be more with this method, but there isnt that much logging going
 //      on compared to the time taken to compile the map, so its negligable.
-void Safe_WriteLog(const char *const message)
+static void Safe_WriteLog(const char *const message)
 {
     if (!CompileLog)
         return;
@@ -225,7 +225,7 @@ void Safe_WriteLog(const char *const message)
     }
 }
 
-void WriteLog(const char *const message)
+static void WriteLog(const char *const message)
 {
     Safe_WriteLog(message);
     std::fprintf(stdout, "%s", message); //std::fprintf(stdout, message); //--vluzacn
@@ -567,10 +567,11 @@ void LogTimeElapsed(float elapsed_time)
     }
 }
 
-void wait()
+static void wait()
 {
     Sleep(1000);
 }
+
 int InitConsole(int argc, char **argv)
 {
     bool wrong = false;

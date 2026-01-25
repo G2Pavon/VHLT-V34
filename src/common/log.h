@@ -42,8 +42,6 @@ void CheckForErrorLog();
 void LogError(const char *const message);
 void CDECL OpenLog(int clientid);
 void CDECL CloseLog();
-void Safe_WriteLog(const char *const message);
-void WriteLog(const char *const message);
 void CheckFatal();
 
 void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...);
@@ -59,6 +57,6 @@ void LogStart(const int argc, char **argv);
 void LogEnd();
 void hlassume(bool exp, assume_msgs msgid); // Should be in hlassert.h, but well so what
 void LogTimeElapsed(float elapsed_time);
-void wait();
+
 int InitConsole(int argc, char **argv);
 void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
