@@ -39,32 +39,29 @@ void ResetTmpFiles();
 void ResetLog();
 void ResetErrorLog();
 void CheckForErrorLog();
-
+void LogError(const char *const message);
 void CDECL OpenLog(int clientid);
 void CDECL CloseLog();
+void Safe_WriteLog(const char *const message);
 void WriteLog(const char *const message);
-
 void CheckFatal();
 
-void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
-
-#define IfDebug(x)
-
-int InitConsole(int argc, char **argv);
-void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
-void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
-void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
 void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...);
 void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const error, ...);
-void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
-
 void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const message, ...);
-
+void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
+void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
+#define IfDebug(x) // TODO: delete this
+void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
+static void DisplayDeveloperLevel();
+void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
+static void LogArgs(int argc, char **argv);
+void Banner();
 void LogStart(const int argc, char **argv);
 void LogEnd();
-void Banner();
-
+void hlassume(bool exp, assume_msgs msgid); // Should be in hlassert.h, but well so what
+static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned &hours, unsigned &minutes, unsigned &seconds);
 void LogTimeElapsed(float elapsed_time);
-
-// Should be in hlassert.h, but well so what
-void hlassume(bool exp, assume_msgs msgid);
+void wait();
+int InitConsole(int argc, char **argv);
+void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
