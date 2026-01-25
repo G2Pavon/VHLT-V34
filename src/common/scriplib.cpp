@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <cstring>
 
 #include "scriplib.h"
@@ -9,29 +8,12 @@
 
 char g_token[MAXTOKEN];
 
-typedef struct
-{
-    char filename[_MAX_PATH];
-    char *buffer;
-    char *script_p;
-    char *end_p;
-    int line;
-} script_t;
-
 constexpr int MAX_INCLUDES = 8;
 
 static script_t s_scriptstack[MAX_INCLUDES];
 script_t *s_script;
 int s_scriptline;
 bool s_endofscript;
-
-//  AddScriptToStack
-//  LoadScriptFile
-//  ParseFromMemory
-//  UnGetToken
-//  EndOfScript
-//  GetToken
-//  TokenAvailable
 
 // =====================================================================================
 //  AddScriptToStack
