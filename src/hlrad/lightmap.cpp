@@ -8,6 +8,11 @@
 #include "common/threads.h"
 #include "common/hlassert.h"
 
+static constexpr int SKYLEVEL_SOFTSKYON = 7;
+static constexpr int SKYLEVEL_SOFTSKYOFF = 4;
+static constexpr int SUNSPREAD_SKYLEVEL = 7;
+static constexpr float SUNSPREAD_THRESHOLD = 15.0;
+
 edgeshare_t g_edgeshare[MAX_MAP_EDGES];
 vec3_t g_face_centroids[MAX_MAP_EDGES]; // BUG: should this be [MAX_MAP_FACES]?
 bool g_sky_lighting_fix = DEFAULT_SKY_LIGHTING_FIX;

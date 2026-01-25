@@ -30,6 +30,82 @@
  * every surface must be divided into at least two g_patches each axis
  */
 
+#define DEFAULT_METHOD eMethodSparseVismatrix
+static constexpr bool DEFAULT_FASTMODE = false;
+static constexpr float DEFAULT_FADE = 1.0;
+static constexpr int DEFAULT_BOUNCE = 8;
+static constexpr bool DEFAULT_DUMPPATCHES = false;
+static constexpr float DEFAULT_AMBIENT_RED = 0.0;
+static constexpr float DEFAULT_AMBIENT_GREEN = 0.0;
+static constexpr float DEFAULT_AMBIENT_BLUE = 0.0;
+// 188 is the fullbright threshold for Goldsrc, regardless of the brightness and gamma settings in the graphic options.
+// However, hlrad can only control the light values of each single light style. So the final in-game brightness may exceed 188 if you have set a high value in the "custom appearance" of the light, or if the face receives light from different styles.
+static constexpr float DEFAULT_LIMITTHRESHOLD = 188.0;
+static constexpr bool DEFAULT_TEXSCALE = true;
+static constexpr float DEFAULT_CHOP = 64.0;
+static constexpr float DEFAULT_TEXCHOP = 32.0;
+static constexpr float DEFAULT_LIGHTSCALE = 2.0; //1.0 //vluzacn
+static constexpr float DEFAULT_DLIGHT_THRESHOLD = 10.0;
+static constexpr float DEFAULT_DLIGHT_SCALE = 1.0; //2.0 //vluzacn
+static constexpr float DEFAULT_SMOOTHING_VALUE = 50.0;
+static constexpr float DEFAULT_SMOOTHING2_VALUE = -1.0;
+static constexpr bool DEFAULT_INCREMENTAL = false;
+static constexpr float DEFAULT_INDIRECT_SUN = 1.0;
+static constexpr bool DEFAULT_EXTRA = false;
+static constexpr bool DEFAULT_CIRCUS = false;
+static constexpr float DEFAULT_CORING = 0.01;
+static constexpr bool DEFAULT_SUBDIVIDE = true;
+static constexpr bool DEFAULT_CHART = false;
+static constexpr bool DEFAULT_INFO = true;
+static constexpr bool DEFAULT_ALLOW_OPAQUES = true;
+static constexpr bool DEFAULT_ALLOW_SPREAD = true;
+
+static constexpr float DEFAULT_COLOUR_GAMMA_RED = 0.55;
+static constexpr float DEFAULT_COLOUR_GAMMA_GREEN = 0.55;
+static constexpr float DEFAULT_COLOUR_GAMMA_BLUE = 0.55;
+
+static constexpr float DEFAULT_COLOUR_LIGHTSCALE_RED = 2.0;   //1.0 //vluzacn
+static constexpr float DEFAULT_COLOUR_LIGHTSCALE_GREEN = 2.0; //1.0 //vluzacn
+static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
+
+static constexpr float DEFAULT_COLOUR_JITTER_HACK_RED = 0.0;
+static constexpr float DEFAULT_COLOUR_JITTER_HACK_GREEN = 0.0;
+static constexpr float DEFAULT_COLOUR_JITTER_HACK_BLUE = 0.0;
+
+static constexpr float DEFAULT_JITTER_HACK_RED = 0.0;
+static constexpr float DEFAULT_JITTER_HACK_GREEN = 0.0;
+static constexpr float DEFAULT_JITTER_HACK_BLUE = 0.0;
+
+// O_o ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Changes by Jussi Kivilinna <hullu@unitedadmins.com> [http://hullu.xtragaming.com/]
+// Transparency light support for bounced light(transfers) is extreamly slow
+// for 'vismatrix' and 'sparse' atm.
+// Only recommended to be used with 'nomatrix' mode
+static constexpr bool DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT = false;
+// RGB Transfers support for HLRAD .. to be used with -customshadowwithbounce
+static constexpr bool DEFAULT_RGB_TRANSFERS = false;
+
+static constexpr float DEFAULT_TRANSTOTAL_HACK = 0.2; //0.5 //vluzacn
+static constexpr unsigned int DEFAULT_MINLIGHT = 0;
+
+static constexpr float_type DEFAULT_TRANSFER_COMPRESS_TYPE = FLOAT16;
+static constexpr vector_type DEFAULT_RGBTRANSFER_COMPRESS_TYPE = VECTOR32;
+
+static constexpr bool DEFAULT_SOFTSKY = true;
+static constexpr int DEFAULT_BLOCKOPAQUE = 1;
+static constexpr float DEFAULT_TRANSLUCENTDEPTH = 2.0f;
+static constexpr bool DEFAULT_NOTEXTURES = false;
+static constexpr float DEFAULT_TEXREFLECTGAMMA = 1.76f; // 2.0(texgamma cvar) / 2.5 (gamma cvar) * 2.2 (screen gamma) = 1.76
+static constexpr float DEFAULT_TEXREFLECTSCALE = 0.7f;  // arbitrary (This is lower than 1.0, because textures are usually brightened in order to look better in Goldsrc. Textures are made brightened because Goldsrc is only able to darken the texture when combining the texture with the lightmap.)
+static constexpr float DEFAULT_BLUR = 1.5;              // classic lighting is equivalent to "-blur 1.0"
+static constexpr bool DEFAULT_NOEMITTERRANGE = false;
+static constexpr bool DEFAULT_BLEEDFIX = true;
+static constexpr float DEFAULT_TEXLIGHTGAP = 0.0;
+static constexpr bool DEFAULT_ESTIMATE = false;
+
+static constexpr float ACCURATEBOUNCE_THRESHOLD = 4.0; // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
+#define ACCURATEBOUNCE_DEFAULT_SKYLEVEL 5              // sample 1026 normals
+
 bool g_fastmode = DEFAULT_FASTMODE;
 typedef enum
 {
@@ -1450,6 +1526,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 // =====================================================================================
 //  AddFaceToOpaqueList
 // =====================================================================================
+constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 static void AddFaceToOpaqueList(
     int entitynum, int modelnum, const vec3_t origin, const vec3_t &transparency_scale, const bool transparency, int style, bool block)
 {

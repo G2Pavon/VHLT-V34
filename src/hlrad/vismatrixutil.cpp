@@ -7,6 +7,8 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 
+#define MAX_COMPRESSED_TRANSFER_INDEX_SIZE ((1 << 12) - 1)
+
 funcCheckVisBit g_CheckVisBit = NULL;
 
 std::size_t g_total_transfer = 0;
