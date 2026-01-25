@@ -57,7 +57,7 @@ bool g_deleteembeddedlightmaps = DEFAULT_DELETEEMBEDDEDLIGHTMAPS;
 // Scans entity data starting  at iIndex for cToken.  Every time a \n char
 // is encountered iLine is incremented.  If iToken is not null, the index
 // cToken was found at is inserted into it.
-bool ScanForToken(char cToken, int &iIndex, int &iLine, bool bIgnoreWhiteSpace, bool bIgnoreOthers, int *iToken = 0)
+static bool ScanForToken(char cToken, int &iIndex, int &iLine, bool bIgnoreWhiteSpace, bool bIgnoreOthers, int *iToken = 0)
 {
     for (; iIndex < g_entdatasize; iIndex++)
     {
@@ -115,7 +115,7 @@ typedef std::list<CEntityPairList *> CEntityList;
 // formatting  and using the formatting  options passed through this
 // function.  The length is specified because in some cases (i.e. the
 // terminator) a null char is desired to be printed.
-void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int iNewLineLength, const char *cTerminator, int iTerminatorLength)
+static void ParseEntityData(const char *cTab, int iTabLength, const char *cNewLine, int iNewLineLength, const char *cTerminator, int iTerminatorLength)
 {
     CEntityList EntityList; // Parsed entities.
 
