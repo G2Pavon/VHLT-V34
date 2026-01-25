@@ -4,7 +4,7 @@
 
 extern void compress_compatability_test(void);
 
-extern const size_t unused_size; // located at the end of a block
+extern const std::size_t unused_size; // located at the end of a block
 
 typedef enum
 {
@@ -16,7 +16,7 @@ typedef enum
 
 extern const char *float_type_string[];
 
-extern const size_t float_size[];
+extern const std::size_t float_size[];
 
 typedef enum
 {
@@ -29,7 +29,7 @@ typedef enum
 
 extern const char *vector_type_string[];
 
-extern const size_t vector_size[];
+extern const std::size_t vector_size[];
 
 inline unsigned int bitget(unsigned int i, unsigned int start, unsigned int end)
 {

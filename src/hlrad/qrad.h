@@ -490,7 +490,7 @@ extern void MakeScalesSparseVismatrix();
 extern void MakeScalesNoVismatrix();
 
 // transfers.c
-extern size_t g_total_transfer;
+extern std::size_t g_total_transfer;
 extern bool readtransfers(const char *const transferfile, long numpatches);
 extern void writetransfers(const char *const transferfile, long total_patches);
 

@@ -9,9 +9,9 @@
 
 funcCheckVisBit g_CheckVisBit = NULL;
 
-size_t g_total_transfer = 0;
-size_t g_transfer_index_bytes = 0;
-size_t g_transfer_data_bytes = 0;
+std::size_t g_total_transfer = 0;
+std::size_t g_transfer_index_bytes = 0;
+std::size_t g_transfer_data_bytes = 0;
 
 int FindTransferOffsetPatchnum(transfer_index_t *tIndex, const patch_t *const patch, const unsigned patchnum)
 {

@@ -166,7 +166,7 @@ void CreateFinalTransparencyArrays(const char *print_name)
     //need to sorted for fast search function
     qsort(s_sorted_list, s_sorted_count, sizeof(transList_t), SortList);
 
-    size_t size = s_sorted_count * sizeof(transList_t) + s_max_trans_count * sizeof(vec3_t);
+    std::size_t size = s_sorted_count * sizeof(transList_t) + s_max_trans_count * sizeof(vec3_t);
     if (size > 1024 * 1024)
         Log("%-20s: %5.1f megs \n", print_name, (double)size / (1024.0 * 1024.0));
     else if (size > 1024)
@@ -301,7 +301,7 @@ void CreateFinalStyleArrays(const char *print_name)
     //need to sorted for fast search function
     qsort(s_style_list, s_style_count, sizeof(styleList_t), SortStyleList);
 
-    size_t size = s_max_style_count * sizeof(styleList_t);
+    std::size_t size = s_max_style_count * sizeof(styleList_t);
     if (size > 1024 * 1024)
         Log("%-20s: %5.1f megs \n", print_name, (double)size / (1024.0 * 1024.0));
     else if (size > 1024)

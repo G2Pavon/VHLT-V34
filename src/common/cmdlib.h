@@ -42,13 +42,13 @@
 #define SYSTEM_SLASH_STR "\\"
 
 // the dec offsetof macro doesn't work very well...
-#define myoffsetof(type, identifier) ((size_t)&((type *)0)->identifier)
+#define myoffsetof(type, identifier) ((std::size_t)&((type *)0)->identifier)
 #define sizeofElement(type, identifier) (sizeof((type *)0)->identifier)
 
 extern const char *stristr(const char *const string, const char *const substring);
-extern bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t count, const char *const args, ...);
-extern bool safe_strncpy(char *const dest, const char *const src, const size_t count);
-extern bool safe_strncat(char *const dest, const char *const src, const size_t count);
+extern bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
+extern bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
+extern bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
 extern bool TerminatedString(const char *buffer, const int size);
 
 extern char *FlipSlashes(char *string);

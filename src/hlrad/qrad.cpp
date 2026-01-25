@@ -1840,7 +1840,7 @@ static void SortPatches()
     g_patches = (patch_t *)AllocBlock((g_num_patches + 1) * sizeof(patch_t)); // allocate one extra slot considering how terribly the code were written
     std::memcpy(g_patches, old_patches, g_num_patches * sizeof(patch_t));
     FreeBlock(old_patches);
-    qsort((void *)g_patches, (size_t)g_num_patches, sizeof(patch_t), patch_sorter);
+    qsort((void *)g_patches, (std::size_t)g_num_patches, sizeof(patch_t), patch_sorter);
 
     // Fixup g_face_patches & Fixup patch->next
     std::memset(g_face_patches, 0, sizeof(g_face_patches));

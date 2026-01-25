@@ -5,7 +5,7 @@
 #include "compress.h"
 #include "log.h"
 
-const size_t unused_size = 3u; // located at the end of a block
+const std::size_t unused_size = 3u; // located at the end of a block
 
 const char *(float_type_string[float_type_count]) =
     {
@@ -13,7 +13,7 @@ const char *(float_type_string[float_type_count]) =
         "16bit",
         "8bit"};
 
-const size_t float_size[float_type_count] =
+const std::size_t float_size[float_type_count] =
     {
         4u,
         2u,
@@ -26,7 +26,7 @@ const char *(vector_type_string[vector_type_count]) =
         "32bit",
         "24bit"};
 
-const size_t vector_size[vector_type_count] =
+const std::size_t vector_size[vector_type_count] =
     {
         12u,
         6u,

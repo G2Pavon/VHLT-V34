@@ -387,7 +387,7 @@ static void FreeVisMatrix()
 static void DumpVismatrixInfo()
 {
     unsigned totals[8];
-    size_t total_vismatrix_memory = sizeof(sparse_column_t) * g_num_patches;
+    std::size_t total_vismatrix_memory = sizeof(sparse_column_t) * g_num_patches;
 
     sparse_column_t *column_end = s_vismatrix + g_num_patches;
     sparse_column_t *column = s_vismatrix;

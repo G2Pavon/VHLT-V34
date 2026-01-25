@@ -268,14 +268,14 @@ float LittleFloat(const float l)
 
 //=============================================================================
 
-bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t count, const char *const args, ...)
+bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...)
 {
     va_list argptr;
 
     hlassert(count > 0);
 
     va_start(argptr, args);
-    size_t amt = std::vsnprintf(dest, count, args, argptr);
+    std::size_t amt = std::vsnprintf(dest, count, args, argptr);
     va_end(argptr);
 
     // truncated (bad!, snprintf doesn't null terminate the string when this happens)
@@ -288,12 +288,12 @@ bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const size_t coun
     return true;
 }
 
-bool safe_strncpy(char *const dest, const char *const src, const size_t count)
+bool safe_strncpy(char *const dest, const char *const src, const std::size_t count)
 {
     return safe_snprintf(dest, count, "%s", src);
 }
 
-bool safe_strncat(char *const dest, const char *const src, const size_t count)
+bool safe_strncat(char *const dest, const char *const src, const std::size_t count)
 {
     if (count)
     {

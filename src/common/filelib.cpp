@@ -65,13 +65,13 @@ std::FILE *SafeOpenRead(const char *const filename)
 
 void SafeRead(std::FILE *f, void *buffer, int count)
 {
-    if (std::fread(buffer, 1, count, f) != (size_t)count)
+    if (std::fread(buffer, 1, count, f) != (std::size_t)count)
         Error("File read failure");
 }
 
 void SafeWrite(std::FILE *f, const void *const buffer, int count)
 {
-    if (std::fwrite(buffer, 1, count, f) != (size_t)count)
+    if (std::fwrite(buffer, 1, count, f) != (std::size_t)count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
 }
 

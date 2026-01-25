@@ -324,7 +324,7 @@ bool TEX_InitFromWad()
     //Log("num of used textures: %i\n", g_numUsedTextures);
 
     // sort texlumps in memory by name
-    qsort((void *)lumpinfo, (size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
+    qsort((void *)lumpinfo, (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
 
     CheckFatal();
     return true;
@@ -339,7 +339,7 @@ lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 
     lumpinfo_t *found = NULL;
 
-    found = (lumpinfo_t *)bsearch(source, (void *)lumpinfo, (size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
+    found = (lumpinfo_t *)bsearch(source, (void *)lumpinfo, (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
     if (!found)
     {
         Warning("::FindTexture() texture %s not found!", source->name);
@@ -589,7 +589,7 @@ void WriteMiptex()
         texinfo_t *tx = g_texinfo;
 
         // Sort them FIRST by wadfile and THEN by name for most efficient loading in the engine.
-        qsort((void *)miptex, (size_t)nummiptex, sizeof(miptex[0]), lump_sorter_by_wad_and_name);
+        qsort((void *)miptex, (std::size_t)nummiptex, sizeof(miptex[0]), lump_sorter_by_wad_and_name);
 
         // Sleazy Hack 104 Pt 2 - After sorting the miptex array, reset the texinfos to point to the right miptexs
         for (int i = 0; i < g_numtexinfo; i++, tx++)
