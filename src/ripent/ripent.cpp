@@ -422,7 +422,7 @@ typedef struct
     char type;
     char compression;
     char pad1, pad2;
-    char name[16]; // must be null terminated
+    char name[MAX_TEXTURE_NAME_LENGTH]; // must be null terminated
 } lumpinfo_t;
 /*int TextureSize(const miptex_t *tex)
 {
@@ -650,10 +650,10 @@ static void ReadTextures(const char *name)
             }
             else
             {
-                char name[16];
+                char name[MAX_TEXTURE_NAME_LENGTH];
                 if (len > 15)
                     Error("Texture name is too long");
-                std::memset(name, '\0', 16);
+                std::memset(name, '\0', MAX_TEXTURE_NAME_LENGTH);
                 SafeRead(texfile, name, len);
                 ((dmiptexlump_t *)g_dtexdata)->dataofs[itex] = g_texdatasize;
                 miptex_t *tex = (miptex_t *)(g_dtexdata + g_texdatasize);

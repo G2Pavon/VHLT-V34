@@ -956,7 +956,7 @@ void PrintBSPFileSizes()
 int ParseImplicitTexinfoFromTexture(int miptex)
 {
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
-    char name[16];
+    char name[MAX_TEXTURE_NAME_LENGTH];
 
     if (miptex < 0 || miptex >= numtextures)
     {
@@ -972,7 +972,7 @@ int ParseImplicitTexinfoFromTexture(int miptex)
     }
 
     miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
-    safe_strncpy(name, mt->name, 16);
+    safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
 
     if (!(std::strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
     {
@@ -1617,7 +1617,7 @@ char *GetTextureByNumber(int texturenumber)
 // =====================================================================================
 entity_t *EntityForModel(const int modnum)
 {
-    char name[16];
+    char name[MAX_TEXTURE_NAME_LENGTH];
 
     std::sprintf(name, "*%i", modnum);
     // search the entities for one using modnum

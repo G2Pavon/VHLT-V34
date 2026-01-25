@@ -13,7 +13,6 @@
 #include "common/log.h"
 #include "common/bspfile.h"
 
-constexpr int MAXWADNAME = 16;
 constexpr int MAX_TEXFILES = 128;
 
 //  FindMiptex
@@ -37,7 +36,7 @@ typedef struct
     char type;
     char compression;
     char pad1, pad2;
-    char name[MAXWADNAME]; // must be null terminated // upper case
+    char name[MAX_TEXTURE_NAME_LENGTH]; // must be null terminated // upper case
 
     int iTexFile; // index of the wad this texture is located in
 
@@ -103,7 +102,7 @@ static void CleanupName(const char *const in, char *out)
 {
     int i;
 
-    for (i = 0; i < MAXWADNAME; i++)
+    for (i = 0; i < MAX_TEXTURE_NAME_LENGTH; i++)
     {
         if (!in[i])
         {
@@ -113,7 +112,7 @@ static void CleanupName(const char *const in, char *out)
         out[i] = toupper(in[i]);
     }
 
-    for (; i < MAXWADNAME; i++)
+    for (; i < MAX_TEXTURE_NAME_LENGTH; i++)
     {
         out[i] = 0;
     }
@@ -153,7 +152,7 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
 static int FindMiptex(const char *const name)
 {
     int i;
-    if (std::strlen(name) >= MAXWADNAME)
+    if (std::strlen(name) >= MAX_TEXTURE_NAME_LENGTH)
     {
         Error("Texture name is too long (%s)\n", name);
     }
@@ -169,7 +168,7 @@ static int FindMiptex(const char *const name)
     }
 
     hlassume(nummiptex < MAX_MAP_TEXTURES, assume_MAX_MAP_TEXTURES);
-    safe_strncpy(miptex[i].name, name, MAXWADNAME);
+    safe_strncpy(miptex[i].name, name, MAX_TEXTURE_NAME_LENGTH);
     nummiptex++;
     ThreadUnlock();
     return i;
@@ -292,9 +291,9 @@ bool TEX_InitFromWad()
         {
             SafeRead(texfile, &lumpinfo[nTexLumps], (sizeof(lumpinfo_t) - sizeof(int))); // iTexFile is NOT read from file
 
-            if (!TerminatedString(lumpinfo[nTexLumps].name, MAXWADNAME))
+            if (!TerminatedString(lumpinfo[nTexLumps].name, MAX_TEXTURE_NAME_LENGTH))
             {
-                lumpinfo[nTexLumps].name[MAXWADNAME - 1] = 0;
+                lumpinfo[nTexLumps].name[MAX_TEXTURE_NAME_LENGTH - 1] = 0;
                 Log(" - ");
                 Warning("Unterminated texture name : wad[%s] texture[%d] name[%s]\n", pszWadFile, nTexLumps, lumpinfo[nTexLumps].name);
             }
@@ -455,7 +454,7 @@ int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_
 // =====================================================================================
 void AddAnimatingTextures()
 {
-    char name[MAXWADNAME];
+    char name[MAX_TEXTURE_NAME_LENGTH];
 
     int base = nummiptex;
 
@@ -466,7 +465,7 @@ void AddAnimatingTextures()
             continue;
         }
 
-        safe_strncpy(name, miptex[i].name, MAXWADNAME);
+        safe_strncpy(name, miptex[i].name, MAX_TEXTURE_NAME_LENGTH);
 
         for (int j = 0; j < 20; j++)
         {
@@ -618,7 +617,7 @@ void WriteMiptex()
             char type;
             char compression;
             char pad1, pad2;
-            char name[MAXWADNAME];
+            char name[MAX_TEXTURE_NAME_LENGTH];
         } dlumpinfo_t;
 
         wadinfo_t writewad_header;
@@ -650,7 +649,7 @@ void WriteMiptex()
                 writewad_lumpinfo->compression = miptex[i].compression;
                 writewad_lumpinfo->pad1 = miptex[i].pad1;
                 writewad_lumpinfo->pad2 = miptex[i].pad2;
-                std::memcpy(writewad_lumpinfo->name, miptex[i].name, MAXWADNAME);
+                std::memcpy(writewad_lumpinfo->name, miptex[i].name, MAX_TEXTURE_NAME_LENGTH);
                 writewad_header.numlumps++;
                 SafeWrite(writewad_file, writewad_data, writewad_datasize);
                 std::free(writewad_data);

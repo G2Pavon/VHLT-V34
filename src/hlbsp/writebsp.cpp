@@ -617,8 +617,7 @@ void FinishBSPFile()
             }
             for (int i = 0; i < g_nummiptex; i++)
             {
-                const int MAXWADNAME = 16;
-                char name[MAXWADNAME];
+                char name[MAX_TEXTURE_NAME_LENGTH];
 
                 if (l->dataofs[i] < 0)
                     continue;
@@ -627,7 +626,7 @@ void FinishBSPFile()
                     miptex_t *m = (miptex_t *)((byte *)l + l->dataofs[i]);
                     if (m->name[0] != '+' && m->name[0] != '-')
                         continue;
-                    safe_strncpy(name, m->name, MAXWADNAME);
+                    safe_strncpy(name, m->name, MAX_TEXTURE_NAME_LENGTH);
                     if (name[1] == '\0')
                         continue;
                     for (int j = 0; j < 20; j++)

@@ -7,6 +7,7 @@
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/cmdlib.h"
+#include "common/bspfile.h"
 
 int g_numtextures;
 radtexture_t *g_textures;
@@ -40,7 +41,7 @@ typedef struct
     char type;
     char compression;
     char pad1, pad2;
-    char name[16];
+    char name[MAX_TEXTURE_NAME_LENGTH];
 } lumpinfo_t;
 
 typedef struct wadfile_s
@@ -130,9 +131,9 @@ void OpenWadFile(const char *name, bool fullpath = false)
     for (int i = 0; i < wad->numlumps; i++)
     {
         SafeRead(wad->file, &wad->lumpinfos[i], sizeof(lumpinfo_t));
-        if (!TerminatedString(wad->lumpinfos[i].name, 16))
+        if (!TerminatedString(wad->lumpinfos[i].name, MAX_TEXTURE_NAME_LENGTH))
         {
-            wad->lumpinfos[i].name[16 - 1] = 0;
+            wad->lumpinfos[i].name[MAX_TEXTURE_NAME_LENGTH - 1] = 0;
             Warning("Unterminated texture name : wad[%s] texture[%d] name[%s]\n", wad->path, i, wad->lumpinfos[i].name);
         }
         wad->lumpinfos[i].filepos = LittleLong(wad->lumpinfos[i].filepos);
@@ -218,7 +219,7 @@ void DefaultTexture(radtexture_t *tex, const char *name)
     tex->width = 16;
     tex->height = 16;
     std::strcpy(tex->name, name);
-    tex->name[16 - 1] = '\0';
+    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
     tex->canvas = (byte *)std::malloc(tex->width * tex->height);
     hlassume(tex->canvas != NULL, assume_NoMemory);
     for (int i = 0; i < 256; i++)
@@ -239,7 +240,7 @@ void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
     tex->width = header->width;
     tex->height = header->height;
     std::strcpy(tex->name, header->name);
-    tex->name[16 - 1] = '\0';
+    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
     if (tex->width <= 0 || tex->height <= 0 ||
         tex->width % (2 * 1 << (MIPLEVELS - 1)) != 0 || tex->height % (2 * (1 << (MIPLEVELS - 1))) != 0)
     {
@@ -285,7 +286,7 @@ void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
     tex->width = header->width;
     tex->height = header->height;
     std::strcpy(tex->name, header->name);
-    tex->name[16 - 1] = '\0';
+    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
     wadfile_t *wad;
     for (wad = g_wadfiles; wad; wad = wad->next)
     {
@@ -307,7 +308,7 @@ void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
             if (std::fseek(wad->file, found->filepos, SEEK_SET))
                 Error("File read failure");
             SafeRead(wad->file, mt, found->disksize);
-            if (!TerminatedString(mt->name, 16))
+            if (!TerminatedString(mt->name, MAX_TEXTURE_NAME_LENGTH))
             {
                 Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path);
                 std::free(mt);
@@ -960,7 +961,7 @@ static void GetLight(dface_t *face, const int texsize[2], double x, double y, ve
     VectorMA(light, dx, light1, light);
 }
 
-static bool GetValidTextureName(int miptex, char name[16])
+static bool GetValidTextureName(int miptex, char *name)
 {
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
 
@@ -977,7 +978,7 @@ static bool GetValidTextureName(int miptex, char name[16])
     }
 
     miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
-    safe_strncpy(name, mt->name, 16);
+    safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
 
     if (std::strcmp(name, mt->name))
     {
@@ -1030,7 +1031,7 @@ void EmbedLightmapInTextures()
         entity_t *ent = g_face_entity[i];
         int originaltexinfonum = f->texinfo;
         texinfo_t *originaltexinfo = &g_texinfo[originaltexinfonum];
-        char texname[16];
+        char texname[MAX_TEXTURE_NAME_LENGTH];
         if (!GetValidTextureName(originaltexinfo->miptex, texname))
         {
             continue;

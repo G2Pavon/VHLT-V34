@@ -4,6 +4,7 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 #include "common/winding.h"
+#include "common/bspfile.h"
 
 #pragma warning(disable : 4142 4028)
 #pragma warning(default : 4142 4028)
@@ -301,7 +302,7 @@ constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 
 typedef struct
 {
-    char name[16]; // not always same with the name in texdata
+    char name[MAX_TEXTURE_NAME_LENGTH]; // not always same with the name in texdata
     int width, height;
     byte *canvas; //[height][width]
     byte palette[256][3];
