@@ -3,12 +3,12 @@
 #include <cstring>
 #include <cmath>
 
+#include "bspfile.h"
 #include "filelib.h"
 #include "messages.h"
 #include "hlassert.h"
 #include "log.h"
 #include "mathlib.h"
-#include "bspfile.h"
 #include "scriplib.h"
 #include "blockmem.h"
 #include "cmdlib.h"
@@ -653,14 +653,6 @@ void WriteExtentFile(const char *const filename)
 //
 // =====================================================================================
 //
-constexpr int BLOCK_WIDTH = 128;
-constexpr int BLOCK_HEIGHT = 128;
-typedef struct lightmapblock_s
-{
-    lightmapblock_s *next;
-    bool used;
-    int allocated[BLOCK_WIDTH];
-} lightmapblock_t;
 void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 {
     lightmapblock_t *block;
@@ -1163,7 +1155,6 @@ epair_t *ParseEpair()
  */
 
 // AJM: each tool should have its own version of GetParamsFromEnt which parseentity calls
-extern void GetParamsFromEnt(entity_t *mapent);
 
 bool ParseEntity()
 {

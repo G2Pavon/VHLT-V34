@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdio>
+
 #include "mathtypes.h"
 #include "mathlib.h"
 #include "win32fix.h"
@@ -325,16 +327,36 @@ extern int g_numsurfedges;
 extern int g_dsurfedges[MAX_MAP_SURFEDGES];
 extern int g_dsurfedges_checksum;
 
-void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
+static int FastChecksum(const void *const buffer, int bytes);
 int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length);
-
+void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
+static void SwapBSPFile(const bool todisk);
+static int CopyLump(int lump, void *dest, int size, const dheader_t *const header);
 void LoadBSPImage(dheader_t *header);
 void LoadBSPFile(const char *const filename);
+static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile);
 void WriteBSPFile(const char *const filename);
-void PrintBSPFileSizes();
-void WriteExtentFile(const char *const filename);
+float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs);
 bool CalcFaceExtents_test();
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
+void WriteExtentFile(const char *const filename);
+
+constexpr int BLOCK_WIDTH = 128;
+constexpr int BLOCK_HEIGHT = 128;
+typedef struct lightmapblock_s
+{
+    lightmapblock_s *next;
+    bool used;
+    int allocated[BLOCK_WIDTH];
+} lightmapblock_t;
+void DoAllocBlock(lightmapblock_t *blocks, int w, int h);
+int CountBlocks();
+
+bool NoWadTextures();
+char *FindWadValue();
+static int ArrayUsage(const char *const szItem, const int items, const int maxitems, const int itemsize);
+static int GlobUsage(const char *const szItem, const int itemstorage, const int maxstorage);
+void PrintBSPFileSizes();
 int ParseImplicitTexinfoFromTexture(int miptex);
 int ParseTexinfoForFace(const dface_t *f);
 void DeleteEmbeddedLightmaps();
@@ -361,27 +383,26 @@ typedef struct
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
+epair_t *ParseEpair();
+extern void GetParamsFromEnt(entity_t *mapent);
+bool ParseEntity();
 void ParseEntities();
+int anglesforvector(float angles[3], const float vector[3]);
 void UnparseEntities();
-
 void DeleteKey(entity_t *ent, const char *const key);
 void SetKeyValue(entity_t *ent, const char *const key, const char *const value);
 const char *ValueForKey(const entity_t *const ent, const char *const key);
 int IntForKey(const entity_t *const ent, const char *const key);
 vec_t FloatForKey(const entity_t *const ent, const char *const key);
 void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec);
-
 entity_t *FindTargetEntity(const char *const target);
-epair_t *ParseEpair();
-entity_t *EntityForModel(int modnum);
-
 //
 // Texture Related Stuff
 //
-
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
 void dtexdata_init();
 void CDECL dtexdata_free();
-
 char *GetTextureByNumber(int texturenumber);
+
+entity_t *EntityForModel(int modnum);
