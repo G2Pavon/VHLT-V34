@@ -410,7 +410,7 @@ static void FreeDrawNodes_r(node_t *node)
 //      Called after a drawing hull is completed
 //      Frees all nodes and faces
 // =====================================================================================
-void OutputEdges_face(face_t *f)
+static void OutputEdges_face(face_t *f)
 {
     if (CheckFaceForHint(f) || CheckFaceForSkip(f) || CheckFaceForNull(f)                                    // AJM
         || CheckFaceForDiscardable(f) || f->texturenum == -1 || f->referenced == 0 || CheckFaceForEnv_Sky(f) //Cpt_Andrew - Env_Sky Check
@@ -426,7 +426,8 @@ void OutputEdges_face(face_t *f)
         f->outputedges[i] = e;
     }
 }
-int OutputEdges_r(node_t *node, int detaillevel)
+
+static int OutputEdges_r(node_t *node, int detaillevel)
 {
     int next = -1;
     if (node->planenum == -1)
@@ -458,6 +459,7 @@ int OutputEdges_r(node_t *node, int detaillevel)
     }
     return next;
 }
+
 static void RemoveCoveredFaces_r(node_t *node)
 {
     if (node->isportalleaf)
@@ -496,6 +498,7 @@ static void RemoveCoveredFaces_r(node_t *node)
     RemoveCoveredFaces_r(node->children[0]);
     RemoveCoveredFaces_r(node->children[1]);
 }
+
 void WriteDrawNodes(node_t *headnode)
 {
     RemoveCoveredFaces_r(headnode); // fill "referenced" value
