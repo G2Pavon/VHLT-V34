@@ -9,6 +9,9 @@
 #include "common/mathlib.h"
 #include "common/winding.h"
 
+constexpr int MAX_PORTALS = 32768;
+constexpr int PORTALSEE_SIZE = (MAX_PORTALS * 2);
+
 // =====================================================================================
 //  AllocStackWinding
 // =====================================================================================
@@ -581,8 +584,6 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const 
         SimpleFlood(srcmightsee, p->leaf, portalsee, c_leafsee);
     }
 }
-
-constexpr int PORTALSEE_SIZE = (MAX_PORTALS * 2);
 
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter

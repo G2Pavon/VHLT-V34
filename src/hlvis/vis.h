@@ -2,21 +2,6 @@
 
 #include "common/bspfile.h"
 
-constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
-
-constexpr bool DEFAULT_FULLVIS = false;
-constexpr bool DEFAULT_CHART = false;
-constexpr bool DEFAULT_INFO = true;
-constexpr bool DEFAULT_ESTIMATE = false;
-
-constexpr bool DEFAULT_FASTVIS = false;
-constexpr int DEFAULT_NETVIS_PORT = 21212;
-constexpr int DEFAULT_NETVIS_RATE = 60;
-
-constexpr int MAX_PORTALS = 32768;
-
-constexpr const char *PORTALFILE = "PRT1"; // WTF?
-
 constexpr int MAX_POINTS_ON_FIXED_WINDING = 32;
 
 typedef struct

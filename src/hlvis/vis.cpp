@@ -27,11 +27,13 @@
 #include "common/bspfile.h"
 #include "common/winding.h"
 
-/*
-
- NOTES
-
-*/
+static constexpr const char *PORTALFILE = "PRT1"; // .prt file header
+static constexpr bool DEFAULT_FASTVIS = false;
+static constexpr bool DEFAULT_ESTIMATE = false;
+static constexpr bool DEFAULT_FULLVIS = false;
+static constexpr bool DEFAULT_CHART = false;
+static constexpr bool DEFAULT_INFO = true;
+static constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 
 int g_numportals = 0;
 unsigned g_portalleafs = 0;
