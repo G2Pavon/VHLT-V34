@@ -50,8 +50,6 @@ extern void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const c
 
 #define IfDebug(x)
 
-extern const char *Localize(const char *s);
-extern void LoadLangFile(const char *name, const char *programpath);
 extern int InitConsole(int argc, char **argv);
 extern void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
 extern void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);

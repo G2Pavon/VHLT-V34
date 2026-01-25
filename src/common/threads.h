@@ -29,13 +29,13 @@ extern void ThreadUnlock();
 extern void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction);
 extern void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction);
 
-#define NamedRunThreadsOn(n, p, f)     \
-    {                                  \
-        Log("%s\n", Localize(#f ":")); \
-        RunThreadsOn(n, p, f);         \
+#define NamedRunThreadsOn(n, p, f) \
+    {                              \
+        Log("%s\n", #f ":");       \
+        RunThreadsOn(n, p, f);     \
     }
 #define NamedRunThreadsOnIndividual(n, p, f) \
     {                                        \
-        Log("%s\n", Localize(#f ":"));       \
+        Log("%s\n", #f ":");                 \
         RunThreadsOnIndividual(n, p, f);     \
     }

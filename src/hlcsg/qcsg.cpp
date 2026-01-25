@@ -1405,7 +1405,6 @@ static void Usage()
 
     Log("\n-= %s Options =-\n\n", g_Program);
     Log("    -console #       : Set to 0 to turn off the pop-up console (default is 1)\n");
-    Log("    -lang file       : localization file\n");
     Log("    -nowadtextures   : include all used textures into bsp\n");
     Log("    -wadinclude file : place textures used from wad specified into bsp\n");
     Log("    -noclip          : don't create clipping hull\n");
@@ -1863,20 +1862,6 @@ int main(const int argc, char **argv)
                     if (i + 1 < argc)
                     {
                         g_scalesize = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lang"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        char tmp[_MAX_PATH];
-
-                        GetModuleFileName(NULL, tmp, _MAX_PATH);
-                        LoadLangFile(argv[++i], tmp);
                     }
                     else
                     {

@@ -24,14 +24,14 @@ static double threadtimes[THREADTIMES_SIZE];
 
 int GetThreadWork()
 {
-    static const char *s1 = NULL; // avoid frequent call of Localize() in PrintConsole
+    static const char *s1 = NULL;
     static const char *s2 = NULL;
 
     ThreadLock();
     if (s1 == NULL)
-        s1 = Localize("  (%d%%: est. time to completion %ld/%ld/%ld secs)   ");
+        s1 = "  (%d%%: est. time to completion %ld/%ld/%ld secs)   ";
     if (s2 == NULL)
-        s2 = Localize("  (%d%%: est. time to completion <1 sec)   ");
+        s2 = "  (%d%%: est. time to completion <1 sec)   ";
 
     if (dispatch == 0)
     {

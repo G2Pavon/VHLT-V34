@@ -2565,7 +2565,6 @@ static void Usage()
 
     Log("\n-= %s Options =-\n\n", g_Program);
     Log("    -console #      : Set to 0 to turn off the pop-up console (default is 1)\n");
-    Log("    -lang file      : localization file\n");
     Log("    -waddir folder  : Search this folder for wad files.\n");
     Log("    -fast           : Fast rad\n");
     Log("    -vismatrix value: Set vismatrix method to normal, sparse or off .\n");
@@ -3670,20 +3669,6 @@ int main(const int argc, char **argv)
                     if (i + 1 < argc)
                     {
                         g_texlightgap = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lang"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        char tmp[_MAX_PATH];
-
-                        GetModuleFileName(NULL, tmp, _MAX_PATH);
-                        LoadLangFile(argv[++i], tmp);
                     }
                     else
                     {

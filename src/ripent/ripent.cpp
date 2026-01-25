@@ -778,7 +778,6 @@ static void Usage(void)
     Log("\n-= %s Options =-\n\n", g_Program);
 
     Log("    -console #      : Set to 0 to turn off the pop-up console (default is 1)\n");
-    Log("    -lang file      : localization file\n");
     Log("    -export         : Export entity data\n");
     Log("    -import         : Import entity data\n\n");
 
@@ -983,20 +982,6 @@ int main(int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-deleteembeddedlightmaps"))
                 {
                     g_deleteembeddedlightmaps = true;
-                }
-                else if (!strcasecmp(argv[i], "-lang"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        char tmp[_MAX_PATH];
-
-                        GetModuleFileName(NULL, tmp, _MAX_PATH);
-                        LoadLangFile(argv[++i], tmp);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
                 }
                 else if (argv[i][0] == '-') //--vluzacn
                 {
