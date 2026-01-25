@@ -64,7 +64,7 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
     return strcasecmp(plump1->name, plump2->name);
 }
 
-void OpenWadFile(const char *name, bool fullpath = false)
+static void OpenWadFile(const char *name, bool fullpath = false)
 {
     wadfile_t *wad = (wadfile_t *)std::malloc(sizeof(wadfile_t));
     hlassume(wad != NULL, assume_NoMemory);
@@ -143,7 +143,7 @@ void OpenWadFile(const char *name, bool fullpath = false)
     qsort(wad->lumpinfos, wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
 }
 
-void TryOpenWadFiles()
+static void TryOpenWadFiles()
 {
     if (!g_wadfiles_opened)
     {
@@ -197,7 +197,7 @@ void TryOpenWadFiles()
     }
 }
 
-void TryCloseWadFiles()
+static void TryCloseWadFiles()
 {
     if (g_wadfiles_opened)
     {
@@ -214,7 +214,7 @@ void TryCloseWadFiles()
     }
 }
 
-void DefaultTexture(radtexture_t *tex, const char *name)
+static void DefaultTexture(radtexture_t *tex, const char *name)
 {
     tex->width = 16;
     tex->height = 16;
@@ -232,7 +232,7 @@ void DefaultTexture(radtexture_t *tex, const char *name)
     }
 }
 
-void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
+static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
 {
     int i;
     const miptex_t *header = mt;
@@ -281,7 +281,7 @@ void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
     }
 }
 
-void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
+static void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
 {
     tex->width = header->width;
     tex->height = header->height;
@@ -413,7 +413,7 @@ void LoadTextures()
 constexpr int CQ_DIM = 3;
 
 template <class T, class T2, class T3>
-inline void CQ_VectorSubtract(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
+static inline void CQ_VectorSubtract(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
 {
     for (int x = 0; x < CQ_DIM; x++)
     {
@@ -422,7 +422,7 @@ inline void CQ_VectorSubtract(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM
 }
 
 template <class T, class T2, class T3>
-inline void CQ_VectorAdd(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
+static inline void CQ_VectorAdd(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
 {
     for (int x = 0; x < CQ_DIM; x++)
     {
@@ -431,7 +431,7 @@ inline void CQ_VectorAdd(const T a[CQ_DIM], const T2 b[CQ_DIM], T3 c[CQ_DIM])
 }
 
 template <class T, class T2>
-inline void CQ_VectorScale(const T a[CQ_DIM], const T2 b, T c[CQ_DIM])
+static inline void CQ_VectorScale(const T a[CQ_DIM], const T2 b, T c[CQ_DIM])
 {
     for (int x = 0; x < CQ_DIM; x++)
     {
@@ -440,7 +440,7 @@ inline void CQ_VectorScale(const T a[CQ_DIM], const T2 b, T c[CQ_DIM])
 }
 
 template <class T, class T2>
-inline void CQ_VectorCopy(const T a[CQ_DIM], T2 b[CQ_DIM])
+static inline void CQ_VectorCopy(const T a[CQ_DIM], T2 b[CQ_DIM])
 {
     for (int x = 0; x < CQ_DIM; x++)
     {
@@ -449,7 +449,7 @@ inline void CQ_VectorCopy(const T a[CQ_DIM], T2 b[CQ_DIM])
 }
 
 template <class T>
-inline void CQ_VectorClear(T a[CQ_DIM])
+static inline void CQ_VectorClear(T a[CQ_DIM])
 {
     for (int x = 0; x < CQ_DIM; x++)
     {
@@ -458,7 +458,7 @@ inline void CQ_VectorClear(T a[CQ_DIM])
 }
 
 template <class T>
-inline T CQ_DotProduct(const T a[CQ_DIM], const T b[CQ_DIM])
+static inline T CQ_DotProduct(const T a[CQ_DIM], const T b[CQ_DIM])
 {
     T dot = (T)0;
     for (int x = 0; x < CQ_DIM; x++)
@@ -848,13 +848,13 @@ static int g_newtextures_num = 0;
 static byte *g_newtextures_data[RADTEXTURES_MAX];
 static int g_newtextures_size[RADTEXTURES_MAX];
 
-int NewTextures_GetCurrentMiptexIndex()
+static int NewTextures_GetCurrentMiptexIndex()
 {
     dmiptexlump_t *texdata = (dmiptexlump_t *)g_dtexdata;
     return texdata->nummiptex + g_newtextures_num;
 }
 
-void NewTextures_PushTexture(int size, void *data)
+static void NewTextures_PushTexture(int size, void *data)
 {
     if (g_newtextures_num >= RADTEXTURES_MAX)
     {
@@ -867,7 +867,7 @@ void NewTextures_PushTexture(int size, void *data)
     g_newtextures_num++;
 }
 
-void NewTextures_Write()
+static void NewTextures_Write()
 {
     if (!g_newtextures_num)
     {
