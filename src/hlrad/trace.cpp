@@ -81,7 +81,7 @@ void MakeTnodes(dmodel_t * /*bm*/)
 
 //==========================================================
 
-int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linecontent, vec_t *skyhit)
+static int TestLine_r(const int node, const vec3_t start, const vec3_t stop, int &linecontent, vec_t *skyhit)
 {
     float front, back;
     vec3_t mid;
@@ -200,7 +200,7 @@ opaquenode_t *opaquenodes;
 
 opaquemodel_t *opaquemodels;
 
-bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
+static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
 {
     if (!f->winding || !f2->winding)
     {
@@ -316,7 +316,7 @@ bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     return true;
 }
 
-int MergeOpaqueFaces(int firstface, int numfaces)
+static int MergeOpaqueFaces(int firstface, int numfaces)
 {
     int i, j;
     opaqueface_t *faces = &opaquefaces[firstface];
@@ -349,7 +349,7 @@ int MergeOpaqueFaces(int firstface, int numfaces)
     return newnum;
 }
 
-void BuildFaceEdges(opaqueface_t *f)
+static void BuildFaceEdges(opaqueface_t *f)
 {
     if (!f->winding)
         return;
@@ -456,7 +456,7 @@ void DeleteOpaqueNodes()
     std::free(opaquemodels);
 }
 
-int TestLineOpaque_face(int facenum, const vec3_t hit)
+static int TestLineOpaque_face(int facenum, const vec3_t hit)
 {
     opaqueface_t *thisface = &opaquefaces[facenum];
     if (thisface->numedges == 0)
@@ -489,7 +489,7 @@ int TestLineOpaque_face(int facenum, const vec3_t hit)
     return 1;
 }
 
-int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
+static int TestLineOpaque_r(int nodenum, const vec3_t start, const vec3_t stop)
 {
     vec_t front, back;
     if (nodenum < 0)
@@ -606,7 +606,7 @@ int TestLineOpaque(int modelnum, const vec3_t modelorigin, const vec3_t start, c
     return TestLineOpaque_r(thismodel->headnode, p1, p2);
 }
 
-int CountOpaqueFaces_r(opaquenode_t *node)
+static int CountOpaqueFaces_r(opaquenode_t *node)
 {
     int count = node->numfaces;
     if (node->children[0] >= 0)
