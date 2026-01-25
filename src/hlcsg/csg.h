@@ -68,7 +68,7 @@ typedef struct
     vec_t scale[2];
 } valve_vects;
 
-extern int g_nMapFileVersion; // map file version * 100 (ie 201), zero for pre-Worldcraft 2.0.1 maps
+extern int g_nMapFileVersion; // map file version 220
 
 typedef struct
 {
@@ -188,7 +188,6 @@ extern hullshape_t g_defaulthulls[NUM_HULLS];
 extern int g_numhullshapes;
 extern hullshape_t g_hullshapes[MAX_HULLSHAPES];
 
-extern void TextureAxisFromPlane(const plane_t *const pln, vec3_t xv, vec3_t yv);
 extern void LoadMapFile(const char *const filename);
 
 //=============================================================================

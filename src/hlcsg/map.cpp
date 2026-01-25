@@ -113,27 +113,6 @@ void DeleteCurrentEntity(entity_t *entity)
     std::memset(entity, 0, sizeof(entity_t));
     g_numentities--;
 }
-// =====================================================================================
-//  TextureAxisFromPlane
-// =====================================================================================
-void TextureAxisFromPlane(const plane_t *const pln, vec3_t xv, vec3_t yv)
-{
-    vec_t best = 0;
-    int bestaxis = 0;
-
-    for (int i = 0; i < 6; i++)
-    {
-        vec_t dot = DotProduct(pln->normal, s_baseaxis[i * 3]);
-        if (dot > best)
-        {
-            best = dot;
-            bestaxis = i;
-        }
-    }
-
-    VectorCopy(s_baseaxis[bestaxis * 3 + 1], xv);
-    VectorCopy(s_baseaxis[bestaxis * 3 + 2], yv);
-}
 
 constexpr double ScaleCorrection(1.0 / 128.0);
 
@@ -684,160 +663,154 @@ bool ParseMapEntity()
 
         if (ent_move_b || ent_scale_b || ent_gscale_b)
         {
-            if (g_nMapFileVersion < 220)
+
+            int ibrush, iside;
+            brush_t *brush;
+            side_t *side;
+            vec_t *point;
+            for (ibrush = 0, brush = g_mapbrushes + mapent->firstbrush; ibrush < mapent->numbrushes; ++ibrush, ++brush)
             {
-                Warning("hlcsg scaling hack is not supported in Worldcraft 2.1- or QuArK mode");
-            }
-            else
-            {
-                int ibrush, iside;
-                brush_t *brush;
-                side_t *side;
-                vec_t *point;
-                for (ibrush = 0, brush = g_mapbrushes + mapent->firstbrush; ibrush < mapent->numbrushes; ++ibrush, ++brush)
+                for (iside = 0, side = g_brushsides + brush->firstside; iside < brush->numsides; ++iside, ++side)
                 {
-                    for (iside = 0, side = g_brushsides + brush->firstside; iside < brush->numsides; ++iside, ++side)
+                    for (int ipoint = 0; ipoint < 3; ++ipoint)
                     {
-                        for (int ipoint = 0; ipoint < 3; ++ipoint)
-                        {
-                            point = side->planepts[ipoint];
-                            if (ent_scale_b)
-                            {
-                                VectorSubtract(point, ent_scale_origin, point);
-                                VectorScale(point, ent_scale, point);
-                                VectorAdd(point, ent_scale_origin, point);
-                            }
-                            if (ent_move_b)
-                            {
-                                VectorAdd(point, ent_move, point);
-                            }
-                            if (ent_gscale_b)
-                            {
-                                VectorScale(point, ent_gscale, point);
-                            }
-                        }
-                        // note that  tex->vecs = td.vects.valve.Axis / td.vects.valve.scale
-                        //            tex->vecs[3] = vects.valve.shift + Dot(origin, tex->vecs)
-                        //      and   texcoordinate = Dot(worldposition, tex->vecs) + tex->vecs[3]
-                        bool zeroscale = false;
-                        if (!side->td.vects.scale[0])
-                        {
-                            side->td.vects.scale[0] = 1;
-                        }
-                        if (!side->td.vects.scale[1])
-                        {
-                            side->td.vects.scale[1] = 1;
-                        }
+                        point = side->planepts[ipoint];
                         if (ent_scale_b)
                         {
-                            vec_t coord[2];
-                            if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
-                            {
-                                coord[0] = DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0] + side->td.vects.shift[0];
-                                side->td.vects.scale[0] *= ent_scale;
-                                if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
-                                {
-                                    side->td.vects.shift[0] = coord[0] - DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0];
-                                }
-                                else
-                                {
-                                    zeroscale = true;
-                                }
-                            }
-                            else
-                            {
-                                zeroscale = true;
-                            }
-                            if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
-                            {
-                                coord[1] = DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1] + side->td.vects.shift[1];
-                                side->td.vects.scale[1] *= ent_scale;
-                                if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
-                                {
-                                    side->td.vects.shift[1] = coord[1] - DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1];
-                                }
-                                else
-                                {
-                                    zeroscale = true;
-                                }
-                            }
-                            else
-                            {
-                                zeroscale = true;
-                            }
+                            VectorSubtract(point, ent_scale_origin, point);
+                            VectorScale(point, ent_scale, point);
+                            VectorAdd(point, ent_scale_origin, point);
                         }
                         if (ent_move_b)
                         {
-                            if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
-                            {
-                                side->td.vects.shift[0] -= DotProduct(ent_move, side->td.vects.UAxis) / side->td.vects.scale[0];
-                            }
-                            else
-                            {
-                                zeroscale = true;
-                            }
-                            if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
-                            {
-                                side->td.vects.shift[1] -= DotProduct(ent_move, side->td.vects.VAxis) / side->td.vects.scale[1];
-                            }
-                            else
-                            {
-                                zeroscale = true;
-                            }
+                            VectorAdd(point, ent_move, point);
                         }
                         if (ent_gscale_b)
                         {
-                            side->td.vects.scale[0] *= ent_gscale;
-                            side->td.vects.scale[1] *= ent_gscale;
+                            VectorScale(point, ent_gscale, point);
                         }
-                        if (zeroscale)
+                    }
+                    // note that  tex->vecs = td.vects.valve.Axis / td.vects.valve.scale
+                    //            tex->vecs[3] = vects.valve.shift + Dot(origin, tex->vecs)
+                    //      and   texcoordinate = Dot(worldposition, tex->vecs) + tex->vecs[3]
+                    bool zeroscale = false;
+                    if (!side->td.vects.scale[0])
+                    {
+                        side->td.vects.scale[0] = 1;
+                    }
+                    if (!side->td.vects.scale[1])
+                    {
+                        side->td.vects.scale[1] = 1;
+                    }
+                    if (ent_scale_b)
+                    {
+                        vec_t coord[2];
+                        if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
                         {
-                            Error("Entity %i, Brush %i: invalid texture scale.\n",
-                                  brush->originalentitynum, brush->originalbrushnum);
+                            coord[0] = DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0] + side->td.vects.shift[0];
+                            side->td.vects.scale[0] *= ent_scale;
+                            if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
+                            {
+                                side->td.vects.shift[0] = coord[0] - DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0];
+                            }
+                            else
+                            {
+                                zeroscale = true;
+                            }
                         }
+                        else
+                        {
+                            zeroscale = true;
+                        }
+                        if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
+                        {
+                            coord[1] = DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1] + side->td.vects.shift[1];
+                            side->td.vects.scale[1] *= ent_scale;
+                            if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
+                            {
+                                side->td.vects.shift[1] = coord[1] - DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1];
+                            }
+                            else
+                            {
+                                zeroscale = true;
+                            }
+                        }
+                        else
+                        {
+                            zeroscale = true;
+                        }
+                    }
+                    if (ent_move_b)
+                    {
+                        if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
+                        {
+                            side->td.vects.shift[0] -= DotProduct(ent_move, side->td.vects.UAxis) / side->td.vects.scale[0];
+                        }
+                        else
+                        {
+                            zeroscale = true;
+                        }
+                        if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
+                        {
+                            side->td.vects.shift[1] -= DotProduct(ent_move, side->td.vects.VAxis) / side->td.vects.scale[1];
+                        }
+                        else
+                        {
+                            zeroscale = true;
+                        }
+                    }
+                    if (ent_gscale_b)
+                    {
+                        side->td.vects.scale[0] *= ent_gscale;
+                        side->td.vects.scale[1] *= ent_gscale;
+                    }
+                    if (zeroscale)
+                    {
+                        Error("Entity %i, Brush %i: invalid texture scale.\n",
+                              brush->originalentitynum, brush->originalbrushnum);
                     }
                 }
-                if (ent_gscale_b)
+            }
+            if (ent_gscale_b)
+            {
+                if (*ValueForKey(mapent, "origin"))
                 {
-                    if (*ValueForKey(mapent, "origin"))
-                    {
-                        double v[3];
-                        int origin[3];
-                        char string[MAXTOKEN];
-                        GetVectorForKey(mapent, "origin", v);
-                        VectorScale(v, ent_gscale, v);
-                        for (int i = 0; i < 3; ++i)
-                            origin[i] = (int)(v[i] >= 0 ? v[i] + 0.5 : v[i] - 0.5);
-                        safe_snprintf(string, MAXTOKEN, "%d %d %d", origin[0], origin[1], origin[2]);
-                        SetKeyValue(mapent, "origin", string);
-                    }
+                    double v[3];
+                    int origin[3];
+                    char string[MAXTOKEN];
+                    GetVectorForKey(mapent, "origin", v);
+                    VectorScale(v, ent_gscale, v);
+                    for (int i = 0; i < 3; ++i)
+                        origin[i] = (int)(v[i] >= 0 ? v[i] + 0.5 : v[i] - 0.5);
+                    safe_snprintf(string, MAXTOKEN, "%d %d %d", origin[0], origin[1], origin[2]);
+                    SetKeyValue(mapent, "origin", string);
                 }
+            }
+            {
+                double b[2][3];
+                if (std::sscanf(ValueForKey(mapent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &b[0][0], &b[0][1], &b[0][2], &b[1][0], &b[1][1], &b[1][2]) == 6)
                 {
-                    double b[2][3];
-                    if (std::sscanf(ValueForKey(mapent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &b[0][0], &b[0][1], &b[0][2], &b[1][0], &b[1][1], &b[1][2]) == 6)
+                    for (int i = 0; i < 2; i++)
                     {
-                        for (int i = 0; i < 2; i++)
+                        vec_t *point = b[i];
+                        if (ent_scale_b)
                         {
-                            vec_t *point = b[i];
-                            if (ent_scale_b)
-                            {
-                                VectorSubtract(point, ent_scale_origin, point);
-                                VectorScale(point, ent_scale, point);
-                                VectorAdd(point, ent_scale_origin, point);
-                            }
-                            if (ent_move_b)
-                            {
-                                VectorAdd(point, ent_move, point);
-                            }
-                            if (ent_gscale_b)
-                            {
-                                VectorScale(point, ent_gscale, point);
-                            }
+                            VectorSubtract(point, ent_scale_origin, point);
+                            VectorScale(point, ent_scale, point);
+                            VectorAdd(point, ent_scale_origin, point);
                         }
-                        char string[MAXTOKEN];
-                        safe_snprintf(string, MAXTOKEN, "%.0f %.0f %.0f %.0f %.0f %.0f", b[0][0], b[0][1], b[0][2], b[1][0], b[1][1], b[1][2]);
-                        SetKeyValue(mapent, "zhlt_minsmaxs", string);
+                        if (ent_move_b)
+                        {
+                            VectorAdd(point, ent_move, point);
+                        }
+                        if (ent_gscale_b)
+                        {
+                            VectorScale(point, ent_gscale, point);
+                        }
                     }
+                    char string[MAXTOKEN];
+                    safe_snprintf(string, MAXTOKEN, "%.0f %.0f %.0f %.0f %.0f %.0f", b[0][0], b[0][1], b[0][2], b[1][0], b[1][1], b[1][2]);
+                    SetKeyValue(mapent, "zhlt_minsmaxs", string);
                 }
             }
         }

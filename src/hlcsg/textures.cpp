@@ -717,11 +717,6 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
         tx.flags |= TEX_SPECIAL;
     }
 
-    if (g_nMapFileVersion < 220)
-    {
-        TextureAxisFromPlane(plane, vecs[0], vecs[1]);
-    }
-
     if (!bt->vects.scale[0])
     {
         bt->vects.scale[0] = 1;
@@ -731,86 +726,11 @@ int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, cons
         bt->vects.scale[1] = 1;
     }
 
-    if (g_nMapFileVersion < 220)
-    {
-        // rotate axis
-        if (bt->vects.rotate == 0)
-        {
-            sinv = 0;
-            cosv = 1;
-        }
-        else if (bt->vects.rotate == 90)
-        {
-            sinv = 1;
-            cosv = 0;
-        }
-        else if (bt->vects.rotate == 180)
-        {
-            sinv = 0;
-            cosv = -1;
-        }
-        else if (bt->vects.rotate == 270)
-        {
-            sinv = -1;
-            cosv = 0;
-        }
-        else
-        {
-            vec_t ang = bt->vects.rotate / 180 * Q_PI;
-            sinv = std::sin(ang);
-            cosv = std::cos(ang);
-        }
+    vec_t scale = 1 / bt->vects.scale[0];
+    VectorScale(bt->vects.UAxis, scale, tx.vecs[0]);
 
-        if (vecs[0][0])
-        {
-            sv = 0;
-        }
-        else if (vecs[0][1])
-        {
-            sv = 1;
-        }
-        else
-        {
-            sv = 2;
-        }
-
-        if (vecs[1][0])
-        {
-            tv = 0;
-        }
-        else if (vecs[1][1])
-        {
-            tv = 1;
-        }
-        else
-        {
-            tv = 2;
-        }
-
-        for (i = 0; i < 2; i++)
-        {
-            vec_t ns = cosv * vecs[i][sv] - sinv * vecs[i][tv];
-            vec_t nt = sinv * vecs[i][sv] + cosv * vecs[i][tv];
-            vecs[i][sv] = ns;
-            vecs[i][tv] = nt;
-        }
-
-        for (i = 0; i < 2; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                tx.vecs[i][j] = vecs[i][j] / bt->vects.scale[i];
-            }
-        }
-    }
-    else
-    {
-        vec_t scale = 1 / bt->vects.scale[0];
-        VectorScale(bt->vects.UAxis, scale, tx.vecs[0]);
-
-        scale = 1 / bt->vects.scale[1];
-        VectorScale(bt->vects.VAxis, scale, tx.vecs[1]);
-    }
+    scale = 1 / bt->vects.scale[1];
+    VectorScale(bt->vects.VAxis, scale, tx.vecs[1]);
 
     tx.vecs[0][3] = bt->vects.shift[0] + DotProduct(origin, tx.vecs[0]);
     tx.vecs[1][3] = bt->vects.shift[1] + DotProduct(origin, tx.vecs[1]);
