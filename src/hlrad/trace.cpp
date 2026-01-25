@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/cmdlib.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"

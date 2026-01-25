@@ -56,7 +56,7 @@ add_executable(hlbsp
     ${SRC_DIR}/hlbsp/merge.cpp
     ${SRC_DIR}/hlbsp/outside.cpp
     ${SRC_DIR}/hlbsp/portals.cpp
-    ${SRC_DIR}/hlbsp/qbsp.cpp
+    ${SRC_DIR}/hlbsp/hlbsp.cpp
     ${SRC_DIR}/hlbsp/solidbsp.cpp
     ${SRC_DIR}/hlbsp/surfaces.cpp
     ${SRC_DIR}/hlbsp/tjunc.cpp
@@ -84,7 +84,7 @@ add_executable(hlcsg
     ${SRC_DIR}/hlcsg/hullfile.cpp
     ${SRC_DIR}/hlcsg/map.cpp
     ${SRC_DIR}/hlcsg/properties.cpp
-    ${SRC_DIR}/hlcsg/qcsg.cpp
+    ${SRC_DIR}/hlcsg/hlcsg.cpp
     ${SRC_DIR}/hlcsg/textures.cpp
     ${SRC_DIR}/hlcsg/wadcfg.cpp
     ${SRC_DIR}/hlcsg/wadpath.cpp
@@ -111,8 +111,8 @@ add_executable(hlrad
     ${SRC_DIR}/hlrad/loadtextures.cpp
     ${SRC_DIR}/hlrad/mathutil.cpp
     ${SRC_DIR}/hlrad/nomatrix.cpp
-    ${SRC_DIR}/hlrad/qrad.cpp
-    ${SRC_DIR}/hlrad/qradutil.cpp
+    ${SRC_DIR}/hlrad/hlrad.cpp
+    ${SRC_DIR}/hlrad/hlradutil.cpp
     ${SRC_DIR}/hlrad/sparse.cpp
     ${SRC_DIR}/hlrad/trace.cpp
     ${SRC_DIR}/hlrad/transfers.cpp
@@ -134,7 +134,7 @@ target_compile_definitions(hlrad PRIVATE HLRAD)
 add_executable(hlvis
     ${COMMON_SOURCES}
     ${SRC_DIR}/hlvis/flow.cpp
-    ${SRC_DIR}/hlvis/vis.cpp
+    ${SRC_DIR}/hlvis/hlvis.cpp
 )
 
 target_include_directories(hlvis PRIVATE

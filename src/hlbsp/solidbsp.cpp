@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 
-#include "bsp5.h"
+#include "hlbsp.h"
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/log.h"

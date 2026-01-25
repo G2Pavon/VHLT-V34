@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "csg.h"
+#include "hlcsg.h"
 #include "common/blockmem.h"
 #include "common/log.h"
 #include "common/hlassert.h"

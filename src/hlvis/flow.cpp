@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "vis.h"
+#include "hlvis.h"
 #include "common/threads.h"
 #include "common/log.h"
 #include "common/mathtypes.h"

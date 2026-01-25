@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/log.h"
 
 // =====================================================================================

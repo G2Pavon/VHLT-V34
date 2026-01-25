@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 
-#include "csg.h"
+#include "hlcsg.h"
 #include "common/cmdlib.h"
 #include "common/blockmem.h"
 #include "common/scriplib.h"

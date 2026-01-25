@@ -14,7 +14,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "bsp5.h"
+#include "hlbsp.h"
 #include "common/cmdlib.h"
 #include "common/cmdlinecfg.h"
 #include "common/filelib.h"

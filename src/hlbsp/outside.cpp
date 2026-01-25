@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cstdlib>
 
-#include "bsp5.h"
+#include "hlbsp.h"
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"

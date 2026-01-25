@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/cmdlib.h"

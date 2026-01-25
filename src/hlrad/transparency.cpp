@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <climits>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/threads.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"

@@ -217,7 +217,7 @@ void LoadTextures();
 void EmbedLightmapInTextures();
 
 //
-// qrad globals
+// hlrad globals
 //
 
 extern patch_t *g_face_patches[MAX_MAP_FACES];
@@ -362,7 +362,7 @@ extern funcCheckVisBit g_CheckVisBit;
 bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &backorigin, const vec3_t &backnormal, vec3_t &transparency_out);
 void MdlLightHack(void);
 
-// qradutil.c
+// hlradutil.c
 vec_t PatchPlaneDist(const patch_t *const patch);
 dleaf_t *PointInLeaf(const vec3_t point);
 void MakeBackplanes();

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/filelib.h"
 #include "common/threads.h"
 #include "common/hlassert.h"

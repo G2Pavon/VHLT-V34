@@ -16,7 +16,7 @@ typedef enum
     assume_ValidPointer,
     assume_BadWorkcount,
 
-    // qcsg
+    // hlcsg
     assume_MISSING_BRACKET_IN_TEXTUREDEF,
     assume_PLANE_WITH_NO_NORMAL,
     assume_BRUSH_WITH_COPLANAR_FACES,
@@ -31,7 +31,7 @@ typedef enum
     assume_MAX_SWITCHED_LIGHTS,
     assume_MAX_TEXFILES,
 
-    // qbsp
+    // hlbsp
     assume_LEAK,
     assume_MAX_LEAF_FACES,
     assume_MAX_WEDGES,
@@ -44,7 +44,7 @@ typedef enum
     assume_MAX_PORTALS_ON_LEAF,
     assume_VALID_NETVIS_STATE,
 
-    // qrad
+    // hlrad
     assume_MAX_TEXLIGHTS,
     assume_MAX_PATCHES,
     assume_TransferError,

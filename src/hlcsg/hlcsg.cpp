@@ -16,7 +16,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
 
-#include "csg.h"
+#include "hlcsg.h"
 #include "wadpath.h"
 #include "common/cmdlib.h"
 #include "common/cmdlinecfg.h"

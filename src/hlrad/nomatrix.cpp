@@ -1,6 +1,6 @@
 #include <io.h>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/threads.h"
 #include "common/cmdlib.h"
 

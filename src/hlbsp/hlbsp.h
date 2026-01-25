@@ -216,7 +216,7 @@ bool CheckFaceForEnv_Sky(const face_t *const f);
 void CullStuff();
 
 //=============================================================================
-// qbsp.c
+// hlbsp.c
 extern bool g_nofill;
 extern bool g_noinsidefill;
 extern bool g_notjunc;

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/log.h"
 #include "common/bspfile.h"
 #include "common/mathtypes.h"

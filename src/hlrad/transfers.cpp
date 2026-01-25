@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/blockmem.h"
 #include "common/log.h"
 

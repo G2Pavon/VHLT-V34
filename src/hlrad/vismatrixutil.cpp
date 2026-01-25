@@ -1,7 +1,7 @@
 #include <cstddef>
 #include <cmath>
 
-#include "qrad.h"
+#include "hlrad.h"
 #include "common/blockmem.h"
 #include "common/threads.h"
 #include "common/mathtypes.h"

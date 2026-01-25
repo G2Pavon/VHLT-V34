@@ -186,7 +186,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
 void InitDefaultHulls();
 
 //=============================================================================
-// csg.c
+// hlcsg.c
 
 extern bool g_chart;
 extern bool g_onlyents;

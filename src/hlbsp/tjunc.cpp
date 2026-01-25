@@ -1,7 +1,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "bsp5.h"
+#include "hlbsp.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"

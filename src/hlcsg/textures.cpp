@@ -5,7 +5,7 @@
 #include <deque>
 #include <cmath>
 
-#include "csg.h"
+#include "hlcsg.h"
 #include "wadpath.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"

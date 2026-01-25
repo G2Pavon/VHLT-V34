@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include "csg.h"
+#include "hlcsg.h"
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
