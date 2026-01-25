@@ -28,6 +28,8 @@
 //                                     O-------X
 //
 
+#define BRINK_FLOOR_THRESHOLD 0.7
+
 typedef struct bpartition_s
 {
     int planenum;

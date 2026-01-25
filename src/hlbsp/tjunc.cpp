@@ -6,6 +6,8 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 
+static constexpr int PLANENUM_LEAF = -1;
+
 typedef struct wvert_s
 {
     vec_t t;

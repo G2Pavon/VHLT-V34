@@ -16,6 +16,7 @@
 #include "common/mathlib.h"
 #include "common/winding.h"
 
+static constexpr vec_t BOUNDS_EXPANSION = 1.0; // expand the bounds of detail leafs when clipping its boundsbrush, to prevent some strange brushes in the func_detail from clipping away the entire boundsbrush making the func_detail invisible.
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
 
 static bool g_reportProgress = false;

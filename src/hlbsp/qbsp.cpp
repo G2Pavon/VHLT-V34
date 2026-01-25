@@ -28,6 +28,30 @@
 
 */
 
+static constexpr const char *ENTITIES_VOID = "entities.void";
+#define ENTITIES_VOID_EXT ".void"
+
+static constexpr int MIN_SUBDIVIDE_SIZE = 64;
+static constexpr int MAX_SUBDIVIDE_SIZE = 512;
+static constexpr int DEFAULT_SUBDIVIDE_SIZE = ((MAX_SURFACE_EXTENT - 1) * TEXTURE_STEP); //#define DEFAULT_SUBDIVIDE_SIZE  240 //--vluzacn
+
+static constexpr int MIN_MAXNODE_SIZE = 64;
+static constexpr int MAX_MAXNODE_SIZE = 65536;
+
+static constexpr bool DEFAULT_NOFILL = false;
+static constexpr bool DEFAULT_NOINSIDEFILL = false;
+static constexpr bool DEFAULT_NOTJUNC = false;
+static constexpr bool DEFAULT_NOBRINK = false;
+static constexpr bool DEFAULT_NOCLIP = false;
+static constexpr bool DEFAULT_NOOPT = false;
+static constexpr bool DEFAULT_NOCLIPNODEMERGE = false;
+static constexpr bool DEFAULT_LEAKONLY = false;
+
+static constexpr bool DEFAULT_CHART = false;
+static constexpr bool DEFAULT_INFO = true;
+static constexpr bool DEFAULT_NULLTEX = true;
+static constexpr bool DEFAULT_ESTIMATE = false;
+
 vec3_t g_hull_size[NUM_HULLS][2] =
     {
         {// 0x0x0
