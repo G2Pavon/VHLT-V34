@@ -45,31 +45,31 @@
 #define myoffsetof(type, identifier) ((std::size_t)&((type *)0)->identifier)
 #define sizeofElement(type, identifier) (sizeof((type *)0)->identifier)
 
-extern const char *stristr(const char *const string, const char *const substring);
-extern bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
-extern bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
-extern bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
-extern bool TerminatedString(const char *buffer, const int size);
+const char *stristr(const char *const string, const char *const substring);
+bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
+bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
+bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
+bool TerminatedString(const char *buffer, const int size);
 
-extern char *FlipSlashes(char *string);
+char *FlipSlashes(char *string);
 
-extern double I_FloatTime();
+double I_FloatTime();
 
-extern int CheckParm(char *check);
+int CheckParm(char *check);
 
-extern void DefaultExtension(char *path, const char *extension);
-extern void DefaultPath(char *path, char *basepath);
-extern void StripFilename(char *path);
-extern void StripExtension(char *path);
+void DefaultExtension(char *path, const char *extension);
+void DefaultPath(char *path, char *basepath);
+void StripFilename(char *path);
+void StripExtension(char *path);
 
-extern void ExtractFile(const char *const path, char *dest);
-extern void ExtractFilePath(const char *const path, char *dest);
-extern void ExtractFileBase(const char *const path, char *dest);
-extern void ExtractFileExtension(const char *const path, char *dest);
+void ExtractFile(const char *const path, char *dest);
+void ExtractFilePath(const char *const path, char *dest);
+void ExtractFileBase(const char *const path, char *dest);
+void ExtractFileExtension(const char *const path, char *dest);
 
-extern short BigShort(short l);
-extern short LittleShort(short l);
-extern int BigLong(int l);
-extern int LittleLong(int l);
-extern float BigFloat(float l);
-extern float LittleFloat(float l);
+short BigShort(short l);
+short LittleShort(short l);
+int BigLong(int l);
+int LittleLong(int l);
+float BigFloat(float l);
+float LittleFloat(float l);

@@ -142,20 +142,20 @@ constexpr int NUM_HULLS = 4; // engine constant
 
 //=============================================================================
 // solidbsp.c
-extern void SubdivideFace(face_t *f, face_t **prevptr);
-extern node_t *SolidBSP(const surfchain_t *const surfhead,
-                        brush_t *detailbrushes,
-                        bool report_progress);
+void SubdivideFace(face_t *f, face_t **prevptr);
+node_t *SolidBSP(const surfchain_t *const surfhead,
+                 brush_t *detailbrushes,
+                 bool report_progress);
 
 //=============================================================================
 // merge.c
-extern void MergePlaneFaces(surface_t *plane);
-extern void MergeAll(surface_t *surfhead);
+void MergePlaneFaces(surface_t *plane);
+void MergeAll(surface_t *surfhead);
 
 //=============================================================================
 // surfaces.c
-extern void MakeFaceEdges();
-extern int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f);
+void MakeFaceEdges();
+int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f);
 
 //=============================================================================
 // portals.c
@@ -170,12 +170,12 @@ typedef struct portal_s
 
 extern node_t g_outside_node; // portals outside the world face this
 
-extern void AddPortalToNodes(portal_t *p, node_t *front, node_t *back);
-extern void RemovePortalFromNode(portal_t *portal, node_t *l);
-extern void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs);
+void AddPortalToNodes(portal_t *p, node_t *front, node_t *back);
+void RemovePortalFromNode(portal_t *portal, node_t *l);
+void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs);
 
-extern void FreePortals(node_t *node);
-extern void WritePortalfile(node_t *headnode);
+void FreePortals(node_t *node);
+void WritePortalfile(node_t *headnode);
 
 //=============================================================================
 // tjunc.c
@@ -183,48 +183,48 @@ void tjunc(node_t *headnode);
 
 //=============================================================================
 // writebsp.c
-extern void WriteClipNodes(node_t *headnode);
-extern void WriteDrawNodes(node_t *headnode);
+void WriteClipNodes(node_t *headnode);
+void WriteDrawNodes(node_t *headnode);
 
-extern void BeginBSPFile();
-extern void FinishBSPFile();
+void BeginBSPFile();
+void FinishBSPFile();
 
 //=============================================================================
 // outside.c
-extern node_t *FillOutside(node_t *node, bool leakfile, unsigned hullnum);
-extern void LoadAllowableOutsideList(const char *const filename);
-extern void FreeAllowableOutsideList();
-extern void FillInside(node_t *node);
+node_t *FillOutside(node_t *node, bool leakfile, unsigned hullnum);
+void LoadAllowableOutsideList(const char *const filename);
+void FreeAllowableOutsideList();
+void FillInside(node_t *node);
 
 //=============================================================================
 // misc functions
-extern void GetParamsFromEnt(entity_t *mapent);
+void GetParamsFromEnt(entity_t *mapent);
 
-extern face_t *AllocFace();
-extern void FreeFace(face_t *f);
+face_t *AllocFace();
+void FreeFace(face_t *f);
 
-extern struct portal_s *AllocPortal();
-extern void FreePortal(struct portal_s *p);
+struct portal_s *AllocPortal();
+void FreePortal(struct portal_s *p);
 
-extern surface_t *AllocSurface();
-extern void FreeSurface(surface_t *s);
+surface_t *AllocSurface();
+void FreeSurface(surface_t *s);
 
-extern side_t *AllocSide();
-extern void FreeSide(side_t *s);
-extern side_t *NewSideFromSide(const side_t *s);
-extern brush_t *AllocBrush();
-extern void FreeBrush(brush_t *b);
-extern brush_t *NewBrushFromBrush(const brush_t *b);
-extern void SplitBrush(brush_t *in, const dplane_t *split, brush_t **front, brush_t **back);
-extern brush_t *BrushFromBox(const vec3_t mins, const vec3_t maxs);
-extern void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs);
+side_t *AllocSide();
+void FreeSide(side_t *s);
+side_t *NewSideFromSide(const side_t *s);
+brush_t *AllocBrush();
+void FreeBrush(brush_t *b);
+brush_t *NewBrushFromBrush(const brush_t *b);
+void SplitBrush(brush_t *in, const dplane_t *split, brush_t **front, brush_t **back);
+brush_t *BrushFromBox(const vec3_t mins, const vec3_t maxs);
+void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs);
 
-extern node_t *AllocNode();
+node_t *AllocNode();
 
-extern bool CheckFaceForHint(const face_t *const f);
-extern bool CheckFaceForSkip(const face_t *const f);
-extern bool CheckFaceForNull(const face_t *const f);
-extern bool CheckFaceForDiscardable(const face_t *f);
+bool CheckFaceForHint(const face_t *const f);
+bool CheckFaceForSkip(const face_t *const f);
+bool CheckFaceForNull(const face_t *const f);
+bool CheckFaceForDiscardable(const face_t *f);
 #define BRINK_FLOOR_THRESHOLD 0.7
 typedef enum
 {
@@ -235,19 +235,19 @@ typedef enum
     BrinkWall,
     BrinkAny,
 } bbrinklevel_e;
-extern void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode);
-extern bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out);
-extern void DeleteBrinkinfo(void *brinkinfo);
+void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode);
+bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out);
+void DeleteBrinkinfo(void *brinkinfo);
 
 // =====================================================================================
 //Cpt_Andrew - UTSky Check
 // =====================================================================================
-extern bool CheckFaceForEnv_Sky(const face_t *const f);
+bool CheckFaceForEnv_Sky(const face_t *const f);
 // =====================================================================================
 
 //=============================================================================
 // cull.c
-extern void CullStuff();
+void CullStuff();
 
 //=============================================================================
 // qbsp.c
@@ -274,5 +274,5 @@ extern bool g_bUseNullTex;
 
 extern bool g_nohull2;
 
-extern face_t *NewFaceFromFace(const face_t *const in);
-extern void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t **back);
+face_t *NewFaceFromFace(const face_t *const in);
+void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t **back);

@@ -15,6 +15,6 @@ typedef struct
 extern wadpath_t *g_pWadPaths[MAX_WADPATHS];
 extern int g_iNumWadPaths;
 
-extern void PushWadPath(const char *const path, bool inuse);
-extern void FreeWadPaths();
-extern void GetUsedWads();
+void PushWadPath(const char *const path, bool inuse);
+void FreeWadPaths();
+void GetUsedWads();

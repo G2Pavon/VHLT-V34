@@ -196,19 +196,19 @@ extern void LoadMapFile(const char *const filename);
 typedef std::deque<std::string>::iterator WadInclude_i;
 extern std::deque<std::string> g_WadInclude; // List of substrings to wadinclude
 
-extern void WriteMiptex();
-extern int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, const vec3_t origin);
-extern const char *GetTextureByNumber_CSG(int texturenumber);
+void WriteMiptex();
+int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, const vec3_t origin);
+const char *GetTextureByNumber_CSG(int texturenumber);
 
 //=============================================================================
 // brush.c
 
-extern brush_t *Brush_LoadEntity(entity_t *ent, int hullnum);
-extern contents_t CheckBrushContents(const brush_t *const b);
+brush_t *Brush_LoadEntity(entity_t *ent, int hullnum);
+contents_t CheckBrushContents(const brush_t *const b);
 
-extern void CreateBrush(int brushnum);
-extern void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthulls);
-extern void InitDefaultHulls();
+void CreateBrush(int brushnum);
+void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthulls);
+void InitDefaultHulls();
 
 //=============================================================================
 // csg.c
@@ -238,7 +238,7 @@ extern cliptype g_cliptype;
 
 constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
-extern const char *GetClipTypeString(cliptype);
+const char *GetClipTypeString(cliptype);
 
 extern vec_t g_scalesize;
 extern bool g_resetlog;
@@ -254,15 +254,15 @@ extern vec_t g_BrushUnionThreshold;
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 extern int g_nummapplanes;
 
-extern bface_t *NewFaceFromFace(const bface_t *const in);
-extern bface_t *CopyFace(const bface_t *const f);
+bface_t *NewFaceFromFace(const bface_t *const in);
+bface_t *CopyFace(const bface_t *const f);
 
-extern void FreeFace(bface_t *f);
+void FreeFace(bface_t *f);
 
-extern bface_t *CopyFaceList(bface_t *f);
-extern void FreeFaceList(bface_t *f);
+bface_t *CopyFaceList(bface_t *f);
+void FreeFaceList(bface_t *f);
 
-extern void GetParamsFromEnt(entity_t *mapent);
+void GetParamsFromEnt(entity_t *mapent);
 
 //=============================================================================
 // brushunion.c
@@ -271,12 +271,12 @@ void CalculateBrushUnions(int brushnum);
 //============================================================================
 // hullfile.cpp
 extern vec3_t g_hull_size[NUM_HULLS][2];
-extern void LoadHullfile(const char *filename);
+void LoadHullfile(const char *filename);
 
 extern const char *g_wadcfgfile;
 extern const char *g_wadconfigname;
-extern void LoadWadcfgfile(const char *filename);
-extern void LoadWadconfig(const char *filename, const char *configname);
+void LoadWadcfgfile(const char *filename);
+void LoadWadconfig(const char *filename, const char *configname);
 
 //============================================================================
 // autowad.cpp      AJM
@@ -286,7 +286,7 @@ extern bool g_bWadAutoDetect;
 //=============================================================================
 // properties.cpp
 
-extern void properties_initialize(const char *filename);
+void properties_initialize(const char *filename);
 extern std::set<std::string> g_invisible_items;
 
 //============================================================================

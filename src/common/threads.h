@@ -20,14 +20,14 @@ constexpr q_threadpriority DEFAULT_THREAD_PRIORITY = eThreadPriorityNormal;
 extern int g_numthreads;
 extern q_threadpriority g_threadpriority;
 
-extern void ThreadSetPriority(q_threadpriority type);
-extern void ThreadSetDefault();
-extern int GetThreadWork();
-extern void ThreadLock();
-extern void ThreadUnlock();
+void ThreadSetPriority(q_threadpriority type);
+void ThreadSetDefault();
+int GetThreadWork();
+void ThreadLock();
+void ThreadUnlock();
 
-extern void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction);
-extern void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction);
+void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction);
+void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction);
 
 #define NamedRunThreadsOn(n, p, f) \
     {                              \

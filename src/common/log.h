@@ -35,36 +35,36 @@ extern unsigned long g_nextclientid; // Client id of next client to spawn from t
 // log.c Functions
 //
 
-extern void ResetTmpFiles();
-extern void ResetLog();
-extern void ResetErrorLog();
-extern void CheckForErrorLog();
+void ResetTmpFiles();
+void ResetLog();
+void ResetErrorLog();
+void CheckForErrorLog();
 
-extern void CDECL OpenLog(int clientid);
-extern void CDECL CloseLog();
-extern void WriteLog(const char *const message);
+void CDECL OpenLog(int clientid);
+void CDECL CloseLog();
+void WriteLog(const char *const message);
 
-extern void CheckFatal();
+void CheckFatal();
 
-extern void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
+void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
 
 #define IfDebug(x)
 
-extern int InitConsole(int argc, char **argv);
-extern void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
-extern void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
-extern void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
-extern void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...);
-extern void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const error, ...);
-extern void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
+int InitConsole(int argc, char **argv);
+void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);
+void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
+void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
+void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...);
+void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const error, ...);
+void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
 
-extern void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const message, ...);
+void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const message, ...);
 
-extern void LogStart(const int argc, char **argv);
-extern void LogEnd();
-extern void Banner();
+void LogStart(const int argc, char **argv);
+void LogEnd();
+void Banner();
 
-extern void LogTimeElapsed(float elapsed_time);
+void LogTimeElapsed(float elapsed_time);
 
 // Should be in hlassert.h, but well so what
-extern void hlassume(bool exp, assume_msgs msgid);
+void hlassume(bool exp, assume_msgs msgid);

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-extern void compress_compatability_test(void);
+void compress_compatability_test(void);
 
 extern const std::size_t unused_size; // located at the end of a block
 

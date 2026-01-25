@@ -87,4 +87,4 @@ typedef enum
     assume_last
 } assume_msgs;
 
-extern const MessageTable_t *GetAssume(assume_msgs id);
+const MessageTable_t *GetAssume(assume_msgs id);

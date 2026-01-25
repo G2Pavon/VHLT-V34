@@ -6,10 +6,10 @@ constexpr int MAXTOKEN = 4096;
 
 extern char g_token[MAXTOKEN];
 
-extern void LoadScriptFile(const char *const filename);
-extern void ParseFromMemory(char *buffer, int size);
+void LoadScriptFile(const char *const filename);
+void ParseFromMemory(char *buffer, int size);
 
-extern bool GetToken(bool crossline);
+bool GetToken(bool crossline);
 
 constexpr int MAX_WAD_PATHS = 42;
 extern char g_szWadPaths[MAX_WAD_PATHS][_MAX_PATH];

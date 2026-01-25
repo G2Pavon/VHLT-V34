@@ -325,19 +325,19 @@ extern int g_numsurfedges;
 extern int g_dsurfedges[MAX_MAP_SURFEDGES];
 extern int g_dsurfedges_checksum;
 
-extern void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
-extern int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length);
+void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
+int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length);
 
-extern void LoadBSPImage(dheader_t *header);
-extern void LoadBSPFile(const char *const filename);
-extern void WriteBSPFile(const char *const filename);
-extern void PrintBSPFileSizes();
-extern void WriteExtentFile(const char *const filename);
-extern bool CalcFaceExtents_test();
-extern void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
-extern int ParseImplicitTexinfoFromTexture(int miptex);
-extern int ParseTexinfoForFace(const dface_t *f);
-extern void DeleteEmbeddedLightmaps();
+void LoadBSPImage(dheader_t *header);
+void LoadBSPFile(const char *const filename);
+void WriteBSPFile(const char *const filename);
+void PrintBSPFileSizes();
+void WriteExtentFile(const char *const filename);
+bool CalcFaceExtents_test();
+void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
+int ParseImplicitTexinfoFromTexture(int miptex);
+int ParseTexinfoForFace(const dface_t *f);
+void DeleteEmbeddedLightmaps();
 
 //
 // Entity Related Stuff
@@ -361,19 +361,19 @@ typedef struct
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
-extern void ParseEntities();
-extern void UnparseEntities();
+void ParseEntities();
+void UnparseEntities();
 
-extern void DeleteKey(entity_t *ent, const char *const key);
-extern void SetKeyValue(entity_t *ent, const char *const key, const char *const value);
-extern const char *ValueForKey(const entity_t *const ent, const char *const key);
-extern int IntForKey(const entity_t *const ent, const char *const key);
-extern vec_t FloatForKey(const entity_t *const ent, const char *const key);
-extern void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec);
+void DeleteKey(entity_t *ent, const char *const key);
+void SetKeyValue(entity_t *ent, const char *const key, const char *const value);
+const char *ValueForKey(const entity_t *const ent, const char *const key);
+int IntForKey(const entity_t *const ent, const char *const key);
+vec_t FloatForKey(const entity_t *const ent, const char *const key);
+void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec);
 
-extern entity_t *FindTargetEntity(const char *const target);
-extern epair_t *ParseEpair();
-extern entity_t *EntityForModel(int modnum);
+entity_t *FindTargetEntity(const char *const target);
+epair_t *ParseEpair();
+entity_t *EntityForModel(int modnum);
 
 //
 // Texture Related Stuff
@@ -381,7 +381,7 @@ extern entity_t *EntityForModel(int modnum);
 
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
-extern void dtexdata_init();
-extern void CDECL dtexdata_free();
+void dtexdata_init();
+void CDECL dtexdata_free();
 
-extern char *GetTextureByNumber(int texturenumber);
+char *GetTextureByNumber(int texturenumber);

@@ -133,10 +133,10 @@ extern unsigned g_bitlongs;
 
 extern volatile int g_vislocalpercent;
 
-extern void BasePortalVis(int threadnum);
+void BasePortalVis(int threadnum);
 
-extern void MaxDistVis(int threadnum);
+void MaxDistVis(int threadnum);
 //extern void		PostMaxDistVis(int threadnum);
 
-extern void PortalFlow(portal_t *p);
-extern void CalcAmbientSounds();
+void PortalFlow(portal_t *p);
+void CalcAmbientSounds();
