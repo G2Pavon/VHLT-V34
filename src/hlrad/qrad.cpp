@@ -2888,127 +2888,26 @@ void ReadInfoTexlights()
     }
 }
 
-const char *lights_rad = "lights.rad";
-const char *ext_rad = ".rad";
 // =====================================================================================
 //  LoadRadFiles
 // =====================================================================================
-void LoadRadFiles(const char *const mapname, const char *const user_rad, const char *argv0)
+void LoadRadFiles(const char *const user_rad)
 {
-    char global_lights[_MAX_PATH];
-    char mapname_lights[_MAX_PATH];
+    char user_lights[_MAX_PATH];
+    char userfile[_MAX_PATH];
 
-    char mapfile[_MAX_PATH];
-    char mapdir[_MAX_PATH];
-    char appdir[_MAX_PATH];
+    ExtractFile(user_rad, userfile);
 
-    // Get application directory (only an approximation on posix systems)
-    // try looking in the directory we were run from
+    // Look for user.rad from command line (raw)
+    safe_strncpy(user_lights, user_rad, _MAX_PATH);
+    if (q_exists(user_lights))
     {
-        char tmp[_MAX_PATH];
-        std::memset(tmp, 0, sizeof(tmp));
-
-        GetModuleFileName(NULL, tmp, _MAX_PATH);
-        ExtractFilePath(tmp, appdir);
-    }
-
-    // Get map directory
-    ExtractFilePath(mapname, mapdir);
-    ExtractFile(mapname, mapfile);
-
-    // Look for lights.rad in mapdir
-    safe_strncpy(global_lights, mapdir, _MAX_PATH);
-    safe_strncat(global_lights, lights_rad, _MAX_PATH);
-    if (q_exists(global_lights))
-    {
-        ReadLightFile(global_lights);
+        ReadLightFile(user_lights);
     }
     else
     {
-        // Look for lights.rad in appdir
-        safe_strncpy(global_lights, appdir, _MAX_PATH);
-        safe_strncat(global_lights, lights_rad, _MAX_PATH);
-        if (q_exists(global_lights))
-        {
-            ReadLightFile(global_lights);
-        }
-        else
-        {
-            // Look for lights.rad in current working directory
-            safe_strncpy(global_lights, lights_rad, _MAX_PATH);
-            if (q_exists(global_lights))
-            {
-                ReadLightFile(global_lights);
-            }
-        }
+        Log("Could not find specified .rad file '%s'\n", user_lights);
     }
-
-    // Look for mapname.rad in mapdir
-    safe_strncpy(mapname_lights, mapdir, _MAX_PATH);
-    safe_strncat(mapname_lights, mapfile, _MAX_PATH);
-    safe_strncat(mapname_lights, ext_rad, _MAX_PATH);
-    if (q_exists(mapname_lights))
-    {
-        ReadLightFile(mapname_lights);
-    }
-
-    if (user_rad)
-    {
-        char user_lights[_MAX_PATH];
-        char userfile[_MAX_PATH];
-
-        ExtractFile(user_rad, userfile);
-
-        // Look for user.rad from command line (raw)
-        safe_strncpy(user_lights, user_rad, _MAX_PATH);
-        if (q_exists(user_lights))
-        {
-            ReadLightFile(user_lights);
-        }
-        else
-        {
-            // Try again with .rad enforced as extension
-            DefaultExtension(user_lights, ext_rad);
-            if (q_exists(user_lights))
-            {
-                ReadLightFile(user_lights);
-            }
-            else
-            {
-                // Look for user.rad in mapdir
-                safe_strncpy(user_lights, mapdir, _MAX_PATH);
-                safe_strncat(user_lights, userfile, _MAX_PATH);
-                DefaultExtension(user_lights, ext_rad);
-                if (q_exists(user_lights))
-                {
-                    ReadLightFile(user_lights);
-                }
-                else
-                {
-                    // Look for user.rad in appdir
-                    safe_strncpy(user_lights, appdir, _MAX_PATH);
-                    safe_strncat(user_lights, userfile, _MAX_PATH);
-                    DefaultExtension(user_lights, ext_rad);
-                    if (q_exists(user_lights))
-                    {
-                        ReadLightFile(user_lights);
-                    }
-                    else
-                    {
-                        // Look for user.rad in current working directory
-                        safe_strncpy(user_lights, userfile, _MAX_PATH);
-                        DefaultExtension(user_lights, ext_rad);
-                        if (q_exists(user_lights))
-                        {
-                            ReadLightFile(user_lights);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ReadInfoTexlights(); // AJM
 }
 
 // =====================================================================================
@@ -3017,7 +2916,7 @@ void LoadRadFiles(const char *const mapname, const char *const user_rad, const c
 int main(const int argc, char **argv)
 {
     const char *mapname_from_arg = NULL;
-    const char *user_lights = NULL;
+    const char *rad_file_path = NULL;
 
     g_Program = "hlrad";
 
@@ -3230,7 +3129,7 @@ int main(const int argc, char **argv)
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
-                        user_lights = argv[++i];
+                        rad_file_path = argv[++i];
                     }
                     else
                     {
@@ -3749,7 +3648,14 @@ int main(const int argc, char **argv)
             Settings();
             DeleteEmbeddedLightmaps();
             LoadTextures();
-            LoadRadFiles(g_Mapname, user_lights, argv[0]);
+
+            if (rad_file_path)
+            {
+                LoadRadFiles(rad_file_path);
+            }
+
+            ReadInfoTexlights();
+
             ReadCustomChopValue();
             ReadCustomSmoothValue();
             ReadTranslucentTextures();
