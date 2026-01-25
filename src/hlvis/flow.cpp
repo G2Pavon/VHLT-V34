@@ -12,7 +12,7 @@
 // =====================================================================================
 //  AllocStackWinding
 // =====================================================================================
-inline static winding_t *AllocStackWinding(pstack_t *const stack)
+static inline winding_t *AllocStackWinding(pstack_t *const stack)
 {
     for (int i = 0; i < 3; i++)
     {
@@ -31,7 +31,7 @@ inline static winding_t *AllocStackWinding(pstack_t *const stack)
 // =====================================================================================
 //  FreeStackWinding
 // =====================================================================================
-inline static void FreeStackWinding(const winding_t *const w, pstack_t *const stack)
+static inline void FreeStackWinding(const winding_t *const w, pstack_t *const stack)
 {
     int i = w - stack->windings;
 
@@ -46,7 +46,7 @@ inline static void FreeStackWinding(const winding_t *const w, pstack_t *const st
 // =====================================================================================
 //  ChopWinding
 // =====================================================================================
-inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const plane_t *const split)
+static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const plane_t *const split)
 {
     vec_t dists[128];
     int sides[128];
@@ -180,7 +180,7 @@ inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const 
 // =====================================================================================
 //  AddPlane
 // =====================================================================================
-inline static void AddPlane(pstack_t *const stack, const plane_t *const split)
+static inline void AddPlane(pstack_t *const stack, const plane_t *const split)
 {
     if (stack->clipPlaneCount)
     {
@@ -209,7 +209,7 @@ inline static void AddPlane(pstack_t *const stack, const plane_t *const split)
 //      order goes source, pass, target.  If the order goes pass, source, target then
 //      flipclip should be set.
 // =====================================================================================
-inline static winding_t *ClipToSeperators(
+static inline winding_t *ClipToSeperators(
     const winding_t *const source,
     const winding_t *const pass,
     winding_t *const a_target,
@@ -347,7 +347,7 @@ inline static winding_t *ClipToSeperators(
 //      Flood fill through the leafs
 //      If src_portal is NULL, this is the originating leaf
 // =====================================================================================
-inline static void RecursiveLeafFlow(const int leafnum, const threaddata_t *const thread, const pstack_t *const prevstack)
+static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *const thread, const pstack_t *const prevstack)
 {
     pstack_t stack;
 
@@ -652,7 +652,7 @@ void BasePortalVis(int unused)
     }
 }
 
-bool BestNormalFromWinding(const vec3_t *points, int numpoints, vec3_t &normal_out)
+static bool BestNormalFromWinding(const vec3_t *points, int numpoints, vec3_t &normal_out)
 {
     const vec3_t *pt1, *pt2, *pt3;
     vec3_t d, normal, edge;
@@ -713,7 +713,7 @@ bool BestNormalFromWinding(const vec3_t *points, int numpoints, vec3_t &normal_o
     return true;
 }
 
-vec_t WindingDist(const winding_t *w[2])
+static vec_t WindingDist(const winding_t *w[2])
 {
     vec_t minsqrdist = 99999999.0 * 99999999.0;
     int b;
