@@ -240,7 +240,6 @@ static void ParseBrush(entity_t *mapent)
     bool ok = GetToken(true);
     while (ok)
     {
-        g_TXcommand = 0;
         if (!std::strcmp(g_token, "}"))
         {
             break;
@@ -322,129 +321,61 @@ static void ParseBrush(entity_t *mapent)
         }
         safe_strncpy(side->td.name, g_token, sizeof(side->td.name));
 
-        if (g_nMapFileVersion < 220) // Worldcraft 2.1-, Radiant
+        // texture U axis
+        GetToken(false);
+        if (std::strcmp(g_token, "["))
         {
-            GetToken(false);
-            side->td.vects.valve.shift[0] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.shift[1] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.rotate = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.scale[0] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.scale[1] = std::atof(g_token);
+            hlassume(false, assume_MISSING_BRACKET_IN_TEXTUREDEF);
         }
-        else // Worldcraft 2.2+
+
+        GetToken(false);
+        side->td.vects.UAxis[0] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.UAxis[1] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.UAxis[2] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.shift[0] = std::atof(g_token);
+
+        GetToken(false);
+        if (std::strcmp(g_token, "]"))
         {
-            // texture U axis
-            GetToken(false);
-            if (std::strcmp(g_token, "["))
-            {
-                hlassume(false, assume_MISSING_BRACKET_IN_TEXTUREDEF);
-            }
-
-            GetToken(false);
-            side->td.vects.valve.UAxis[0] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.UAxis[1] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.UAxis[2] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.shift[0] = std::atof(g_token);
-
-            GetToken(false);
-            if (std::strcmp(g_token, "]"))
-            {
-                Error("missing ']' in texturedef (U)");
-            }
-
-            // texture V axis
-            GetToken(false);
-            if (std::strcmp(g_token, "["))
-            {
-                Error("missing '[' in texturedef (V)");
-            }
-
-            GetToken(false);
-            side->td.vects.valve.VAxis[0] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.VAxis[1] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.VAxis[2] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.shift[1] = std::atof(g_token);
-
-            GetToken(false);
-            if (std::strcmp(g_token, "]"))
-            {
-                Error("missing ']' in texturedef (V)");
-            }
-
-            // Texture rotation is implicit in U/V axes.
-            GetToken(false);
-            side->td.vects.valve.rotate = 0;
-
-            // texure scale
-            GetToken(false);
-            side->td.vects.valve.scale[0] = std::atof(g_token);
-            GetToken(false);
-            side->td.vects.valve.scale[1] = std::atof(g_token);
+            Error("missing ']' in texturedef (U)");
         }
+
+        // texture V axis
+        GetToken(false);
+        if (std::strcmp(g_token, "["))
+        {
+            Error("missing '[' in texturedef (V)");
+        }
+
+        GetToken(false);
+        side->td.vects.VAxis[0] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.VAxis[1] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.VAxis[2] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.shift[1] = std::atof(g_token);
+
+        GetToken(false);
+        if (std::strcmp(g_token, "]"))
+        {
+            Error("missing ']' in texturedef (V)");
+        }
+
+        // Texture rotation is implicit in U/V axes.
+        GetToken(false);
+        side->td.vects.rotate = 0;
+
+        // texure scale
+        GetToken(false);
+        side->td.vects.scale[0] = std::atof(g_token);
+        GetToken(false);
+        side->td.vects.scale[1] = std::atof(g_token);
 
         ok = GetToken(true); // Done with line, this reads the first item from the next line
-
-        if ((g_TXcommand == '1' || g_TXcommand == '2'))
-        {
-            // We are QuArK mode and need to translate some numbers to align textures its way
-            // from QuArK, the texture vectors are given directly from the three points
-            vec3_t TexPt[2];
-            float aa, bb, dd;
-
-            int k = g_TXcommand - '0';
-            for (int j = 0; j < 3; j++)
-            {
-                TexPt[1][j] = (side->planepts[k][j] - side->planepts[0][j]) * ScaleCorrection;
-            }
-            k = 3 - k;
-            for (int j = 0; j < 3; j++)
-            {
-                TexPt[0][j] = (side->planepts[k][j] - side->planepts[0][j]) * ScaleCorrection;
-            }
-
-            float dot22 = DotProduct(TexPt[0], TexPt[0]);
-            float dot23 = DotProduct(TexPt[0], TexPt[1]);
-            float dot33 = DotProduct(TexPt[1], TexPt[1]);
-            float mdet = dot22 * dot33 - dot23 * dot23;
-            if (mdet < 1E-6 && mdet > -1E-6)
-            {
-                aa = bb = dd = 0;
-                Warning("Degenerate QuArK-style brush texture : Entity %i, Brush %i @ (%f,%f,%f) (%f,%f,%f)	(%f,%f,%f)",
-                        b->originalentitynum, b->originalbrushnum,
-                        side->planepts[0][0], side->planepts[0][1], side->planepts[0][2],
-                        side->planepts[1][0], side->planepts[1][1], side->planepts[1][2], side->planepts[2][0],
-                        side->planepts[2][1], side->planepts[2][2]);
-            }
-            else
-            {
-                mdet = 1.0 / mdet;
-                aa = dot33 * mdet;
-                bb = -dot23 * mdet;
-                //cc = -dot23*mdet;             // cc = bb
-                dd = dot22 * mdet;
-            }
-
-            for (int j = 0; j < 3; j++)
-            {
-                side->td.vects.quark.vects[0][j] = aa * TexPt[0][j] + bb * TexPt[1][j];
-                side->td.vects.quark.vects[1][j] = -(/*cc */ bb * TexPt[0][j] + dd * TexPt[1][j]);
-            }
-
-            side->td.vects.quark.vects[0][3] = -DotProduct(side->td.vects.quark.vects[0], side->planepts[0]);
-            side->td.vects.quark.vects[1][3] = -DotProduct(side->td.vects.quark.vects[1], side->planepts[0]);
-        }
-
-        side->td.txcommand = g_TXcommand; // Quark stuff, but needs setting always
     };
     if (b->cliphull != 0) // has CLIP* texture
     {
@@ -753,7 +684,7 @@ bool ParseMapEntity()
 
         if (ent_move_b || ent_scale_b || ent_gscale_b)
         {
-            if (g_nMapFileVersion < 220 || g_brushsides[0].td.txcommand != 0)
+            if (g_nMapFileVersion < 220)
             {
                 Warning("hlcsg scaling hack is not supported in Worldcraft 2.1- or QuArK mode");
             }
@@ -789,24 +720,24 @@ bool ParseMapEntity()
                         //            tex->vecs[3] = vects.valve.shift + Dot(origin, tex->vecs)
                         //      and   texcoordinate = Dot(worldposition, tex->vecs) + tex->vecs[3]
                         bool zeroscale = false;
-                        if (!side->td.vects.valve.scale[0])
+                        if (!side->td.vects.scale[0])
                         {
-                            side->td.vects.valve.scale[0] = 1;
+                            side->td.vects.scale[0] = 1;
                         }
-                        if (!side->td.vects.valve.scale[1])
+                        if (!side->td.vects.scale[1])
                         {
-                            side->td.vects.valve.scale[1] = 1;
+                            side->td.vects.scale[1] = 1;
                         }
                         if (ent_scale_b)
                         {
                             vec_t coord[2];
-                            if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
                             {
-                                coord[0] = DotProduct(ent_scale_origin, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0] + side->td.vects.valve.shift[0];
-                                side->td.vects.valve.scale[0] *= ent_scale;
-                                if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                                coord[0] = DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0] + side->td.vects.shift[0];
+                                side->td.vects.scale[0] *= ent_scale;
+                                if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
                                 {
-                                    side->td.vects.valve.shift[0] = coord[0] - DotProduct(ent_scale_origin, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0];
+                                    side->td.vects.shift[0] = coord[0] - DotProduct(ent_scale_origin, side->td.vects.UAxis) / side->td.vects.scale[0];
                                 }
                                 else
                                 {
@@ -817,13 +748,13 @@ bool ParseMapEntity()
                             {
                                 zeroscale = true;
                             }
-                            if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
                             {
-                                coord[1] = DotProduct(ent_scale_origin, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1] + side->td.vects.valve.shift[1];
-                                side->td.vects.valve.scale[1] *= ent_scale;
-                                if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                                coord[1] = DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1] + side->td.vects.shift[1];
+                                side->td.vects.scale[1] *= ent_scale;
+                                if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
                                 {
-                                    side->td.vects.valve.shift[1] = coord[1] - DotProduct(ent_scale_origin, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1];
+                                    side->td.vects.shift[1] = coord[1] - DotProduct(ent_scale_origin, side->td.vects.VAxis) / side->td.vects.scale[1];
                                 }
                                 else
                                 {
@@ -837,17 +768,17 @@ bool ParseMapEntity()
                         }
                         if (ent_move_b)
                         {
-                            if (std::abs(side->td.vects.valve.scale[0]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.scale[0]) > NORMAL_EPSILON)
                             {
-                                side->td.vects.valve.shift[0] -= DotProduct(ent_move, side->td.vects.valve.UAxis) / side->td.vects.valve.scale[0];
+                                side->td.vects.shift[0] -= DotProduct(ent_move, side->td.vects.UAxis) / side->td.vects.scale[0];
                             }
                             else
                             {
                                 zeroscale = true;
                             }
-                            if (std::abs(side->td.vects.valve.scale[1]) > NORMAL_EPSILON)
+                            if (std::abs(side->td.vects.scale[1]) > NORMAL_EPSILON)
                             {
-                                side->td.vects.valve.shift[1] -= DotProduct(ent_move, side->td.vects.valve.VAxis) / side->td.vects.valve.scale[1];
+                                side->td.vects.shift[1] -= DotProduct(ent_move, side->td.vects.VAxis) / side->td.vects.scale[1];
                             }
                             else
                             {
@@ -856,8 +787,8 @@ bool ParseMapEntity()
                         }
                         if (ent_gscale_b)
                         {
-                            side->td.vects.valve.scale[0] *= ent_gscale;
-                            side->td.vects.valve.scale[1] *= ent_gscale;
+                            side->td.vects.scale[0] *= ent_gscale;
+                            side->td.vects.scale[1] *= ent_gscale;
                         }
                         if (zeroscale)
                         {

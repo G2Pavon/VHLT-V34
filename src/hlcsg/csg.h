@@ -68,23 +68,11 @@ typedef struct
     vec_t scale[2];
 } valve_vects;
 
-typedef struct
-{
-    float vects[2][4];
-} quark_vects;
-
-typedef union
-{
-    valve_vects valve;
-    quark_vects quark;
-} vects_union;
-
 extern int g_nMapFileVersion; // map file version * 100 (ie 201), zero for pre-Worldcraft 2.0.1 maps
 
 typedef struct
 {
-    char txcommand;
-    vects_union vects;
+    valve_vects vects;
     char name[32];
 } brush_texture_t;
 
