@@ -485,14 +485,14 @@ void FreePortal(portal_t *p) // consider: inline
     std::free(p);
 }
 
-side_t *AllocSide()
+static side_t *AllocSide()
 {
     side_t *s = (side_t *)std::malloc(sizeof(side_t));
     std::memset(s, 0, sizeof(side_t));
     return s;
 }
 
-void FreeSide(side_t *s)
+static void FreeSide(side_t *s)
 {
     if (s->w)
     {
@@ -502,7 +502,7 @@ void FreeSide(side_t *s)
     return;
 }
 
-side_t *NewSideFromSide(const side_t *s)
+static side_t *NewSideFromSide(const side_t *s)
 {
     side_t *news = AllocSide();
     news->plane = s->plane;
@@ -510,7 +510,7 @@ side_t *NewSideFromSide(const side_t *s)
     return news;
 }
 
-brush_t *AllocBrush()
+static brush_t *AllocBrush()
 {
     brush_t *b = (brush_t *)std::malloc(sizeof(brush_t));
     std::memset(b, 0, sizeof(brush_t));
@@ -543,7 +543,7 @@ brush_t *NewBrushFromBrush(const brush_t *b)
     return newb;
 }
 
-void ClipBrush(brush_t **b, const dplane_t *split, vec_t epsilon)
+static void ClipBrush(brush_t **b, const dplane_t *split, vec_t epsilon)
 {
     side_t *s, **pnext;
     Winding *w;
@@ -699,7 +699,7 @@ node_t *AllocNode()
 // =====================================================================================
 //  AddPointToBounds
 // =====================================================================================
-void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
+static void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
 {
     for (int i = 0; i < 3; i++)
     {
@@ -1007,6 +1007,7 @@ static surfchain_t *ReadSurfs(std::FILE *file)
 
     return SurflistFromValidFaces();
 }
+
 static brush_t *ReadBrushes(std::FILE *file)
 {
     brush_t *brushes = NULL;

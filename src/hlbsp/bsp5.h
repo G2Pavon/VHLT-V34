@@ -209,10 +209,6 @@ void FreePortal(struct portal_s *p);
 surface_t *AllocSurface();
 void FreeSurface(surface_t *s);
 
-side_t *AllocSide();
-void FreeSide(side_t *s);
-side_t *NewSideFromSide(const side_t *s);
-brush_t *AllocBrush();
 void FreeBrush(brush_t *b);
 brush_t *NewBrushFromBrush(const brush_t *b);
 void SplitBrush(brush_t *in, const dplane_t *split, brush_t **front, brush_t **back);
