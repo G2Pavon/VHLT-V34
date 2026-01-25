@@ -5,12 +5,12 @@
 #include <cstdlib>
 
 #include "bsp5.h"
-#include "bspfile.h"
-#include "cmdlib.h"
-#include "filelib.h"
-#include "blockmem.h"
-#include "log.h"
-#include "mathtypes.h"
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
+#include "common/filelib.h"
+#include "common/blockmem.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
 
 //  PointInLeaf
 //  PlaceOccupant

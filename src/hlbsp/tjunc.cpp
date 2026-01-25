@@ -2,9 +2,9 @@
 #include <cmath>
 
 #include "bsp5.h"
-#include "log.h"
-#include "mathtypes.h"
-#include "mathlib.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
 
 typedef struct wvert_s
 {

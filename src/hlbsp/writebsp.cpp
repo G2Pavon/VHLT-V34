@@ -14,9 +14,9 @@
 #include <cstring>
 
 #include "bsp5.h"
-#include "cmdlib.h"
-#include "log.h"
-#include "bspfile.h"
+#include "common/cmdlib.h"
+#include "common/log.h"
+#include "common/bspfile.h"
 
 typedef std::map<int, int> PlaneMap;
 static PlaneMap gPlaneMap;

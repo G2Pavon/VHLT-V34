@@ -2,11 +2,11 @@
 #include <cmath>
 
 #include "bsp5.h"
-#include "bspfile.h"
-#include "hlassert.h"
-#include "log.h"
-#include "mathtypes.h"
-#include "mathlib.h"
+#include "common/bspfile.h"
+#include "common/hlassert.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
 
 //  SubdivideFace
 

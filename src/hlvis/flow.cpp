@@ -3,11 +3,11 @@
 #include <cmath>
 
 #include "vis.h"
-#include "threads.h"
-#include "log.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "winding.h"
+#include "common/threads.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/winding.h"
 
 // =====================================================================================
 //  AllocStackWinding

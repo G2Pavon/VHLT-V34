@@ -1,8 +1,8 @@
 #pragma once
 
-#include "winding.h"
-#include "mathtypes.h"
-#include "bspfile.h"
+#include "common/winding.h"
+#include "common/mathtypes.h"
+#include "common/bspfile.h"
 
 constexpr const char *ENTITIES_VOID = "entities.void";
 #define ENTITIES_VOID_EXT ".void"

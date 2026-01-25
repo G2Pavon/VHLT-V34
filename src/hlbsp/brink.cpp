@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "bsp5.h"
-#include "log.h"
+#include "common/log.h"
 
 // TODO: we should consider corners in addition to brinks.
 // TODO: use bcircle_t structure only to find out all possible "movement"s, then send then down the bsp tree to determine which leafs may incorrectly block the movement.

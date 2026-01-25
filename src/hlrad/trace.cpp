@@ -3,12 +3,12 @@
 #include <cmath>
 
 #include "qrad.h"
-#include "cmdlib.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "log.h" //--vluzacn
-#include "winding.h"
+#include "common/cmdlib.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/bspfile.h"
+#include "common/log.h" //--vluzacn
+#include "common/winding.h"
 
 // #define      ON_EPSILON      0.001
 

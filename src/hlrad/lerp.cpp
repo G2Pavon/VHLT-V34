@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "qrad.h"
-#include "log.h"
+#include "common/log.h"
 
 int g_lerp_enabled = DEFAULT_LERP_ENABLED;
 

@@ -15,11 +15,11 @@
 #include <windows.h>
 
 #include "bsp5.h"
-#include "cmdlib.h"
-#include "cmdlinecfg.h"
-#include "filelib.h"
-#include "log.h"
-#include "threads.h"
+#include "common/cmdlib.h"
+#include "common/cmdlinecfg.h"
+#include "common/filelib.h"
+#include "common/log.h"
+#include "common/threads.h"
 
 /*
 

@@ -3,14 +3,14 @@
 #include <cstdlib>
 
 #include "csg.h"
-#include "blockmem.h"
-#include "threads.h"
-#include "bspfile.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "log.h"
-#include "win32fix.h"
-#include "winding.h"
+#include "common/blockmem.h"
+#include "common/threads.h"
+#include "common/bspfile.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/log.h"
+#include "common/win32fix.h"
+#include "common/winding.h"
 
 plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;

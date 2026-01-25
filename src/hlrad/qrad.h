@@ -1,9 +1,9 @@
 #pragma once
 
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "winding.h"
 #include "compress.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/winding.h"
 
 #pragma warning(disable : 4142 4028)
 #pragma warning(default : 4142 4028)

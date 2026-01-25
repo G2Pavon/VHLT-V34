@@ -3,8 +3,8 @@
 #include <cstring>
 
 #include "bsp5.h"
-#include "cmdlib.h"
-#include "log.h"
+#include "common/cmdlib.h"
+#include "common/log.h"
 
 node_t g_outside_node; // portals outside the world face this
 

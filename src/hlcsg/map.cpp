@@ -6,13 +6,13 @@
 #include <string>
 
 #include "csg.h"
-#include "cmdlib.h"
-#include "blockmem.h"
-#include "scriplib.h"
-#include "log.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "bspfile.h"
+#include "common/cmdlib.h"
+#include "common/blockmem.h"
+#include "common/scriplib.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/bspfile.h"
 
 int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];

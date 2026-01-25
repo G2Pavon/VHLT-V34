@@ -1,8 +1,8 @@
 #include <cstdio>
 
 #include "qrad.h"
-#include "blockmem.h"
-#include "log.h"
+#include "common/blockmem.h"
+#include "common/log.h"
 
 /*
  * =============

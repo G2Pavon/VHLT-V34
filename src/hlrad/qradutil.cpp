@@ -3,10 +3,10 @@
 #include <cstdlib>
 
 #include "qrad.h"
-#include "log.h"
-#include "bspfile.h"
-#include "mathtypes.h"
-#include "mathlib.h"
+#include "common/log.h"
+#include "common/bspfile.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
 
 static dplane_t backplanes[MAX_MAP_PLANES];
 

@@ -3,13 +3,13 @@
 #include <io.h>
 
 #include "qrad.h"
-#include "blockmem.h"
-#include "threads.h"
-#include "cmdlib.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "log.h"
+#include "common/blockmem.h"
+#include "common/threads.h"
+#include "common/cmdlib.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/bspfile.h"
+#include "common/log.h"
 
 typedef struct
 {

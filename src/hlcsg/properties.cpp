@@ -7,9 +7,9 @@
 #include <cstring>
 #include <cstdlib>
 
-#include "filelib.h"
-#include "log.h"
-#include "bspfile.h"
+#include "common/filelib.h"
+#include "common/log.h"
+#include "common/bspfile.h"
 
 std::set<std::string> g_invisible_items;
 

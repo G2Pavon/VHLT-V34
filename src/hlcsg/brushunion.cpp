@@ -1,12 +1,12 @@
 #include <cmath>
 
 #include "csg.h"
-#include "blockmem.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "winding.h"
+#include "common/blockmem.h"
+#include "common/log.h"
+#include "common/hlassert.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/winding.h"
 
 vec_t g_BrushUnionThreshold = DEFAULT_BRUSH_UNION_THRESHOLD;
 

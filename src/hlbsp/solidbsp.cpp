@@ -28,13 +28,13 @@
 #include <cmath>
 
 #include "bsp5.h"
-#include "bspfile.h"
-#include "cmdlib.h"
-#include "log.h"
-#include "hlassert.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "winding.h"
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
+#include "common/log.h"
+#include "common/hlassert.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/winding.h"
 
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
 

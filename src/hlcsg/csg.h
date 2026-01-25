@@ -6,11 +6,11 @@
 #include <map>
 #include <set>
 
-#include "bspfile.h"
-#include "boundingbox.h"
-#include "winding.h"
-#include "mathtypes.h"
-#include "mathlib.h"
+#include "common/bspfile.h"
+#include "common/boundingbox.h"
+#include "common/winding.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
 // AJM: added in
 
 #ifndef DOUBLEVEC_T

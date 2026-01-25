@@ -4,9 +4,9 @@
 #include <cmath>
 
 #include "qrad.h"
-#include "filelib.h"
-#include "log.h"
-#include "cmdlib.h"
+#include "common/filelib.h"
+#include "common/log.h"
+#include "common/cmdlib.h"
 
 int g_numtextures;
 radtexture_t *g_textures;

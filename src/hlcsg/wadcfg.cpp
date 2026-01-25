@@ -2,10 +2,10 @@
 #include <cstdlib>
 
 #include "wadpath.h"
-#include "log.h"
-#include "filelib.h"
-#include "scriplib.h"
-#include "win32fix.h"
+#include "common/log.h"
+#include "common/filelib.h"
+#include "common/scriplib.h"
+#include "common/win32fix.h"
 
 void LoadWadconfig(const char *filename, const char *configname)
 {

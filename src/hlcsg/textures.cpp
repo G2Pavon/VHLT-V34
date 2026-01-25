@@ -6,12 +6,12 @@
 #include <cmath>
 
 #include "csg.h"
-#include "cmdlib.h"
 #include "wadpath.h"
-#include "filelib.h"
-#include "threads.h"
-#include "log.h"
-#include "bspfile.h"
+#include "common/cmdlib.h"
+#include "common/filelib.h"
+#include "common/threads.h"
+#include "common/log.h"
+#include "common/bspfile.h"
 
 constexpr int MAXWADNAME = 16;
 constexpr int MAX_TEXFILES = 128;

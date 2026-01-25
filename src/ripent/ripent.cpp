@@ -19,12 +19,12 @@
 #include <windows.h>
 
 #include "ripent.h"
-#include "hlassert.h"
-#include "log.h"
-#include "cmdlinecfg.h"
-#include "filelib.h"
-#include "bspfile.h"
-#include "cmdlib.h"
+#include "common/hlassert.h"
+#include "common/log.h"
+#include "common/cmdlinecfg.h"
+#include "common/filelib.h"
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
 
 typedef enum
 {

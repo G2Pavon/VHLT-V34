@@ -17,13 +17,13 @@
 #include <windows.h> //--vluzacn
 
 #include "csg.h"
-#include "cmdlib.h"
-#include "cmdlinecfg.h"
 #include "wadpath.h"
-#include "filelib.h"
-#include "blockmem.h"
-#include "threads.h"
-#include "scriplib.h"
+#include "common/cmdlib.h"
+#include "common/cmdlinecfg.h"
+#include "common/filelib.h"
+#include "common/blockmem.h"
+#include "common/threads.h"
+#include "common/scriplib.h"
 
 /*
 

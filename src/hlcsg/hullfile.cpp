@@ -1,9 +1,9 @@
 #include <cstdio>
 
 #include "csg.h"
-#include "filelib.h"
-#include "log.h"
-#include "mathtypes.h"
+#include "common/filelib.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
 
 vec3_t g_hull_size[NUM_HULLS][2] =
     {

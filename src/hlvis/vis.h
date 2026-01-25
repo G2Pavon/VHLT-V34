@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bspfile.h"
+#include "common/bspfile.h"
 
 constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 

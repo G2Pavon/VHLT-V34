@@ -3,10 +3,10 @@
 #include <cstring>
 
 #include "wadpath.h"
-#include "log.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "cmdlib.h"
+#include "common/log.h"
+#include "common/mathlib.h"
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
 
 wadpath_t *g_pWadPaths[MAX_WADPATHS];
 int g_iNumWadPaths = 0;

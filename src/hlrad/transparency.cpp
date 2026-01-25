@@ -9,11 +9,11 @@
 #include <climits>
 
 #include "qrad.h"
-#include "threads.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "log.h"
-#include "win32fix.h"
+#include "common/threads.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/log.h"
+#include "common/win32fix.h"
 
 typedef struct
 {

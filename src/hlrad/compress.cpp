@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "compress.h"
-#include "log.h"
+#include "common/log.h"
 
 const std::size_t unused_size = 3u; // located at the end of a block
 

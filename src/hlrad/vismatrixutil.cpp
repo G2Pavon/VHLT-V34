@@ -2,10 +2,10 @@
 #include <cmath>
 
 #include "qrad.h"
-#include "blockmem.h"
-#include "threads.h"
-#include "mathtypes.h"
-#include "mathlib.h"
+#include "common/blockmem.h"
+#include "common/threads.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
 
 funcCheckVisBit g_CheckVisBit = NULL;
 
