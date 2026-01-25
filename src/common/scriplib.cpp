@@ -71,7 +71,7 @@ void ParseFromMemory(char *buffer, const int size)
 // =====================================================================================
 //  EndOfScript
 // =====================================================================================
-bool EndOfScript(const bool crossline)
+static bool EndOfScript(const bool crossline)
 {
     if (!crossline)
         Error("Line %i is incomplete (did you place a \" inside an entity string?) \n", s_scriptline);

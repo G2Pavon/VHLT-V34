@@ -16,5 +16,4 @@ typedef struct
 
 void LoadScriptFile(const char *const filename);
 void ParseFromMemory(char *buffer, int size);
-bool EndOfScript(const bool crossline);
 bool GetToken(bool crossline);
