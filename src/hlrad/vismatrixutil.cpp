@@ -13,45 +13,6 @@ std::size_t g_total_transfer = 0;
 std::size_t g_transfer_index_bytes = 0;
 std::size_t g_transfer_data_bytes = 0;
 
-int FindTransferOffsetPatchnum(transfer_index_t *tIndex, const patch_t *const patch, const unsigned patchnum)
-{
-    //
-    // binary search for match
-    //
-    int low = 0;
-    int high = patch->iIndex - 1;
-
-    while (1)
-    {
-        int offset = (low + high) / 2;
-
-        if ((tIndex[offset].index + tIndex[offset].size) < patchnum)
-        {
-            low = offset + 1;
-        }
-        else if (tIndex[offset].index > patchnum)
-        {
-            high = offset - 1;
-        }
-        else
-        {
-            unsigned int rval = 0;
-            transfer_index_t *pIndex = tIndex;
-
-            for (unsigned x = 0; x < offset; x++, pIndex++)
-            {
-                rval += pIndex->size + 1;
-            }
-            rval += patchnum - tIndex[offset].index;
-            return rval;
-        }
-        if (low > high)
-        {
-            return -1;
-        }
-    }
-}
-
 static unsigned GetLengthOfRun(const transfer_raw_index_t *raw, const transfer_raw_index_t *const end)
 {
     unsigned run_size = 0;
