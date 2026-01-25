@@ -20,7 +20,8 @@ typedef struct
     int numclipplanes;
     dplane_t *clipplanes;
 } intersecttest_t;
-bool TestFaceIntersect(intersecttest_t *t, int facenum)
+
+static bool TestFaceIntersect(intersecttest_t *t, int facenum)
 {
     dface_t *f2 = &g_dfaces[facenum];
     Winding *w = new Winding(*f2);
@@ -39,7 +40,8 @@ bool TestFaceIntersect(intersecttest_t *t, int facenum)
     delete w;
     return intersect;
 }
-intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
+
+static intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
 {
     dface_t *f = &g_dfaces[facenum];
     intersecttest_t *t = (intersecttest_t *)std::malloc(sizeof(intersecttest_t));
@@ -80,12 +82,14 @@ intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
     }
     return t;
 }
-void FreeIntersectTest(intersecttest_t *t)
+
+static void FreeIntersectTest(intersecttest_t *t)
 {
     std::free(t->clipplanes);
     std::free(t);
 }
-void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgeend, dface_t *const f)
+
+static void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgeend, dface_t *const f)
 {
     if (DEVELOPER_LEVEL_WARNING <= g_developer)
     {
@@ -103,7 +107,8 @@ void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgeend, dfa
         }
     }
 }
-int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeend, int &edgeendnext, dface_t *const f, dface_t *&fnext, vec_t &angle, vec3_t &normal)
+
+static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeend, int &edgeendnext, dface_t *const f, dface_t *&fnext, vec_t &angle, vec3_t &normal)
 // Must guarantee these faces will form a loop or a chain, otherwise will result in endless loop.
 //
 //   e[end]/enext[endnext]
@@ -849,7 +854,7 @@ typedef struct
     samplefrag_t *head;
 } samplefraginfo_t;
 
-void ChopFrag(samplefrag_t *frag)
+static void ChopFrag(samplefrag_t *frag)
 // fill winding, windingplane, mywinding, mywindingplane, numedges, edges
 {
     // get the shape of the fragment by clipping the face using the boundaries
@@ -1414,6 +1419,7 @@ static light_flag_t SetSampleFromST(vec_t *const point,
 
     return LuxelFlag;
 }
+
 static void CalcPoints(lightinfo_t *l)
 {
     const int facenum = l->surfnum;
@@ -2210,7 +2216,8 @@ typedef struct
     int edge[3];
     int dir[3];
 } triangle_t;
-void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int numedges, edge_t *edges, int numtriangles, triangle_t *triangles)
+
+static void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int numedges, edge_t *edges, int numtriangles, triangle_t *triangles)
 {
     hlassume(numpoints == (1 << (2 * skylevel)) + 2, assume_first);
     hlassume(numedges == (1 << (2 * skylevel)) * 4 - 4, assume_first);
@@ -2248,6 +2255,7 @@ void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int numedges
         g_skynormalsizes[skylevel][j] /= totalsize;
     }
 }
+
 void BuildDiffuseNormals()
 {
     g_numskynormals[0] = 0;
@@ -2353,6 +2361,7 @@ void BuildDiffuseNormals()
     std::free(edges);
     std::free(triangles);
 }
+
 static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec3_t normal, vec3_t *sample, byte *styles, int step, int miptex, int texlightgap_surfacenum)
 {
     vec3_t delta;
@@ -3083,7 +3092,7 @@ const vec3_t s_circuscolors[] = {
 // =====================================================================================
 //  BuildFacelights
 // =====================================================================================
-void CalcLightmap(lightinfo_t *l, byte *styles)
+static void CalcLightmap(lightinfo_t *l, byte *styles)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
     int lastoffset;
@@ -3325,6 +3334,7 @@ void CalcLightmap(lightinfo_t *l, byte *styles)
         }
     }
 }
+
 void BuildFacelights(const int facenum)
 {
     unsigned char f_styles[ALLSTYLES];
@@ -4088,6 +4098,7 @@ void PrecompLightmapOffsets()
         hlassume(g_lightdatasize <= g_max_map_lightdata, assume_MAX_MAP_LIGHTING); //lightdata
     }
 }
+
 void ReduceLightmap()
 {
     byte *oldlightdata = (byte *)std::malloc(g_lightdatasize);
@@ -4181,7 +4192,7 @@ typedef struct
     int facecount;
 } mdllight_t;
 
-int MLH_AddFace(mdllight_t *ml, int facenum)
+static int MLH_AddFace(mdllight_t *ml, int facenum)
 {
     dface_t *f = &g_dfaces[facenum];
     int i;
@@ -4211,7 +4222,8 @@ int MLH_AddFace(mdllight_t *ml, int facenum)
     }
     return i;
 }
-void MLH_AddSample(mdllight_t *ml, int facenum, int w, int h, int s, int t, const vec3_t pos)
+
+static void MLH_AddSample(mdllight_t *ml, int facenum, int w, int h, int s, int t, const vec3_t pos)
 {
     dface_t *f = &g_dfaces[facenum];
     int i;
@@ -4245,7 +4257,8 @@ void MLH_AddSample(mdllight_t *ml, int facenum, int w, int h, int s, int t, cons
         }
     }
 }
-void MLH_CalcExtents(const dface_t *f, int *texturemins, int *extents)
+
+static void MLH_CalcExtents(const dface_t *f, int *texturemins, int *extents)
 {
     int bmins[2];
     int bmaxs[2];
@@ -4256,7 +4269,8 @@ void MLH_CalcExtents(const dface_t *f, int *texturemins, int *extents)
         extents[i] = (bmaxs[i] - bmins[i]) * TEXTURE_STEP;
     }
 }
-void MLH_GetSamples_r(mdllight_t *ml, int nodenum, const float *start, const float *end)
+
+static void MLH_GetSamples_r(mdllight_t *ml, int nodenum, const float *start, const float *end)
 {
     if (nodenum < 0)
         return;
@@ -4321,7 +4335,8 @@ void MLH_GetSamples_r(mdllight_t *ml, int nodenum, const float *start, const flo
     }
     MLH_GetSamples_r(ml, node->children[!side], mid, end);
 }
-void MLH_mdllightCreate(mdllight_t *ml)
+
+static void MLH_mdllightCreate(mdllight_t *ml)
 {
     // code from Quake
     float p[3];
@@ -4334,7 +4349,7 @@ void MLH_mdllightCreate(mdllight_t *ml)
     MLH_GetSamples_r(ml, 0, p, end);
 }
 
-int MLH_CopyLight(const vec3_t from, const vec3_t to)
+static int MLH_CopyLight(const vec3_t from, const vec3_t to)
 {
     int count = 0;
     mdllight_t mlfrom, mlto;
