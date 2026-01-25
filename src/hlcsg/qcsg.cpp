@@ -1142,61 +1142,6 @@ void WriteBSP(const char *const name)
     WriteBSPFile(path);
 }
 
-//
-// =====================================================================================
-//
-
-// AJM: added in function
-// =====================================================================================
-//  CopyGenerictoCLIP
-//      clips a generic brush
-// =====================================================================================
-/*static void     CopyGenerictoCLIP(const brush_t* const b)
-{
-    // code blatently ripped from CopySKYtoCLIP()
-
-    int             i;
-    entity_t*       mapent;
-    brush_t*        newbrush;
-
-    mapent = &g_entities[b->entitynum];
-    mapent->numbrushes++;
-
-    newbrush = &g_mapbrushes[g_nummapbrushes];
-#ifdef HLCSG_COUNT_NEW
-	newbrush->originalentitynum = b->originalentitynum;
-	newbrush->originalbrushnum = b->originalbrushnum;
-#endif
-    newbrush->entitynum = b->entitynum;
-    newbrush->brushnum = g_nummapbrushes - mapent->firstbrush;
-    newbrush->firstside = g_numbrushsides;
-    newbrush->numsides = b->numsides;
-    newbrush->contents = CONTENTS_CLIP;
-    newbrush->noclip = 0;
-
-    for (i = 0; i < b->numsides; i++)
-    {
-        int             j;
-
-        side_t*         side = &g_brushsides[g_numbrushsides];
-
-        *side = g_brushsides[b->firstside + i];
-        safe_strncpy(side->td.name, "CLIP", sizeof(side->td.name));
-
-        for (j = 0; j < NUM_HULLS; j++)
-        {
-            newbrush->hulls[j].faces = NULL;
-            newbrush->hulls[j].bounds = b->hulls[j].bounds;
-        }
-
-        g_numbrushsides++;
-        hlassume(g_numbrushsides < MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
-    }
-
-    g_nummapbrushes++;
-    hlassume(g_nummapbrushes < MAX_MAP_BRUSHES, assume_MAX_MAP_BRUSHES);
-}*/
-
 // AJM: added in
 unsigned int BrushClipHullsDiscarded = 0;
 unsigned int ClipNodesDiscarded = 0;
@@ -1250,16 +1195,6 @@ static void CheckForNoClip()
             MarkEntForNoclip(ent);
             count++;
         }
-        /*
-        // condition 6: its a func_wall, while we noclip it, we remake the clipnodes manually 
-        else if (!strncasecmp(entclassname, "func_wall", 9)) 
-        {
-            for (int j = ent->firstbrush; j < ent->firstbrush + ent->numbrushes; j++)
-                CopyGenerictoCLIP(&g_mapbrushes[i]);
-
-            MarkEntForNoclip(ent);
-        }
-*/
     }
 
     Log("%i entities discarded from clipping hulls\n", count);

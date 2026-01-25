@@ -679,32 +679,6 @@ void ExpandBrush(brush_t *brush, const int hullnum)
     normal[1] = 0;
     normal[2] = 1;
     AddHullPlane(hull, normal, (axialbevel[plane_z][1] ? brush->hulls[0].bounds.m_Maxs : origin), false);
-    /*
-	bface_t* hull_face; //sanity check
-
-	for(hull_face = hull->faces; hull_face; hull_face = hull_face->next)
-	{
-		for(current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
-		{
-			if(current_face->w->m_NumPoints < 3)
-			{ continue; }
-			for(counter = 0; counter < current_face->w->m_NumPoints; counter++)
-			{
-				if(DotProduct(hull_face->plane->normal,hull_face->plane->origin) < DotProduct(hull_face->plane->normal,current_face->w->m_Points[counter]))
-				{
-					Warning("Illegal Brush (clip hull [%i] has backward face): Entity %i, Brush %i\n",hullnum,
-#ifdef HLCSG_COUNT_NEW
-						brush->originalentitynum, brush->originalbrushnum
-#else
-						brush->entitynum, brush->brushnum
-#endif
-						);
-					break;
-				}
-			}
-		}
-	}
-*/
 }
 
 // =====================================================================================

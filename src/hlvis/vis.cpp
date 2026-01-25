@@ -427,23 +427,6 @@ static void CalcVis()
     // Remove this file
     unlink(visdatafile);
 
-    /*    if(g_postcompile)
-	{
-		if(!g_maxdistance)
-		{
-			Error("Must use -maxdistance parameter with -postcompile");
-		}
-
-		// Decompress everything so we can edit it
-		DecompressAll();
-		
-		NamedRunThreadsOn(g_portalleafs, g_estimate, PostMaxDistVis);
-
-		// Recompress it
-		CompressAll();
-	}
-	else
-	{*/
     //		InitVisBlock();
     //		SetupVisBlockLeafs();
 
@@ -946,10 +929,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                /*		else if(!strcasecmp(argv[i], "-postcompile"))
-		{
-			g_postcompile = true;
-		}*/
                 else if (argv[i][0] == '-')
                 {
                     Log("Unknown option \"%s\"", argv[i]);

@@ -1042,20 +1042,6 @@ void LoadMapFile(const char *const filename)
         g_numparsedentities++;
     }
 
-    // AJM debug
-    /*
-    for (int i = 0; i < g_numentities; i++)
-    {
-        Log("entity: %i - %i brushes - %s\n", i, g_entities[i].numbrushes, ValueForKey(&g_entities[i], "classname"));
-    }
-    Log("total entities: %i\ntotal brushes: %i\n\n", g_numentities, g_nummapbrushes);
-
-    for (i = g_entities[0].firstbrush; i < g_entities[0].firstbrush + g_entities[0].numbrushes; i++)
-    {
-        Log("worldspawn brush %i: contents %s\n", i, ContentsToString((contents_t)g_mapbrushes[i].contents)); 
-    }
-    */
-
     unsigned num_engine_entities = CountEngineEntities();
 
     hlassume(num_engine_entities < MAX_ENGINE_ENTITIES, assume_MAX_ENGINE_ENTITIES);

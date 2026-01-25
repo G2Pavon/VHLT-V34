@@ -264,7 +264,6 @@ void GetParamsFromEnt(entity_t *mapent)
     float flTmp = FloatForKey(mapent, "smooth");
     if (flTmp)
     {
-        /*g_smoothing_threshold = flTmp;*/
         g_smoothing_threshold = std::cos(g_smoothing_value * (Q_PI / 180.0)); // --vluzacn
         Log("%30s [ %-9s ]\n", "Smoothing threshold", ValueForKey(mapent, "smooth"));
     }

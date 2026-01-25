@@ -424,45 +424,7 @@ typedef struct
     char pad1, pad2;
     char name[MAX_TEXTURE_NAME_LENGTH]; // must be null terminated
 } lumpinfo_t;
-/*int TextureSize(const miptex_t *tex)
-{
-	int size = 0;
-	int w, h;
-	size += sizeof(miptex_t);
-	w = tex->width, h = tex->height;
-	for (int imip = 0; imip < MIPLEVELS; ++imip, w/=2, h/=2)
-	{
-		size += w * h;
-	}
-	size += 256 * 3 + 4;
-	return size;
-}
-void WriteEmptyTexture(std::FILE *outwad, const miptex_t *tex)
-{
-	miptex_t outtex;
-	int start, end;
-	int w, h;
-	memcpy (&outtex, tex, sizeof(miptex_t));
-	start = ftell (outwad);
-	fseek (outwad, sizeof(miptex_t), SEEK_CUR);
-	w = tex->width, h = tex->height;
-	for (int imip = 0; imip < MIPLEVELS; ++imip, w/=2, h/=2)
-	{
-		void *tmp = calloc (w * h, 1);
-		outtex.offsets[imip] = ftell (outwad) - start;
-		SafeWrite (outwad, tmp, w * h);
-		free (tmp);
-	}
-	short s = 256;
-	SafeWrite (outwad, &s, sizeof(short));
-	void *tmp = calloc (256 * 3 + 2, 1); // assume width and height are multiples of 16
-	SafeWrite (outwad, tmp, 256 * 3 + 2);
-	free (tmp);
-	end = ftell (outwad);
-	fseek (outwad, start, SEEK_SET);
-	SafeWrite (outwad, &outtex, sizeof (miptex_t));
-	fseek (outwad, end, SEEK_SET);
-}*/
+
 static void WriteTextures(const char *const name)
 {
     char wadfilename[_MAX_PATH];

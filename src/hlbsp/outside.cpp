@@ -159,9 +159,6 @@ static bool RecursiveFillOutside(node_t *l, const bool fill)
 
     if ((l->contents == CONTENTS_SOLID) || (l->contents == CONTENTS_SKY))
     {
-        /*if (l->contents != CONTENTS_SOLID)
-            Log("RecursiveFillOutside::l->contents == %i \n", l->contents);*/
-
         return false;
     }
 
@@ -452,8 +449,6 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
         const char *cl = ValueForKey(&g_entities[i], "classname");
         if (!isClassnameAllowableOutside(cl))
         {
-            /*if (!VectorCompare(origin, vec3_origin))
-			*/
             if (*ValueForKey(&g_entities[i], "origin")) //--vluzacn
             {
                 origin[2] += 1; // so objects on floor are ok

@@ -1286,15 +1286,6 @@ void EmbedLightmapInTextures()
                 palettemaxcolors = 255;
                 VectorCopy(tex->palette[255], palette[255]); // the transparency color
             }
-            /*else if (texname[0] == '!')
-			{
-				paletteoffset = 16; // because the 4th entry and the 5th entry are reserved for fog color and fog density
-				for (j = 0; j < 16; j++)
-				{
-					VectorCopy (tex->palette[j], palette[j]);
-				}
-				palettemaxcolors = 256 - 16;
-			}*/
             else
             {
                 paletteoffset = 0;
@@ -1404,10 +1395,6 @@ void EmbedLightmapInTextures()
         {
             std::strcpy(miptex->name, "{_rad");
         }
-        /*else if (texname[0] == '!')
-		{
-			strcpy (miptex->name, "!_rad");
-		}*/
         else
         {
             std::strcpy(miptex->name, "__rad");
