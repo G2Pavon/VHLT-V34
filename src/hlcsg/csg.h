@@ -254,15 +254,13 @@ extern vec_t g_BrushUnionThreshold;
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 extern int g_nummapplanes;
 
-bface_t *NewFaceFromFace(const bface_t *const in);
 bface_t *CopyFace(const bface_t *const f);
-
-void FreeFace(bface_t *f);
-
 bface_t *CopyFaceList(bface_t *f);
 void FreeFaceList(bface_t *f);
-
 void GetParamsFromEnt(entity_t *mapent);
+
+// brush.cpp
+const char *ContentsToString(const contents_t type);
 
 //=============================================================================
 // brushunion.c

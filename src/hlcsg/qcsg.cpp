@@ -260,7 +260,7 @@ void GetParamsFromEnt(entity_t *mapent)
 //  NewFaceFromFace
 //      Duplicates the non point information of a face, used by SplitFace
 // =====================================================================================
-bface_t *NewFaceFromFace(const bface_t *const in)
+static bface_t *NewFaceFromFace(const bface_t *const in)
 {
     bface_t *newf = (bface_t *)Alloc(sizeof(bface_t));
 
@@ -276,7 +276,7 @@ bface_t *NewFaceFromFace(const bface_t *const in)
 // =====================================================================================
 //  FreeFace
 // =====================================================================================
-void FreeFace(bface_t *f)
+static void FreeFace(bface_t *f)
 {
     delete f->w;
     Free(f);
@@ -285,7 +285,7 @@ void FreeFace(bface_t *f)
 // =====================================================================================
 //  WriteFace
 // =====================================================================================
-void WriteFace(const int hull, const bface_t *const f, int detaillevel)
+static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 {
 
     ThreadLock();
@@ -924,7 +924,7 @@ static void SetModelNumbers()
     }
 }
 
-void ReuseModel()
+static void ReuseModel()
 {
     for (int i = g_numentities - 1; i >= 1; i--) // so it won't affect the remaining entities in the loop when we move this entity backward
     {
@@ -1066,7 +1066,7 @@ static void ConvertHintToEmpty()
 // =====================================================================================
 //  WriteBSP
 // =====================================================================================
-void LoadWadValue()
+static void LoadWadValue()
 {
     char *wadvalue;
     ParseFromMemory(g_dentdata, g_entdatasize);
@@ -1119,7 +1119,8 @@ void LoadWadValue()
     SetKeyValue(&g_entities[0], "wad", wadvalue);
     std::free(wadvalue);
 }
-void WriteBSP(const char *const name)
+
+static void WriteBSP(const char *const name)
 {
     char path[_MAX_PATH];
 
@@ -1510,7 +1511,7 @@ static void Settings()
 // =====================================================================================
 //  CSGCleanup
 // =====================================================================================
-void CSGCleanup()
+static void CSGCleanup()
 {
     //Log("CSGCleanup\n");
     FreeWadPaths();
