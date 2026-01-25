@@ -230,13 +230,13 @@ static DWORD WINAPI ThreadEntryStub(LPVOID pParam)
     return 0;
 }
 
-void threads_InitCrit()
+static void threads_InitCrit()
 {
     InitializeCriticalSection(&crit);
     threaded = true;
 }
 
-void threads_UninitCrit()
+static void threads_UninitCrit()
 {
     DeleteCriticalSection(&crit);
 }

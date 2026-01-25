@@ -28,8 +28,6 @@ void ThreadSetDefault();
 void ThreadLock();
 void ThreadUnlock();
 
-void threads_InitCrit();
-void threads_UninitCrit();
 void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction);
 
 #define NamedRunThreadsOn(n, p, f) \
