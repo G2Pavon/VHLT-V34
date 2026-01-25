@@ -329,10 +329,9 @@ extern int g_dsurfedges_checksum;
 
 int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length);
 void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
-void LoadBSPImage(dheader_t *header);
 void LoadBSPFile(const char *const filename);
 void WriteBSPFile(const char *const filename);
-float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs);
+
 bool CalcFaceExtents_test();
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
 void WriteExtentFile(const char *const filename);
@@ -345,13 +344,10 @@ typedef struct lightmapblock_s
     bool used;
     int allocated[BLOCK_WIDTH];
 } lightmapblock_t;
-void DoAllocBlock(lightmapblock_t *blocks, int w, int h);
+
 int CountBlocks();
 
-bool NoWadTextures();
-char *FindWadValue();
 void PrintBSPFileSizes();
-int ParseImplicitTexinfoFromTexture(int miptex);
 int ParseTexinfoForFace(const dface_t *f);
 void DeleteEmbeddedLightmaps();
 
@@ -381,7 +377,6 @@ epair_t *ParseEpair();
 extern void GetParamsFromEnt(entity_t *mapent);
 bool ParseEntity();
 void ParseEntities();
-int anglesforvector(float angles[3], const float vector[3]);
 void UnparseEntities();
 void DeleteKey(entity_t *ent, const char *const key);
 void SetKeyValue(entity_t *ent, const char *const key, const char *const value);

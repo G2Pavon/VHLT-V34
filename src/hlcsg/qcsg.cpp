@@ -24,6 +24,7 @@
 #include "common/blockmem.h"
 #include "common/threads.h"
 #include "common/scriplib.h"
+#include "common/bspfile.h"
 
 /*
 

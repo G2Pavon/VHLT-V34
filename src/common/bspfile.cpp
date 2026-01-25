@@ -402,21 +402,10 @@ static int CopyLump(int lump, void *dest, int size, const dheader_t *const heade
 }
 
 // =====================================================================================
-//  LoadBSPFile
-//      balh
-// =====================================================================================
-void LoadBSPFile(const char *const filename)
-{
-    dheader_t *header;
-    LoadFile(filename, (char **)&header);
-    LoadBSPImage(header);
-}
-
-// =====================================================================================
 //  LoadBSPImage
 //      balh
 // =====================================================================================
-void LoadBSPImage(dheader_t *const header)
+static void LoadBSPImage(dheader_t *const header)
 {
     // swap the header
     for (unsigned int i = 0; i < sizeof(dheader_t) / 4; i++)
@@ -467,6 +456,17 @@ void LoadBSPImage(dheader_t *const header)
     g_dvisdata_checksum = FastChecksum(g_dvisdata, g_visdatasize * sizeof(g_dvisdata[0]));
     g_dlightdata_checksum = FastChecksum(g_dlightdata, g_lightdatasize * sizeof(g_dlightdata[0]));
     g_dentdata_checksum = FastChecksum(g_dentdata, g_entdatasize * sizeof(g_dentdata[0]));
+}
+
+// =====================================================================================
+//  LoadBSPFile
+//      balh
+// =====================================================================================
+void LoadBSPFile(const char *const filename)
+{
+    dheader_t *header;
+    LoadFile(filename, (char **)&header);
+    LoadBSPImage(header);
 }
 
 //
@@ -531,7 +531,7 @@ void WriteBSPFile(const char *const filename)
 //  GetFaceExtents (with PLATFORM_CAN_CALC_EXTENT on)
 // =====================================================================================
 
-float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
+static float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
 {
     volatile double val = (double)point[0] * (double)vecs[0]; // always do one operation at a time and save to memory
     volatile double tmp = (double)point[1] * (double)vecs[1];
@@ -653,7 +653,7 @@ void WriteExtentFile(const char *const filename)
 //
 // =====================================================================================
 //
-void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
+static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 {
     lightmapblock_t *block;
     // code from Quake
@@ -761,7 +761,7 @@ int CountBlocks()
     }
     return count;
 }
-bool NoWadTextures()
+static bool NoWadTextures()
 {
     // copied from loadtextures.cpp
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
@@ -782,7 +782,8 @@ bool NoWadTextures()
     }
     return true;
 }
-char *FindWadValue()
+
+static char *FindWadValue()
 // return NULL for syntax error
 // this function needs to be as stable as possible because it might be called from ripent
 {
@@ -945,7 +946,7 @@ void PrintBSPFileSizes()
 //  ParseImplicitTexinfoFromTexture
 //      purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
 // =====================================================================================
-int ParseImplicitTexinfoFromTexture(int miptex)
+static int ParseImplicitTexinfoFromTexture(int miptex)
 {
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
     char name[MAX_TEXTURE_NAME_LENGTH];
@@ -981,7 +982,7 @@ int ParseImplicitTexinfoFromTexture(int miptex)
     return texinfo;
 }
 
-int ParseTexinfoForFace(const dface_t *f)
+static int ParseTexinfoForFace(const dface_t *f)
 {
     int texinfo = f->texinfo;
     int miptex = g_texinfo[texinfo].miptex;
@@ -1246,7 +1247,7 @@ void ParseEntities()
 //  UnparseEntities
 //      Generates the dentdata string from all the entities
 // =====================================================================================
-int anglesforvector(float angles[3], const float vector[3])
+static int anglesforvector(float angles[3], const float vector[3])
 {
     float z = vector[2], r = std::sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
     if (std::sqrt(z * z + r * r) < NORMAL_EPSILON)
@@ -1294,6 +1295,7 @@ int anglesforvector(float angles[3], const float vector[3])
     angles[2] = 0;
     return 0;
 }
+
 void UnparseEntities()
 {
     char line[MAXTOKEN];
