@@ -10,7 +10,7 @@
 
 static dplane_t backplanes[MAX_MAP_PLANES];
 
-dleaf_t *PointInLeaf_Worst_r(int nodenum, const vec3_t point)
+static dleaf_t *PointInLeaf_Worst_r(int nodenum, const vec3_t point)
 {
     while (nodenum >= 0)
     {
@@ -46,10 +46,12 @@ dleaf_t *PointInLeaf_Worst_r(int nodenum, const vec3_t point)
 
     return &g_dleafs[-nodenum - 1];
 }
-dleaf_t *PointInLeaf_Worst(const vec3_t point)
+
+static dleaf_t *PointInLeaf_Worst(const vec3_t point)
 {
     return PointInLeaf_Worst_r(0, point);
 }
+
 dleaf_t *PointInLeaf(const vec3_t point)
 {
     int nodenum = 0;
@@ -147,7 +149,7 @@ void getAdjustedPlaneFromFaceNumber(unsigned int faceNumber, dplane_t *plane)
 }
 
 // Will modify the plane with the new dist
-void TranslatePlane(dplane_t *plane, const vec_t *delta)
+static void TranslatePlane(dplane_t *plane, const vec_t *delta)
 {
     plane->dist += DotProduct(plane->normal, delta);
 }
