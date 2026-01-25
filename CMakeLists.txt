@@ -17,7 +17,6 @@ if (MSVC)
     )
 endif()
 
-
 # ================================
 # Directories
 # ================================
@@ -26,6 +25,7 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(COMMON_DIR ${SRC_DIR}/common)
 
 include_directories(
+    ${SRC_DIR}
     ${COMMON_DIR}
 )
 
@@ -63,6 +63,10 @@ add_executable(hlbsp
     ${SRC_DIR}/hlbsp/writebsp.cpp
 )
 
+target_include_directories(hlbsp PRIVATE
+    ${SRC_DIR}/hlbsp
+)
+
 target_compile_definitions(hlbsp PRIVATE
     HLBSP
     DOUBLEVEC_T
@@ -84,6 +88,10 @@ add_executable(hlcsg
     ${SRC_DIR}/hlcsg/textures.cpp
     ${SRC_DIR}/hlcsg/wadcfg.cpp
     ${SRC_DIR}/hlcsg/wadpath.cpp
+)
+
+target_include_directories(hlcsg PRIVATE
+    ${SRC_DIR}/hlcsg
 )
 
 target_compile_definitions(hlcsg PRIVATE
@@ -113,6 +121,10 @@ add_executable(hlrad
     ${SRC_DIR}/hlrad/vismatrixutil.cpp
 )
 
+target_include_directories(hlrad PRIVATE
+    ${SRC_DIR}/hlrad
+)
+
 target_compile_definitions(hlrad PRIVATE HLRAD)
 
 # ================================
@@ -125,6 +137,10 @@ add_executable(hlvis
     ${SRC_DIR}/hlvis/vis.cpp
 )
 
+target_include_directories(hlvis PRIVATE
+    ${SRC_DIR}/hlvis
+)
+
 target_compile_definitions(hlvis PRIVATE HLVIS)
 
 # ================================
@@ -134,6 +150,10 @@ target_compile_definitions(hlvis PRIVATE HLVIS)
 add_executable(ripent
     ${COMMON_SOURCES}
     ${SRC_DIR}/ripent/ripent.cpp
+)
+
+target_include_directories(ripent PRIVATE
+    ${SRC_DIR}/ripent
 )
 
 target_compile_definitions(ripent PRIVATE RIPENT)
