@@ -1,25 +1,5 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 
-//  FaceSide
-//  ChooseMidPlaneFromList
-//  ChoosePlaneFromList
-//  SelectPartition
-
-//  CalcSurfaceInfo
-//  DivideSurface
-//  SplitNodeSurfaces
-//  RankForContents
-//  ContentsForRank
-
-//  FreeLeafSurfs
-//  LinkLeafFaces
-//  MakeNodePortal
-//  SplitNodePortals
-//  CalcNodeBounds
-//  CopyFacesToNode
-//  BuildBspTree_r
-//  SolidBSP
-
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
 #include <cstdlib>
@@ -159,7 +139,7 @@ typedef struct
     } result;                          // "public"
 } surfacetree_t;
 
-void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
+static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
 {
     node->size = node->leaffaces->size();
     node->size_discardable = 0;
@@ -269,7 +249,7 @@ void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
     BuildSurfaceTree_r(tree, node->children[1]);
 }
 
-surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
+static surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
 {
     surfacetree_t *tree = (surfacetree_t *)std::malloc(sizeof(surfacetree_t));
     tree->epsilon = epsilon;
@@ -300,7 +280,7 @@ surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
     return tree;
 }
 
-void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node, const dplane_t *split)
+static void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node, const dplane_t *split)
 {
     if (node->size == 0)
     {
@@ -352,7 +332,7 @@ void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node, const
     }
 }
 
-void TestSurfaceTree(surfacetree_t *tree, const dplane_t *split)
+static void TestSurfaceTree(surfacetree_t *tree, const dplane_t *split)
 {
     if (tree->dontbuild)
     {
@@ -364,7 +344,7 @@ void TestSurfaceTree(surfacetree_t *tree, const dplane_t *split)
     TestSurfaceTree_r(tree, tree->headnode, split);
 }
 
-void DeleteSurfaceTree_r(surfacetreenode_t *node)
+static void DeleteSurfaceTree_r(surfacetreenode_t *node)
 {
     if (node->isleaf)
     {
@@ -380,7 +360,7 @@ void DeleteSurfaceTree_r(surfacetreenode_t *node)
     }
 }
 
-void DeleteSurfaceTree(surfacetree_t *tree)
+static void DeleteSurfaceTree(surfacetree_t *tree)
 {
     DeleteSurfaceTree_r(tree->headnode);
     std::free(tree->headnode);
@@ -625,7 +605,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, co
 //      Selects a surface from a linked list of surfaces to split the group on
 //      returns NULL if the surface list can not be divided any more (a leaf)
 // =====================================================================================
-int CalcSplitDetaillevel(const node_t *node)
+static int CalcSplitDetaillevel(const node_t *node)
 {
     int bestdetaillevel = -1;
     for (surface_t *s = node->surfaces; s; s = s->next)
@@ -648,6 +628,7 @@ int CalcSplitDetaillevel(const node_t *node)
     }
     return bestdetaillevel;
 }
+
 static surface_t *SelectPartition(surface_t *surfaces, const node_t *const node, const bool usemidsplit, int splitdetaillevel, vec3_t validmins, vec3_t validmaxs)
 {
     if (splitdetaillevel == -1)
@@ -710,7 +691,8 @@ static void CalcSurfaceInfo(surface_t *surf)
         }
     }
 }
-void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
+
+static void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
 {
     // when we move on to the next detaillevel, some discardable faces of previous detail level remain not on node (because they are discardable). remove them now
     surface_t *s;
@@ -900,6 +882,7 @@ static void SplitNodeSurfaces(surface_t *surfaces, const node_t *const node)
     node->children[0]->surfaces = frontlist;
     node->children[1]->surfaces = backlist;
 }
+
 static void SplitNodeBrushes(brush_t *brushes, const node_t *node)
 {
     brush_t *frontfrag;
@@ -1048,6 +1031,7 @@ static void FreeLeafSurfs(node_t *leaf)
 
     leaf->surfaces = NULL;
 }
+
 static void FreeLeafBrushes(node_t *leaf)
 {
     brush_t *next;
@@ -1066,7 +1050,7 @@ static void FreeLeafBrushes(node_t *leaf)
 // =====================================================================================
 constexpr int MAX_LEAF_FACES = 16384;
 
-const char *ContentsToString(int contents)
+static const char *ContentsToString(int contents)
 {
     switch (contents)
     {
@@ -1100,6 +1084,7 @@ const char *ContentsToString(int contents)
         return "UNKNOWN";
     }
 }
+
 static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 {
     face_t *f;
@@ -1179,6 +1164,7 @@ static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 
     leafnode->contents = ContentsForRank(rank);
 }
+
 static void MakeLeaf(node_t *leafnode)
 {
     face_t *markfaces[MAX_LEAF_FACES + 1];
