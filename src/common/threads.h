@@ -1,8 +1,5 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 #include "log.h"
 
 constexpr int MAX_THREADS = 64;
@@ -24,13 +21,13 @@ extern int g_numthreads;
 extern q_threadpriority g_threadpriority;
 
 int GetThreadWork();
-static void ThreadWorkerFunction(int unused);
+
 void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction);
 void ThreadSetPriority(q_threadpriority type);
 void ThreadSetDefault();
 void ThreadLock();
 void ThreadUnlock();
-static DWORD WINAPI ThreadEntryStub(LPVOID pParam);
+
 void threads_InitCrit();
 void threads_UninitCrit();
 void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction);

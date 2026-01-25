@@ -53,14 +53,11 @@ void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
 void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
 #define IfDebug(x) // TODO: delete this
 void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
-static void DisplayDeveloperLevel();
 void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
-static void LogArgs(int argc, char **argv);
 void Banner();
 void LogStart(const int argc, char **argv);
 void LogEnd();
 void hlassume(bool exp, assume_msgs msgid); // Should be in hlassert.h, but well so what
-static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned &hours, unsigned &minutes, unsigned &seconds);
 void LogTimeElapsed(float elapsed_time);
 void wait();
 int InitConsole(int argc, char **argv);

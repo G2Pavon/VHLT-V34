@@ -14,7 +14,6 @@ typedef struct
     int line;
 } script_t;
 
-static void AddScriptToStack(const char *const filename);
 void LoadScriptFile(const char *const filename);
 void ParseFromMemory(char *buffer, int size);
 bool EndOfScript(const bool crossline);

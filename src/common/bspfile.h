@@ -327,14 +327,10 @@ extern int g_numsurfedges;
 extern int g_dsurfedges[MAX_MAP_SURFEDGES];
 extern int g_dsurfedges_checksum;
 
-static int FastChecksum(const void *const buffer, int bytes);
 int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length);
 void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length);
-static void SwapBSPFile(const bool todisk);
-static int CopyLump(int lump, void *dest, int size, const dheader_t *const header);
 void LoadBSPImage(dheader_t *header);
 void LoadBSPFile(const char *const filename);
-static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile);
 void WriteBSPFile(const char *const filename);
 float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs);
 bool CalcFaceExtents_test();
@@ -354,8 +350,6 @@ int CountBlocks();
 
 bool NoWadTextures();
 char *FindWadValue();
-static int ArrayUsage(const char *const szItem, const int items, const int maxitems, const int itemsize);
-static int GlobUsage(const char *const szItem, const int itemstorage, const int maxstorage);
 void PrintBSPFileSizes();
 int ParseImplicitTexinfoFromTexture(int miptex);
 int ParseTexinfoForFace(const dface_t *f);
