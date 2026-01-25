@@ -23,7 +23,7 @@ constexpr int MAX_TEXFILES = 128;
 
 typedef struct
 {
-    char identification[4]; // should be WAD2/WAD3
+    char identification[4]; // should be WAD3
     int numlumps;
     int infotableofs;
 } wadinfo_t;
@@ -270,7 +270,7 @@ bool TEX_InitFromWad()
         SafeRead(texfile, &wadinfo, sizeof(wadinfo));
 
         // make sure its a valid format
-        if (std::strncmp(wadinfo.identification, "WAD2", 4) && std::strncmp(wadinfo.identification, "WAD3", 4))
+        if (std::strncmp(wadinfo.identification, "WAD3", 4))
         {
             Log(" - ");
             Error("%s isn't a Wadfile!", pszWadFile);

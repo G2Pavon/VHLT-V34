@@ -117,7 +117,7 @@ void OpenWadFile(const char *name, bool fullpath = false)
     SafeRead(wad->file, &wadinfo, sizeof(wadinfo));
     wadinfo.numlumps = LittleLong(wadinfo.numlumps);
     wadinfo.infotableofs = LittleLong(wadinfo.infotableofs);
-    if (std::strncmp(wadinfo.identification, "WAD2", 4) && std::strncmp(wadinfo.identification, "WAD3", 4))
+    if (std::strncmp(wadinfo.identification, "WAD3", 4))
         Error("%s isn't a Wadfile!", wad->path);
     wad->numlumps = wadinfo.numlumps;
     if (wad->numlumps < 0 || wadinfo.infotableofs < 0 || wadinfo.infotableofs + wad->numlumps * (int)sizeof(lumpinfo_t) > wad->filesize)

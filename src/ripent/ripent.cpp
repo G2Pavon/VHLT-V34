@@ -410,7 +410,7 @@ static void WriteBSP(const char *const name)
 
 typedef struct
 {
-    char identification[4]; // should be WAD2/WAD3
+    char identification[4]; // should be WAD3
     int numlumps;
     int infotableofs;
 } wadinfo_t;
