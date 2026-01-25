@@ -1,10 +1,7 @@
 #pragma once
 
 #include <cstdlib>
-#include <malloc.h> // for _alloca
 #include <cstring>
-
-#define alloca _alloca
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
