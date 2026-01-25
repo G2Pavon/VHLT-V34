@@ -45,25 +45,15 @@
 #define myoffsetof(type, identifier) ((std::size_t)&((type *)0)->identifier)
 #define sizeofElement(type, identifier) (sizeof((type *)0)->identifier)
 
+double I_FloatTime();
 const char *stristr(const char *const string, const char *const substring);
-bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
-bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
-bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
-bool TerminatedString(const char *buffer, const int size);
 
 char *FlipSlashes(char *string);
-
-double I_FloatTime();
-
-int CheckParm(char *check);
-
 void DefaultExtension(char *path, const char *extension);
-void DefaultPath(char *path, char *basepath);
 void StripFilename(char *path);
 void StripExtension(char *path);
-
-void ExtractFile(const char *const path, char *dest);
 void ExtractFilePath(const char *const path, char *dest);
+void ExtractFile(const char *const path, char *dest);
 void ExtractFileBase(const char *const path, char *dest);
 void ExtractFileExtension(const char *const path, char *dest);
 
@@ -73,3 +63,8 @@ int BigLong(int l);
 int LittleLong(int l);
 float BigFloat(float l);
 float LittleFloat(float l);
+
+bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
+bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
+bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
+bool TerminatedString(const char *buffer, const int size);
