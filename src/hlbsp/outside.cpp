@@ -333,7 +333,7 @@ unsigned g_nAllowableOutside = 0;
 unsigned g_maxAllowableOutside = 0;
 char **g_strAllowableOutsideList;
 
-bool isClassnameAllowableOutside(const char *const classname)
+static bool isClassnameAllowableOutside(const char *const classname)
 {
     if (g_strAllowableOutsideList)
     {
@@ -591,7 +591,7 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     return node;
 }
 
-void ResetMark_r(node_t *node)
+static void ResetMark_r(node_t *node)
 {
     if (node->isportalleaf)
     {
@@ -610,7 +610,8 @@ void ResetMark_r(node_t *node)
         ResetMark_r(node->children[1]);
     }
 }
-void MarkOccupied_r(node_t *node)
+
+static void MarkOccupied_r(node_t *node)
 {
     if (node->empty == 1)
     {
@@ -623,7 +624,8 @@ void MarkOccupied_r(node_t *node)
         }
     }
 }
-void RemoveUnused_r(node_t *node)
+
+static void RemoveUnused_r(node_t *node)
 {
     if (node->isportalleaf)
     {
@@ -638,6 +640,7 @@ void RemoveUnused_r(node_t *node)
         RemoveUnused_r(node->children[1]);
     }
 }
+
 void FillInside(node_t *node)
 {
     g_outside_node.empty = 0;
