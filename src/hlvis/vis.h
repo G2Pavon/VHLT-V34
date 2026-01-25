@@ -99,7 +99,6 @@ typedef struct
     pstack_t pstack_head;
 } threaddata_t;
 
-extern bool g_fastvis;
 extern bool g_fullvis;
 
 extern int g_numportals;
@@ -113,25 +112,18 @@ typedef struct
     int visleafnum;
     int reverse;
 } overview_t;
-extern const int g_overview_max;
-extern overview_t g_overview[];
-extern int g_overview_count;
 
 typedef struct
 {
     bool isoverviewpoint;
     bool isskyboxpoint;
 } leafinfo_t;
-extern leafinfo_t *g_leafinfos;
 
 extern portal_t *g_portals;
 extern leaf_t *g_leafs;
 
-extern byte *g_uncompressed;
 extern unsigned g_bitbytes;
 extern unsigned g_bitlongs;
-
-extern volatile int g_vislocalpercent;
 
 void BasePortalVis(int threadnum);
 

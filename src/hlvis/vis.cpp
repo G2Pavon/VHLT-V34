@@ -39,9 +39,9 @@ unsigned g_portalleafs = 0;
 portal_t *g_portals;
 
 leaf_t *g_leafs;
-int *g_leafstarts;
-int *g_leafcounts;
-int g_leafcount_all;
+static int *leafstarts;
+static int *leafcounts;
+static int leafcount_all;
 
 // AJM: MVD
 //
@@ -51,12 +51,12 @@ static byte *vismap_p;
 static byte *vismap_end; // past visfile
 static int originalvismapsize;
 
-byte *g_uncompressed; // [bitbytes*portalleafs]
+static byte *uncompressed; // [bitbytes*portalleafs]
 
 unsigned g_bitbytes; // (portalleafs+63)>>3
 unsigned g_bitlongs;
 
-bool g_fastvis = DEFAULT_FASTVIS;
+static bool fastvis = DEFAULT_FASTVIS;
 bool g_fullvis = DEFAULT_FULLVIS;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
@@ -66,10 +66,10 @@ bool g_info = DEFAULT_INFO;
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
 //bool			g_postcompile = DEFAULT_POST_COMPILE;
 //
-const int g_overview_max = MAX_MAP_ENTITIES;
-overview_t g_overview[g_overview_max];
-int g_overview_count = 0;
-leafinfo_t *g_leafinfos = NULL;
+static const int overview_max = MAX_MAP_ENTITIES;
+static overview_t overview[overview_max];
+static int overview_count = 0;
+static leafinfo_t *leafinfos = NULL;
 
 static int totalvis = 0;
 
@@ -138,20 +138,20 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     else if (iTmp == 1)
     {
-        g_fastvis = true;
+        fastvis = true;
         g_fullvis = false;
     }
     else if (iTmp == 2)
     {
-        g_fastvis = false;
+        fastvis = false;
         g_fullvis = false;
     }
     else if (iTmp == 3)
     {
         g_fullvis = true;
-        g_fastvis = false;
+        fastvis = false;
     }
-    Log("%30s [ %-9s ]\n", "Fast VIS", g_fastvis ? "on" : "off");
+    Log("%30s [ %-9s ]\n", "Fast VIS", fastvis ? "on" : "off");
     Log("%30s [ %-9s ]\n", "Full VIS", g_fullvis ? "on" : "off");
 
     ///////////////////
@@ -268,7 +268,7 @@ static void LeafFlow(const int leafnum)
     // flow through all portals, collecting visible bits
     //
     std::memset(compressed, 0, sizeof(compressed));
-    byte *outbuffer = g_uncompressed + leafnum * g_bitbytes;
+    byte *outbuffer = uncompressed + leafnum * g_bitbytes;
     leaf_t *leaf = &g_leafs[leafnum];
     int tmp = 0;
 
@@ -307,7 +307,7 @@ static void LeafFlow(const int leafnum)
 
     outbuffer[offset] |= bit;
 
-    if (g_leafinfos[leafnum].isoverviewpoint)
+    if (leafinfos[leafnum].isoverviewpoint)
     {
         for (unsigned i = 0; i < g_portalleafs; i++)
         {
@@ -316,7 +316,7 @@ static void LeafFlow(const int leafnum)
     }
     for (unsigned i = 0; i < g_portalleafs; i++)
     {
-        if (g_leafinfos[i].isskyboxpoint)
+        if (leafinfos[i].isskyboxpoint)
         {
             outbuffer[i >> 3] |= (1 << (i & 7));
         }
@@ -337,16 +337,16 @@ static void LeafFlow(const int leafnum)
     totalvis += numvis;
 
     byte buffer2[MAX_MAP_LEAFS / 8];
-    int diskbytes = (g_leafcount_all + 7) >> 3;
+    int diskbytes = (leafcount_all + 7) >> 3;
     std::memset(buffer2, 0, diskbytes);
     for (unsigned i = 0; i < g_portalleafs; i++)
     {
-        for (unsigned j = 0; j < g_leafcounts[i]; j++)
+        for (unsigned j = 0; j < leafcounts[i]; j++)
         {
             int srcofs = i >> 3;
             int srcbit = 1 << (i & 7);
-            int dstofs = (g_leafstarts[i] + j) >> 3;
-            int dstbit = 1 << ((g_leafstarts[i] + j) & 7);
+            int dstofs = (leafstarts[i] + j) >> 3;
+            int dstbit = 1 << ((leafstarts[i] + j) & 7);
             if (outbuffer[srcofs] & srcbit)
             {
                 buffer2[dstofs] |= dstbit;
@@ -363,9 +363,9 @@ static void LeafFlow(const int leafnum)
         Error("Vismap expansion overflow");
     }
 
-    for (unsigned j = 0; j < g_leafcounts[leafnum]; j++)
+    for (unsigned j = 0; j < leafcounts[leafnum]; j++)
     {
-        g_dleafs[g_leafstarts[leafnum] + j + 1].visofs = dest - vismap;
+        g_dleafs[leafstarts[leafnum] + j + 1].visofs = dest - vismap;
     }
 
     std::memcpy(dest, compressed, i);
@@ -376,8 +376,8 @@ static void LeafFlow(const int leafnum)
 // =====================================================================================
 static void CalcPortalVis()
 {
-    // g_fastvis just uses mightsee for a very loose bound
-    if (g_fastvis)
+    // fastvis just uses mightsee for a very loose bound
+    if (fastvis)
     {
         for (int i = 0; i < g_numportals * 2; i++)
         {
@@ -457,8 +457,8 @@ static void CalcVis()
         SaveVisData(visdatafile);
 
         // We need to reset the uncompressed variable and portal visbits
-        std::free(g_uncompressed);
-        g_uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
+        std::free(uncompressed);
+        uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
 
         vismap_p = g_dvisdata;
 
@@ -524,9 +524,9 @@ static void LoadPortals(char *portal_image)
     // each file portal is split into two memory portals
     g_portals = (portal_t *)std::calloc(2 * g_numportals, sizeof(portal_t));
     g_leafs = (leaf_t *)std::calloc(g_portalleafs, sizeof(leaf_t));
-    g_leafinfos = (leafinfo_t *)std::calloc(g_portalleafs, sizeof(leafinfo_t));
-    g_leafcounts = (int *)std::calloc(g_portalleafs, sizeof(int));
-    g_leafstarts = (int *)std::calloc(g_portalleafs, sizeof(int));
+    leafinfos = (leafinfo_t *)std::calloc(g_portalleafs, sizeof(leafinfo_t));
+    leafcounts = (int *)std::calloc(g_portalleafs, sizeof(int));
+    leafstarts = (int *)std::calloc(g_portalleafs, sizeof(int));
 
     originalvismapsize = g_portalleafs * ((g_portalleafs + 7) / 8);
 
@@ -537,38 +537,38 @@ static void LoadPortals(char *portal_image)
     { // this may cause hlvis to overflow, because numportalleafs can be larger than g_numleafs in some special cases
         Error("Too many portalleafs (g_portalleafs(%d) > MAX_MAP_LEAFS(%d)).", g_portalleafs, MAX_MAP_LEAFS);
     }
-    g_leafcount_all = 0;
+    leafcount_all = 0;
     for (i = 0; i < g_portalleafs; i++)
     {
         unsigned rval = 0;
         token = strtok(NULL, seperators);
         CheckNullToken(token);
-        rval += std::sscanf(token, "%i", &g_leafcounts[i]);
+        rval += std::sscanf(token, "%i", &leafcounts[i]);
         if (rval != 1)
         {
             Error("LoadPortals: read leaf %i failed", i);
         }
-        g_leafstarts[i] = g_leafcount_all;
-        g_leafcount_all += g_leafcounts[i];
+        leafstarts[i] = leafcount_all;
+        leafcount_all += leafcounts[i];
     }
-    if (g_leafcount_all != g_dmodels[0].visleafs)
+    if (leafcount_all != g_dmodels[0].visleafs)
     { // internal error (this should never happen)
-        Error("Corrupted leaf mapping (g_leafcount_all(%d) != g_dmodels[0].visleafs(%d)).", g_leafcount_all, g_dmodels[0].visleafs);
+        Error("Corrupted leaf mapping (leafcount_all(%d) != g_dmodels[0].visleafs(%d)).", leafcount_all, g_dmodels[0].visleafs);
     }
     for (i = 0; i < g_portalleafs; i++)
     {
-        for (int j = 0; j < g_overview_count; j++)
+        for (int j = 0; j < overview_count; j++)
         {
-            int d = g_overview[j].visleafnum - g_leafstarts[i];
-            if (0 <= d && d < g_leafcounts[i])
+            int d = overview[j].visleafnum - leafstarts[i];
+            if (0 <= d && d < leafcounts[i])
             {
-                if (g_overview[j].reverse)
+                if (overview[j].reverse)
                 {
-                    g_leafinfos[i].isskyboxpoint = true;
+                    leafinfos[i].isskyboxpoint = true;
                 }
                 else
                 {
-                    g_leafinfos[i].isoverviewpoint = true;
+                    leafinfos[i].isoverviewpoint = true;
                 }
             }
         }
@@ -759,7 +759,7 @@ static void Settings()
     Log("\n");
 
     // HLVIS Specific Settings
-    Log("fast vis            [ %7s ] [ %7s ]\n", g_fastvis ? "on" : "off", DEFAULT_FASTVIS ? "on" : "off");
+    Log("fast vis            [ %7s ] [ %7s ]\n", fastvis ? "on" : "off", DEFAULT_FASTVIS ? "on" : "off");
     Log("full vis            [ %7s ] [ %7s ]\n", g_fullvis ? "on" : "off", DEFAULT_FULLVIS ? "on" : "off");
     Log("\n\n");
 }
@@ -841,8 +841,8 @@ int main(const int argc, char **argv)
                 }
                 else if (!strcasecmp(argv[i], "-fast"))
                 {
-                    Log("g_fastvis = true\n");
-                    g_fastvis = true;
+                    Log("fastvis = true\n");
+                    fastvis = true;
                 }
                 else if (!strcasecmp(argv[i], "-full"))
                 {
@@ -1000,14 +1000,14 @@ int main(const int argc, char **argv)
                 {
                     if (!std::strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
                     {
-                        if (g_overview_count < g_overview_max)
+                        if (overview_count < overview_max)
                         {
                             vec3_t p;
                             GetVectorForKey(&g_entities[i], "origin", p);
-                            VectorCopy(p, g_overview[g_overview_count].origin);
-                            g_overview[g_overview_count].visleafnum = VisLeafnumForPoint(p);
-                            g_overview[g_overview_count].reverse = IntForKey(&g_entities[i], "reverse");
-                            g_overview_count++;
+                            VectorCopy(p, overview[overview_count].origin);
+                            overview[overview_count].visleafnum = VisLeafnumForPoint(p);
+                            overview[overview_count].reverse = IntForKey(&g_entities[i], "reverse");
+                            overview_count++;
                         }
                     }
                 }
@@ -1015,7 +1015,7 @@ int main(const int argc, char **argv)
             LoadPortalsByFilename(portalfile);
 
             Settings();
-            g_uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
+            uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
 
             CalcVis();
             g_visdatasize = vismap_p - g_dvisdata;
@@ -1031,7 +1031,7 @@ int main(const int argc, char **argv)
             double end = I_FloatTime();
             LogTimeElapsed(end - start);
 
-            std::free(g_uncompressed);
+            std::free(uncompressed);
             // END VIS
         }
     }
