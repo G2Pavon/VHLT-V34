@@ -975,7 +975,7 @@ static float totalarea = 0;
 // =====================================================================================
 
 vec_t *chopscales; //[nummiptex]
-void ReadCustomChopValue()
+static void ReadCustomChopValue()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     chopscales = (vec_t *)std::malloc(num * sizeof(vec_t));
@@ -1006,12 +1006,14 @@ void ReadCustomChopValue()
         }
     }
 }
-vec_t ChopScaleForTexture(int facenum)
+
+static vec_t ChopScaleForTexture(int facenum)
 {
     return chopscales[g_texinfo[g_dfaces[facenum].texinfo].miptex];
 }
+
 vec_t *g_smoothvalues; //[nummiptex]
-void ReadCustomSmoothValue()
+static void ReadCustomSmoothValue()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_smoothvalues = (vec_t *)std::malloc(num * sizeof(vec_t));
@@ -1040,7 +1042,8 @@ void ReadCustomSmoothValue()
         }
     }
 }
-void ReadTranslucentTextures()
+
+static void ReadTranslucentTextures()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_translucenttextures = (vec3_t *)std::malloc(num * sizeof(vec3_t));
@@ -1089,6 +1092,7 @@ void ReadTranslucentTextures()
         }
     }
 }
+
 vec3_t *g_lightingconeinfo; //[nummiptex]
 static vec_t DefaultScaleForPower(vec_t power)
 {
@@ -1096,7 +1100,8 @@ static vec_t DefaultScaleForPower(vec_t power)
     vec_t scale = (1 + power) / 2.0;
     return scale;
 }
-void ReadLightingCone()
+
+static void ReadLightingCone()
 {
     int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
     g_lightingconeinfo = (vec3_t *)std::malloc(num * sizeof(vec3_t));
@@ -1214,6 +1219,7 @@ static bool getEmitMode(const patch_t *patch)
     }
     return emitmode;
 }
+
 static vec_t getChop(const patch_t *const patch)
 {
     vec_t rval;
@@ -1662,6 +1668,7 @@ static entity_t *FindTexlightEntity(int facenum)
     }
     return found;
 }
+
 static void MakePatches()
 {
     vec3_t origin;
@@ -2839,7 +2846,7 @@ static void Settings()
 //  ReadInfoTexlights
 //      try and parse texlight info from the info_texlights entity
 // =====================================================================================
-void ReadInfoTexlights()
+static void ReadInfoTexlights()
 {
     int numtexlights = 0;
     float r, g, b, i;
@@ -2891,7 +2898,7 @@ void ReadInfoTexlights()
 // =====================================================================================
 //  LoadRadFiles
 // =====================================================================================
-void LoadRadFiles(const char *const user_rad)
+static void LoadRadFiles(const char *const user_rad)
 {
     char user_lights[_MAX_PATH];
     char userfile[_MAX_PATH];
