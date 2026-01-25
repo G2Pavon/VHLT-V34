@@ -519,8 +519,6 @@ void FreeTriangulations();
 // mathutil.c
 bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scaleout, int &opaquestyleout);
 bool intersect_line_plane(const dplane_t *const plane, const vec_t *const p1, const vec_t *const p2, vec3_t point);
-bool intersect_linesegment_plane(const dplane_t *const plane, const vec_t *const p1, const vec_t *const p2, vec3_t point);
-void plane_from_points(const vec3_t p1, const vec3_t p2, const vec3_t p3, dplane_t *plane);
 bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *point, vec_t epsilon = 0.0);
 bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_t *point, vec_t width);
 void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *point);

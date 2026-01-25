@@ -209,63 +209,6 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
     return bestwidth;
 }
 
-bool intersect_linesegment_plane(const dplane_t *const plane, const vec_t *const p1, const vec_t *const p2, vec3_t point)
-{
-    vec_t part1 = DotProduct(p1, plane->normal) - plane->dist;
-    vec_t part2 = DotProduct(p2, plane->normal) - plane->dist;
-    if (part1 * part2 > 0 || part1 == part2)
-        return false;
-    for (int i = 0; i < 3; ++i)
-        point[i] = (part1 * p2[i] - part2 * p1[i]) / (part1 - part2);
-    return true;
-}
-
-// =====================================================================================
-//  plane_from_points
-// =====================================================================================
-void plane_from_points(const vec3_t p1, const vec3_t p2, const vec3_t p3, dplane_t *plane)
-{
-    vec3_t delta1;
-    vec3_t delta2;
-    vec3_t normal;
-
-    VectorSubtract(p3, p2, delta1);
-    VectorSubtract(p1, p2, delta2);
-    CrossProduct(delta1, delta2, normal);
-    VectorNormalize(normal);
-    plane->dist = DotProduct(normal, p1);
-    VectorCopy(normal, plane->normal);
-}
-
-//LineSegmentIntersectsBounds --vluzacn
-bool LineSegmentIntersectsBounds_r(const vec_t *p1, const vec_t *p2, const vec_t *mins, const vec_t *maxs, int d)
-{
-    vec3_t x1, x2;
-    d--;
-    if (p2[d] < p1[d])
-    {
-        const vec_t *tmp = p1;
-        p1 = p2;
-        p2 = tmp;
-    }
-    if (p2[d] < mins[d] || p1[d] > maxs[d])
-        return false;
-    if (d == 0)
-        return true;
-    vec_t lmin = p1[d] >= mins[d] ? 0 : (mins[d] - p1[d]) / (p2[d] - p1[d]);
-    vec_t lmax = p2[d] <= maxs[d] ? 1 : (p2[d] - maxs[d]) / (p2[d] - p1[d]);
-    for (int i = 0; i < d; ++i)
-    {
-        x1[i] = (1 - lmin) * p1[i] + lmin * p2[i];
-        x2[i] = (1 - lmax) * p2[i] + lmax * p2[i];
-    }
-    return LineSegmentIntersectsBounds_r(x1, x2, mins, maxs, d);
-}
-inline bool LineSegmentIntersectsBounds(const vec3_t p1, const vec3_t p2, const vec3_t mins, const vec3_t maxs)
-{
-    return LineSegmentIntersectsBounds_r(p1, p2, mins, maxs, 3);
-}
-
 // =====================================================================================
 //  TestSegmentAgainstOpaqueList
 //      Returns true if the segment intersects an item in the opaque list
