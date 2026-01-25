@@ -27,7 +27,7 @@ constexpr vec_t DIST_EPSILON = 0.04;
 //	very large given the change from O(N^2) to O(NlogN) to build the set of planes.
 // =====================================================================================
 
-int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
+static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
 {
     vec_t t;
 
@@ -101,7 +101,7 @@ find_plane:
     return returnval;
 }
 
-int PlaneFromPoints(const vec_t *const p0, const vec_t *const p1, const vec_t *const p2)
+static int PlaneFromPoints(const vec_t *const p0, const vec_t *const p1, const vec_t *const p2)
 {
     vec3_t v1, v2;
     vec3_t normal;
@@ -128,7 +128,7 @@ const char *GetClipTypeString(cliptype ct)
 //  Called to add any and all clip hull planes by the new ExpandBrush.
 // =====================================================================================
 
-void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *const origin, const bool check_planenum)
+static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *const origin, const bool check_planenum)
 {
     int planenum = FindIntPlane(normal, origin);
     //check to see if this plane is already in the brush (optional to speed
@@ -188,7 +188,7 @@ void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *con
 //     cliptype          simple    precise     legacy normalized   smallest
 //     clipnodecount        971       1089       1202       1232       1000
 
-void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, const hullbrush_t *hb, brushhull_t *hull)
+static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, const hullbrush_t *hb, brushhull_t *hull)
 {
     const hullbrushface_t *hbf;
     vec3_t normal;
@@ -379,7 +379,7 @@ void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, co
     std::free(axialbevel);
 }
 
-void ExpandBrush(brush_t *brush, const int hullnum)
+static void ExpandBrush(brush_t *brush, const int hullnum)
 {
     const hullshape_t *hs = &g_defaulthulls[hullnum];
     { // look up the name of its hull shape in g_hullshapes[]
@@ -684,7 +684,7 @@ void ExpandBrush(brush_t *brush, const int hullnum)
 // =====================================================================================
 //  MakeHullFaces
 // =====================================================================================
-void SortSides(brushhull_t *h)
+static void SortSides(brushhull_t *h)
 {
     int numsides;
     int i;
@@ -737,7 +737,8 @@ void SortSides(brushhull_t *h)
     std::free(isused);
     std::free(sorted);
 }
-void MakeHullFaces(const brush_t *const b, brushhull_t *h)
+
+static void MakeHullFaces(const brush_t *const b, brushhull_t *h)
 {
     bface_t *f2;
     // this will decrease AllocBlock amount
@@ -808,7 +809,7 @@ restart:
 // =====================================================================================
 //  MakeBrushPlanes
 // =====================================================================================
-bool MakeBrushPlanes(brush_t *b)
+static bool MakeBrushPlanes(brush_t *b)
 {
     bface_t *f;
     vec3_t origin;
@@ -1157,7 +1158,8 @@ void CreateBrush(const int brushnum) //--vluzacn
         }
     }
 }
-hullbrush_t *CreateHullBrush(const brush_t *b)
+
+static hullbrush_t *CreateHullBrush(const brush_t *b)
 {
     const int MAXSIZE = 256;
 
@@ -1398,7 +1400,7 @@ hullbrush_t *CreateHullBrush(const brush_t *b)
     return hb;
 }
 
-hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
+static hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
 {
     hullbrush_t *hb2 = (hullbrush_t *)std::malloc(sizeof(hullbrush_t));
     hlassume(hb2 != NULL, assume_NoMemory);
@@ -1423,7 +1425,7 @@ hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
     return hb2;
 }
 
-void DeleteHullBrush(hullbrush_t *hb)
+static void DeleteHullBrush(hullbrush_t *hb)
 {
     for (hullbrushface_t *hbf = hb->faces; hbf < hb->faces + hb->numfaces; hbf++)
     {
