@@ -393,7 +393,7 @@ static void CalcPortalVis()
 // =====================================================================================
 //  SaveVisData
 // =====================================================================================
-void SaveVisData(const char *filename)
+static void SaveVisData(const char *filename)
 {
     std::FILE *fp = std::fopen(filename, "wb");
 
@@ -764,7 +764,7 @@ static void Settings()
     Log("\n\n");
 }
 
-int VisLeafnumForPoint(const vec3_t point)
+static int VisLeafnumForPoint(const vec3_t point)
 {
     int nodenum = 0;
     while (nodenum >= 0)
