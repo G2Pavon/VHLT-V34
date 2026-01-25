@@ -9,6 +9,8 @@
 #include "blockmem.h"
 #include "hlassert.h"
 
+q_threadfunction q_entry;
+
 q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
 
 constexpr int THREADTIMES_SIZE = 100;
@@ -221,8 +223,6 @@ void ThreadUnlock()
     enter--;
     LeaveCriticalSection(&crit);
 }
-
-q_threadfunction q_entry;
 
 static DWORD WINAPI ThreadEntryStub(LPVOID pParam)
 {
