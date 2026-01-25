@@ -9,11 +9,15 @@
 #include "blockmem.h"
 #include "hlassert.h"
 
+static constexpr int MAX_THREADS = 64;
+const int DEFAULT_NUMTHREADS = -1;
+static constexpr q_threadpriority DEFAULT_THREAD_PRIORITY = eThreadPriorityNormal;
+
 q_threadfunction q_entry;
 
 q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
 
-constexpr int THREADTIMES_SIZE = 100;
+static constexpr int THREADTIMES_SIZE = 100;
 #define THREADTIMES_SIZEf (float)(THREADTIMES_SIZE)
 
 static int dispatch = 0;
