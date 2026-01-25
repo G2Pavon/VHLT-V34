@@ -16,7 +16,7 @@ constexpr char SEPCHR = '\n';
 bool error = false;
 #define SEPSTR "\n"
 
-int plen(const char *p)
+static int plen(const char *p)
 {
     for (int l = 0;; l++)
     {
@@ -26,11 +26,13 @@ int plen(const char *p)
             return l;
     }
 }
-bool pvalid(const char *p)
+
+static bool pvalid(const char *p)
 {
     return plen(p) >= 0;
 }
-bool pmatch(const char *cmdlineparam, const char *param)
+
+static bool pmatch(const char *cmdlineparam, const char *param)
 {
     int k;
     int cl = plen(cmdlineparam);
@@ -63,11 +65,13 @@ bool pmatch(const char *cmdlineparam, const char *param)
     }
     return false;
 }
-char *pnext(char *p)
+
+static char *pnext(char *p)
 {
     return p + (plen(p) + 1);
 }
-char *findparams(char *cmdlineparams, char *params)
+
+static char *findparams(char *cmdlineparams, char *params)
 {
     char *c1, *c, *p;
     for (c1 = cmdlineparams; pvalid(c1); c1 = pnext(c1))
@@ -80,14 +84,16 @@ char *findparams(char *cmdlineparams, char *params)
     }
     return NULL;
 }
-void addparams(char *cmdline, char *params, unsigned int n)
+
+static void addparams(char *cmdline, char *params, unsigned int n)
 {
     if (std::strlen(cmdline) + std::strlen(params) + 1 <= n)
         std::strcat(cmdline, params);
     else
         error = true;
 }
-void delparams(char *cmdline, char *params)
+
+static void delparams(char *cmdline, char *params)
 {
     char *c, *p;
     if (!pvalid(params)) //avoid infinite loop
@@ -100,7 +106,7 @@ void delparams(char *cmdline, char *params)
     }
 }
 
-void parsecommand(execute_t &e, char *cmdline, char *words, unsigned int n)
+static void parsecommand(execute_t &e, char *cmdline, char *words, unsigned int n)
 {
     command_t t;
     if (!pvalid(words))
@@ -167,7 +173,7 @@ void parsecommand(execute_t &e, char *cmdline, char *words, unsigned int n)
         }
     }
 }
-const char *nextword(const char *s, char *token, unsigned int n)
+static const char *nextword(const char *s, char *token, unsigned int n)
 {
     unsigned int i;
     const char *c;
@@ -195,7 +201,8 @@ const char *nextword(const char *s, char *token, unsigned int n)
     token[i] = '\0';
     return content ? c : NULL;
 }
-void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
+
+static void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
 {
     std::strcpy(cmdline, "");
     std::strcat(cmdline, "<");
@@ -213,7 +220,8 @@ void parsearg(int argc, char **argv, char *cmdline, unsigned int n)
             error = true;
     }
 }
-void unparsearg(int &argc, char **&argv, char *cmdline)
+
+static void unparsearg(int &argc, char **&argv, char *cmdline)
 {
     char *c;
     int j;
@@ -240,6 +248,7 @@ void unparsearg(int &argc, char **&argv, char *cmdline)
         argv[i][j] = '\0';
     }
 }
+
 void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&argvnew)
 {
     char token[MAXTOKEN], words[MAXTOKEN], cmdline[MAXTOKEN];
