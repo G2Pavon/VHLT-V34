@@ -126,28 +126,6 @@ const dplane_t *getPlaneFromFaceNumber(const unsigned int faceNumber)
     }
 }
 
-// Returns plane adjusted for face offset (for origin brushes, primarily used in the opaque code)
-void getAdjustedPlaneFromFaceNumber(unsigned int faceNumber, dplane_t *plane)
-{
-    dface_t *face = &g_dfaces[faceNumber];
-    const vec_t *face_offset = g_face_offset[faceNumber];
-
-    plane->type = (planetypes)0;
-
-    if (face->side)
-    {
-        VectorCopy(backplanes[face->planenum].normal, plane->normal);
-        vec_t dist = DotProduct(plane->normal, face_offset);
-        plane->dist = backplanes[face->planenum].dist + dist;
-    }
-    else
-    {
-        VectorCopy(g_dplanes[face->planenum].normal, plane->normal);
-        vec_t dist = DotProduct(plane->normal, face_offset);
-        plane->dist = g_dplanes[face->planenum].dist + dist;
-    }
-}
-
 // Will modify the plane with the new dist
 static void TranslatePlane(dplane_t *plane, const vec_t *delta)
 {

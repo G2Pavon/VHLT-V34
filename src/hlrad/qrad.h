@@ -470,7 +470,6 @@ dleaf_t *PointInLeaf(const vec3_t point);
 void MakeBackplanes();
 const dplane_t *getPlaneFromFace(const dface_t *const face);
 const dplane_t *getPlaneFromFaceNumber(unsigned int facenum);
-void getAdjustedPlaneFromFaceNumber(unsigned int facenum, dplane_t *plane);
 dleaf_t *HuntForWorld(vec_t *point, const vec_t *plane_offset, const dplane_t *plane, int hunt_size, vec_t hunt_scale, vec_t hunt_offset);
 void ApplyMatrix(const matrix_t &m, const vec3_t in, vec3_t &out);
 void ApplyMatrixOnPlane(const matrix_t &m_inverse, const vec3_t in_normal, vec_t in_dist, vec3_t &out_normal, vec_t &out_dist);
