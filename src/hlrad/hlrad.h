@@ -229,9 +229,6 @@ extern entity_t *g_face_texlights[MAX_MAP_FACES];
 extern patch_t *g_patches; // shrinked to its real size, because 1048576 patches * 256 bytes = 256MB will be too big
 extern unsigned g_num_patches;
 
-extern float g_lightscale;
-extern float g_dlight_threshold;
-extern float g_coring;
 extern int g_lerp_enabled;
 
 void MakeShadowSplits();
@@ -244,13 +241,8 @@ extern vec3_t g_ambient;
 extern vec_t g_direct_scale;
 extern vec_t g_limitthreshold;
 extern bool g_drawoverload;
-extern unsigned g_numbounce;
-extern float g_qgamma;
 extern float g_indirect_sun;
-extern float g_smoothing_threshold;
-extern float g_smoothing_value;
 extern float g_smoothing_threshold_2;
-extern float g_smoothing_value_2;
 extern vec_t *g_smoothvalues; //[nummiptex]
 extern bool g_estimate;
 extern char g_source[_MAX_PATH];
@@ -259,11 +251,9 @@ extern bool g_incremental;
 extern bool g_circus;
 extern bool g_allow_spread;
 extern bool g_sky_lighting_fix;
-extern vec_t g_chop;    // Chop value for normal textures
-extern vec_t g_texchop; // Chop value for texture lights
+
 extern opaqueList_t *g_opaque_face_list;
-extern unsigned g_opaque_face_count;     // opaque entity count //HLRAD_OPAQUE_NODE
-extern unsigned g_max_opaque_face_count; // Current array maximum (used for reallocs)
+extern unsigned g_opaque_face_count; // opaque entity count //HLRAD_OPAQUE_NODE
 
 // ------------------------------------------------------------------------
 // Changes by Adam Foster - afoster@compsoc.man.ac.uk
@@ -278,21 +268,16 @@ extern vec3_t g_jitter_hack;
 
 extern bool g_customshadow_with_bouncelight;
 extern bool g_rgb_transfers;
-
-extern float g_transtotal_hack;
 extern unsigned char g_minlight;
 extern float_type g_transfer_compress_type;
 extern vector_type g_rgbtransfer_compress_type;
 extern bool g_softsky;
-extern int g_blockopaque;
-extern bool g_drawpatch;
 extern bool g_drawsample;
 extern vec3_t g_drawsample_origin;
 extern vec_t g_drawsample_radius;
-extern bool g_drawedge;
 extern bool g_drawlerp;
 extern bool g_drawnudge;
-extern float g_corings[ALLSTYLES];
+extern vec_t g_corings[ALLSTYLES];
 extern int stylewarningcount; // not thread safe
 extern int stylewarningnext;  // not thread safe
 extern vec3_t *g_translucenttextures;
@@ -302,7 +287,6 @@ extern bool g_notextures;
 extern vec_t g_texreflectgamma;
 extern vec_t g_texreflectscale;
 extern vec_t g_blur;
-extern bool g_noemitterrange;
 extern bool g_bleedfix;
 extern vec_t g_maxdiscardedlight;
 extern vec3_t g_maxdiscardedpos;

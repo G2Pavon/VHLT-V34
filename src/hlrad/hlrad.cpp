@@ -59,23 +59,18 @@ static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_ALLOW_OPAQUES = true;
 static constexpr bool DEFAULT_ALLOW_SPREAD = true;
-
 static constexpr float DEFAULT_COLOUR_GAMMA_RED = 0.55;
 static constexpr float DEFAULT_COLOUR_GAMMA_GREEN = 0.55;
 static constexpr float DEFAULT_COLOUR_GAMMA_BLUE = 0.55;
-
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_RED = 2.0;   //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_GREEN = 2.0; //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
-
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_RED = 0.0;
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_GREEN = 0.0;
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_BLUE = 0.0;
-
 static constexpr float DEFAULT_JITTER_HACK_RED = 0.0;
 static constexpr float DEFAULT_JITTER_HACK_GREEN = 0.0;
 static constexpr float DEFAULT_JITTER_HACK_BLUE = 0.0;
-
 // O_o ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Changes by Jussi Kivilinna <hullu@unitedadmins.com> [http://hullu.xtragaming.com/]
 // Transparency light support for bounced light(transfers) is extreamly slow
@@ -84,13 +79,10 @@ static constexpr float DEFAULT_JITTER_HACK_BLUE = 0.0;
 static constexpr bool DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT = false;
 // RGB Transfers support for HLRAD .. to be used with -customshadowwithbounce
 static constexpr bool DEFAULT_RGB_TRANSFERS = false;
-
 static constexpr float DEFAULT_TRANSTOTAL_HACK = 0.2; //0.5 //vluzacn
 static constexpr unsigned int DEFAULT_MINLIGHT = 0;
-
 static constexpr float_type DEFAULT_TRANSFER_COMPRESS_TYPE = FLOAT16;
 static constexpr vector_type DEFAULT_RGBTRANSFER_COMPRESS_TYPE = VECTOR32;
-
 static constexpr bool DEFAULT_SOFTSKY = true;
 static constexpr int DEFAULT_BLOCKOPAQUE = 1;
 static constexpr float DEFAULT_TRANSLUCENTDEPTH = 2.0f;
@@ -102,11 +94,9 @@ static constexpr bool DEFAULT_NOEMITTERRANGE = false;
 static constexpr bool DEFAULT_BLEEDFIX = true;
 static constexpr float DEFAULT_TEXLIGHTGAP = 0.0;
 static constexpr bool DEFAULT_ESTIMATE = false;
-
 static constexpr float ACCURATEBOUNCE_THRESHOLD = 4.0; // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
 #define ACCURATEBOUNCE_DEFAULT_SKYLEVEL 5              // sample 1026 normals
 
-bool g_fastmode = DEFAULT_FASTMODE;
 typedef enum
 {
     eMethodVismatrix,
@@ -114,9 +104,25 @@ typedef enum
     eMethodNoVismatrix
 } eVisMethods;
 
-eVisMethods g_method = DEFAULT_METHOD;
+static unsigned g_numbounce = DEFAULT_BOUNCE; // 3; /* Originally this was 8 */
+static bool g_dumppatches = DEFAULT_DUMPPATCHES;
+static float g_lightscale = DEFAULT_LIGHTSCALE;
+static float g_dlight_threshold = DEFAULT_DLIGHT_THRESHOLD; // was DIRECT_LIGHT constant
+static float g_smoothing_value = DEFAULT_SMOOTHING_VALUE;
+static float g_smoothing_value_2 = DEFAULT_SMOOTHING2_VALUE;
+static float g_transtotal_hack = DEFAULT_TRANSTOTAL_HACK;
+static int g_blockopaque = DEFAULT_BLOCKOPAQUE;
+static bool g_drawpatch = false;
+static bool g_drawedge = false;
+// Cosine of smoothing angle(in radians)
+static float g_coring = DEFAULT_CORING;      // Light threshold to force to blackness(minimizes lightmaps)
+static unsigned g_max_opaque_face_count = 0; // Current array maximum (used for reallocs)
+static bool g_noemitterrange = DEFAULT_NOEMITTERRANGE;
 
-vec_t g_fade = DEFAULT_FADE;
+static vec3_t (*emitlight)[MAXLIGHTMAPS]; //LRC
+static vec3_t (*addlight)[MAXLIGHTMAPS];  //LRC
+static unsigned char (*newstyles)[MAXLIGHTMAPS];
+static float g_smoothing_threshold;
 
 patch_t *g_face_patches[MAX_MAP_FACES];
 entity_t *g_face_entity[MAX_MAP_FACES];
@@ -124,93 +130,58 @@ eModelLightmodes g_face_lightmode[MAX_MAP_FACES];
 patch_t *g_patches;
 entity_t *g_face_texlights[MAX_MAP_FACES];
 unsigned g_num_patches;
-
-static vec3_t (*emitlight)[MAXLIGHTMAPS]; //LRC
-static vec3_t (*addlight)[MAXLIGHTMAPS];  //LRC
-static unsigned char (*newstyles)[MAXLIGHTMAPS];
-
 vec3_t g_face_offset[MAX_MAP_FACES]; // for rotating bmodels
+float g_smoothing_threshold_2;
 
+bool g_fastmode = DEFAULT_FASTMODE;
+eVisMethods g_method = DEFAULT_METHOD;
+vec_t g_fade = DEFAULT_FADE;
 vec_t g_direct_scale = DEFAULT_DLIGHT_SCALE;
-
-unsigned g_numbounce = DEFAULT_BOUNCE; // 3; /* Originally this was 8 */
-
-static bool g_dumppatches = DEFAULT_DUMPPATCHES;
-
 vec3_t g_ambient = {DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE};
 vec_t g_limitthreshold = DEFAULT_LIMITTHRESHOLD;
 bool g_drawoverload = false;
-
-float g_lightscale = DEFAULT_LIGHTSCALE;
-float g_dlight_threshold = DEFAULT_DLIGHT_THRESHOLD; // was DIRECT_LIGHT constant
-
 char g_source[_MAX_PATH] = "";
-
 bool g_incremental = DEFAULT_INCREMENTAL;
 float g_indirect_sun = DEFAULT_INDIRECT_SUN;
 bool g_extra = DEFAULT_EXTRA;
 bool g_texscale = DEFAULT_TEXSCALE;
-
-float g_smoothing_threshold;
-float g_smoothing_value = DEFAULT_SMOOTHING_VALUE;
-float g_smoothing_threshold_2;
-float g_smoothing_value_2 = DEFAULT_SMOOTHING2_VALUE;
-
 bool g_circus = DEFAULT_CIRCUS;
 bool g_allow_opaques = DEFAULT_ALLOW_OPAQUES;
 bool g_allow_spread = DEFAULT_ALLOW_SPREAD;
-
-// --------------------------------------------------------------------------
-// Changes by Adam Foster - afoster@compsoc.man.ac.uk
+bool g_customshadow_with_bouncelight = DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT;
+bool g_rgb_transfers = DEFAULT_RGB_TRANSFERS;
 vec3_t g_colour_qgamma = {DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE};
 vec3_t g_colour_lightscale = {DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE};
 vec3_t g_colour_jitter_hack = {DEFAULT_COLOUR_JITTER_HACK_RED, DEFAULT_COLOUR_JITTER_HACK_GREEN, DEFAULT_COLOUR_JITTER_HACK_BLUE};
 vec3_t g_jitter_hack = {DEFAULT_JITTER_HACK_RED, DEFAULT_JITTER_HACK_GREEN, DEFAULT_JITTER_HACK_BLUE};
-// --------------------------------------------------------------------------
-
-bool g_customshadow_with_bouncelight = DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT;
-bool g_rgb_transfers = DEFAULT_RGB_TRANSFERS;
-
-float g_transtotal_hack = DEFAULT_TRANSTOTAL_HACK;
 unsigned char g_minlight = DEFAULT_MINLIGHT;
 float_type g_transfer_compress_type = DEFAULT_TRANSFER_COMPRESS_TYPE;
 vector_type g_rgbtransfer_compress_type = DEFAULT_RGBTRANSFER_COMPRESS_TYPE;
 bool g_softsky = DEFAULT_SOFTSKY;
-int g_blockopaque = DEFAULT_BLOCKOPAQUE;
 bool g_notextures = DEFAULT_NOTEXTURES;
 vec_t g_texreflectgamma = DEFAULT_TEXREFLECTGAMMA;
 vec_t g_texreflectscale = DEFAULT_TEXREFLECTSCALE;
 bool g_bleedfix = DEFAULT_BLEEDFIX;
-bool g_drawpatch = false;
 bool g_drawsample = false;
 vec3_t g_drawsample_origin = {0, 0, 0};
 vec_t g_drawsample_radius = 0;
-bool g_drawedge = false;
 bool g_drawlerp = false;
 bool g_drawnudge = false;
-
-// Cosine of smoothing angle(in radians)
-float g_coring = DEFAULT_CORING; // Light threshold to force to blackness(minimizes lightmaps)
 bool g_chart = DEFAULT_CHART;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_info = DEFAULT_INFO;
-
 // Patch creation and subdivision criteria
 bool g_subdivide = DEFAULT_SUBDIVIDE;
-vec_t g_chop = DEFAULT_CHOP;
-vec_t g_texchop = DEFAULT_TEXCHOP;
-
+vec_t g_chop = DEFAULT_CHOP;       // Chop value for normal textures
+vec_t g_texchop = DEFAULT_TEXCHOP; // Chop value for texture lights
 // Opaque faces
 opaqueList_t *g_opaque_face_list = NULL;
 unsigned g_opaque_face_count = 0;
-unsigned g_max_opaque_face_count = 0; // Current array maximum (used for reallocs)
 vec_t g_corings[ALLSTYLES];
 vec3_t *g_translucenttextures = NULL;
 vec_t g_translucentdepth = DEFAULT_TRANSLUCENTDEPTH;
 vec_t g_blur = DEFAULT_BLUR;
-bool g_noemitterrange = DEFAULT_NOEMITTERRANGE;
 vec_t g_texlightgap = DEFAULT_TEXLIGHTGAP;
-
 // Misc
 int leafparents[MAX_MAP_LEAFS];
 int nodeparents[MAX_MAP_NODES];
