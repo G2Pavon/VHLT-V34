@@ -177,7 +177,7 @@ vec_t g_texchop = DEFAULT_TEXCHOP; // Chop value for texture lights
 // Opaque faces
 opaqueList_t *g_opaque_face_list = NULL;
 unsigned g_opaque_face_count = 0;
-vec_t g_corings[ALLSTYLES];
+float g_corings[ALLSTYLES];
 vec3_t *g_translucenttextures = NULL;
 vec_t g_translucentdepth = DEFAULT_TRANSLUCENTDEPTH;
 vec_t g_blur = DEFAULT_BLUR;
