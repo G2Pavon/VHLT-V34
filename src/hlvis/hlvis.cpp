@@ -35,45 +35,34 @@ static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
 static constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 
-int g_numportals = 0;
-unsigned g_portalleafs = 0;
+static bool fastvis = DEFAULT_FASTVIS;
+static const int overview_max = MAX_MAP_ENTITIES;
+static int overview_count = 0;
+static leafinfo_t *leafinfos = NULL;
+static int totalvis = 0;
 
-portal_t *g_portals;
-
-leaf_t *g_leafs;
 static int *leafstarts;
 static int *leafcounts;
 static int leafcount_all;
-
-// AJM: MVD
-//
-
 static byte *vismap;
 static byte *vismap_p;
 static byte *vismap_end; // past visfile
 static int originalvismapsize;
-
 static byte *uncompressed; // [bitbytes*portalleafs]
+static overview_t overview[overview_max];
 
+portal_t *g_portals;
+leaf_t *g_leafs;
 unsigned g_bitbytes; // (portalleafs+63)>>3
 unsigned g_bitlongs;
 
-static bool fastvis = DEFAULT_FASTVIS;
+int g_numportals = 0;
+unsigned g_portalleafs = 0;
 bool g_fullvis = DEFAULT_FULLVIS;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
 bool g_info = DEFAULT_INFO;
-
-// AJM: MVD
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
-//bool			g_postcompile = DEFAULT_POST_COMPILE;
-//
-static const int overview_max = MAX_MAP_ENTITIES;
-static overview_t overview[overview_max];
-static int overview_count = 0;
-static leafinfo_t *leafinfos = NULL;
-
-static int totalvis = 0;
 
 // AJM: addded in
 // =====================================================================================
