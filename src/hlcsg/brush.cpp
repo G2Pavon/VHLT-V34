@@ -12,15 +12,14 @@
 #include "common/win32fix.h"
 #include "common/winding.h"
 
-static constexpr vec_t FLOOR_Z = 0.7; // Quake default
-
 plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
-hullshape_t g_defaulthulls[NUM_HULLS];
-int g_numhullshapes;
-hullshape_t g_hullshapes[MAX_HULLSHAPES];
+static hullshape_t g_defaulthulls[NUM_HULLS];
+static int g_numhullshapes;
+static hullshape_t g_hullshapes[MAX_HULLSHAPES];
 
-constexpr vec_t DIST_EPSILON = 0.04;
+static constexpr vec_t FLOOR_Z = 0.7; // Quake default
+static constexpr vec_t DIST_EPSILON = 0.04;
 
 // =====================================================================================
 //  FindIntPlane, fast version (replacement by KGP)

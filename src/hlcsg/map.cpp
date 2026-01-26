@@ -17,10 +17,10 @@
 int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 
-int g_numbrushsides;
+static int g_numbrushsides;
 side_t g_brushsides[MAX_MAP_SIDES];
 
-int g_nMapFileVersion;
+static int g_nMapFileVersion; // map file version 220
 
 static const vec3_t s_baseaxis[18] = {
     {0, 0, 1},

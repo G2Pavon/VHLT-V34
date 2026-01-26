@@ -43,8 +43,6 @@ typedef struct
     vec_t scale[2];
 } valve_vects;
 
-extern int g_nMapFileVersion; // map file version 220
-
 typedef struct
 {
     valve_vects vects;
@@ -156,12 +154,7 @@ extern brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 
 constexpr int MAX_MAP_SIDES = (MAX_MAP_BRUSHES * 6);
 
-extern int g_numbrushsides;
 extern side_t g_brushsides[MAX_MAP_SIDES];
-
-extern hullshape_t g_defaulthulls[NUM_HULLS];
-extern int g_numhullshapes;
-extern hullshape_t g_hullshapes[MAX_HULLSHAPES];
 
 extern void LoadMapFile(const char *const filename);
 
@@ -188,17 +181,11 @@ void InitDefaultHulls();
 //=============================================================================
 // hlcsg.c
 
-extern bool g_chart;
 extern bool g_onlyents;
 extern bool g_noclip;
 extern bool g_wadtextures;
 extern bool g_skyclip;
-extern bool g_estimate;
-extern const char *g_hullfile;
-
 extern bool g_bUseNullTex;
-
-extern bool g_bClipNazi;
 
 #define EnumPrint(a) #a
 typedef enum
@@ -214,14 +201,10 @@ extern cliptype g_cliptype;
 const char *GetClipTypeString(cliptype);
 
 extern vec_t g_scalesize;
-extern bool g_resetlog;
 extern bool g_nolightopt;
-
-extern bool g_noutf8;
 
 extern bool g_nullifytrigger;
 
-extern vec_t g_tiny_threshold;
 extern vec_t g_BrushUnionThreshold;
 
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
