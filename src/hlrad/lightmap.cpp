@@ -17,8 +17,6 @@ edgeshare_t g_edgeshare[MAX_MAP_EDGES];
 vec3_t g_face_centroids[MAX_MAP_EDGES]; // BUG: should this be [MAX_MAP_FACES]?
 bool g_sky_lighting_fix = DEFAULT_SKY_LIGHTING_FIX;
 
-float g_corings[ALLSTYLES];
-
 // =====================================================================================
 //  PairEdges
 // =====================================================================================
