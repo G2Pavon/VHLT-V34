@@ -60,38 +60,31 @@ static int c_tiny;
 static int c_tiny_clip;
 static int c_outfaces;
 static int c_csgfaces;
-BoundingBox world_bounds;
+static BoundingBox world_bounds;
 
-bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
-bool g_onlyents = DEFAULT_ONLYENTS;        // onlyents mode "-onlyents"
-bool g_wadtextures = DEFAULT_WADTEXTURES;  // "-nowadtextures"
 static bool g_chart = DEFAULT_CHART;       // show chart "-chart"
-bool g_skyclip = DEFAULT_SKYCLIP;          // no sky clipping "-noskyclip"
 static bool g_estimate = DEFAULT_ESTIMATE; // progress estimates "-estimate"
-bool g_info = DEFAULT_INFO;                // "-info" ?
 static const char *g_hullfile = NULL;      // external hullfile "-hullfie sdfsd"
-const char *g_wadcfgfile = NULL;
-const char *g_wadconfigname = NULL;
-
-bool g_bUseNullTex = DEFAULT_NULLTEX; // "-nonulltex"
-
-cliptype g_cliptype = DEFAULT_CLIPTYPE; // "-cliptype <value>"
-
-const char *g_nullfile = NULL;
-
+static const char *g_wadcfgfile = NULL;
+static const char *g_wadconfigname = NULL;
+static const char *g_nullfile = NULL;
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
-
-bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
-
-vec_t g_scalesize = DEFAULT_SCALESIZE;
 static bool g_resetlog = DEFAULT_RESETLOG;
-bool g_nolightopt = DEFAULT_NOLIGHTOPT;
-
 static bool g_noutf8 = DEFAULT_NOUTF8;
-
-bool g_nullifytrigger = DEFAULT_NULLIFYTRIGGER;
 static vec_t g_tiny_threshold = DEFAULT_TINY_THRESHOLD;
-bool g_viewsurface = false;
+static bool g_viewsurface = false;
+
+bool g_noclip = DEFAULT_NOCLIP;                // no clipping hull "-noclip"
+bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
+bool g_wadtextures = DEFAULT_WADTEXTURES;      // "-nowadtextures"
+bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
+bool g_info = DEFAULT_INFO;                    // "-info" ?
+bool g_bUseNullTex = DEFAULT_NULLTEX;          // "-nonulltex"
+cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
+bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
+vec_t g_scalesize = DEFAULT_SCALESIZE;
+bool g_nolightopt = DEFAULT_NOLIGHTOPT;
+bool g_nullifytrigger = DEFAULT_NULLIFYTRIGGER;
 
 // =====================================================================================
 //  GetParamsFromEnt

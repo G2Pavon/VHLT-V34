@@ -202,9 +202,7 @@ const char *GetClipTypeString(cliptype);
 
 extern vec_t g_scalesize;
 extern bool g_nolightopt;
-
 extern bool g_nullifytrigger;
-
 extern vec_t g_BrushUnionThreshold;
 
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
@@ -227,8 +225,6 @@ void CalculateBrushUnions(int brushnum);
 extern vec3_t g_hull_size[NUM_HULLS][2];
 void LoadHullfile(const char *filename);
 
-extern const char *g_wadcfgfile;
-extern const char *g_wadconfigname;
 void LoadWadcfgfile(const char *filename);
 void LoadWadconfig(const char *filename, const char *configname);
 
