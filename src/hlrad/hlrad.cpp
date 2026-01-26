@@ -146,7 +146,6 @@ float g_dlight_threshold = DEFAULT_DLIGHT_THRESHOLD; // was DIRECT_LIGHT constan
 
 char g_source[_MAX_PATH] = "";
 
-char g_vismatfile[_MAX_PATH] = "";
 bool g_incremental = DEFAULT_INCREMENTAL;
 float g_indirect_sun = DEFAULT_INDIRECT_SUN;
 bool g_extra = DEFAULT_EXTRA;
