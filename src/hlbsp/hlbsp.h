@@ -218,27 +218,25 @@ void CullStuff();
 //=============================================================================
 // hlbsp.c
 extern bool g_nofill;
-extern bool g_noinsidefill;
 extern bool g_notjunc;
 extern bool g_nobrink;
 extern bool g_noclipnodemerge;
-extern bool g_watervis;
-extern bool g_chart;
-extern bool g_estimate;
 extern int g_maxnode_size;
 extern int g_subdivide_size;
 extern int g_hullnum;
 extern bool g_bLeakOnly;
 extern bool g_bLeaked;
+extern bool g_bUseNullTex;
+extern bool g_nohull2;
+extern bool g_chart;
+
 extern char g_portfilename[_MAX_PATH];
 extern char g_pointfilename[_MAX_PATH];
 extern char g_linefilename[_MAX_PATH];
 extern char g_bspfilename[_MAX_PATH];
 extern char g_extentfilename[_MAX_PATH];
 
-extern bool g_bUseNullTex;
-
-extern bool g_nohull2;
+extern vec3_t g_hull_size[NUM_HULLS][2];
 
 face_t *NewFaceFromFace(const face_t *const in);
 void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t **back);

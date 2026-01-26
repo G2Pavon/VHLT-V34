@@ -30,11 +30,10 @@
 
 static constexpr const char *ENTITIES_VOID = "entities.void";
 #define ENTITIES_VOID_EXT ".void"
-
 static constexpr int MIN_SUBDIVIDE_SIZE = 64;
 static constexpr int MAX_SUBDIVIDE_SIZE = 512;
-static constexpr int DEFAULT_SUBDIVIDE_SIZE = ((MAX_SURFACE_EXTENT - 1) * TEXTURE_STEP); //#define DEFAULT_SUBDIVIDE_SIZE  240 //--vluzacn
 
+static constexpr int DEFAULT_SUBDIVIDE_SIZE = ((MAX_SURFACE_EXTENT - 1) * TEXTURE_STEP); //#define DEFAULT_SUBDIVIDE_SIZE  240 //--vluzacn
 static constexpr int MIN_MAXNODE_SIZE = 64;
 static constexpr int MAX_MAXNODE_SIZE = 65536;
 
@@ -46,7 +45,6 @@ static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_NOOPT = false;
 static constexpr bool DEFAULT_NOCLIPNODEMERGE = false;
 static constexpr bool DEFAULT_LEAKONLY = false;
-
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_NULLTEX = true;
@@ -66,9 +64,9 @@ vec3_t g_hull_size[NUM_HULLS][2] =
         {// 32x32x36
          {-16, -16, -18},
          {16, 16, 18}}};
+
 static std::FILE *polyfiles[NUM_HULLS];
 static std::FILE *brushfiles[NUM_HULLS];
-int g_hullnum = 0;
 
 static face_t *validfaces[MAX_INTERNAL_MAP_PLANES];
 
@@ -82,22 +80,21 @@ char g_extentfilename[_MAX_PATH];
 bool g_noopt = DEFAULT_NOOPT; // don't optimize BSP on write
 bool g_noclipnodemerge = DEFAULT_NOCLIPNODEMERGE;
 bool g_nofill = DEFAULT_NOFILL; // dont fill "-nofill"
-bool g_noinsidefill = DEFAULT_NOINSIDEFILL;
+static bool g_noinsidefill = DEFAULT_NOINSIDEFILL;
 bool g_notjunc = DEFAULT_NOTJUNC;
 bool g_nobrink = DEFAULT_NOBRINK;
-bool g_noclip = DEFAULT_NOCLIP;     // no clipping hull "-noclip"
-bool g_chart = DEFAULT_CHART;       // print out chart? "-chart"
-bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
+bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
+bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
+static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
 bool g_info = DEFAULT_INFO;
 bool g_bLeakOnly = DEFAULT_LEAKONLY; // leakonly mode "-leakonly"
 bool g_bLeaked = false;
 int g_subdivide_size = DEFAULT_SUBDIVIDE_SIZE;
-
 bool g_bUseNullTex = DEFAULT_NULLTEX; // "-nonulltex"
-
 bool g_nohull2 = false;
-
 bool g_viewportal = false;
+
+int g_hullnum = 0;
 
 dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 
