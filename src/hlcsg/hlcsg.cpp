@@ -289,7 +289,7 @@ static bface_t *NewFaceFromFace(const bface_t *const in)
 static void FreeFace(bface_t *f)
 {
     delete f->w;
-    Free(f);
+    std::free(f);
 }
 
 // =====================================================================================

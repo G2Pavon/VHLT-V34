@@ -598,9 +598,9 @@ static bool ParseMapEntity()
             }
 
             SetKeyValue(mapent, e->key, e->value);
-            Free(e->key);
-            Free(e->value);
-            Free(e);
+            std::free(e->key);
+            std::free(e->value);
+            std::free(e);
         }
     }
     {
@@ -865,7 +865,7 @@ static bool ParseMapEntity()
             g_entities[i].firstbrush += newbrushes;
         }
         std::memset(mapent, 0, sizeof(*mapent));
-        Free(temp);
+        std::free(temp);
         return true;
     }
 

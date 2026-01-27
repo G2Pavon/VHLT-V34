@@ -69,12 +69,3 @@ void *Alloc(const unsigned long size)
 {
     return std::calloc(1, size);
 }
-
-// =====================================================================================
-//  AllocBlock
-// =====================================================================================
-bool Free(void *pointer)
-{
-    std::free(pointer);
-    return true;
-}
