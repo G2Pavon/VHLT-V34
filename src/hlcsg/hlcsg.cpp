@@ -64,10 +64,10 @@ static BoundingBox world_bounds;
 
 static bool g_chart = DEFAULT_CHART;       // show chart "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // progress estimates "-estimate"
-static const char *g_hullfile = NULL;      // external hullfile "-hullfie sdfsd"
-static const char *g_wadcfgfile = NULL;
-static const char *g_wadconfigname = NULL;
-static const char *g_nullfile = NULL;
+static const char *g_hullfile = nullptr;   // external hullfile "-hullfie sdfsd"
+static const char *g_wadcfgfile = nullptr;
+static const char *g_wadconfigname = nullptr;
+static const char *g_nullfile = nullptr;
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_resetlog = DEFAULT_RESETLOG;
 static bool g_noutf8 = DEFAULT_NOUTF8;
@@ -550,7 +550,7 @@ bface_t *CopyFaceList(bface_t *f)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -580,7 +580,7 @@ void FreeFaceList(bface_t *f)
 // =====================================================================================
 static bface_t *CopyFacesToOutside(brushhull_t *bh)
 {
-    bface_t *outside = NULL;
+    bface_t *outside = nullptr;
 
     for (bface_t *f = bh->faces; f; f = f->next)
     {
@@ -684,7 +684,7 @@ static void CSGBrush(int brushnum)
             // fragments are inside
 
             bface_t *f = outside;
-            outside = NULL;
+            outside = nullptr;
             for (; f; f = next)
             {
                 next = f->next;
@@ -790,7 +790,7 @@ static void CSGBrush(int brushnum)
                             else
                             {
                                 FreeFace(f);
-                                f = NULL;
+                                f = nullptr;
                                 break;
                             }
                         }
@@ -800,7 +800,7 @@ static void CSGBrush(int brushnum)
                 {
                     f->next = outside;
                     outside = f;
-                    f = NULL;
+                    f = nullptr;
                 }
                 delete w;
 
@@ -811,7 +811,7 @@ static void CSGBrush(int brushnum)
                             b1->originalentitynum, b1->originalbrushnum);
                     c_tiny_clip++;
                     FreeFace(f);
-                    f = NULL;
+                    f = nullptr;
                 }
                 if (f)
                 {
@@ -1533,8 +1533,8 @@ static void CSGCleanup()
 // =====================================================================================
 int main(const int argc, char **argv)
 {
-    char name[_MAX_PATH];                // mapanme
-    const char *mapname_from_arg = NULL; // mapname path from passed argvar
+    char name[_MAX_PATH];                   // mapanme
+    const char *mapname_from_arg = nullptr; // mapname path from passed argvar
 
     g_Program = "hlcsg";
 

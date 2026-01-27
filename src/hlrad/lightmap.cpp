@@ -108,7 +108,7 @@ static void AddFaceForVertexNormal_printerror(const int edgeabs, const int edgee
             Log(" e=%d v0=%d(%f,%f,%f) v1=%d(%f,%f,%f) share0=%d share1=%d\n", e,
                 v0, g_dvertexes[v0].point[0], g_dvertexes[v0].point[1], g_dvertexes[v0].point[2],
                 v1, g_dvertexes[v1].point[0], g_dvertexes[v1].point[1], g_dvertexes[v1].point[2],
-                (es->faces[0] == NULL ? -1 : es->faces[0] - g_dfaces), (es->faces[1] == NULL ? -1 : es->faces[1] - g_dfaces));
+                (es->faces[0] == nullptr ? -1 : es->faces[0] - g_dfaces), (es->faces[1] == nullptr ? -1 : es->faces[1] - g_dfaces));
         }
     }
 }
@@ -1027,7 +1027,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
     hlassume(frag != NULL, assume_NoMemory);
 
     // some basic info
-    frag->next = NULL;
+    frag->next = nullptr;
     frag->parentfrag = parent;
     frag->parentedge = edge;
     frag->facenum = edge->nextfacenum;
@@ -1054,7 +1054,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         {
             Developer(DEVELOPER_LEVEL_MEGASPAM, "couldn't translate sample boundaries on face %d", frag->facenum);
             std::free(frag);
-            return NULL;
+            return nullptr;
         }
         VectorScale(frag->myrect.planes[x].normal, 1 / len, frag->myrect.planes[x].normal);
         frag->myrect.planes[x].dist /= len;
@@ -1070,7 +1070,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         delete frag->winding;
         std::free(frag->edges);
         std::free(frag);
-        return NULL;
+        return nullptr;
     }
 
     // do overlap test
@@ -1112,7 +1112,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         delete frag->winding;
         std::free(frag->edges);
         std::free(frag);
-        return NULL;
+        return nullptr;
     }
 
     return frag;
@@ -1184,9 +1184,9 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
     info->head = (samplefrag_t *)std::malloc(sizeof(samplefrag_t));
     hlassume(info->head != NULL, assume_NoMemory);
 
-    info->head->next = NULL;
-    info->head->parentfrag = NULL;
-    info->head->parentedge = NULL;
+    info->head->next = nullptr;
+    info->head->parentfrag = nullptr;
+    info->head->parentedge = nullptr;
     info->head->facenum = facenum;
 
     info->head->flippedangle = 0.0;
@@ -1219,7 +1219,7 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
         delete info->head->winding;
         std::free(info->head->edges);
         std::free(info->head);
-        info->head = NULL;
+        info->head = nullptr;
         info->size = 0;
     }
     else
@@ -2129,7 +2129,7 @@ void CreateDirectLights()
     // move all emit_skylight to leaf 0 (the solid leaf)
     if (g_sky_lighting_fix)
     {
-        directlight_t *skylights = NULL;
+        directlight_t *skylights = nullptr;
         for (int l = 0; l < 1 + g_dmodels[0].visleafs; l++)
         {
             directlight_t **pdl;
@@ -2147,7 +2147,7 @@ void CreateDirectLights()
                 }
             }
         }
-        while ((dl = directlights[0]) != NULL)
+        while ((dl = directlights[0]) != nullptr)
         {
             // since they are in leaf 0, they won't emit a light anyway
             directlights[0] = dl->next;
@@ -2264,8 +2264,8 @@ static void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int n
 void BuildDiffuseNormals()
 {
     g_numskynormals[0] = 0;
-    g_skynormals[0] = NULL; //don't use this
-    g_skynormalsizes[0] = NULL;
+    g_skynormals[0] = nullptr; //don't use this
+    g_skynormalsizes[0] = nullptr;
     int numpoints = 6;
     point_t *points = (point_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) + 2) * sizeof(point_t));
     hlassume(points != NULL, assume_NoMemory);
@@ -3811,7 +3811,7 @@ void BuildFacelights(const int facenum)
             else
             {
                 f->styles[k] = 255;
-                fl->samples[k] = NULL;
+                fl->samples[k] = nullptr;
             }
         }
         for (j = 1; j < ALLSTYLES && f_styles[j] != 255; j++)
@@ -3931,13 +3931,13 @@ void BuildFacelights(const int facenum)
             }
         }
         std::free(patch->totalstyle_all);
-        patch->totalstyle_all = NULL;
+        patch->totalstyle_all = nullptr;
         std::free(patch->samplelight_all);
-        patch->samplelight_all = NULL;
+        patch->samplelight_all = nullptr;
         std::free(patch->totallight_all);
-        patch->totallight_all = NULL;
+        patch->totallight_all = nullptr;
         std::free(patch->directlight_all);
-        patch->directlight_all = NULL;
+        patch->directlight_all = nullptr;
     }
     std::free(l.lmcache);
     std::free(l.lmcache_normal);
@@ -4068,7 +4068,7 @@ void PrecompLightmapOffsets()
                 else
                 {
                     f->styles[k] = 255;
-                    fl->samples[k] = NULL;
+                    fl->samples[k] = nullptr;
                 }
             }
             for (int j = 1; j < ALLSTYLES; j++)
@@ -4393,7 +4393,7 @@ void MdlLightHack()
             continue;
         used = 1;
         entity_t *ent2 = FindTargetEntity(target);
-        if (ent2 == NULL)
+        if (ent2 == nullptr)
         {
             Warning("target entity '%s' not found", target);
             continue;
@@ -4430,7 +4430,7 @@ void CreateFacelightDependencyList()
 
     for (int i = 0; i < MAX_MAP_FACES; i++)
     {
-        g_dependentfacelights[i] = NULL;
+        g_dependentfacelights[i] = nullptr;
     }
 
     // for each face
@@ -4451,7 +4451,7 @@ void CreateFacelightDependencyList()
                 if (0 <= surface && surface < g_numfaces)
                 {
                     // insert this face into the dependency list of that surface
-                    for (item = g_dependentfacelights[surface]; item != NULL; item = item->next)
+                    for (item = g_dependentfacelights[surface]; item != nullptr; item = item->next)
                     {
                         if (item->facenum == facenum)
                             break;
@@ -4530,7 +4530,7 @@ void AddPatchLights(int facenum)
         return;
     }
 
-    for (facelightlist_t *item = g_dependentfacelights[facenum]; item != NULL; item = item->next)
+    for (facelightlist_t *item = g_dependentfacelights[facenum]; item != nullptr; item = item->next)
     {
         dface_t *f_other = &g_dfaces[item->facenum];
         facelight_t *fl_other = &facelight[item->facenum];

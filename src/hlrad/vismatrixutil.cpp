@@ -9,7 +9,7 @@
 
 #define MAX_COMPRESSED_TRANSFER_INDEX_SIZE ((1 << 12) - 1)
 
-funcCheckVisBit g_CheckVisBit = NULL;
+funcCheckVisBit g_CheckVisBit = nullptr;
 
 std::size_t g_total_transfer = 0;
 std::size_t g_transfer_index_bytes = 0;
@@ -57,7 +57,7 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
 
     if (!compressed_count_1)
     {
-        return NULL;
+        return nullptr;
     }
 
     transfer_index_t *CompressedArray = (transfer_index_t *)AllocBlock(sizeof(transfer_index_t) * compressed_count_1);

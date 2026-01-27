@@ -22,12 +22,12 @@ bool g_log = DEFAULT_LOG;
 unsigned long g_clientid = 0;
 unsigned long g_nextclientid = 0;
 
-static std::FILE *CompileLog = NULL;
+static std::FILE *CompileLog = nullptr;
 static bool fatal = false;
 
 bool twice = false;
 bool useconsole = false;
-std::FILE *conout = NULL;
+std::FILE *conout = nullptr;
 
 ////////
 
@@ -136,7 +136,7 @@ void LogError(const char *const message)
     if (g_log && CompileLog)
     {
         char logfilename[_MAX_PATH];
-        std::FILE *ErrorLog = NULL;
+        std::FILE *ErrorLog = nullptr;
 
         safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
         ErrorLog = std::fopen(logfilename, "a");
@@ -146,7 +146,7 @@ void LogError(const char *const message)
             std::fprintf(ErrorLog, "%s: %s\n", g_Program, message);
             std::fflush(ErrorLog);
             std::fclose(ErrorLog);
-            ErrorLog = NULL;
+            ErrorLog = nullptr;
         }
         else
         {
@@ -191,7 +191,7 @@ void CDECL CloseLog()
         LogEnd();
         std::fflush(CompileLog);
         std::fclose(CompileLog);
-        CompileLog = NULL;
+        CompileLog = nullptr;
     }
 }
 

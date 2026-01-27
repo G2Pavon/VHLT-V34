@@ -313,7 +313,7 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
     vec3_t dir, test;
     int firstcorner, lastcorner;
 
-    face_t *chain = NULL;
+    face_t *chain = nullptr;
     do
     {
         hlassume(f->original == NULL, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
@@ -488,7 +488,7 @@ static void tjunc_fix_r(node_t *node)
         return;
     }
 
-    newlist = NULL;
+    newlist = nullptr;
 
     for (face_t *f = node->faces; f; f = next)
     {

@@ -15,7 +15,7 @@ std::set<std::string> g_invisible_items;
 
 void properties_initialize(const char *filename)
 {
-    if (filename == NULL)
+    if (filename == nullptr)
     {
         return;
     }

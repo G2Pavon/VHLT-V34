@@ -13,7 +13,7 @@
 void writetransfers(const char *const transferfile, const long total_patches)
 {
     std::FILE *file = std::fopen(transferfile, "w+b");
-    if (file != NULL)
+    if (file != nullptr)
     {
 
         Log("Writing transfers file [%s]\n", transferfile);
@@ -90,7 +90,7 @@ bool readtransfers(const char *const transferfile, const long numpatches)
     long total_patches;
 
     std::FILE *file = std::fopen(transferfile, "rb");
-    if (file != NULL)
+    if (file != nullptr)
     {
 
         Log("Reading transfers file [%s]\n", transferfile);
@@ -168,8 +168,8 @@ FailedRead:
         FreeBlock(patch->tIndex);
         patch->iData = 0;
         patch->iIndex = 0;
-        patch->tData = NULL;
-        patch->tIndex = NULL;
+        patch->tData = nullptr;
+        patch->tIndex = nullptr;
     }
 }
     std::fclose(file);

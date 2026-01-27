@@ -799,23 +799,23 @@ static char *FindWadValue()
             if (g_dentdata[linestart] == '{')
             {
                 if (inentity)
-                    return NULL;
+                    return nullptr;
                 inentity = true;
             }
             else if (g_dentdata[linestart] == '}')
             {
                 if (!inentity)
-                    return NULL;
+                    return nullptr;
                 inentity = false;
                 return _strdup(""); // only parse the first entity
             }
             else
-                return NULL;
+                return nullptr;
         }
         else
         {
             if (!inentity)
-                return NULL;
+                return nullptr;
             int quotes[4];
             int i, j;
             for (i = 0, j = linestart; i < 4; i++, j++)
@@ -829,7 +829,7 @@ static char *FindWadValue()
             }
             if (i != 4 || quotes[0] != linestart || quotes[3] != lineend - 1)
             {
-                return NULL;
+                return nullptr;
             }
             if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !std::strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
             {
@@ -845,7 +845,7 @@ static char *FindWadValue()
             if (g_dentdata[linestart] != '\r' && g_dentdata[linestart] != '\n')
                 break;
     }
-    return NULL;
+    return nullptr;
 }
 
 #define ENTRIES(a) (sizeof(a) / sizeof(*(a)))
@@ -928,7 +928,7 @@ void PrintBSPFileSizes()
     {
         Log("Wad files required to run the map: (None)\n");
     }
-    else if (wadvalue == NULL)
+    else if (wadvalue == nullptr)
     {
         Log("Wad files required to run the map: (Couldn't parse wad keyvalue from entity data)\n");
     }
@@ -1346,7 +1346,7 @@ void UnparseEntities()
                 newent->epairs = mapent->epairs;
                 SetKeyValue(newent, "classname", "light_environment");
                 SetKeyValue(newent, "_fake", "1");
-                mapent->epairs = NULL;
+                mapent->epairs = nullptr;
             }
         }
     }
@@ -1567,7 +1567,7 @@ entity_t *FindTargetEntity(const char *const target)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void dtexdata_init()
@@ -1581,9 +1581,9 @@ void dtexdata_init()
 void CDECL dtexdata_free()
 {
     FreeBlock(g_dtexdata);
-    g_dtexdata = NULL;
+    g_dtexdata = nullptr;
     FreeBlock(g_dlightdata);
-    g_dlightdata = NULL;
+    g_dlightdata = nullptr;
 }
 
 // =====================================================================================

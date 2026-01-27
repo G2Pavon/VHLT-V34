@@ -307,7 +307,7 @@ void ScaleDirectLights();             // run before AddPatchLights
 void CreateFacelightDependencyList(); // run before AddPatchLights
 void AddPatchLights(int facenum);
 void FreeFacelightDependencyList();
-int TestLine(const vec3_t start, const vec3_t stop, vec_t *skyhitout = NULL);
+int TestLine(const vec3_t start, const vec3_t stop, vec_t *skyhitout = nullptr);
 
 typedef struct
 {

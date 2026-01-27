@@ -30,13 +30,13 @@ static double threadtimes[THREADTIMES_SIZE];
 
 int GetThreadWork()
 {
-    static const char *s1 = NULL;
-    static const char *s2 = NULL;
+    static const char *s1 = nullptr;
+    static const char *s2 = nullptr;
 
     ThreadLock();
-    if (s1 == NULL)
+    if (s1 == nullptr)
         s1 = "  (%d%%: est. time to completion %ld/%ld/%ld secs)   ";
-    if (s2 == NULL)
+    if (s2 == nullptr)
         s2 = "  (%d%%: est. time to completion <1 sec)   ";
 
     if (dispatch == 0)

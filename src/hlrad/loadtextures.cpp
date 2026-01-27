@@ -17,7 +17,7 @@ typedef struct waddir_s
     struct waddir_s *next;
     char path[_MAX_PATH];
 } waddir_t;
-waddir_t *g_waddirs = NULL;
+waddir_t *g_waddirs = nullptr;
 
 void AddWadFolder(const char *path)
 {
@@ -54,7 +54,7 @@ typedef struct wadfile_s
     lumpinfo_t *lumpinfos;
 } wadfile_t;
 
-wadfile_t *g_wadfiles = NULL;
+wadfile_t *g_wadfiles = nullptr;
 bool g_wadfiles_opened;
 
 static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
@@ -619,7 +619,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
     numnodes++;
 
     n->isleafnode = true;
-    n->parentnode = NULL;
+    n->parentnode = nullptr;
     n->numpoints = numpoints;
     n->refpoints = pointarray;
     CQ_SelectPartition(n);
@@ -663,7 +663,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
             n->isleafnode = true;
             n->parentnode = bestnode;
             n->numpoints = 0;
-            n->refpoints = NULL;
+            n->refpoints = nullptr;
         }
 
         // partition the points using the best splitter

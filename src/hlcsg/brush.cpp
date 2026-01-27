@@ -731,7 +731,7 @@ static void SortSides(brushhull_t *h)
     }
     for (i = -1; i < numsides; i++)
     {
-        *(i >= 0 ? &sides[sorted[i]]->next : &h->faces) = (i + 1 < numsides ? sides[sorted[i + 1]] : NULL);
+        *(i >= 0 ? &sides[sorted[i]]->next : &h->faces) = (i + 1 < numsides ? sides[sorted[i + 1]] : nullptr);
     }
     std::free(sides);
     std::free(normals);
@@ -1130,7 +1130,7 @@ void CreateBrush(const int brushnum) //--vluzacn
     {
         if (b->cliphull)
         {
-            b->hulls[0].faces = NULL;
+            b->hulls[0].faces = nullptr;
         }
         return;
     }
@@ -1146,7 +1146,7 @@ void CreateBrush(const int brushnum) //--vluzacn
             }
         }
         b->contents = CONTENTS_SOLID;
-        b->hulls[0].faces = NULL;
+        b->hulls[0].faces = nullptr;
     }
     else
     {
@@ -1388,7 +1388,7 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
     }
     else
     {
-        hb = NULL;
+        hb = nullptr;
         Error("Entity %i, Brush %i: invalid brush. This brush cannot be used for info_hullshape.",
               b->originalentitynum, b->originalbrushnum);
     }

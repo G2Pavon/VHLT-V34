@@ -141,7 +141,7 @@ dleaf_t *HuntForWorld(vec_t *point, const vec_t *plane_offset, const dplane_t *p
     vec3_t original_point;
 
     vec3_t best_point;
-    dleaf_t *best_leaf = NULL;
+    dleaf_t *best_leaf = nullptr;
     vec_t best_dist = 99999999.0;
 
     vec3_t scales;
@@ -563,10 +563,10 @@ void FindFacePositions(int facenum)
     positionmap_t *map = &g_face_positions[facenum];
     map->valid = true;
     map->facenum = facenum;
-    map->facewinding = NULL;
-    map->facewindingwithoffset = NULL;
-    map->texwinding = NULL;
-    map->grid = NULL;
+    map->facewinding = nullptr;
+    map->facewindingwithoffset = nullptr;
+    map->texwinding = nullptr;
+    map->grid = nullptr;
 
     texinfo_t *ti = &g_texinfo[f->texinfo];
     if (ti->flags & TEX_SPECIAL)
@@ -610,11 +610,11 @@ void FindFacePositions(int facenum)
     if (map->texwinding->m_NumPoints == 0)
     {
         delete map->facewinding;
-        map->facewinding = NULL;
+        map->facewinding = nullptr;
         delete map->facewindingwithoffset;
-        map->facewindingwithoffset = NULL;
+        map->facewindingwithoffset = nullptr;
         delete map->texwinding;
-        map->texwinding = NULL;
+        map->texwinding = nullptr;
         map->valid = false;
         return;
     }
@@ -653,11 +653,11 @@ void FindFacePositions(int facenum)
     if (map->w <= 0 || map->h <= 0 || (double)map->w * (double)map->h > 99999999)
     {
         delete map->facewinding;
-        map->facewinding = NULL;
+        map->facewinding = nullptr;
         delete map->facewindingwithoffset;
-        map->facewindingwithoffset = NULL;
+        map->facewindingwithoffset = nullptr;
         delete map->texwinding;
-        map->texwinding = NULL;
+        map->texwinding = nullptr;
         map->valid = false;
         return;
     }
@@ -723,13 +723,13 @@ void FreePositionMaps()
         if (map->valid)
         {
             delete map->facewinding;
-            map->facewinding = NULL;
+            map->facewinding = nullptr;
             delete map->facewindingwithoffset;
-            map->facewindingwithoffset = NULL;
+            map->facewindingwithoffset = nullptr;
             delete map->texwinding;
-            map->texwinding = NULL;
+            map->texwinding = nullptr;
             std::free(map->grid);
-            map->grid = NULL;
+            map->grid = nullptr;
             map->valid = false;
         }
     }

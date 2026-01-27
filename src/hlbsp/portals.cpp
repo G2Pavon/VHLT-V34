@@ -71,12 +71,12 @@ void RemovePortalFromNode(portal_t *portal, node_t *l)
     if (portal->nodes[0] == l)
     {
         *pp = portal->next[0];
-        portal->nodes[0] = NULL;
+        portal->nodes[0] = nullptr;
     }
     else if (portal->nodes[1] == l)
     {
         *pp = portal->next[1];
-        portal->nodes[1] = NULL;
+        portal->nodes[1] = nullptr;
     }
 }
 

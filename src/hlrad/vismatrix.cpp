@@ -212,7 +212,7 @@ static void FreeVisMatrix()
     {
         if (FreeBlock(s_vismatrix))
         {
-            s_vismatrix = NULL;
+            s_vismatrix = nullptr;
         }
         else
         {

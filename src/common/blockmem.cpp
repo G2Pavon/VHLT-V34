@@ -30,7 +30,7 @@ void *AllocBlock(const unsigned long size)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 
     return pointer;
@@ -41,7 +41,7 @@ void *AllocBlock(const unsigned long size)
 // =====================================================================================
 bool FreeBlock(void *pointer)
 {
-    if (!pointer)
+    if (pointer == nullptr)
     {
         Warning("Freeing a null pointer");
     }

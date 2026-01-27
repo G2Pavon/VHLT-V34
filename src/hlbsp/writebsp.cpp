@@ -169,7 +169,7 @@ void WriteClipNodes(node_t *nodes)
 {
     // we only merge among the clipnodes of the same hull of the same model
     clipnodemap_t outputmap;
-    WriteClipNodes_r(nodes, NULL, &outputmap);
+    WriteClipNodes_r(nodes, nullptr, &outputmap);
 }
 
 // =====================================================================================
@@ -295,7 +295,7 @@ static void WriteFace(face_t *f)
         g_numsurfedges++;
     }
     std::free(f->outputedges);
-    f->outputedges = NULL;
+    f->outputedges = nullptr;
 }
 
 // =====================================================================================
@@ -508,7 +508,7 @@ void WriteDrawNodes(node_t *headnode)
     {
         nextdetaillevel = OutputEdges_r(headnode, detaillevel);
     }
-    WriteDrawNodes_r(headnode, NULL);
+    WriteDrawNodes_r(headnode, nullptr);
 }
 
 // =====================================================================================

@@ -38,7 +38,7 @@ static constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 static bool fastvis = DEFAULT_FASTVIS;
 static const int overview_max = MAX_MAP_ENTITIES;
 static int overview_count = 0;
-static leafinfo_t *leafinfos = NULL;
+static leafinfo_t *leafinfos = nullptr;
 static int totalvis = 0;
 
 static int *leafstarts;
@@ -194,13 +194,13 @@ static portal_t *GetNextPortal()
     {
         if (GetThreadWork() == -1)
         {
-            return NULL;
+            return nullptr;
         }
 
         ThreadLock();
 
         int min = 99999;
-        portal_t *p = NULL;
+        portal_t *p = nullptr;
 
         for (j = 0, tp = g_portals; j < g_numportals * 2; j++, tp++)
         {
@@ -474,7 +474,7 @@ static void CalcVis()
 // =====================================================================================
 static INLINE void FASTCALL CheckNullToken(const char *const token)
 {
-    if (token == NULL)
+    if (token == nullptr)
     {
         Error("LoadPortals: Damaged or invalid .prt file\n");
     }
@@ -782,7 +782,7 @@ int main(const int argc, char **argv)
 {
     char portalfile[_MAX_PATH];
     char source[_MAX_PATH];
-    const char *mapname_from_arg = NULL;
+    const char *mapname_from_arg = nullptr;
 
     g_Program = "hlvis";
 
