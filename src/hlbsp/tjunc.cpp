@@ -316,7 +316,7 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
     face_t *chain = nullptr;
     do
     {
-        hlassume(f->original == NULL, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
+        hlassume(f->original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
 
         if (f->numpoints <= MAXPOINTS)
         { // the face is now small enough without more cutting
@@ -376,7 +376,7 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
 
         face_t *newface = NewFaceFromFace(f);
 
-        hlassume(f->original == NULL, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
+        hlassume(f->original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
 
         newface->original = chain;
         chain = newface;

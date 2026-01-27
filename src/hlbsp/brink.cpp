@@ -301,7 +301,7 @@ static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 {
     numobjects++;
     btreepoint_t *tp = (btreepoint_t *)std::malloc(sizeof(btreepoint_t));
-    hlassume(tp != NULL, assume_NoMemory);
+    hlassume(tp != nullptr, assume_NoMemory);
     tp->edges = new btreeedge_l();
     tp->infinite = infinite;
     return tp;
@@ -311,7 +311,7 @@ static btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
 {
     numobjects++;
     btreeedge_t *te = (btreeedge_t *)std::malloc(sizeof(btreeedge_t));
-    hlassume(te != NULL, assume_NoMemory);
+    hlassume(te != nullptr, assume_NoMemory);
     te->points[0].p = nullptr;
     te->points[0].side = false;
     te->points[1].p = nullptr;
@@ -352,7 +352,7 @@ static btreeface_t *AllocTreeface(int &numobjects, bool infinite)
 {
     numobjects++;
     btreeface_t *tf = (btreeface_t *)std::malloc(sizeof(btreeface_t));
-    hlassume(tf != NULL, assume_NoMemory);
+    hlassume(tf != nullptr, assume_NoMemory);
     tf->edges = new btreeedge_l();
     tf->leafs[0].l = nullptr;
     tf->leafs[0].side = false;
@@ -410,7 +410,7 @@ static btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 {
     numobjects++;
     btreeleaf_t *tl = (btreeleaf_t *)std::malloc(sizeof(btreeleaf_t));
-    hlassume(tl != NULL, assume_NoMemory);
+    hlassume(tl != nullptr, assume_NoMemory);
     tl->faces = new btreeface_l();
     tl->infinite = infinite;
     return tl;
@@ -1142,11 +1142,11 @@ static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnode
 static void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headnode)
 {
     bclipnode_t *bclipnodes = (bclipnode_t *)std::malloc(MAXCLIPNODES * sizeof(bclipnode_t)); // 262144 * 30byte = 7.5MB
-    hlassume(bclipnodes != NULL, assume_NoMemory);
+    hlassume(bclipnodes != nullptr, assume_NoMemory);
     info->numclipnodes = 0;
     ExpandClipnodes_r(bclipnodes, info->numclipnodes, clipnodes, headnode);
     info->clipnodes = (bclipnode_t *)std::malloc(info->numclipnodes * sizeof(bclipnode_t));
-    hlassume(info->clipnodes != NULL, assume_NoMemory);
+    hlassume(info->clipnodes != nullptr, assume_NoMemory);
     std::memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
     for (int i = 0; i < info->numclipnodes; i++)
     {
@@ -1453,7 +1453,7 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
         return false; // the whole leaf is on the plane, or the leaf doesn't consist of any vertex
     }
     bpartition_t *p = (bpartition_t *)std::malloc(sizeof(bpartition_t));
-    hlassume(p != NULL, assume_NoMemory);
+    hlassume(p != nullptr, assume_NoMemory);
     p->next = clipnode->partitions;
     p->planenum = planenum;
     p->planeside = planeside;

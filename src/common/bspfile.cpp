@@ -699,7 +699,7 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
                 return;
             }
             block->next = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
-            hlassume(block->next != NULL, assume_NoMemory);
+            hlassume(block->next != nullptr, assume_NoMemory);
             std::memset(block->next, 0, sizeof(lightmapblock_t));
         }
     }
@@ -707,7 +707,7 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 int CountBlocks()
 {
     lightmapblock_t *blocks = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
-    hlassume(blocks != NULL, assume_NoMemory);
+    hlassume(blocks != nullptr, assume_NoMemory);
     std::memset(blocks, 0, sizeof(lightmapblock_t));
 
     for (int k = 0; k < g_numfaces; k++)
@@ -835,7 +835,7 @@ static char *FindWadValue()
             {
                 int len = quotes[3] - (quotes[2] + 1);
                 char *value = (char *)std::malloc(len + 1);
-                hlassume(value != NULL, assume_NoMemory);
+                hlassume(value != nullptr, assume_NoMemory);
                 std::memcpy(value, &g_dentdata[quotes[2] + 1], len);
                 value[len] = '\0';
                 return value;
@@ -1030,7 +1030,7 @@ void DeleteEmbeddedLightmaps()
     // Step 2: remove redundant texinfo
     {
         bool *texinfoused = (bool *)std::malloc(g_numtexinfo * sizeof(bool));
-        hlassume(texinfoused != NULL, assume_NoMemory);
+        hlassume(texinfoused != nullptr, assume_NoMemory);
 
         for (i = 0; i < g_numtexinfo; i++)
         {
@@ -1071,7 +1071,7 @@ void DeleteEmbeddedLightmaps()
     // Step 3: remove redundant textures
     {
         bool *textureused = (bool *)std::malloc(numtextures * sizeof(bool));
-        hlassume(textureused != NULL, assume_NoMemory);
+        hlassume(textureused != nullptr, assume_NoMemory);
 
         for (i = 0; i < numtextures; i++)
         {
@@ -1393,7 +1393,7 @@ void UnparseEntities()
         int j;
         int count = 0;
         bool *lightneedcompare = (bool *)std::malloc(g_numentities * sizeof(bool));
-        hlassume(lightneedcompare != NULL, assume_NoMemory);
+        hlassume(lightneedcompare != nullptr, assume_NoMemory);
         std::memset(lightneedcompare, 0, g_numentities * sizeof(bool));
         for (int i = g_numentities - 1; i > -1; i--)
         {
@@ -1573,9 +1573,9 @@ entity_t *FindTargetEntity(const char *const target)
 void dtexdata_init()
 {
     g_dtexdata = (byte *)AllocBlock(g_max_map_miptex);
-    hlassume(g_dtexdata != NULL, assume_NoMemory);
+    hlassume(g_dtexdata != nullptr, assume_NoMemory);
     g_dlightdata = (byte *)AllocBlock(g_max_map_lightdata);
-    hlassume(g_dlightdata != NULL, assume_NoMemory);
+    hlassume(g_dlightdata != nullptr, assume_NoMemory);
 }
 
 void CDECL dtexdata_free()

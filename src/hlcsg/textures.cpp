@@ -428,7 +428,7 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
             for (int i = 0; i < MIPLEVELS; i++)
                 miptex->offsets[i] = 0;
             writewad_data = (byte *)std::malloc(source->disksize);
-            hlassume(writewad_data != NULL, assume_NoMemory);
+            hlassume(writewad_data != nullptr, assume_NoMemory);
             if (std::fseek(texfiles[source->iTexFile], source->filepos, SEEK_SET))
                 Error("File read failure");
             SafeRead(texfiles[source->iTexFile], writewad_data, source->disksize);
@@ -625,7 +625,7 @@ void WriteMiptex()
         std::FILE *writewad_file = SafeOpenWrite(writewad_name);
         int writewad_maxlumpinfos = nummiptex;
         dlumpinfo_t *writewad_lumpinfos = (dlumpinfo_t *)std::malloc(writewad_maxlumpinfos * sizeof(dlumpinfo_t));
-        hlassume(writewad_lumpinfos != NULL, assume_NoMemory);
+        hlassume(writewad_lumpinfos != nullptr, assume_NoMemory);
         writewad_header.identification[0] = 'W';
         writewad_header.identification[1] = 'A';
         writewad_header.identification[2] = 'D';

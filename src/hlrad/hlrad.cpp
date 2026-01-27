@@ -1505,7 +1505,7 @@ static void AddFaceToOpaqueList(
         g_max_opaque_face_count += OPAQUE_ARRAY_GROWTH_SIZE;
         g_opaque_face_list = (opaqueList_t *)realloc(g_opaque_face_list, sizeof(opaqueList_t) * g_max_opaque_face_count);
 
-        hlassume(g_opaque_face_list != NULL, assume_NoMemory);
+        hlassume(g_opaque_face_list != nullptr, assume_NoMemory);
     }
 
     {

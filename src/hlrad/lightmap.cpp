@@ -50,9 +50,9 @@ static intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
 {
     dface_t *f = &g_dfaces[facenum];
     intersecttest_t *t = (intersecttest_t *)std::malloc(sizeof(intersecttest_t));
-    hlassume(t != NULL, assume_NoMemory);
+    hlassume(t != nullptr, assume_NoMemory);
     t->clipplanes = (dplane_t *)std::malloc(f->numedges * sizeof(dplane_t));
-    hlassume(t->clipplanes != NULL, assume_NoMemory);
+    hlassume(t->clipplanes != nullptr, assume_NoMemory);
     t->numclipplanes = 0;
 
     for (int j = 0; j < f->numedges; j++)
@@ -467,7 +467,7 @@ void PairEdges()
                                 if (!in)
                                 {
                                     facelist_t *l = (facelist_t *)std::malloc(sizeof(facelist_t));
-                                    hlassume(l != NULL, assume_NoMemory);
+                                    hlassume(l != nullptr, assume_NoMemory);
                                     l->face = fcurrent;
                                     l->next = e->vertex_facelist[edgeend];
                                     e->vertex_facelist[edgeend] = l;
@@ -668,14 +668,14 @@ static void CalcFaceExtents(lightinfo_t *l)
         l->lmcachewidth = l->texsize[0] * l->lmcache_density + 1 + 2 * l->lmcache_side;
         l->lmcacheheight = l->texsize[1] * l->lmcache_density + 1 + 2 * l->lmcache_side;
         l->lmcache = (vec3_t(*)[ALLSTYLES])std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
-        hlassume(l->lmcache != NULL, assume_NoMemory);
+        hlassume(l->lmcache != nullptr, assume_NoMemory);
         l->lmcache_normal = (vec3_t *)std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t));
-        hlassume(l->lmcache_normal != NULL, assume_NoMemory);
+        hlassume(l->lmcache_normal != nullptr, assume_NoMemory);
         l->lmcache_wallflags = (int *)std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(int));
-        hlassume(l->lmcache_wallflags != NULL, assume_NoMemory);
+        hlassume(l->lmcache_wallflags != nullptr, assume_NoMemory);
         l->surfpt_position = (vec3_t *)std::malloc(MAX_SINGLEMAP * sizeof(vec3_t));
         l->surfpt_surface = (int *)std::malloc(MAX_SINGLEMAP * sizeof(int));
-        hlassume(l->surfpt_position != NULL && l->surfpt_surface != NULL, assume_NoMemory);
+        hlassume(l->surfpt_position != NULL && l->surfpt_surface != nullptr, assume_NoMemory);
     }
 }
 
@@ -907,7 +907,7 @@ static void ChopFrag(samplefrag_t *frag)
     // find the edges where the fragment can grow in the future
     frag->numedges = 0;
     frag->edges = (samplefragedge_t *)std::malloc(f->numedges * sizeof(samplefragedge_t));
-    hlassume(frag->edges != NULL, assume_NoMemory);
+    hlassume(frag->edges != nullptr, assume_NoMemory);
     for (int i = 0; i < f->numedges; i++)
     {
 
@@ -1024,7 +1024,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
 {
 
     samplefrag_t *frag = (samplefrag_t *)std::malloc(sizeof(samplefrag_t));
-    hlassume(frag != NULL, assume_NoMemory);
+    hlassume(frag != nullptr, assume_NoMemory);
 
     // some basic info
     frag->next = nullptr;
@@ -1077,7 +1077,7 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
 
     bool overlap = false;
     dplane_t *clipplanes = (dplane_t *)std::malloc(frag->winding->m_NumPoints * sizeof(dplane_t));
-    hlassume(clipplanes != NULL, assume_NoMemory);
+    hlassume(clipplanes != nullptr, assume_NoMemory);
     int numclipplanes = 0;
     for (int x = 0; x < frag->winding->m_NumPoints; x++)
     {
@@ -1178,11 +1178,11 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
     const vec3_t v_t = {0, 1, 0};
 
     samplefraginfo_t *info = (samplefraginfo_t *)std::malloc(sizeof(samplefraginfo_t));
-    hlassume(info != NULL, assume_NoMemory);
+    hlassume(info != nullptr, assume_NoMemory);
     info->maxsize = maxsize;
     info->size = 1;
     info->head = (samplefrag_t *)std::malloc(sizeof(samplefrag_t));
-    hlassume(info->head != NULL, assume_NoMemory);
+    hlassume(info->head != nullptr, assume_NoMemory);
 
     info->head->next = nullptr;
     info->head->parentfrag = nullptr;
@@ -1587,7 +1587,7 @@ void CreateDirectLights()
             numdlights++;
             dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
 
-            hlassume(dl != NULL, assume_NoMemory);
+            hlassume(dl != nullptr, assume_NoMemory);
 
             VectorCopy(p->origin, dl->origin);
 
@@ -1654,7 +1654,7 @@ void CreateDirectLights()
                 directlight_t *dl2;
                 numdlights++;
                 dl2 = (directlight_t *)std::calloc(1, sizeof(directlight_t));
-                hlassume(dl2 != NULL, assume_NoMemory);
+                hlassume(dl2 != nullptr, assume_NoMemory);
                 *dl2 = *dl;
                 VectorMA(dl->origin, -2, dl->normal, dl2->origin);
                 VectorSubtract(vec3_origin, dl->normal, dl2->normal);
@@ -1716,7 +1716,7 @@ void CreateDirectLights()
         numdlights++;
         dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
 
-        hlassume(dl != NULL, assume_NoMemory);
+        hlassume(dl != nullptr, assume_NoMemory);
 
         GetVectorForKey(e, "origin", dl->origin);
 
@@ -1993,8 +1993,8 @@ void CreateDirectLights()
                         dl->numsunnormals = count;
                         dl->sunnormals = (vec3_t *)std::malloc(count * sizeof(vec3_t));
                         dl->sunnormalweights = (vec_t *)std::malloc(count * sizeof(vec_t));
-                        hlassume(dl->sunnormals != NULL, assume_NoMemory);
-                        hlassume(dl->sunnormalweights != NULL, assume_NoMemory);
+                        hlassume(dl->sunnormals != nullptr, assume_NoMemory);
+                        hlassume(dl->sunnormalweights != nullptr, assume_NoMemory);
                         for (count = 0, i = 0; i < g_numskynormals[SUNSPREAD_SKYLEVEL]; i++)
                         {
                             vec3_t &testnormal = g_skynormals[SUNSPREAD_SKYLEVEL][i];
@@ -2032,8 +2032,8 @@ void CreateDirectLights()
                     dl->numsunnormals = 1;
                     dl->sunnormals = (vec3_t *)std::malloc(sizeof(vec3_t));
                     dl->sunnormalweights = (vec_t *)std::malloc(sizeof(vec_t));
-                    hlassume(dl->sunnormals != NULL, assume_NoMemory);
-                    hlassume(dl->sunnormalweights != NULL, assume_NoMemory);
+                    hlassume(dl->sunnormals != nullptr, assume_NoMemory);
+                    hlassume(dl->sunnormalweights != nullptr, assume_NoMemory);
                     VectorCopy(dl->normal, dl->sunnormals[0]);
                     dl->sunnormalweights[0] = 1.0;
                 }
@@ -2230,8 +2230,8 @@ static void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int n
     g_numskynormals[skylevel] = numpoints;
     g_skynormals[skylevel] = (vec3_t *)std::malloc(numpoints * sizeof(vec3_t));
     g_skynormalsizes[skylevel] = (vec_t *)std::malloc(numpoints * sizeof(vec_t));
-    hlassume(g_skynormals[skylevel] != NULL, assume_NoMemory);
-    hlassume(g_skynormalsizes[skylevel] != NULL, assume_NoMemory);
+    hlassume(g_skynormals[skylevel] != nullptr, assume_NoMemory);
+    hlassume(g_skynormalsizes[skylevel] != nullptr, assume_NoMemory);
 
     for (int j = 0; j < numpoints; j++)
     {
@@ -2268,7 +2268,7 @@ void BuildDiffuseNormals()
     g_skynormalsizes[0] = nullptr;
     int numpoints = 6;
     point_t *points = (point_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) + 2) * sizeof(point_t));
-    hlassume(points != NULL, assume_NoMemory);
+    hlassume(points != nullptr, assume_NoMemory);
     points[0][0] = 1, points[0][1] = 0, points[0][2] = 0;
     points[1][0] = -1, points[1][1] = 0, points[1][2] = 0;
     points[2][0] = 0, points[2][1] = 1, points[2][2] = 0;
@@ -2277,7 +2277,7 @@ void BuildDiffuseNormals()
     points[5][0] = 0, points[5][1] = 0, points[5][2] = -1;
     int numedges = 12;
     edge_t *edges = (edge_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) * 4 - 4) * sizeof(edge_t));
-    hlassume(edges != NULL, assume_NoMemory);
+    hlassume(edges != nullptr, assume_NoMemory);
     edges[0].point[0] = 0, edges[0].point[1] = 2, edges[0].divided = false;
     edges[1].point[0] = 2, edges[1].point[1] = 1, edges[1].divided = false;
     edges[2].point[0] = 1, edges[2].point[1] = 3, edges[2].divided = false;
@@ -2292,7 +2292,7 @@ void BuildDiffuseNormals()
     edges[11].point[0] = 1, edges[11].point[1] = 4, edges[11].divided = false;
     int numtriangles = 8;
     triangle_t *triangles = (triangle_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) * 2) * sizeof(triangle_t));
-    hlassume(triangles != NULL, assume_NoMemory);
+    hlassume(triangles != nullptr, assume_NoMemory);
     triangles[0].edge[0] = 0, triangles[0].dir[0] = 0, triangles[0].edge[1] = 4, triangles[0].dir[1] = 0, triangles[0].edge[2] = 8, triangles[0].dir[2] = 0;
     triangles[1].edge[0] = 1, triangles[1].dir[0] = 0, triangles[1].edge[1] = 11, triangles[1].dir[1] = 0, triangles[1].edge[2] = 4, triangles[1].dir[2] = 1;
     triangles[2].edge[0] = 2, triangles[2].dir[0] = 0, triangles[2].edge[1] = 5, triangles[2].dir[1] = 1, triangles[2].edge[2] = 11, triangles[2].dir[2] = 1;
@@ -2837,7 +2837,7 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
         numtexwindings++;
     }
     Winding **texwindings = (Winding **)std::malloc(numtexwindings * sizeof(Winding *));
-    hlassume(texwindings != NULL, assume_NoMemory);
+    hlassume(texwindings != nullptr, assume_NoMemory);
 
     // translate world winding into winding in s,t plane
     for (j = 0, patch = g_face_patches[facenum]; j < numtexwindings; j++, patch = patch->next)
@@ -3415,7 +3415,7 @@ void BuildFacelights(const int facenum)
     for (int k = 0; k < ALLSTYLES; k++)
     {
         fl_samples[k] = (sample_t *)std::calloc(l.numsurfpt, sizeof(sample_t));
-        hlassume(fl_samples[k] != NULL, assume_NoMemory);
+        hlassume(fl_samples[k] != nullptr, assume_NoMemory);
     }
     for (patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next)
     {
@@ -3805,7 +3805,7 @@ void BuildFacelights(const int facenum)
                 maxlights[bestindex] = 0;
                 f->styles[k] = f_styles[bestindex];
                 fl->samples[k] = (sample_t *)std::malloc(fl->numsamples * sizeof(sample_t));
-                hlassume(fl->samples[k] != NULL, assume_NoMemory);
+                hlassume(fl->samples[k] != nullptr, assume_NoMemory);
                 std::memcpy(fl->samples[k], fl_samples[bestindex], fl->numsamples * sizeof(sample_t));
             }
             else
@@ -4044,7 +4044,7 @@ void PrecompLightmapOffsets()
                     maxlights[beststyle] = 0;
                     f->styles[k] = beststyle;
                     fl->samples[k] = (sample_t *)std::malloc(fl->numsamples * sizeof(sample_t));
-                    hlassume(fl->samples[k] != NULL, assume_NoMemory);
+                    hlassume(fl->samples[k] != nullptr, assume_NoMemory);
                     for (i = 0; i < MAXLIGHTMAPS && oldstyles[i] != 255; i++)
                     {
                         if (oldstyles[i] == f->styles[k])
@@ -4107,7 +4107,7 @@ void PrecompLightmapOffsets()
 void ReduceLightmap()
 {
     byte *oldlightdata = (byte *)std::malloc(g_lightdatasize);
-    hlassume(oldlightdata != NULL, assume_NoMemory);
+    hlassume(oldlightdata != nullptr, assume_NoMemory);
     std::memcpy(oldlightdata, g_dlightdata, g_lightdatasize);
     g_lightdatasize = 0;
 
@@ -4462,7 +4462,7 @@ void CreateFacelightDependencyList()
                     }
 
                     item = (facelightlist_t *)std::malloc(sizeof(facelightlist_t));
-                    hlassume(item != NULL, assume_NoMemory);
+                    hlassume(item != nullptr, assume_NoMemory);
                     item->facenum = facenum;
                     item->next = g_dependentfacelights[surface];
                     g_dependentfacelights[surface] = item;
@@ -4654,8 +4654,8 @@ void FinalLightFace(const int facenum)
 
     vec3_t *original_basiclight = (vec3_t *)std::calloc(fl->numsamples, sizeof(vec3_t));
     final_basiclight = (int (*)[3])std::calloc(fl->numsamples, sizeof(int[3]));
-    hlassume(original_basiclight != NULL, assume_NoMemory);
-    hlassume(final_basiclight != NULL, assume_NoMemory);
+    hlassume(original_basiclight != nullptr, assume_NoMemory);
+    hlassume(final_basiclight != nullptr, assume_NoMemory);
     for (int k = 0; k < lightstyles; k++)
     {
         sample_t *samp = fl->samples[k];

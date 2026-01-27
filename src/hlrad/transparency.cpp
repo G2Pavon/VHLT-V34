@@ -59,7 +59,7 @@ static unsigned AddTransparencyToDataList(const vec3_t trans)
 
         s_trans_list = (vec3_t *)realloc(s_trans_list, sizeof(vec3_t) * s_max_trans_count);
 
-        hlassume(s_trans_list != NULL, assume_NoMemory);
+        hlassume(s_trans_list != nullptr, assume_NoMemory);
 
         std::memset(&s_trans_list[old_max_count], 0, sizeof(vec3_t) * (s_max_trans_count - old_max_count));
 
@@ -97,7 +97,7 @@ void AddTransparencyToRawArray(const unsigned p1, const unsigned p2, const vec3_
 
         s_raw_list = (transList_t *)realloc(s_raw_list, sizeof(transList_t) * s_max_raw_count);
 
-        hlassume(s_raw_list != NULL, assume_NoMemory);
+        hlassume(s_raw_list != nullptr, assume_NoMemory);
 
         std::memset(&s_raw_list[old_max_count], 0, sizeof(transList_t) * (s_max_raw_count - old_max_count));
     }
@@ -146,7 +146,7 @@ void CreateFinalTransparencyArrays(const char *print_name)
     s_sorted_count = s_raw_count * 2;
     s_sorted_list = (transList_t *)std::malloc(sizeof(transList_t) * s_sorted_count);
 
-    hlassume(s_sorted_list != NULL, assume_NoMemory);
+    hlassume(s_sorted_list != nullptr, assume_NoMemory);
 
     //First half have p1>p2
     for (unsigned int i = 0; i < s_raw_count; i++)
@@ -264,7 +264,7 @@ void AddStyleToStyleArray(const unsigned p1, const unsigned p2, const int style)
 
         s_style_list = (styleList_t *)realloc(s_style_list, sizeof(styleList_t) * s_max_style_count);
 
-        hlassume(s_style_list != NULL, assume_NoMemory);
+        hlassume(s_style_list != nullptr, assume_NoMemory);
 
         std::memset(&s_style_list[old_max_count], 0, sizeof(styleList_t) * (s_max_style_count - old_max_count));
     }

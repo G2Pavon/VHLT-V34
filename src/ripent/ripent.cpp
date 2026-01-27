@@ -456,7 +456,7 @@ static void WriteTextures(const char *const name)
 
         lumpinfo_t *info;
         info = (lumpinfo_t *)std::malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t));
-        hlassume(info != NULL, assume_NoMemory);
+        hlassume(info != nullptr, assume_NoMemory);
         std::memset(info, 0, header.numlumps * sizeof(lumpinfo_t));
 
         for (int i = 0; i < header.numlumps; i++)
@@ -495,7 +495,7 @@ static void WriteTextures(const char *const name)
 
         lumpinfo_t *info;
         info = (lumpinfo_t *)std::malloc(((dmiptexlump_t *)g_dtexdata)->nummiptex * sizeof(lumpinfo_t)); // might be more than needed
-        hlassume(info != NULL, assume_NoMemory);
+        hlassume(info != nullptr, assume_NoMemory);
 
         std::fprintf(texfile, "%d\r\n", ((dmiptexlump_t *)g_dtexdata)->nummiptex);
         std::fseek(wadfile, sizeof(wadinfo_t), SEEK_SET);
@@ -571,7 +571,7 @@ static void ReadTextures(const char *name)
 
         lumpinfo_t *info;
         info = (lumpinfo_t *)std::malloc(header.numlumps * sizeof(lumpinfo_t));
-        hlassume(info != NULL, assume_NoMemory);
+        hlassume(info != nullptr, assume_NoMemory);
         SafeRead(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
 
         for (int i = 0; i < header.numlumps; i++)
@@ -592,7 +592,7 @@ static void ReadTextures(const char *name)
 
         lumpinfo_t *info;
         info = (lumpinfo_t *)std::malloc(header.numlumps * sizeof(lumpinfo_t));
-        hlassume(info != NULL, assume_NoMemory);
+        hlassume(info != nullptr, assume_NoMemory);
         SafeRead(wadfile, info, header.numlumps * sizeof(lumpinfo_t));
 
         int nummiptex = 0;
@@ -670,7 +670,7 @@ static void WriteEntities(const char *const name)
         {
             bak_entdatasize = g_entdatasize;
             bak_dentdata = (char *)std::malloc(g_entdatasize);
-            hlassume(bak_dentdata != NULL, assume_NoMemory);
+            hlassume(bak_dentdata != nullptr, assume_NoMemory);
             std::memcpy(bak_dentdata, g_dentdata, g_entdatasize);
             ParseEntityData("  ", 2, "\r\n", 2, "", 0);
         }

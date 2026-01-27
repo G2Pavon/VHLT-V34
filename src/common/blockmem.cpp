@@ -16,7 +16,7 @@ void *AllocBlock(size_t size)
 
     void *p = std::calloc(1, size);
 
-    hlassume(p != NULL, assume_NoMemory);
+    hlassume(p != nullptr, assume_NoMemory);
 
     return p;
 }

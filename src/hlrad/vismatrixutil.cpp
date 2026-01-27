@@ -270,8 +270,8 @@ void MakeScales(const int threadnum)
             patch->tData = (transfer_data_t *)AllocBlock(data_size);
             patch->tIndex = CompressTransferIndicies(tIndex_All, patch->iData, &patch->iIndex);
 
-            hlassume(patch->tData != NULL, assume_NoMemory);
-            hlassume(patch->tIndex != NULL, assume_NoMemory);
+            hlassume(patch->tData != nullptr, assume_NoMemory);
+            hlassume(patch->tIndex != nullptr, assume_NoMemory);
 
             ThreadLock();
             g_transfer_data_bytes += data_size;
@@ -508,8 +508,8 @@ void MakeRGBScales(const int threadnum)
             patch->tRGBData = (rgb_transfer_data_t *)AllocBlock(data_size);
             patch->tIndex = CompressTransferIndicies(tIndex_All, patch->iData, &patch->iIndex);
 
-            hlassume(patch->tRGBData != NULL, assume_NoMemory);
-            hlassume(patch->tIndex != NULL, assume_NoMemory);
+            hlassume(patch->tRGBData != nullptr, assume_NoMemory);
+            hlassume(patch->tIndex != nullptr, assume_NoMemory);
 
             ThreadLock();
             g_transfer_data_bytes += data_size;

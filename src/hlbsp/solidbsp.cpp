@@ -654,7 +654,7 @@ static surface_t *SelectPartition(surface_t *surfaces, const node_t *const node,
 // =====================================================================================
 static void CalcSurfaceInfo(surface_t *surf)
 {
-    hlassume(surf->faces != NULL, assume_ValidPointer); // "CalcSurfaceInfo() surface without a face"
+    hlassume(surf->faces != nullptr, assume_ValidPointer); // "CalcSurfaceInfo() surface without a face"
 
     //
     // calculate a bounding box
