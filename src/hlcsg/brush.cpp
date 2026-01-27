@@ -146,7 +146,7 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
             } //don't add a plane twice
         }
     }
-    bface_t *new_face = (bface_t *)Alloc(sizeof(bface_t)); // TODO: This leaks
+    bface_t *new_face = (bface_t *)std::calloc(1, sizeof(bface_t)); // TODO: This leaks
     new_face->planenum = planenum;
     new_face->plane = &g_mapplanes[new_face->planenum];
     new_face->next = hull->faces;
@@ -851,7 +851,7 @@ static bool MakeBrushPlanes(brush_t *b)
             }
         }
 
-        f = (bface_t *)Alloc(sizeof(*f)); // TODO: This leaks
+        f = (bface_t *)std::calloc(1, sizeof(*f)); // TODO: This leaks
 
         f->planenum = planenum;
         f->plane = &g_mapplanes[planenum];

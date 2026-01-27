@@ -384,7 +384,7 @@ void LoadAllowableOutsideList(const char *const filename)
     {
         unsigned len = std::strlen(filename) + 5;
 
-        fname = (char *)Alloc(len);
+        fname = (char *)std::calloc(1, len);
         safe_snprintf(fname, len, "%s", filename);
     }
 

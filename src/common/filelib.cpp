@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <cstdio>
 #include <cerrno>
 #include <cstring>
@@ -84,7 +85,7 @@ int LoadFile(const char *const filename, char **bufferptr)
 {
     std::FILE *f = SafeOpenRead(filename);
     int length = q_filelength(f);
-    char *buffer = (char *)Alloc(length + 1);
+    char *buffer = (char *)std::calloc(1, length + 1);
     SafeRead(f, buffer, length);
     std::fclose(f);
 

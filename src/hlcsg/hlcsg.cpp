@@ -272,7 +272,7 @@ void GetParamsFromEnt(entity_t *mapent)
 // =====================================================================================
 static bface_t *NewFaceFromFace(const bface_t *const in)
 {
-    bface_t *newf = (bface_t *)Alloc(sizeof(bface_t));
+    bface_t *newf = (bface_t *)std::calloc(1, sizeof(bface_t));
 
     newf->contents = in->contents;
     newf->texinfo = in->texinfo;

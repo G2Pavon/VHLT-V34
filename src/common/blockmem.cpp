@@ -1,12 +1,9 @@
-#include <cstdlib>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "cmdlib.h"
+#include "blockmem.h"
 #include "messages.h"
 #include "log.h"
-#include "hlassert.h"
-#include "blockmem.h"
 
 // =====================================================================================
 //  AllocBlock
@@ -59,13 +56,4 @@ bool FreeBlock(void *pointer)
         Warning("Could not translate pointer into handle");
         return false;
     }
-}
-
-// =====================================================================================
-//  AllocBlock
-// =====================================================================================
-// HeapAlloc/HeapFree is thread safe by default
-void *Alloc(const unsigned long size)
-{
-    return std::calloc(1, size);
 }

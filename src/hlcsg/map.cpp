@@ -841,7 +841,7 @@ static bool ParseMapEntity()
         int newbrushes = mapent->numbrushes;
         int worldbrushes = g_entities[0].numbrushes;
 
-        brush_t *temp = (brush_t *)Alloc(newbrushes * sizeof(brush_t));
+        brush_t *temp = (brush_t *)std::calloc(1, newbrushes * sizeof(brush_t));
         std::memcpy(temp, g_mapbrushes + mapent->firstbrush, newbrushes * sizeof(brush_t));
 
         for (int i = 0; i < newbrushes; i++)

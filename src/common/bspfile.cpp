@@ -1133,7 +1133,7 @@ void DeleteEmbeddedLightmaps()
 // =====================================================================================
 epair_t *ParseEpair()
 {
-    epair_t *e = (epair_t *)Alloc(sizeof(epair_t));
+    epair_t *e = (epair_t *)std::calloc(1, sizeof(epair_t));
 
     if (std::strlen(g_token) >= MAX_KEY - 1)
         Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)std::strlen(g_token));
@@ -1496,7 +1496,7 @@ void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
             return;
         }
     }
-    ep = (epair_t *)Alloc(sizeof(*ep));
+    ep = (epair_t *)std::calloc(1, sizeof(*ep));
     ep->next = ent->epairs;
     ent->epairs = ep;
     ep->key = strdup(key);
