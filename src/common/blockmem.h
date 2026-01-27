@@ -1,4 +1,6 @@
 #pragma once
 
-void *AllocBlock(unsigned long size);
+#include <cstddef>
+
+void *AllocBlock(size_t size);
 bool FreeBlock(void *pointer);
