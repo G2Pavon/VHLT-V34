@@ -675,7 +675,7 @@ static void CalcFaceExtents(lightinfo_t *l)
         hlassume(l->lmcache_wallflags != nullptr, assume_NoMemory);
         l->surfpt_position = (vec3_t *)std::malloc(MAX_SINGLEMAP * sizeof(vec3_t));
         l->surfpt_surface = (int *)std::malloc(MAX_SINGLEMAP * sizeof(int));
-        hlassume(l->surfpt_position != NULL && l->surfpt_surface != nullptr, assume_NoMemory);
+        hlassume(l->surfpt_position != nullptr && l->surfpt_surface != nullptr, assume_NoMemory);
     }
 }
 

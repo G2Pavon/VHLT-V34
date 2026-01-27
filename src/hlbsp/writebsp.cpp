@@ -578,12 +578,12 @@ void FinishBSPFile()
             int Num = 0, Size = 0;
             int *Map = (int *)std::malloc(g_nummiptex * sizeof(int));
 
-            hlassume(Used != NULL && Map != nullptr, assume_NoMemory);
+            hlassume(Used != nullptr && Map != nullptr, assume_NoMemory);
             int *lumpsizes = (int *)std::malloc(g_nummiptex * sizeof(int));
             const int newdatasizemax = g_texdatasize - ((byte *)&l->dataofs[g_nummiptex] - (byte *)l);
             byte *newdata = (byte *)std::malloc(newdatasizemax);
             int newdatasize = 0;
-            hlassume(lumpsizes != NULL && newdata != nullptr, assume_NoMemory);
+            hlassume(lumpsizes != nullptr && newdata != nullptr, assume_NoMemory);
             int total = 0;
             for (int i = 0; i < g_nummiptex; i++)
             {
