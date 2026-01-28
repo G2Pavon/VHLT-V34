@@ -1,8 +1,4 @@
-#include <cstdio>
-
 #include "hlcsg.h"
-#include "common/filelib.h"
-#include "common/log.h"
 #include "common/mathtypes.h"
 
 vec3_t g_hull_size[NUM_HULLS][2] =
@@ -19,75 +15,3 @@ vec3_t g_hull_size[NUM_HULLS][2] =
         {// 32x32x36
          {-16, -16, -18},
          {16, 16, 18}}};
-
-void LoadHullfile(const char *filename)
-{
-    if (filename == nullptr)
-    {
-        return;
-    }
-
-    if (q_exists(filename))
-    {
-        Log("Loading hull definitions from '%s'\n", filename);
-    }
-    else
-    {
-        Error("Could not find hull definition file '%s'\n", filename);
-        return;
-    }
-
-    float x1, y1, z1;
-    float x2, y2, z2;
-
-    std::FILE *file = std::fopen(filename, "r");
-
-    char magic = (char)std::fgetc(file);
-    std::rewind(file);
-
-    if (magic == '(')
-    { // Test for old-style hull-file
-
-        for (int i = 0; i < NUM_HULLS; i++)
-        {
-            int count = std::fscanf(file, "( %f %f %f ) ( %f %f %f )\n", &x1, &y1, &z1, &x2, &y2, &z2);
-            if (count != 6)
-            {
-                Error("Could not parse old hull definition file '%s' (%d, %d)\n", filename, i, count);
-            }
-
-            g_hull_size[i][0][0] = x1;
-            g_hull_size[i][0][1] = y1;
-            g_hull_size[i][0][2] = z1;
-
-            g_hull_size[i][1][0] = x2;
-            g_hull_size[i][1][1] = y2;
-            g_hull_size[i][1][2] = z2;
-        }
-    }
-    else
-    {
-        // Skip hull 0 (visibile polygons)
-        for (int i = 1; i < NUM_HULLS; i++)
-        {
-            int count = std::fscanf(file, "%f %f %f\n", &x1, &y1, &z1);
-            if (count != 3)
-            {
-                Error("Could not parse new hull definition file '%s' (%d, %d)\n", filename, i, count);
-            }
-            x1 *= 0.5;
-            y1 *= 0.5;
-            z1 *= 0.5;
-
-            g_hull_size[i][0][0] = -x1;
-            g_hull_size[i][0][1] = -y1;
-            g_hull_size[i][0][2] = -z1;
-
-            g_hull_size[i][1][0] = x1;
-            g_hull_size[i][1][1] = y1;
-            g_hull_size[i][1][2] = z1;
-        }
-    }
-
-    std::fclose(file);
-}

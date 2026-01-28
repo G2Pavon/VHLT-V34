@@ -64,7 +64,6 @@ static BoundingBox world_bounds;
 
 static bool g_chart = DEFAULT_CHART;       // show chart "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // progress estimates "-estimate"
-static const char *g_hullfile = nullptr;   // external hullfile "-hullfie sdfsd"
 static const char *g_wadcfgfile = nullptr;
 static const char *g_wadconfigname = nullptr;
 static const char *g_nullfile = nullptr;
@@ -140,13 +139,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     sprintf_s(szTmp, "%i", g_max_map_miptex);
     Log("%30s [ %-9s ]\n", "Texture Data Memory", szTmp);
-
-    // hullfile(string) : "Custom Hullfile"
-    if (ValueForKey(mapent, "hullfile"))
-    {
-        g_hullfile = ValueForKey(mapent, "hullfile");
-        Log("%30s [ %-9s ]\n", "Custom Hullfile", g_hullfile);
-    }
 
     // wadautodetect(choices) : "Wad Auto Detect" : 0 =	[ 0 : "Off" 1 : "On" ]
     if (!std::strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
@@ -1365,7 +1357,6 @@ static void Usage()
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
     Log("    -tiny #          : minmum brush face surface area before it is discarded\n");
     Log("    -brushunion #    : threshold to warn about overlapping brushes\n\n");
-    Log("    -hullfile file   : Reads in custom collision hull dimensions\n");
     Log("    -wadcfgfile file : wad configuration file\n");
     Log("    -wadconfig name  : use the old wad configuration approach (select a group from wad.cfg)\n");
     Log("    -texdata #       : Alter maximum texture memory limit (in kb)\n");
@@ -1473,7 +1464,6 @@ static void Settings()
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-    Log("hullfile              [ %7s ] [ %7s ]\n", g_hullfile ? g_hullfile : "None", "None");
     Log("wad configuration file[ %7s ] [ %7s ]\n", g_wadcfgfile ? g_wadcfgfile : "None", "None");
     Log("wad.cfg group name    [ %7s ] [ %7s ]\n", g_wadconfigname ? g_wadconfigname : "None", "None");
     Log("nullfile              [ %7s ] [ %7s ]\n", g_nullfile ? g_nullfile : "None", "None");
@@ -1771,17 +1761,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                else if (!strcasecmp(argv[i], "-hullfile"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_hullfile = argv[++i];
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-wadcfgfile"))
                 {
                     if (i + 1 < argc)
@@ -1902,29 +1881,6 @@ int main(const int argc, char **argv)
             //  before settings are finalised and printed out, so that the info_compile_parameters
             //  entity can be dealt with effectively
             double start = I_FloatTime();
-            if (g_hullfile)
-            {
-                char temp[_MAX_PATH];
-                char test[_MAX_PATH];
-                safe_strncpy(temp, g_Mapname, _MAX_PATH);
-                ExtractFilePath(temp, test);
-                safe_strncat(test, g_hullfile, _MAX_PATH);
-                if (q_exists(test))
-                {
-                    g_hullfile = strdup(test);
-                }
-                else
-                {
-
-                    GetModuleFileName(NULL, temp, _MAX_PATH);
-                    ExtractFilePath(temp, test);
-                    safe_strncat(test, g_hullfile, _MAX_PATH);
-                    if (q_exists(test))
-                    {
-                        g_hullfile = strdup(test);
-                    }
-                }
-            }
             if (g_nullfile)
             {
                 char temp[_MAX_PATH];
@@ -1972,7 +1928,6 @@ int main(const int argc, char **argv)
                 }
             }
 
-            LoadHullfile(g_hullfile); // if the user specified a hull file, load it now
             if (g_bUseNullTex)
             {
                 properties_initialize(g_nullfile);
