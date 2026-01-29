@@ -72,34 +72,3 @@ void LoadWadconfig(const char *filename, const char *configname)
     std::free(buffer); // should not be freed because it is still being used as script buffer
                        //Log ("Using custom wadfile configuration: '%s' (with %i wad%s)\n", configname, count, count > 1 ? "s" : "");
 }
-void LoadWadcfgfile(const char *filename)
-{
-    Log("Loading wad configuration file '%s' :\n", filename);
-    int count = 0;
-    char *buffer;
-    int size = LoadFile(filename, &buffer);
-    ParseFromMemory(buffer, size);
-    while (GetToken(true))
-    {
-        Log(" ");
-        bool include = false;
-        if (!strcasecmp(g_token, "include"))
-        {
-            Log("include ");
-            include = true;
-            if (!GetToken(true))
-            {
-                Error("parsing '%s': unexpected end of file.", filename);
-            }
-        }
-        Log("\"%s\"\n", g_token);
-        if (g_iNumWadPaths >= MAX_WADPATHS)
-        {
-            Error("parsing '%s': too many wad files.", filename);
-        }
-        count++;
-        PushWadPath(g_token, !include);
-    }
-    std::free(buffer); // should not be freed because it is still being used as script buffer
-                       //Log ("Using custom wadfile configuration: '%s' (with %i wad%s)\n", filename, count, count > 1 ? "s" : "");
-}
