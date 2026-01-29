@@ -83,7 +83,6 @@ add_executable(hlcsg
     ${SRC_DIR}/hlcsg/brushunion.cpp
     ${SRC_DIR}/hlcsg/hullfile.cpp
     ${SRC_DIR}/hlcsg/map.cpp
-    ${SRC_DIR}/hlcsg/properties.cpp
     ${SRC_DIR}/hlcsg/hlcsg.cpp
     ${SRC_DIR}/hlcsg/textures.cpp
     ${SRC_DIR}/hlcsg/wadpath.cpp

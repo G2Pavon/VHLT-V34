@@ -62,9 +62,8 @@ static int c_outfaces;
 static int c_csgfaces;
 static BoundingBox world_bounds;
 
-static bool g_chart = DEFAULT_CHART;       // show chart "-chart"
-static bool g_estimate = DEFAULT_ESTIMATE; // progress estimates "-estimate"
-static const char *g_nullfile = nullptr;
+static bool g_chart = DEFAULT_CHART;        // show chart "-chart"
+static bool g_estimate = DEFAULT_ESTIMATE;  // progress estimates "-estimate"
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_resetlog = DEFAULT_RESETLOG;
 static bool g_noutf8 = DEFAULT_NOUTF8;
@@ -1336,7 +1335,6 @@ static void Usage()
     Log("    -clipeconomy     : turn clipnode economy mode on\n");
 
     Log("    -cliptype value  : set to smallest, normalized, simple, precise, or legacy (default)\n");
-    Log("    -nullfile file   : specify list of entities to retexture with NULL\n");
 
     Log("    -onlyents        : do an entity update from .map to .bsp\n");
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
@@ -1447,7 +1445,6 @@ static void Settings()
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-    Log("nullfile              [ %7s ] [ %7s ]\n", g_nullfile ? g_nullfile : "None", "None");
     Log("nullify trigger       [ %7s ] [ %7s ]\n", g_nullifytrigger ? "on" : "off", DEFAULT_NULLIFYTRIGGER ? "on" : "off");
     // calc min surface area
     {
@@ -1655,19 +1652,6 @@ int main(const int argc, char **argv)
                     }
                 }
 
-                else if (!strcasecmp(argv[i], "-nullfile"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_nullfile = argv[++i];
-                    }
-                    else
-                    {
-                        Log("Error: -nullfile: expected path to null ent file following parameter\n");
-                        Usage();
-                    }
-                }
-
                 else if (!strcasecmp(argv[i], "-wadautodetect"))
                 {
                     g_bWadAutoDetect = true;
@@ -1840,34 +1824,7 @@ int main(const int argc, char **argv)
             //  before settings are finalised and printed out, so that the info_compile_parameters
             //  entity can be dealt with effectively
             double start = I_FloatTime();
-            if (g_nullfile)
-            {
-                char temp[_MAX_PATH];
-                char test[_MAX_PATH];
-                safe_strncpy(temp, g_Mapname, _MAX_PATH);
-                ExtractFilePath(temp, test);
-                safe_strncat(test, g_nullfile, _MAX_PATH);
-                if (q_exists(test))
-                {
-                    g_nullfile = strdup(test);
-                }
-                else
-                {
 
-                    GetModuleFileName(NULL, temp, _MAX_PATH);
-                    ExtractFilePath(temp, test);
-                    safe_strncat(test, g_nullfile, _MAX_PATH);
-                    if (q_exists(test))
-                    {
-                        g_nullfile = strdup(test);
-                    }
-                }
-            }
-
-            if (g_bUseNullTex)
-            {
-                properties_initialize(g_nullfile);
-            }
             safe_strncpy(name, mapname_from_arg, _MAX_PATH); // make a copy of the nap name
             FlipSlashes(name);
             DefaultExtension(name, ".map"); // might be .reg

@@ -124,16 +124,6 @@ constexpr double ScaleCorrection(1.0 / 128.0);
 static bool CheckForInvisible(entity_t *mapent)
 {
     std::string keyval(ValueForKey(mapent, "classname"));
-    if (g_invisible_items.count(keyval))
-    {
-        return true;
-    }
-
-    keyval.assign(ValueForKey(mapent, "targetname"));
-    if (g_invisible_items.count(keyval))
-    {
-        return true;
-    }
 
     keyval.assign(ValueForKey(mapent, "zhlt_invisible"));
     if (!keyval.empty() && std::strcmp(keyval.c_str(), "0"))

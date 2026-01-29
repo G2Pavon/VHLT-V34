@@ -229,10 +229,4 @@ extern vec3_t g_hull_size[NUM_HULLS][2];
 
 extern bool g_bWadAutoDetect;
 
-//=============================================================================
-// properties.cpp
-
-void properties_initialize(const char *filename);
-extern std::set<std::string> g_invisible_items;
-
 //============================================================================
