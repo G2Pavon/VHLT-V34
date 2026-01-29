@@ -64,7 +64,6 @@ static BoundingBox world_bounds;
 
 static bool g_chart = DEFAULT_CHART;       // show chart "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // progress estimates "-estimate"
-static const char *g_wadconfigname = nullptr;
 static const char *g_nullfile = nullptr;
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_resetlog = DEFAULT_RESETLOG;
@@ -149,13 +148,6 @@ void GetParamsFromEnt(entity_t *mapent)
         g_bWadAutoDetect = false;
     }
     Log("%30s [ %-9s ]\n", "Wad Auto Detect", g_bWadAutoDetect ? "on" : "off");
-
-    // wadconfig(string) : "Custom Wad Configuration" : ""
-    if (*ValueForKey(mapent, "wadconfig"))
-    {
-        g_wadconfigname = _strdup(ValueForKey(mapent, "wadconfig"));
-        Log("%30s [ %-9s ]\n", "Custom Wad Configuration Name", g_wadconfigname);
-    }
 
     // noclipeconomy(choices) : "Strip Uneeded Clipnodes?" : 1 = [ 1 : "Yes" 0 : "No" ]
     iTmp = IntForKey(mapent, "noclipeconomy");
@@ -1350,7 +1342,6 @@ static void Usage()
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
     Log("    -tiny #          : minmum brush face surface area before it is discarded\n");
     Log("    -brushunion #    : threshold to warn about overlapping brushes\n\n");
-    Log("    -wadconfig name  : use the old wad configuration approach (select a group from wad.cfg)\n");
     Log("    -texdata #       : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #     : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart           : display bsp statitics\n");
@@ -1456,7 +1447,6 @@ static void Settings()
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-    Log("wad.cfg group name    [ %7s ] [ %7s ]\n", g_wadconfigname ? g_wadconfigname : "None", "None");
     Log("nullfile              [ %7s ] [ %7s ]\n", g_nullfile ? g_nullfile : "None", "None");
     Log("nullify trigger       [ %7s ] [ %7s ]\n", g_nullifytrigger ? "on" : "off", DEFAULT_NULLIFYTRIGGER ? "on" : "off");
     // calc min surface area
@@ -1752,17 +1742,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                else if (!strcasecmp(argv[i], "-wadconfig"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_wadconfigname = argv[++i];
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-scale"))
                 {
                     if (i + 1 < argc)
@@ -1932,22 +1911,8 @@ int main(const int argc, char **argv)
 
             if (!g_onlyents)
             {
-                if (g_wadconfigname)
-                {
-                    char temp[_MAX_PATH];
-                    char test[_MAX_PATH];
-
-                    GetModuleFileName(NULL, temp, _MAX_PATH);
-                    ExtractFilePath(temp, test);
-                    safe_strncat(test, "wad.cfg", _MAX_PATH);
-
-                    LoadWadconfig(test, g_wadconfigname);
-                }
-                else
-                {
-                    Log("Using mapfile wad configuration\n");
-                    GetUsedWads();
-                }
+                Log("Using mapfile wad configuration\n");
+                GetUsedWads();
 
                 if (g_bWadAutoDetect)
                 {
