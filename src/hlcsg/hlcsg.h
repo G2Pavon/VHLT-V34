@@ -201,7 +201,6 @@ const char *GetClipTypeString(cliptype);
 
 extern vec_t g_scalesize;
 extern bool g_nolightopt;
-extern bool g_nullifytrigger;
 extern vec_t g_BrushUnionThreshold;
 
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];

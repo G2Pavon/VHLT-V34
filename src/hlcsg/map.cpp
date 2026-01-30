@@ -387,15 +387,13 @@ static void ParseBrush(entity_t *mapent)
             std::strcpy(side->td.name, "NULL");
         }
     }
-    if (g_nullifytrigger)
+
+    for (int j = 0; j < b->numsides; j++)
     {
-        for (int j = 0; j < b->numsides; j++)
+        side_t *side = &g_brushsides[b->firstside + j];
+        if (!strncasecmp(side->td.name, "AAATRIGGER", 10))
         {
-            side_t *side = &g_brushsides[b->firstside + j];
-            if (!strncasecmp(side->td.name, "AAATRIGGER", 10))
-            {
-                std::strcpy(side->td.name, "NULL");
-            }
+            std::strcpy(side->td.name, "NULL");
         }
     }
 

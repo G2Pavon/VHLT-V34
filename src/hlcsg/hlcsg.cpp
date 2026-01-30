@@ -48,7 +48,6 @@ static constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
 static constexpr bool DEFAULT_RESETLOG = true;
 static constexpr bool DEFAULT_NOLIGHTOPT = false;
 static constexpr bool DEFAULT_NOUTF8 = false;
-static constexpr bool DEFAULT_NULLIFYTRIGGER = true;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
@@ -78,7 +77,6 @@ cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
 bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 vec_t g_scalesize = DEFAULT_SCALESIZE;
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
-bool g_nullifytrigger = DEFAULT_NULLIFYTRIGGER;
 
 // =====================================================================================
 //  GetParamsFromEnt
@@ -1349,8 +1347,6 @@ static void Usage()
     Log("    -verbose         : compile with verbose messages\n");
     Log("    -noinfo          : Do not show tool configuration information\n");
 
-    Log("    -nonullifytrigger: don't remove 'aaatrigger' texture\n");
-
     Log("    -nolightopt      : don't optimize engine light entities\n");
 
     Log("    -notextconvert   : don't convert game_text message from Windows ANSI to UTF8 format\n");
@@ -1440,7 +1436,6 @@ static void Settings()
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-    Log("nullify trigger       [ %7s ] [ %7s ]\n", g_nullifytrigger ? "on" : "off", DEFAULT_NULLIFYTRIGGER ? "on" : "off");
     // calc min surface area
     {
         char tiny_penetration[10];
@@ -1742,10 +1737,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-viewsurface"))
                 {
                     g_viewsurface = true;
-                }
-                else if (!strcasecmp(argv[i], "-nonullifytrigger"))
-                {
-                    g_nullifytrigger = false;
                 }
                 else if (argv[i][0] == '-')
                 {
