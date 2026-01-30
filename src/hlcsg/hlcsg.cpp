@@ -42,7 +42,6 @@ static constexpr bool DEFAULT_WADTEXTURES = true;
 static constexpr bool DEFAULT_SKYCLIP = true;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
-static constexpr bool DEFAULT_NULLTEX = true;
 static constexpr bool DEFAULT_CLIPNAZI = false;
 static constexpr bool DEFAULT_WADAUTODETECT = false;
 static constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
@@ -75,7 +74,6 @@ bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
 bool g_wadtextures = DEFAULT_WADTEXTURES;      // "-nowadtextures"
 bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
 bool g_info = DEFAULT_INFO;                    // "-info" ?
-bool g_bUseNullTex = DEFAULT_NULLTEX;          // "-nonulltex"
 cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
 bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 vec_t g_scalesize = DEFAULT_SCALESIZE;
@@ -1351,7 +1349,6 @@ static void Usage()
     Log("    -verbose         : compile with verbose messages\n");
     Log("    -noinfo          : Do not show tool configuration information\n");
 
-    Log("    -nonulltex       : Turns off null texture stripping\n");
     Log("    -nonullifytrigger: don't remove 'aaatrigger' texture\n");
 
     Log("    -nolightopt      : don't optimize engine light entities\n");
@@ -1435,8 +1432,6 @@ static void Settings()
     // HLCSG Specific Settings
 
     Log("noclip                [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
-
-    Log("null texture stripping[ %7s ] [ %7s ]\n", g_bUseNullTex ? "on" : "off", DEFAULT_NULLTEX ? "on" : "off");
 
     Log("clipnode economy mode [ %7s ] [ %7s ]\n", g_bClipNazi ? "on" : "off", DEFAULT_CLIPNAZI ? "on" : "off");
 
@@ -1607,11 +1602,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-onlyents"))
                 {
                     g_onlyents = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-nonulltex"))
-                {
-                    g_bUseNullTex = false;
                 }
 
                 else if (!strcasecmp(argv[i], "-clipeconomy"))
