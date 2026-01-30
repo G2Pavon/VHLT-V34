@@ -66,7 +66,6 @@ static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_resetlog = DEFAULT_RESETLOG;
 static bool g_noutf8 = DEFAULT_NOUTF8;
 static vec_t g_tiny_threshold = DEFAULT_TINY_THRESHOLD;
-static bool g_viewsurface = false;
 
 bool g_noclip = DEFAULT_NOCLIP;                // no clipping hull "-noclip"
 bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
@@ -289,28 +288,6 @@ static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 
     // put in an extra line break
     std::fprintf(out[hull], "\n");
-    if (g_viewsurface)
-    {
-        static bool side = false;
-        side = !side;
-        if (side)
-        {
-            vec3_t center, center2;
-            w->getCenter(center);
-            VectorAdd(center, f->plane->normal, center2);
-            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
-            for (unsigned int i = 0; i < w->m_NumPoints; i++)
-            {
-                vec_t *p1 = w->m_Points[i];
-                vec_t *p2 = w->m_Points[(i + 1) % w->m_NumPoints];
-                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
-                std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
-            }
-            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-            std::fprintf(out_view[hull], "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
-        }
-    }
 
     ThreadUnlock();
 }
@@ -1734,10 +1711,6 @@ int main(const int argc, char **argv)
                 {
                     g_noutf8 = true;
                 }
-                else if (!strcasecmp(argv[i], "-viewsurface"))
-                {
-                    g_viewsurface = true;
-                }
                 else if (argv[i][0] == '-')
                 {
                     Log("Unknown option \"%s\"\n", argv[i]);
@@ -1913,13 +1886,6 @@ int main(const int argc, char **argv)
                 out_detailbrush[i] = std::fopen(name, "w");
                 if (!out_detailbrush[i])
                     Error("Couldn't open %s", name);
-                if (g_viewsurface)
-                {
-                    safe_snprintf(name, _MAX_PATH, "%s_surface%i.pts", g_Mapname, i);
-                    out_view[i] = std::fopen(name, "w");
-                    if (!out[i])
-                        Error("Counldn't open %s", name);
-                }
             }
             {
                 char name[_MAX_PATH];
@@ -1952,10 +1918,6 @@ int main(const int argc, char **argv)
             {
                 std::fclose(out[i]);
                 std::fclose(out_detailbrush[i]);
-                if (g_viewsurface)
-                {
-                    std::fclose(out_view[i]);
-                }
             }
 
             EmitPlanes();
