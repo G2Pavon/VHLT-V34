@@ -45,7 +45,6 @@ static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_CLIPNAZI = false;
 static constexpr bool DEFAULT_WADAUTODETECT = false;
 static constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
-static constexpr bool DEFAULT_RESETLOG = true;
 static constexpr bool DEFAULT_NOLIGHTOPT = false;
 static constexpr bool DEFAULT_NOUTF8 = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
@@ -63,7 +62,6 @@ static BoundingBox world_bounds;
 static bool g_chart = DEFAULT_CHART;        // show chart "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE;  // progress estimates "-estimate"
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
-static bool g_resetlog = DEFAULT_RESETLOG;
 static bool g_noutf8 = DEFAULT_NOUTF8;
 static vec_t g_tiny_threshold = DEFAULT_TINY_THRESHOLD;
 
@@ -1318,7 +1316,6 @@ static void Usage()
     Log("    -chart           : display bsp statitics\n");
     Log("    -low | -high     : run program an altered priority level\n");
     Log("    -nolog           : don't generate the compile logfiles\n");
-    Log("    -noresetlog      : Do not delete log file\n");
     Log("    -threads #       : manually specify the number of threads to run\n");
     Log("    -estimate        : display estimated time during compile\n");
     Log("    -verbose         : compile with verbose messages\n");
@@ -1378,7 +1375,6 @@ static void Settings()
 
     Log("verbose               [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
     Log("log                   [ %7s ] [ %7s ]\n", g_log ? "on" : "off", DEFAULT_LOG ? "on" : "off");
-    Log("reset logfile         [ %7s ] [ %7s ]\n", g_resetlog ? "on" : "off", DEFAULT_RESETLOG ? "on" : "off");
 
     Log("developer             [ %7d ] [ %7d ]\n", g_developer, DEFAULT_DEVELOPER);
     Log("chart                 [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
@@ -1699,10 +1695,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                else if (!strcasecmp(argv[i], "-noresetlog"))
-                {
-                    g_resetlog = false;
-                }
                 else if (!strcasecmp(argv[i], "-nolightopt"))
                 {
                     g_nolightopt = true;
@@ -1746,7 +1738,7 @@ int main(const int argc, char **argv)
 
             // other stuff
             ResetErrorLog();
-            if (!g_onlyents && g_resetlog)
+            if (!g_onlyents)
                 ResetLog();
             OpenLog(g_clientid);
             std::atexit(CloseLog);
