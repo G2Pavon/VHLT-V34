@@ -199,7 +199,6 @@ extern cliptype g_cliptype;
 
 const char *GetClipTypeString(cliptype);
 
-extern vec_t g_scalesize;
 extern bool g_nolightopt;
 extern vec_t g_BrushUnionThreshold;
 

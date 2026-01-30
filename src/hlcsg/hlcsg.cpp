@@ -44,7 +44,6 @@ static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_CLIPNAZI = false;
 static constexpr bool DEFAULT_WADAUTODETECT = false;
-static constexpr vec_t DEFAULT_SCALESIZE = -1.0; //dont scale
 static constexpr bool DEFAULT_NOLIGHTOPT = false;
 static constexpr bool DEFAULT_NOUTF8 = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
@@ -72,7 +71,6 @@ bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
 bool g_info = DEFAULT_INFO;                    // "-info" ?
 cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
 bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
-vec_t g_scalesize = DEFAULT_SCALESIZE;
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
 
 // =====================================================================================
@@ -1329,7 +1327,6 @@ static void Usage()
 
     Log("    -wadautodetect   : Force auto-detection of wadfiles\n");
 
-    Log("    -scale #         : Scale the world. Use at your own risk.\n");
     Log("    mapfile          : The mapfile to compile\n\n");
 
     std::exit(1);
@@ -1427,20 +1424,6 @@ static void Settings()
         safe_snprintf(brush_union, sizeof(brush_union), "%3.3f", g_BrushUnionThreshold);
         safe_snprintf(default_brush_union, sizeof(default_brush_union), "%3.3f", DEFAULT_BRUSH_UNION_THRESHOLD);
         Log("brush union threshold [ %7s ] [ %7s ]\n", brush_union, default_brush_union);
-    }
-    {
-        char buf1[10];
-        char buf2[10];
-
-        if (g_scalesize > 0)
-            safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_scalesize);
-        else
-            std::strcpy(buf1, "None");
-        if (DEFAULT_SCALESIZE > 0)
-            safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_SCALESIZE);
-        else
-            std::strcpy(buf2, "None");
-        Log("map scaling           [ %7s ] [ %7s ]\n", buf1, buf2);
     }
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");
     Log("convert game_text     [ %7s ] [ %7s ]\n", !g_noutf8 ? "on" : "off", !DEFAULT_NOUTF8 ? "on" : "off");
@@ -1674,17 +1657,6 @@ int main(const int argc, char **argv)
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {
                         g_tiny_threshold = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-scale"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_scalesize = std::atof(argv[++i]);
                     }
                     else
                     {

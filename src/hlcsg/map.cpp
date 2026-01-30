@@ -619,11 +619,6 @@ static bool ParseMapEntity()
         vec_t ent_scale = 1;
         vec_t ent_gscale = 1;
 
-        if (g_scalesize > 0)
-        {
-            ent_gscale_b = true;
-            ent_gscale = g_scalesize;
-        }
         double v[4] = {0, 0, 0, 0};
         if (*ValueForKey(mapent, "zhlt_transform"))
         {
