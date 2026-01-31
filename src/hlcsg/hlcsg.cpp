@@ -453,7 +453,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
 // =====================================================================================
 //  CopyFace
 // =====================================================================================
-bface_t *CopyFace(const bface_t *const f)
+static bface_t *CopyFace(const bface_t *const f)
 {
     bface_t *n = NewFaceFromFace(f);
     n->w = f->w->Copy();
@@ -464,7 +464,7 @@ bface_t *CopyFace(const bface_t *const f)
 // =====================================================================================
 //  CopyFaceList
 // =====================================================================================
-bface_t *CopyFaceList(bface_t *f)
+static bface_t *CopyFaceList(bface_t *f)
 {
     if (f)
     {
@@ -491,7 +491,7 @@ bface_t *CopyFaceList(bface_t *f)
 // =====================================================================================
 //  FreeFaceList
 // =====================================================================================
-void FreeFaceList(bface_t *f)
+static void FreeFaceList(bface_t *f)
 {
     if (f)
     {
