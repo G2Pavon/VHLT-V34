@@ -40,7 +40,6 @@ static constexpr bool DEFAULT_ONLYENTS = false;
 static constexpr bool DEFAULT_WADTEXTURES = true;
 static constexpr bool DEFAULT_SKYCLIP = true;
 static constexpr bool DEFAULT_CHART = false;
-static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_CLIPNAZI = false;
 static constexpr bool DEFAULT_WADAUTODETECT = false;
 static constexpr bool DEFAULT_NOLIGHTOPT = false;
@@ -64,7 +63,6 @@ bool g_noclip = DEFAULT_NOCLIP;                // no clipping hull "-noclip"
 bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
 bool g_wadtextures = DEFAULT_WADTEXTURES;      // "-nowadtextures"
 bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
-bool g_info = DEFAULT_INFO;                    // "-info" ?
 cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
 bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
@@ -1280,11 +1278,8 @@ static void Usage()
     Log("    -nowadtextures   : include all used textures into bsp\n");
     Log("    -wadinclude file : place textures used from wad specified into bsp\n");
     Log("    -noclip          : don't create clipping hull\n");
-
     Log("    -clipeconomy     : turn clipnode economy mode on\n");
-
     Log("    -cliptype value  : set to smallest, normalized, simple, precise, or legacy (default)\n");
-
     Log("    -onlyents        : do an entity update from .map to .bsp\n");
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
     Log("    -texdata #       : Alter maximum texture memory limit (in kb)\n");
@@ -1295,16 +1290,10 @@ static void Usage()
     Log("    -threads #       : manually specify the number of threads to run\n");
     Log("    -estimate        : display estimated time during compile\n");
     Log("    -verbose         : compile with verbose messages\n");
-    Log("    -noinfo          : Do not show tool configuration information\n");
-
     Log("    -nolightopt      : don't optimize engine light entities\n");
-
     Log("    -notextconvert   : don't convert game_text message from Windows ANSI to UTF8 format\n");
-
     Log("    -dev #           : compile with developer message\n\n");
-
     Log("    -wadautodetect   : Force auto-detection of wadfiles\n");
-
     Log("    mapfile          : The mapfile to compile\n\n");
 
     std::exit(1);
@@ -1330,9 +1319,6 @@ static void DumpWadinclude()
 static void Settings()
 {
     char *tmp;
-
-    if (!g_info)
-        return;
 
     Log("\nCurrent %s Settings\n", g_Program);
     Log("Name                 |  Setting  |  Default\n"
@@ -1372,22 +1358,15 @@ static void Settings()
     }
     Log("priority              [ %7s ] [ %7s ]\n", tmp, "Normal");
     Log("\n");
-
     // HLCSG Specific Settings
-
     Log("noclip                [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
-
     Log("clipnode economy mode [ %7s ] [ %7s ]\n", g_bClipNazi ? "on" : "off", DEFAULT_CLIPNAZI ? "on" : "off");
-
     Log("clip hull type        [ %7s ] [ %7s ]\n", GetClipTypeString(g_cliptype), GetClipTypeString(DEFAULT_CLIPTYPE));
-
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");
     Log("convert game_text     [ %7s ] [ %7s ]\n", !g_noutf8 ? "on" : "off", !DEFAULT_NOUTF8 ? "on" : "off");
-
     Log("\n");
 }
 
@@ -1477,10 +1456,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
                     g_verbose = true;
-                }
-                else if (!strcasecmp(argv[i], "-noinfo"))
-                {
-                    g_info = false;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
