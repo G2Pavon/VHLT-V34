@@ -15,7 +15,7 @@ typedef struct
 {
     vec3_t normal;
     float dist;
-} plane_t;
+} portalplane_t;
 
 typedef enum
 {
@@ -26,8 +26,8 @@ typedef enum
 
 typedef struct
 {
-    plane_t plane; // normal pointing into neighbor
-    int leaf;      // neighbor
+    portalplane_t plane; // normal pointing into neighbor
+    int leaf;            // neighbor
     winding_t *winding;
     vstatus_t status;
     byte *visbits;
@@ -39,7 +39,7 @@ typedef struct
 typedef struct seperating_plane_s
 {
     struct seperating_plane_s *next;
-    plane_t plane; // from portal is on positive side
+    portalplane_t plane; // from portal is on positive side
 } sep_t;
 
 typedef struct passage_s
@@ -70,10 +70,10 @@ typedef struct pstack_s
     winding_t windings[3]; // source, pass, temp in any order
     char freewindings[3];
 
-    const plane_t *portalplane;
+    const portalplane_t *portalplane;
 
     int clipPlaneCount;
-    plane_t *clipPlane;
+    portalplane_t *clipPlane;
 } pstack_t;
 
 typedef struct

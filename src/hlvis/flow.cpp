@@ -50,7 +50,7 @@ static inline void FreeStackWinding(const winding_t *const w, pstack_t *const st
 // =====================================================================================
 //  ChopWinding
 // =====================================================================================
-static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const plane_t *const split)
+static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const portalplane_t *const split)
 {
     vec_t dists[128];
     int sides[128];
@@ -184,7 +184,7 @@ static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack,
 // =====================================================================================
 //  AddPlane
 // =====================================================================================
-static inline void AddPlane(pstack_t *const stack, const plane_t *const split)
+static inline void AddPlane(pstack_t *const stack, const portalplane_t *const split)
 {
     if (stack->clipPlaneCount)
     {
@@ -221,7 +221,7 @@ static inline winding_t *ClipToSeperators(
     pstack_t *const stack)
 {
     int i, k, l;
-    plane_t plane;
+    portalplane_t plane;
     vec3_t v1, v2;
     int counts[3];
     winding_t *target = a_target;
@@ -444,7 +444,7 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
 
         // get plane of portal, point normal into the neighbor leaf
         stack.portalplane = &p->plane;
-        plane_t backplane;
+        portalplane_t backplane;
         VectorSubtract(vec3_origin, p->plane.normal, backplane.normal);
         backplane.dist = -p->plane.dist;
 
@@ -485,7 +485,7 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
         if (stack.clipPlaneCount == -1)
         {
             stack.clipPlaneCount = 0;
-            stack.clipPlane = (plane_t *)alloca(sizeof(plane_t) * prevstack->source->numpoints * prevstack->pass->numpoints);
+            stack.clipPlane = (portalplane_t *)alloca(sizeof(portalplane_t) * prevstack->source->numpoints * prevstack->pass->numpoints);
 
             ClipToSeperators(prevstack->source, prevstack->pass, nullptr, false, &stack);
             ClipToSeperators(prevstack->pass, prevstack->source, nullptr, true, &stack);
@@ -900,7 +900,7 @@ void MaxDistVis(int unused)
 {
     int j;
     leaf_t *tl;
-    plane_t *boundary = nullptr;
+    portalplane_t *boundary = nullptr;
     vec3_t delta;
 
     while (1)

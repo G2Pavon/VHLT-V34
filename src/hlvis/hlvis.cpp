@@ -152,7 +152,7 @@ void GetParamsFromEnt(entity_t *mapent)
 // =====================================================================================
 //  PlaneFromWinding
 // =====================================================================================
-static void PlaneFromWinding(winding_t *w, plane_t *plane)
+static void PlaneFromWinding(winding_t *w, portalplane_t *plane)
 {
     vec3_t v1;
     vec3_t v2;
@@ -489,7 +489,7 @@ static void LoadPortals(char *portal_image)
     portal_t *p;
     int numpoints;
     int leafnums[2];
-    plane_t plane;
+    portalplane_t plane;
     const char *const seperators = " ()\r\n\t";
 
     char *token = strtok(portal_image, seperators);
