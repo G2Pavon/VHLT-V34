@@ -1287,7 +1287,6 @@ static void Usage()
 
     Log("    -onlyents        : do an entity update from .map to .bsp\n");
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
-    Log("    -brushunion #    : threshold to warn about overlapping brushes\n\n");
     Log("    -texdata #       : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #     : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart           : display bsp statitics\n");
@@ -1386,15 +1385,6 @@ static void Settings()
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
 
-    // calc union threshold
-    {
-        char brush_union[10];
-        char default_brush_union[10];
-
-        safe_snprintf(brush_union, sizeof(brush_union), "%3.3f", g_BrushUnionThreshold);
-        safe_snprintf(default_brush_union, sizeof(default_brush_union), "%3.3f", DEFAULT_BRUSH_UNION_THRESHOLD);
-        Log("brush union threshold [ %7s ] [ %7s ]\n", brush_union, default_brush_union);
-    }
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");
     Log("convert game_text     [ %7s ] [ %7s ]\n", !g_noutf8 ? "on" : "off", !DEFAULT_NOUTF8 ? "on" : "off");
 
@@ -1611,17 +1601,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                else if (!strcasecmp(argv[i], "-brushunion"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_BrushUnionThreshold = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-nolightopt"))
                 {
                     g_nolightopt = true;
@@ -1783,12 +1762,6 @@ int main(const int argc, char **argv)
             // Set model centers
             for (int i = 0; i < g_numentities; i++)
                 SetModelCenters(i); //NamedRunThreadsOnIndividual(g_numentities, g_estimate, SetModelCenters); //--vluzacn
-
-            // Calc brush unions
-            if ((g_BrushUnionThreshold > 0.0) && (g_BrushUnionThreshold <= 100.0))
-            {
-                NamedRunThreadsOnIndividual(g_nummapbrushes, g_estimate, CalculateBrushUnions);
-            }
 
             // open hull files
             for (int i = 0; i < NUM_HULLS; i++)

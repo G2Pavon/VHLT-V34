@@ -17,8 +17,6 @@
 #error you must add -dDOUBLEVEC_T to the project!
 #endif
 
-constexpr float DEFAULT_BRUSH_UNION_THRESHOLD = 0.0f;
-
 // AJM: added in
 #define UNLESS(a) if (!(a))
 
@@ -200,7 +198,6 @@ extern cliptype g_cliptype;
 const char *GetClipTypeString(cliptype);
 
 extern bool g_nolightopt;
-extern vec_t g_BrushUnionThreshold;
 
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 extern int g_nummapplanes;
@@ -212,10 +209,6 @@ void GetParamsFromEnt(entity_t *mapent);
 
 // brush.cpp
 const char *ContentsToString(const contents_t type);
-
-//=============================================================================
-// brushunion.c
-void CalculateBrushUnions(int brushnum);
 
 //============================================================================
 // hullfile.cpp
