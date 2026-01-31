@@ -417,7 +417,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
         //              if (mirrorcontents != CONTENTS_SOLID)
         {
             f->planenum ^= 1;
-            f->plane = &g_mapplanes[f->planenum];
+            f->plane = &g_csg_mapplanes[f->planenum];
             f->contents = backcontents;
             f->texinfo = backnull ? -1 : texinfo;
 
@@ -798,7 +798,7 @@ static void CSGBrush(int brushnum)
 static void EmitPlanes()
 {
     g_numplanes = g_nummapplanes;
-    faceplane_t *mp = g_mapplanes;
+    faceplane_t *mp = g_csg_mapplanes;
     dplane_t *dp = g_dplanes;
     {
         char name[_MAX_PATH];
@@ -806,7 +806,7 @@ static void EmitPlanes()
         std::FILE *planeout = std::fopen(name, "wb");
         if (!planeout)
             Error("Couldn't open %s", name);
-        SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(faceplane_t));
+        SafeWrite(planeout, g_csg_mapplanes, g_nummapplanes * sizeof(faceplane_t));
         std::fclose(planeout);
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)

@@ -12,7 +12,7 @@
 #include "common/win32fix.h"
 #include "common/winding.h"
 
-faceplane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
+faceplane_t g_csg_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
 static hullshape_t g_defaulthulls[NUM_HULLS];
 static int g_numhullshapes;
@@ -38,11 +38,11 @@ find_plane:
     for (; returnval < g_nummapplanes; returnval++)
     {
         // BUG: there might be some multithread issue --vluzacn
-        if (-DIR_EPSILON < (t = normal[0] - g_mapplanes[returnval].normal[0]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[1] - g_mapplanes[returnval].normal[1]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[2] - g_mapplanes[returnval].normal[2]) && t < DIR_EPSILON)
+        if (-DIR_EPSILON < (t = normal[0] - g_csg_mapplanes[returnval].normal[0]) && t < DIR_EPSILON &&
+            -DIR_EPSILON < (t = normal[1] - g_csg_mapplanes[returnval].normal[1]) && t < DIR_EPSILON &&
+            -DIR_EPSILON < (t = normal[2] - g_csg_mapplanes[returnval].normal[2]) && t < DIR_EPSILON)
         {
-            t = DotProduct(origin, g_mapplanes[returnval].normal) - g_mapplanes[returnval].dist;
+            t = DotProduct(origin, g_csg_mapplanes[returnval].normal) - g_csg_mapplanes[returnval].dist;
 
             if (-DIST_EPSILON < t && t < DIST_EPSILON)
             {
@@ -61,7 +61,7 @@ find_plane:
     // create new planes - double check that we have room for 2 planes
     hlassume(g_nummapplanes + 1 < MAX_INTERNAL_MAP_PLANES, assume_MAX_INTERNAL_MAP_PLANES);
 
-    faceplane_t *p = &g_mapplanes[g_nummapplanes];
+    faceplane_t *p = &g_csg_mapplanes[g_nummapplanes];
 
     VectorCopy(origin, p->origin);
     VectorCopy(normal, p->normal);
@@ -148,7 +148,7 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
     }
     bface_t *new_face = (bface_t *)std::calloc(1, sizeof(bface_t)); // TODO: This leaks
     new_face->planenum = planenum;
-    new_face->plane = &g_mapplanes[new_face->planenum];
+    new_face->plane = &g_csg_mapplanes[new_face->planenum];
     new_face->next = hull->faces;
     new_face->contents = CONTENTS_EMPTY;
     hull->faces = new_face;
@@ -706,7 +706,7 @@ static void SortSides(brushhull_t *h)
     {
         sides[i] = f;
         isused[i] = false;
-        const faceplane_t *p = &g_mapplanes[f->planenum];
+        const faceplane_t *p = &g_csg_mapplanes[f->planenum];
         VectorCopy(p->normal, normals[i]);
     }
     for (i = 0; i < numsides; i++)
@@ -758,7 +758,7 @@ restart:
             {
                 continue;
             }
-            const faceplane_t *p = &g_mapplanes[f2->planenum ^ 1];
+            const faceplane_t *p = &g_csg_mapplanes[f2->planenum ^ 1];
             if (!w->Chop(p->normal, p->dist, NORMAL_EPSILON // fix "invalid brush" in ExpandBrush
                          ))                                 // Nothing left to chop (getArea will return 0 for us in this case for below)
             {
@@ -854,7 +854,7 @@ static bool MakeBrushPlanes(brush_t *b)
         f = (bface_t *)std::calloc(1, sizeof(*f)); // TODO: This leaks
 
         f->planenum = planenum;
-        f->plane = &g_mapplanes[planenum];
+        f->plane = &g_csg_mapplanes[planenum];
         f->next = b->hulls[0].faces;
         b->hulls[0].faces = f;
         f->texinfo = g_onlyents ? 0 : TexinfoForBrushTexture(f->plane, &s->td, origin);

@@ -196,7 +196,7 @@ const char *GetClipTypeString(cliptype);
 
 extern bool g_nolightopt;
 
-extern faceplane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
+extern faceplane_t g_csg_mapplanes[MAX_INTERNAL_MAP_PLANES];
 extern int g_nummapplanes;
 
 void GetParamsFromEnt(entity_t *mapent);
