@@ -35,7 +35,6 @@
 
 */
 
-static constexpr vec_t DEFAULT_TINY_THRESHOLD = 0.0;
 static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_ONLYENTS = false;
 static constexpr bool DEFAULT_WADTEXTURES = true;
@@ -52,8 +51,6 @@ static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluz
 static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
 static std::FILE *out_view[NUM_HULLS];
 static std::FILE *out_detailbrush[NUM_HULLS];
-static int c_tiny;
-static int c_tiny_clip;
 static int c_outfaces;
 static int c_csgfaces;
 static BoundingBox world_bounds;
@@ -62,7 +59,6 @@ static bool g_chart = DEFAULT_CHART;        // show chart "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE;  // progress estimates "-estimate"
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_noutf8 = DEFAULT_NOUTF8;
-static vec_t g_tiny_threshold = DEFAULT_TINY_THRESHOLD;
 
 bool g_noclip = DEFAULT_NOCLIP;                // no clipping hull "-noclip"
 bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
@@ -365,13 +361,6 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
 
         f->contents = frontcontents;
         f->texinfo = frontnull ? -1 : texinfo;
-        if (f->w->getArea() < g_tiny_threshold)
-        {
-            c_tiny++;
-            Verbose("Entity %i, Brush %i: tiny fragment\n",
-                    b->originalentitynum, b->originalbrushnum);
-            continue;
-        }
 
         // count unique faces
         if (!hull)
@@ -749,15 +738,6 @@ static void CSGBrush(int brushnum)
                 }
                 delete w;
 
-                vec_t area = f ? f->w->getArea() : 0;
-                if (f && area < g_tiny_threshold)
-                {
-                    Verbose("Entity %i, Brush %i: tiny penetration\n",
-                            b1->originalentitynum, b1->originalbrushnum);
-                    c_tiny_clip++;
-                    FreeFace(f);
-                    f = nullptr;
-                }
                 if (f)
                 {
                     // there is one convex fragment of the original
@@ -1307,7 +1287,6 @@ static void Usage()
 
     Log("    -onlyents        : do an entity update from .map to .bsp\n");
     Log("    -noskyclip       : disable automatic clipping of SKY brushes\n");
-    Log("    -tiny #          : minmum brush face surface area before it is discarded\n");
     Log("    -brushunion #    : threshold to warn about overlapping brushes\n\n");
     Log("    -texdata #       : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #     : Alter maximum lighting memory limit (in kb)\n");
@@ -1406,15 +1385,6 @@ static void Settings()
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
     Log("wadtextures           [ %7s ] [ %7s ]\n", g_wadtextures ? "on" : "off", DEFAULT_WADTEXTURES ? "on" : "off");
     Log("skyclip               [ %7s ] [ %7s ]\n", g_skyclip ? "on" : "off", DEFAULT_SKYCLIP ? "on" : "off");
-    // calc min surface area
-    {
-        char tiny_penetration[10];
-        char default_tiny_penetration[10];
-
-        safe_snprintf(tiny_penetration, sizeof(tiny_penetration), "%3.3f", g_tiny_threshold);
-        safe_snprintf(default_tiny_penetration, sizeof(default_tiny_penetration), "%3.3f", DEFAULT_TINY_THRESHOLD);
-        Log("min surface area      [ %7s ] [ %7s ]\n", tiny_penetration, default_tiny_penetration);
-    }
 
     // calc union threshold
     {
@@ -1652,17 +1622,6 @@ int main(const int argc, char **argv)
                         Usage();
                     }
                 }
-                else if (!strcasecmp(argv[i], "-tiny"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_tiny_threshold = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-nolightopt"))
                 {
                     g_nolightopt = true;
@@ -1870,8 +1829,6 @@ int main(const int argc, char **argv)
 
             Verbose("%5i csg faces\n", c_csgfaces);
             Verbose("%5i used faces\n", c_outfaces);
-            Verbose("%5i tiny faces\n", c_tiny);
-            Verbose("%5i tiny clips\n", c_tiny_clip);
 
             // close hull files
             for (int i = 0; i < NUM_HULLS; i++)
