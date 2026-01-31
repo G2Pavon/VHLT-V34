@@ -178,7 +178,6 @@ void InitDefaultHulls();
 // hlcsg.c
 
 extern bool g_onlyents;
-extern bool g_noclip;
 extern bool g_wadtextures;
 extern bool g_skyclip;
 

@@ -35,7 +35,6 @@
 
 */
 
-static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_ONLYENTS = false;
 static constexpr bool DEFAULT_WADTEXTURES = true;
 static constexpr bool DEFAULT_SKYCLIP = true;
@@ -59,7 +58,6 @@ static bool g_estimate = DEFAULT_ESTIMATE;  // progress estimates "-estimate"
 static bool g_bClipNazi = DEFAULT_CLIPNAZI; // "-noclipeconomy"
 static bool g_noutf8 = DEFAULT_NOUTF8;
 
-bool g_noclip = DEFAULT_NOCLIP;                // no clipping hull "-noclip"
 bool g_onlyents = DEFAULT_ONLYENTS;            // onlyents mode "-onlyents"
 bool g_wadtextures = DEFAULT_WADTEXTURES;      // "-nowadtextures"
 bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
@@ -174,16 +172,6 @@ void GetParamsFromEnt(entity_t *mapent)
         1 : "No"
     ]
     */
-    iTmp = IntForKey(mapent, "nocliphull");
-    if (iTmp == 1)
-    {
-        g_noclip = true;
-    }
-    else
-    {
-        g_noclip = false;
-    }
-    Log("%30s [ %-9s ]\n", "Clipping Hull Generation", g_noclip ? "off" : "on");
     // cliptype(choices) : "Clip Hull Type" : 4 = [ 0 : "Smallest" 1 : "Normalized" 2: "Simple" 3 : "Precise" 4 : "Legacy" ]
     iTmp = IntForKey(mapent, "cliptype");
     switch (iTmp)
@@ -1277,7 +1265,6 @@ static void Usage()
     Log("    -console #       : Set to 0 to turn off the pop-up console (default is 1)\n");
     Log("    -nowadtextures   : include all used textures into bsp\n");
     Log("    -wadinclude file : place textures used from wad specified into bsp\n");
-    Log("    -noclip          : don't create clipping hull\n");
     Log("    -clipeconomy     : turn clipnode economy mode on\n");
     Log("    -cliptype value  : set to smallest, normalized, simple, precise, or legacy (default)\n");
     Log("    -onlyents        : do an entity update from .map to .bsp\n");
@@ -1359,7 +1346,6 @@ static void Settings()
     Log("priority              [ %7s ] [ %7s ]\n", tmp, "Normal");
     Log("\n");
     // HLCSG Specific Settings
-    Log("noclip                [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
     Log("clipnode economy mode [ %7s ] [ %7s ]\n", g_bClipNazi ? "on" : "off", DEFAULT_CLIPNAZI ? "on" : "off");
     Log("clip hull type        [ %7s ] [ %7s ]\n", GetClipTypeString(g_cliptype), GetClipTypeString(DEFAULT_CLIPTYPE));
     Log("onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off");
@@ -1476,10 +1462,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-noskyclip"))
                 {
                     g_skyclip = false;
-                }
-                else if (!strcasecmp(argv[i], "-noclip"))
-                {
-                    g_noclip = true;
                 }
                 else if (!strcasecmp(argv[i], "-onlyents"))
                 {

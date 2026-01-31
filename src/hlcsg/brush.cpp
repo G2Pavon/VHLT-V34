@@ -1126,15 +1126,6 @@ void CreateBrush(const int brushnum) //--vluzacn
     if (contents == CONTENTS_TOEMPTY)
         return;
 
-    if (g_noclip)
-    {
-        if (b->cliphull)
-        {
-            b->hulls[0].faces = nullptr;
-        }
-        return;
-    }
-
     if (b->cliphull)
     {
         for (int h = 1; h < NUM_HULLS; h++)
