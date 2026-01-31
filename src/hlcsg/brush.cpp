@@ -12,7 +12,7 @@
 #include "common/win32fix.h"
 #include "common/winding.h"
 
-plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
+faceplane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
 static hullshape_t g_defaulthulls[NUM_HULLS];
 static int g_numhullshapes;
@@ -61,7 +61,7 @@ find_plane:
     // create new planes - double check that we have room for 2 planes
     hlassume(g_nummapplanes + 1 < MAX_INTERNAL_MAP_PLANES, assume_MAX_INTERNAL_MAP_PLANES);
 
-    plane_t *p = &g_mapplanes[g_nummapplanes];
+    faceplane_t *p = &g_mapplanes[g_nummapplanes];
 
     VectorCopy(origin, p->origin);
     VectorCopy(normal, p->normal);
@@ -87,7 +87,7 @@ find_plane:
     // always put axial planes facing positive first
     if (normal[(p->type) % 3] < 0)
     {
-        plane_t temp = *p;
+        faceplane_t temp = *p;
         *p = *(p + 1);
         *(p + 1) = temp;
         returnval = g_nummapplanes + 1;
@@ -437,7 +437,7 @@ static void ExpandBrush(brush_t *brush, const int hullnum)
     // step 1: for collision between player vertex and brush face. --vluzacn
     for (bface_t *current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
     {
-        plane_t *current_plane = current_face->plane;
+        faceplane_t *current_plane = current_face->plane;
 
         //don't bother adding axial planes,
         //they're defined by adding the bounding box anyway
@@ -524,7 +524,7 @@ static void ExpandBrush(brush_t *brush, const int hullnum)
     {
         for (bface_t *current_face = brush->hulls[0].faces; current_face; current_face = current_face->next)
         {
-            plane_t *current_plane = current_face->plane;
+            faceplane_t *current_plane = current_face->plane;
 
             //test to see if the plane is completely non-axial (if it is, need to add bevels to any
             //existing "inflection edges" where there's a sign change with a neighboring plane's normal for
@@ -588,7 +588,7 @@ static void ExpandBrush(brush_t *brush, const int hullnum)
                     continue;
                 }
 
-                plane_t *other_plane = other_face->plane;
+                faceplane_t *other_plane = other_face->plane;
 
                 //check each direction for sign change in normal -- zero can be safely ignored
                 for (unsigned int dir = 0; dir < 3; dir++)
@@ -706,7 +706,7 @@ static void SortSides(brushhull_t *h)
     {
         sides[i] = f;
         isused[i] = false;
-        const plane_t *p = &g_mapplanes[f->planenum];
+        const faceplane_t *p = &g_mapplanes[f->planenum];
         VectorCopy(p->normal, normals[i]);
     }
     for (i = 0; i < numsides; i++)
@@ -758,7 +758,7 @@ restart:
             {
                 continue;
             }
-            const plane_t *p = &g_mapplanes[f2->planenum ^ 1];
+            const faceplane_t *p = &g_mapplanes[f2->planenum ^ 1];
             if (!w->Chop(p->normal, p->dist, NORMAL_EPSILON // fix "invalid brush" in ExpandBrush
                          ))                                 // Nothing left to chop (getArea will return 0 for us in this case for below)
             {
@@ -1156,7 +1156,7 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
     const int MAXSIZE = 256;
 
     hullbrush_t *hb;
-    plane_t planes[MAXSIZE];
+    faceplane_t planes[MAXSIZE];
     Winding *w[MAXSIZE];
     hullbrushedge_t edges[MAXSIZE];
     hullbrushvertex_t vertexes[MAXSIZE];

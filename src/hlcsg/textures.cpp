@@ -687,7 +687,7 @@ void WriteMiptex()
 // =====================================================================================
 //  TexinfoForBrushTexture
 // =====================================================================================
-int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, const vec3_t origin)
+int TexinfoForBrushTexture(const faceplane_t *const plane, brush_texture_t *bt, const vec3_t origin)
 {
     vec3_t vecs[2];
     int sv, tv;

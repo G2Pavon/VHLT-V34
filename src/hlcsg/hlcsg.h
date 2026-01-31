@@ -28,7 +28,7 @@ typedef struct
     vec3_t origin;
     vec_t dist;
     planetypes type;
-} plane_t;
+} faceplane_t;
 
 typedef struct
 {
@@ -56,7 +56,7 @@ typedef struct bface_s
 {
     struct bface_s *next;
     int planenum;
-    plane_t *plane;
+    faceplane_t *plane;
     Winding *w;
     int texinfo;
     bool used; // just for face counting
@@ -161,7 +161,7 @@ typedef std::deque<std::string>::iterator WadInclude_i;
 extern std::deque<std::string> g_WadInclude; // List of substrings to wadinclude
 
 void WriteMiptex();
-int TexinfoForBrushTexture(const plane_t *const plane, brush_texture_t *bt, const vec3_t origin);
+int TexinfoForBrushTexture(const faceplane_t *const plane, brush_texture_t *bt, const vec3_t origin);
 const char *GetTextureByNumber_CSG(int texturenumber);
 
 //=============================================================================
@@ -196,7 +196,7 @@ const char *GetClipTypeString(cliptype);
 
 extern bool g_nolightopt;
 
-extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
+extern faceplane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 extern int g_nummapplanes;
 
 void GetParamsFromEnt(entity_t *mapent);

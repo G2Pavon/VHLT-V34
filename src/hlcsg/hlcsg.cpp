@@ -798,7 +798,7 @@ static void CSGBrush(int brushnum)
 static void EmitPlanes()
 {
     g_numplanes = g_nummapplanes;
-    plane_t *mp = g_mapplanes;
+    faceplane_t *mp = g_mapplanes;
     dplane_t *dp = g_dplanes;
     {
         char name[_MAX_PATH];
@@ -806,7 +806,7 @@ static void EmitPlanes()
         std::FILE *planeout = std::fopen(name, "wb");
         if (!planeout)
             Error("Couldn't open %s", name);
-        SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(plane_t));
+        SafeWrite(planeout, g_mapplanes, g_nummapplanes * sizeof(faceplane_t));
         std::fclose(planeout);
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)
