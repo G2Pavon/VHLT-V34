@@ -261,8 +261,6 @@ extern unsigned g_opaque_face_count; // opaque entity count //HLRAD_OPAQUE_NODE
 extern vec3_t g_colour_qgamma;
 extern vec3_t g_colour_lightscale;
 
-extern vec3_t g_colour_jitter_hack;
-
 // ------------------------------------------------------------------------
 
 extern bool g_customshadow_with_bouncelight;

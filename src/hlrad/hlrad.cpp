@@ -65,9 +65,6 @@ static constexpr float DEFAULT_COLOUR_GAMMA_BLUE = 0.55;
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_RED = 2.0;   //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_GREEN = 2.0; //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
-static constexpr float DEFAULT_COLOUR_JITTER_HACK_RED = 0.0;
-static constexpr float DEFAULT_COLOUR_JITTER_HACK_GREEN = 0.0;
-static constexpr float DEFAULT_COLOUR_JITTER_HACK_BLUE = 0.0;
 // O_o ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Changes by Jussi Kivilinna <hullu@unitedadmins.com> [http://hullu.xtragaming.com/]
 // Transparency light support for bounced light(transfers) is extreamly slow
@@ -144,7 +141,6 @@ bool g_customshadow_with_bouncelight = DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT;
 bool g_rgb_transfers = DEFAULT_RGB_TRANSFERS;
 vec3_t g_colour_qgamma = {DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE};
 vec3_t g_colour_lightscale = {DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE};
-vec3_t g_colour_jitter_hack = {DEFAULT_COLOUR_JITTER_HACK_RED, DEFAULT_COLOUR_JITTER_HACK_GREEN, DEFAULT_COLOUR_JITTER_HACK_BLUE};
 unsigned char g_minlight = DEFAULT_MINLIGHT;
 float_type g_transfer_compress_type = DEFAULT_TRANSFER_COMPRESS_TYPE;
 vector_type g_rgbtransfer_compress_type = DEFAULT_RGBTRANSFER_COMPRESS_TYPE;
@@ -2584,7 +2580,6 @@ static void Usage()
     //Log("-= Unofficial features added by Adam Foster (afoster@compsoc.man.ac.uk) =-\n\n");
     Log("   -colourgamma r g b  : Sets different gamma values for r, g, b\n");
     Log("   -colourscale r g b  : Sets different lightscale values for r, g ,b\n");
-    Log("   -colourjitter r g b : Adds noise, independent colours, for dithering\n");
     //Log("-= End of unofficial features! =-\n\n" );
 
     // ------------------------------------------------------------------------
@@ -2751,15 +2746,6 @@ static void Settings()
     Log("sky lighting fix     [ %17s ] [ %17s ]\n", g_sky_lighting_fix ? "on" : "off", DEFAULT_SKY_LIGHTING_FIX ? "on" : "off");
     Log("incremental          [ %17s ] [ %17s ]\n", g_incremental ? "on" : "off", DEFAULT_INCREMENTAL ? "on" : "off");
     Log("dump                 [ %17s ] [ %17s ]\n", g_dumppatches ? "on" : "off", DEFAULT_DUMPPATCHES ? "on" : "off");
-
-    // ------------------------------------------------------------------------
-    // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-    // displays information on all the brand-new features :)
-
-    Log("\n");
-    safe_snprintf(buf1, sizeof(buf1), "%3.1f %3.1f %3.1f", g_colour_jitter_hack[0], g_colour_jitter_hack[1], g_colour_jitter_hack[2]);
-    safe_snprintf(buf2, sizeof(buf2), "%3.1f %3.1f %3.1f", DEFAULT_COLOUR_JITTER_HACK_RED, DEFAULT_COLOUR_JITTER_HACK_GREEN, DEFAULT_COLOUR_JITTER_HACK_BLUE);
-    Log("colour jitter        [ %17s ] [ %17s ]\n", buf1, buf2);
 
     // ------------------------------------------------------------------------
 
@@ -3303,20 +3289,6 @@ int main(const int argc, char **argv)
                     else
                     {
                         Error("expected three color values after '-colourscale'\n");
-                    }
-                }
-
-                else if (!strcasecmp(argv[i], "-colourjitter"))
-                {
-                    if (i + 3 < argc)
-                    {
-                        g_colour_jitter_hack[0] = (float)std::atof(argv[++i]);
-                        g_colour_jitter_hack[1] = (float)std::atof(argv[++i]);
-                        g_colour_jitter_hack[2] = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Error("expected three color values after '-colourjitter'\n");
                     }
                 }
 
