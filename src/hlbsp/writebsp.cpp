@@ -688,7 +688,6 @@ void FinishBSPFile()
     }
     g_numplanes = gNumMappedPlanes;
 
-    if (!g_nobrink)
     {
         Log("FixBrinks:\n");
         int numclipnodes;

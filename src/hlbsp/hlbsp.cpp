@@ -38,7 +38,6 @@ static constexpr int MIN_MAXNODE_SIZE = 64;
 static constexpr int MAX_MAXNODE_SIZE = 65536;
 
 static constexpr bool DEFAULT_NOTJUNC = false;
-static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
 
@@ -70,7 +69,6 @@ char g_extentfilename[_MAX_PATH];
 
 // command line flags
 bool g_notjunc = DEFAULT_NOTJUNC;
-bool g_nobrink = DEFAULT_NOBRINK;
 bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
 bool g_bLeaked = false;
@@ -1247,7 +1245,6 @@ static void Usage()
     Log("    -subdivide #   : Sets the face subdivide size\n");
     Log("    -maxnodesize # : Sets the maximum portal node size\n\n");
     Log("    -notjunc       : Don't break edges on t-junctions     (not for final runs)\n");
-    Log("    -nobrink       : Don't smooth brinks                  (not for final runs)\n");
     Log("    -texdata #     : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #   : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart         : display bsp statitics\n");
@@ -1311,7 +1308,6 @@ static void Settings()
 
     // HLBSP Specific Settings
     Log("notjunc             [ %7s ] [ %7s ]\n", g_notjunc ? "on" : "off", DEFAULT_NOTJUNC ? "on" : "off");
-    Log("nobrink             [ %7s ] [ %7s ]\n", g_nobrink ? "on" : "off", DEFAULT_NOBRINK ? "on" : "off");
     Log("subdivide size      [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
         g_subdivide_size, DEFAULT_SUBDIVIDE_SIZE, MIN_SUBDIVIDE_SIZE, MAX_SUBDIVIDE_SIZE);
     Log("max node size       [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
@@ -1501,10 +1497,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-notjunc"))
                 {
                     g_notjunc = true;
-                }
-                else if (!strcasecmp(argv[i], "-nobrink"))
-                {
-                    g_nobrink = true;
                 }
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
