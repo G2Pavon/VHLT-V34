@@ -44,7 +44,6 @@ static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
-static constexpr bool DEFAULT_NULLTEX = true;
 static constexpr bool DEFAULT_ESTIMATE = false;
 
 vec3_t g_hull_size[NUM_HULLS][2] =
@@ -84,7 +83,6 @@ static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
 bool g_info = DEFAULT_INFO;
 bool g_bLeaked = false;
 int g_subdivide_size = DEFAULT_SUBDIVIDE_SIZE;
-bool g_bUseNullTex = DEFAULT_NULLTEX; // "-nonulltex"
 bool g_nohull2 = false;
 bool g_viewportal = false;
 
@@ -792,17 +790,10 @@ bool CheckFaceForNull(const face_t *const f)
             return true;
     }
     // null faces are only of facetype face_null if we are using null texture stripping
-    if (g_bUseNullTex)
-    {
-        const char *name = GetTextureByNumber(f->texturenum);
-        if (!strncasecmp(name, "null", 4))
-            return true;
-        return false;
-    }
-    else // otherwise, under normal cases, null textured faces should be facetype face_normal
-    {
-        return false;
-    }
+    const char *name = GetTextureByNumber(f->texturenum);
+    if (!strncasecmp(name, "null", 4))
+        return true;
+    return false;
 }
 // =====================================================================================
 //Cpt_Andrew - UTSky Check
@@ -1309,8 +1300,6 @@ static void Usage()
     Log("    -threads #     : manually specify the number of threads to run\n");
     Log("    -estimate      : display estimated time during compile\n");
 
-    Log("    -nonulltex     : Don't strip NULL faces\n");
-
     Log("    -nohull2       : Don't generate hull 2 (the clipping hull for large monsters and pushables)\n");
 
     Log("    -viewportal    : Show portal boundaries in 'mapname_portal.pts' file\n");
@@ -1374,7 +1363,6 @@ static void Settings()
     Log("noclip              [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
     Log("nofill              [ %7s ] [ %7s ]\n", g_nofill ? "on" : "off", DEFAULT_NOFILL ? "on" : "off");
     Log("noinsidefill        [ %7s ] [ %7s ]\n", g_noinsidefill ? "on" : "off", DEFAULT_NOINSIDEFILL ? "on" : "off");
-    Log("null tex. stripping [ %7s ] [ %7s ]\n", g_bUseNullTex ? "on" : "off", DEFAULT_NULLTEX ? "on" : "off");
     Log("notjunc             [ %7s ] [ %7s ]\n", g_notjunc ? "on" : "off", DEFAULT_NOTJUNC ? "on" : "off");
     Log("nobrink             [ %7s ] [ %7s ]\n", g_nobrink ? "on" : "off", DEFAULT_NOBRINK ? "on" : "off");
     Log("subdivide size      [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
@@ -1622,11 +1610,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-nolog"))
                 {
                     g_log = false;
-                }
-
-                else if (!strcasecmp(argv[i], "-nonulltex"))
-                {
-                    g_bUseNullTex = false;
                 }
 
                 else if (!strcasecmp(argv[i], "-nohull2"))

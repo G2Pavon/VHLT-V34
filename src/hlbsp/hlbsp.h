@@ -224,7 +224,6 @@ extern int g_maxnode_size;
 extern int g_subdivide_size;
 extern int g_hullnum;
 extern bool g_bLeaked;
-extern bool g_bUseNullTex;
 extern bool g_nohull2;
 extern bool g_chart;
 
