@@ -3450,7 +3450,8 @@ void BuildFacelights(const int facenum)
         vec_t sizehalf = 0.5 * g_blur * l.lmcache_density;
         vec_t subsamples = 0.0;
         VectorCopy(l.lmcache_normal[s_center + l.lmcachewidth * t_center], centernormal);
-        if (g_bleedfix && !g_drawnudge)
+
+        if (!g_drawnudge) // fix wall bleeding problem for large blur value
         {
             int s_origin = s_center;
             int t_origin = t_center;
@@ -3512,7 +3513,7 @@ void BuildFacelights(const int facenum)
                 for (int t = t_center - l.lmcache_side; t <= t_center + l.lmcache_side; t++)
                 {
                     vec_t weighting = (qmin(0.5, sizehalf - (s - s_center)) - qmax(-0.5, -sizehalf - (s - s_center))) * (qmin(0.5, sizehalf - (t - t_center)) - qmax(-0.5, -sizehalf - (t - t_center)));
-                    if (g_bleedfix && !g_drawnudge)
+                    if (!g_drawnudge)
                     {
                         int wallflags = sample_wallflags[(s - s_center + l.lmcache_side) + (2 * l.lmcache_side + 1) * (t - t_center + l.lmcache_side)];
                         if (wallflags & (WALLFLAG_BLOCKED | WALLFLAG_SHADOWED))

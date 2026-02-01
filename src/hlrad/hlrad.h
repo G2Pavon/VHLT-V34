@@ -287,7 +287,6 @@ extern bool g_notextures;
 extern vec_t g_texreflectgamma;
 extern vec_t g_texreflectscale;
 extern vec_t g_blur;
-extern bool g_bleedfix;
 extern vec_t g_maxdiscardedlight;
 extern vec3_t g_maxdiscardedpos;
 extern vec_t g_texlightgap;

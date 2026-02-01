@@ -91,7 +91,6 @@ static constexpr float DEFAULT_TEXREFLECTGAMMA = 1.76f; // 2.0(texgamma cvar) / 
 static constexpr float DEFAULT_TEXREFLECTSCALE = 0.7f;  // arbitrary (This is lower than 1.0, because textures are usually brightened in order to look better in Goldsrc. Textures are made brightened because Goldsrc is only able to darken the texture when combining the texture with the lightmap.)
 static constexpr float DEFAULT_BLUR = 1.5;              // classic lighting is equivalent to "-blur 1.0"
 static constexpr bool DEFAULT_NOEMITTERRANGE = false;
-static constexpr bool DEFAULT_BLEEDFIX = true;
 static constexpr float DEFAULT_TEXLIGHTGAP = 0.0;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr float ACCURATEBOUNCE_THRESHOLD = 4.0; // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
@@ -161,7 +160,6 @@ bool g_softsky = DEFAULT_SOFTSKY;
 bool g_notextures = DEFAULT_NOTEXTURES;
 vec_t g_texreflectgamma = DEFAULT_TEXREFLECTGAMMA;
 vec_t g_texreflectscale = DEFAULT_TEXREFLECTSCALE;
-bool g_bleedfix = DEFAULT_BLEEDFIX;
 bool g_drawsample = false;
 vec3_t g_drawsample_origin = {0, 0, 0};
 vec_t g_drawsample_radius = 0;
@@ -2691,7 +2689,6 @@ static void Usage()
     Log("   -texreflectscale # : Reflectivity for 255-white texture.\n");
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
     Log("   -noemitterrange: Don't fix pointy texlights.\n");
-    Log("   -nobleedfix    : Don't fix wall bleeding problem for large blur value.\n");
     Log("   -drawpatch     : Export light patch positions to file 'mapname_patch.pts'.\n");
     Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
     Log("   -drawedge      : Export smooth edge positions to file 'mapname_edge.pts'.\n");
@@ -2883,7 +2880,6 @@ static void Settings()
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_BLUR);
     Log("blur size            [ %17s ] [ %17s ]\n", buf1, buf2);
     Log("no emitter range     [ %17s ] [ %17s ]\n", g_noemitterrange ? "on" : "off", DEFAULT_NOEMITTERRANGE ? "on" : "off");
-    Log("wall bleeding fix    [ %17s ] [ %17s ]\n", g_bleedfix ? "on" : "off", DEFAULT_BLEEDFIX ? "on" : "off");
 
     Log("\n\n");
 }
@@ -3611,10 +3607,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-noemitterrange"))
                 {
                     g_noemitterrange = true;
-                }
-                else if (!strcasecmp(argv[i], "-nobleedfix"))
-                {
-                    g_bleedfix = false;
                 }
                 else if (!strcasecmp(argv[i], "-texlightgap"))
                 {
