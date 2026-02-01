@@ -39,7 +39,6 @@ static constexpr int MAX_MAXNODE_SIZE = 65536;
 
 static constexpr bool DEFAULT_NOTJUNC = false;
 static constexpr bool DEFAULT_NOBRINK = false;
-static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
 
@@ -72,7 +71,6 @@ char g_extentfilename[_MAX_PATH];
 // command line flags
 bool g_notjunc = DEFAULT_NOTJUNC;
 bool g_nobrink = DEFAULT_NOBRINK;
-bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
 bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
 bool g_bLeaked = false;
@@ -130,25 +128,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Thread Priority", "low");
     }
 
-    /*
-    nocliphull(choices) : "Generate clipping hulls" : 0 =
-    [
-        0 : "Yes"
-        1 : "No"
-    ]
-    */
-    iTmp = IntForKey(mapent, "nocliphull");
-    if (iTmp == 0)
-    {
-        g_noclip = false;
-    }
-    else if (iTmp == 1)
-    {
-        g_noclip = true;
-    }
-    Log("%30s [ %-9s ]\n", "Clipping Hull Generation", g_noclip ? "off" : "on");
-
-    //////////////////
     Verbose("\n");
 }
 
@@ -1150,19 +1129,6 @@ static bool ProcessModel()
     model->numfaces = g_numfaces - model->firstface;
     model->visleafs = g_numleafs - startleafs;
 
-    if (g_noclip)
-    {
-        /*
-			KGP 12/31/03 - store empty content type in headnode pointers to signify
-			lack of clipping information in a way that doesn't crash the half-life
-			engine at runtime.
-		*/
-        model->headnode[1] = CONTENTS_EMPTY;
-        model->headnode[2] = CONTENTS_EMPTY;
-        model->headnode[3] = CONTENTS_EMPTY;
-        goto skipclip;
-    }
-
     // the clipping hulls are simpler
     for (g_hullnum = 1; g_hullnum < NUM_HULLS; g_hullnum++)
     {
@@ -1282,7 +1248,6 @@ static void Usage()
     Log("    -maxnodesize # : Sets the maximum portal node size\n\n");
     Log("    -notjunc       : Don't break edges on t-junctions     (not for final runs)\n");
     Log("    -nobrink       : Don't smooth brinks                  (not for final runs)\n");
-    Log("    -noclip        : Don't process the clipping hull      (not for final runs)\n");
     Log("    -texdata #     : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #   : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart         : display bsp statitics\n");
@@ -1345,7 +1310,6 @@ static void Settings()
     Log("\n");
 
     // HLBSP Specific Settings
-    Log("noclip              [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
     Log("notjunc             [ %7s ] [ %7s ]\n", g_notjunc ? "on" : "off", DEFAULT_NOTJUNC ? "on" : "off");
     Log("nobrink             [ %7s ] [ %7s ]\n", g_nobrink ? "on" : "off", DEFAULT_NOBRINK ? "on" : "off");
     Log("subdivide size      [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
@@ -1541,10 +1505,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-nobrink"))
                 {
                     g_nobrink = true;
-                }
-                else if (!strcasecmp(argv[i], "-noclip"))
-                {
-                    g_noclip = true;
                 }
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
