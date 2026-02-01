@@ -514,11 +514,6 @@ void tjunc(node_t *headnode)
 
     Verbose("---- tjunc ----\n");
 
-    if (g_notjunc)
-    {
-        return;
-    }
-
     //
     // identify all points on common edges
     //

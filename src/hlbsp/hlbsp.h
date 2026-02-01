@@ -217,7 +217,6 @@ void CullStuff();
 
 //=============================================================================
 // hlbsp.c
-extern bool g_notjunc;
 extern int g_maxnode_size;
 extern int g_subdivide_size;
 extern int g_hullnum;
