@@ -90,7 +90,6 @@ static constexpr bool DEFAULT_NOTEXTURES = false;
 static constexpr float DEFAULT_TEXREFLECTGAMMA = 1.76f; // 2.0(texgamma cvar) / 2.5 (gamma cvar) * 2.2 (screen gamma) = 1.76
 static constexpr float DEFAULT_TEXREFLECTSCALE = 0.7f;  // arbitrary (This is lower than 1.0, because textures are usually brightened in order to look better in Goldsrc. Textures are made brightened because Goldsrc is only able to darken the texture when combining the texture with the lightmap.)
 static constexpr float DEFAULT_BLUR = 1.5;              // classic lighting is equivalent to "-blur 1.0"
-static constexpr bool DEFAULT_NOEMITTERRANGE = false;
 static constexpr float DEFAULT_TEXLIGHTGAP = 0.0;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr float ACCURATEBOUNCE_THRESHOLD = 4.0; // If the receiver patch is closer to emitter patch than EXACTBOUNCE_THRESHOLD * emitter_patch->radius, calculate the exact visibility amount.
@@ -116,7 +115,6 @@ static bool g_drawedge = false;
 // Cosine of smoothing angle(in radians)
 static float g_coring = DEFAULT_CORING;      // Light threshold to force to blackness(minimizes lightmaps)
 static unsigned g_max_opaque_face_count = 0; // Current array maximum (used for reallocs)
-static bool g_noemitterrange = DEFAULT_NOEMITTERRANGE;
 
 static vec3_t (*emitlight)[MAXLIGHTMAPS]; //LRC
 static vec3_t (*addlight)[MAXLIGHTMAPS];  //LRC
@@ -733,11 +731,7 @@ static void UpdateEmitterInfo(patch_t *patch)
             }
         }
     }
-    patch->emitter_range = ACCURATEBOUNCE_THRESHOLD * radius;
-    if (g_noemitterrange)
-    {
-        patch->emitter_range = 0.0;
-    }
+    patch->emitter_range = ACCURATEBOUNCE_THRESHOLD * radius; // fix pointy texlights
     patch->emitter_skylevel = skylevel;
 }
 
@@ -2688,7 +2682,6 @@ static void Usage()
     Log("   -texreflectgamma # : Gamma that relates reflectivity to texture color bits.\n");
     Log("   -texreflectscale # : Reflectivity for 255-white texture.\n");
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
-    Log("   -noemitterrange: Don't fix pointy texlights.\n");
     Log("   -drawpatch     : Export light patch positions to file 'mapname_patch.pts'.\n");
     Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
     Log("   -drawedge      : Export smooth edge positions to file 'mapname_edge.pts'.\n");
@@ -2879,7 +2872,6 @@ static void Settings()
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_blur);
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_BLUR);
     Log("blur size            [ %17s ] [ %17s ]\n", buf1, buf2);
-    Log("no emitter range     [ %17s ] [ %17s ]\n", g_noemitterrange ? "on" : "off", DEFAULT_NOEMITTERRANGE ? "on" : "off");
 
     Log("\n\n");
 }
@@ -3603,10 +3595,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-                else if (!strcasecmp(argv[i], "-noemitterrange"))
-                {
-                    g_noemitterrange = true;
                 }
                 else if (!strcasecmp(argv[i], "-texlightgap"))
                 {
