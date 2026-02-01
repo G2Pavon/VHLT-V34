@@ -128,7 +128,6 @@ vec_t g_fade = DEFAULT_FADE;
 vec_t g_direct_scale = DEFAULT_DLIGHT_SCALE;
 vec3_t g_ambient = {DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE};
 vec_t g_limitthreshold = DEFAULT_LIMITTHRESHOLD;
-bool g_drawoverload = false;
 char g_source[_MAX_PATH] = "";
 bool g_incremental = DEFAULT_INCREMENTAL;
 float g_indirect_sun = DEFAULT_INDIRECT_SUN;
@@ -2605,7 +2604,6 @@ static void Usage()
     Log("   -texreflectgamma # : Gamma that relates reflectivity to texture color bits.\n");
     Log("   -texreflectscale # : Reflectivity for 255-white texture.\n");
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
-    Log("   -drawoverload  : Highlight fullbright spots\n");
 
     Log("    mapfile       : The mapfile to compile\n\n");
 
@@ -3067,10 +3065,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-                else if (!strcasecmp(argv[i], "-drawoverload"))
-                {
-                    g_drawoverload = true;
                 }
                 else if (!strcasecmp(argv[i], "-lights"))
                 {

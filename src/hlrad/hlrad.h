@@ -240,7 +240,6 @@ extern bool g_extra;
 extern vec3_t g_ambient;
 extern vec_t g_direct_scale;
 extern vec_t g_limitthreshold;
-extern bool g_drawoverload;
 extern float g_indirect_sun;
 extern float g_smoothing_threshold_2;
 extern vec_t *g_smoothvalues; //[nummiptex]

@@ -4669,17 +4669,7 @@ void FinalLightFace(const int facenum)
                 vec_t max = VectorMaximum(lb);
                 if (g_limitthreshold >= 0 && max > g_limitthreshold)
                 {
-                    if (!g_drawoverload)
-                    {
-                        VectorScale(lb, g_limitthreshold / max, lb);
-                    }
-                }
-                else
-                {
-                    if (g_drawoverload)
-                    {
-                        VectorScale(lb, 0.1, lb); // darken good points
-                    }
+                    VectorScale(lb, g_limitthreshold / max, lb);
                 }
             }
             for (int i = 0; i < 3; ++i)
