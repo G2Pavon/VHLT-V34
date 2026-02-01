@@ -32,7 +32,6 @@ static constexpr bool DEFAULT_FASTVIS = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr bool DEFAULT_FULLVIS = false;
 static constexpr bool DEFAULT_CHART = false;
-static constexpr bool DEFAULT_INFO = true;
 static constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 
 static bool fastvis = DEFAULT_FASTVIS;
@@ -61,7 +60,6 @@ unsigned g_portalleafs = 0;
 bool g_fullvis = DEFAULT_FULLVIS;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
-bool g_info = DEFAULT_INFO;
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
 
 // AJM: addded in
@@ -690,7 +688,6 @@ static void Usage()
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -maxdistance #  : Alter the maximum distance for visibility\n");
     Log("    -verbose        : compile with verbose messages\n");
-    Log("    -noinfo         : Do not show tool configuration information\n");
     Log("    -dev #          : compile with developer message\n\n");
     Log("    mapfile         : The mapfile to compile\n\n");
     std::exit(1);
@@ -702,11 +699,6 @@ static void Usage()
 static void Settings()
 {
     char *tmp;
-
-    if (!g_info)
-    {
-        return;
-    }
 
     Log("\n-= Current %s Settings =-\n", g_Program);
     Log("Name               |  Setting  |  Default\n"
@@ -853,10 +845,6 @@ int main(const int argc, char **argv)
                     g_verbose = true;
                 }
 
-                else if (!strcasecmp(argv[i], "-noinfo"))
-                {
-                    g_info = false;
-                }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
                     g_chart = true;
