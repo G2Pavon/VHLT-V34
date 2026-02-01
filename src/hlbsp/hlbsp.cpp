@@ -42,7 +42,6 @@ static constexpr bool DEFAULT_NOINSIDEFILL = false;
 static constexpr bool DEFAULT_NOTJUNC = false;
 static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_NOCLIP = false;
-static constexpr bool DEFAULT_NOOPT = false;
 static constexpr bool DEFAULT_LEAKONLY = false;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
@@ -76,7 +75,6 @@ char g_portfilename[_MAX_PATH];
 char g_extentfilename[_MAX_PATH];
 
 // command line flags
-bool g_noopt = DEFAULT_NOOPT;   // don't optimize BSP on write
 bool g_nofill = DEFAULT_NOFILL; // dont fill "-nofill"
 static bool g_noinsidefill = DEFAULT_NOINSIDEFILL;
 bool g_notjunc = DEFAULT_NOTJUNC;
@@ -166,16 +164,6 @@ void GetParamsFromEnt(entity_t *mapent)
         g_bLeakOnly = true;
     }
     Log("%30s [ %-9s ]\n", "Leakonly Mode", g_bLeakOnly ? "on" : "off");
-
-    iTmp = IntForKey(mapent, "noopt");
-    if (iTmp == 0)
-    {
-        g_noopt = false;
-    }
-    else
-    {
-        g_noopt = true;
-    }
 
     /*
     nocliphull(choices) : "Generate clipping hulls" : 0 =
@@ -1341,7 +1329,6 @@ static void Usage()
     Log("    -noclip        : Don't process the clipping hull      (not for final runs)\n");
     Log("    -nofill        : Don't fill outside (will mask LEAKs) (not for final runs)\n");
     Log("    -noinsidefill  : Don't fill empty spaces\n");
-    Log("    -noopt         : Don't optimize planes on BSP write   (not for final runs)\n");
     Log("    -texdata #     : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #   : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart         : display bsp statitics\n");
@@ -1415,7 +1402,6 @@ static void Settings()
     Log("noclip              [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
     Log("nofill              [ %7s ] [ %7s ]\n", g_nofill ? "on" : "off", DEFAULT_NOFILL ? "on" : "off");
     Log("noinsidefill        [ %7s ] [ %7s ]\n", g_noinsidefill ? "on" : "off", DEFAULT_NOINSIDEFILL ? "on" : "off");
-    Log("noopt               [ %7s ] [ %7s ]\n", g_noopt ? "on" : "off", DEFAULT_NOOPT ? "on" : "off");
     Log("null tex. stripping [ %7s ] [ %7s ]\n", g_bUseNullTex ? "on" : "off", DEFAULT_NULLTEX ? "on" : "off");
     Log("notjunc             [ %7s ] [ %7s ]\n", g_notjunc ? "on" : "off", DEFAULT_NOTJUNC ? "on" : "off");
     Log("nobrink             [ %7s ] [ %7s ]\n", g_nobrink ? "on" : "off", DEFAULT_NOBRINK ? "on" : "off");
@@ -1680,10 +1666,6 @@ int main(const int argc, char **argv)
                     g_nohull2 = true;
                 }
 
-                else if (!strcasecmp(argv[i], "-noopt"))
-                {
-                    g_noopt = true;
-                }
                 else if (!strcasecmp(argv[i], "-subdivide"))
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
