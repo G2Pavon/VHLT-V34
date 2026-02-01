@@ -55,7 +55,6 @@ static constexpr bool DEFAULT_CIRCUS = false;
 static constexpr float DEFAULT_CORING = 0.01;
 static constexpr bool DEFAULT_SUBDIVIDE = true;
 static constexpr bool DEFAULT_CHART = false;
-static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_ALLOW_OPAQUES = true;
 static constexpr bool DEFAULT_ALLOW_SPREAD = true;
 static constexpr float DEFAULT_COLOUR_GAMMA_RED = 0.55;
@@ -147,7 +146,6 @@ vec_t g_texreflectgamma = DEFAULT_TEXREFLECTGAMMA;
 vec_t g_texreflectscale = DEFAULT_TEXREFLECTSCALE;
 bool g_chart = DEFAULT_CHART;
 bool g_estimate = DEFAULT_ESTIMATE;
-bool g_info = DEFAULT_INFO;
 // Patch creation and subdivision criteria
 bool g_subdivide = DEFAULT_SUBDIVIDE;
 vec_t g_chop = DEFAULT_CHOP;       // Chop value for normal textures
@@ -2528,7 +2526,6 @@ static void Usage()
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -verbose        : compile with verbose messages\n");
-    Log("    -noinfo         : Do not show tool configuration information\n");
     Log("    -dev #          : compile with developer message\n\n");
 
     // ------------------------------------------------------------------------
@@ -2577,11 +2574,6 @@ static void Settings()
     char *tmp;
     char buf1[1024];
     char buf2[1024];
-
-    if (!g_info)
-    {
-        return;
-    }
 
     Log("\n-= Current %s Settings =-\n", g_Program);
     Log("Name                | Setting             | Default\n"
@@ -2874,10 +2866,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
                     g_verbose = true;
-                }
-                else if (!strcasecmp(argv[i], "-noinfo"))
-                {
-                    g_info = false;
                 }
                 else if (!strcasecmp(argv[i], "-threads"))
                 {
