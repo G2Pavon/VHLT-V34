@@ -68,9 +68,6 @@ static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_RED = 0.0;
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_GREEN = 0.0;
 static constexpr float DEFAULT_COLOUR_JITTER_HACK_BLUE = 0.0;
-static constexpr float DEFAULT_JITTER_HACK_RED = 0.0;
-static constexpr float DEFAULT_JITTER_HACK_GREEN = 0.0;
-static constexpr float DEFAULT_JITTER_HACK_BLUE = 0.0;
 // O_o ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Changes by Jussi Kivilinna <hullu@unitedadmins.com> [http://hullu.xtragaming.com/]
 // Transparency light support for bounced light(transfers) is extreamly slow
@@ -148,7 +145,6 @@ bool g_rgb_transfers = DEFAULT_RGB_TRANSFERS;
 vec3_t g_colour_qgamma = {DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE};
 vec3_t g_colour_lightscale = {DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE};
 vec3_t g_colour_jitter_hack = {DEFAULT_COLOUR_JITTER_HACK_RED, DEFAULT_COLOUR_JITTER_HACK_GREEN, DEFAULT_COLOUR_JITTER_HACK_BLUE};
-vec3_t g_jitter_hack = {DEFAULT_JITTER_HACK_RED, DEFAULT_JITTER_HACK_GREEN, DEFAULT_JITTER_HACK_BLUE};
 unsigned char g_minlight = DEFAULT_MINLIGHT;
 float_type g_transfer_compress_type = DEFAULT_TRANSFER_COMPRESS_TYPE;
 vector_type g_rgbtransfer_compress_type = DEFAULT_RGBTRANSFER_COMPRESS_TYPE;
@@ -2589,7 +2585,6 @@ static void Usage()
     Log("   -colourgamma r g b  : Sets different gamma values for r, g, b\n");
     Log("   -colourscale r g b  : Sets different lightscale values for r, g ,b\n");
     Log("   -colourjitter r g b : Adds noise, independent colours, for dithering\n");
-    Log("   -jitter r g b       : Adds noise, monochromatic, for dithering\n");
     //Log("-= End of unofficial features! =-\n\n" );
 
     // ------------------------------------------------------------------------
@@ -2765,9 +2760,6 @@ static void Settings()
     safe_snprintf(buf1, sizeof(buf1), "%3.1f %3.1f %3.1f", g_colour_jitter_hack[0], g_colour_jitter_hack[1], g_colour_jitter_hack[2]);
     safe_snprintf(buf2, sizeof(buf2), "%3.1f %3.1f %3.1f", DEFAULT_COLOUR_JITTER_HACK_RED, DEFAULT_COLOUR_JITTER_HACK_GREEN, DEFAULT_COLOUR_JITTER_HACK_BLUE);
     Log("colour jitter        [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.1f %3.1f %3.1f", g_jitter_hack[0], g_jitter_hack[1], g_jitter_hack[2]);
-    safe_snprintf(buf2, sizeof(buf2), "%3.1f %3.1f %3.1f", DEFAULT_JITTER_HACK_RED, DEFAULT_JITTER_HACK_GREEN, DEFAULT_JITTER_HACK_BLUE);
-    Log("monochromatic jitter [ %17s ] [ %17s ]\n", buf1, buf2);
 
     // ------------------------------------------------------------------------
 
@@ -3325,19 +3317,6 @@ int main(const int argc, char **argv)
                     else
                     {
                         Error("expected three color values after '-colourjitter'\n");
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-jitter"))
-                {
-                    if (i + 3 < argc)
-                    {
-                        g_jitter_hack[0] = (float)std::atof(argv[++i]);
-                        g_jitter_hack[1] = (float)std::atof(argv[++i]);
-                        g_jitter_hack[2] = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Error("expected three color values after '-jitter'\n");
                     }
                 }
 

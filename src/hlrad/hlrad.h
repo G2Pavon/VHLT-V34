@@ -262,7 +262,6 @@ extern vec3_t g_colour_qgamma;
 extern vec3_t g_colour_lightscale;
 
 extern vec3_t g_colour_jitter_hack;
-extern vec3_t g_jitter_hack;
 
 // ------------------------------------------------------------------------
 
