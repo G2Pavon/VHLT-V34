@@ -43,7 +43,6 @@ static constexpr bool DEFAULT_NOTJUNC = false;
 static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_NOCLIP = false;
 static constexpr bool DEFAULT_CHART = false;
-static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_ESTIMATE = false;
 
 vec3_t g_hull_size[NUM_HULLS][2] =
@@ -80,7 +79,6 @@ bool g_nobrink = DEFAULT_NOBRINK;
 bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
 bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
-bool g_info = DEFAULT_INFO;
 bool g_bLeaked = false;
 int g_subdivide_size = DEFAULT_SUBDIVIDE_SIZE;
 bool g_nohull2 = false;
@@ -1304,7 +1302,6 @@ static void Usage()
     Log("    -viewportal    : Show portal boundaries in 'mapname_portal.pts' file\n");
 
     Log("    -verbose       : compile with verbose messages\n");
-    Log("    -noinfo        : Do not show tool configuration information\n");
     Log("    -dev #         : compile with developer message\n\n");
     Log("    mapfile        : The mapfile to compile\n\n");
 
@@ -1317,9 +1314,6 @@ static void Usage()
 static void Settings()
 {
     char *tmp;
-
-    if (!g_info)
-        return;
 
     Log("\nCurrent %s Settings\n", g_Program);
     Log("Name               |  Setting  |  Default\n"
@@ -1588,10 +1582,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
                     g_verbose = true;
-                }
-                else if (!strcasecmp(argv[i], "-noinfo"))
-                {
-                    g_info = false;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
