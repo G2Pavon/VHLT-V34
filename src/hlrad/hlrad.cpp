@@ -157,9 +157,6 @@ bool g_softsky = DEFAULT_SOFTSKY;
 bool g_notextures = DEFAULT_NOTEXTURES;
 vec_t g_texreflectgamma = DEFAULT_TEXREFLECTGAMMA;
 vec_t g_texreflectscale = DEFAULT_TEXREFLECTSCALE;
-bool g_drawsample = false;
-vec3_t g_drawsample_origin = {0, 0, 0};
-vec_t g_drawsample_radius = 0;
 bool g_chart = DEFAULT_CHART;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_info = DEFAULT_INFO;
@@ -2647,7 +2644,6 @@ static void Usage()
     Log("   -texreflectscale # : Reflectivity for 255-white texture.\n");
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
     Log("   -drawpatch     : Export light patch positions to file 'mapname_patch.pts'.\n");
-    Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
     Log("   -drawoverload  : Highlight fullbright spots\n");
 
     Log("    mapfile       : The mapfile to compile\n\n");
@@ -3427,21 +3423,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-drawpatch"))
                 {
                     g_drawpatch = true;
-                }
-                else if (!strcasecmp(argv[i], "-drawsample"))
-                {
-                    g_drawsample = true;
-                    if (i + 4 < argc)
-                    {
-                        g_drawsample_origin[0] = std::atof(argv[++i]);
-                        g_drawsample_origin[1] = std::atof(argv[++i]);
-                        g_drawsample_origin[2] = std::atof(argv[++i]);
-                        g_drawsample_radius = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
                 }
                 else if (!strcasecmp(argv[i], "-compress"))
                 {

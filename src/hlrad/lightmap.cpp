@@ -4561,39 +4561,6 @@ void AddPatchLights(int facenum)
 // =====================================================================================
 void FinalLightFace(const int facenum)
 {
-    if (facenum == 0 && g_drawsample)
-    {
-        char name[_MAX_PATH + 20];
-        std::sprintf(name, "%s_sample.pts", g_Mapname);
-        Log("Writing '%s' ...\n", name);
-
-        std::FILE *f = std::fopen(name, "w");
-        if (f)
-        {
-            const int pos_count = 15;
-            const vec3_t pos[pos_count] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 0, -1}, {1, 0, 0}, {0, 0, 0}};
-            vec3_t v, dist;
-            for (int i = 0; i < g_numfaces; ++i)
-            {
-                const facelight_t *fl = &facelight[i];
-                for (int j = 0; j < fl->numsamples; ++j)
-                {
-                    VectorCopy(fl->samples[0][j].pos, v);
-                    VectorSubtract(v, g_drawsample_origin, dist);
-                    if (DotProduct(dist, dist) < g_drawsample_radius * g_drawsample_radius)
-                    {
-                        for (int k = 0; k < pos_count; ++k)
-                            std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
-                    }
-                }
-            }
-            std::fclose(f);
-            Log("OK.\n");
-        }
-        else
-            Log("Error.\n");
-    }
-
     vec3_t lb, v;
     int lightstyles;
     int (*final_basiclight)[3];

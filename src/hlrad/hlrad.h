@@ -272,9 +272,6 @@ extern unsigned char g_minlight;
 extern float_type g_transfer_compress_type;
 extern vector_type g_rgbtransfer_compress_type;
 extern bool g_softsky;
-extern bool g_drawsample;
-extern vec3_t g_drawsample_origin;
-extern vec_t g_drawsample_radius;
 extern vec_t g_corings[ALLSTYLES];
 extern int stylewarningcount; // not thread safe
 extern int stylewarningnext;  // not thread safe
