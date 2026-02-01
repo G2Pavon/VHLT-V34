@@ -2510,7 +2510,6 @@ static void Usage()
     Log("    -notexscale     : Do not scale radiosity patches with texture scale\n");
     Log("    -coring #       : Set lighting threshold before blackness\n");
     Log("    -dlight #       : Set direct lighting threshold\n");
-    Log("    -nolerp         : Disable radiosity interpolation, nearest point instead\n\n");
     Log("    -fade #         : Set global fade (larger values = shorter lights)\n");
     Log("    -texlightgap #  : Set global gap distance for texlights\n");
     Log("    -scale #        : Set global light scaling value\n");
@@ -2648,7 +2647,6 @@ static void Settings()
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_coring);
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_CORING);
     Log("coring threshold     [ %17s ] [ %17s ]\n", buf1, buf2);
-    Log("patch interpolation  [ %17s ] [ %17s ]\n", g_lerp_enabled ? "on" : "off", DEFAULT_LERP_ENABLED ? "on" : "off");
 
     Log("\n");
 
@@ -2890,10 +2888,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-fast"))
                 {
                     g_fastmode = true;
-                }
-                else if (!strcasecmp(argv[i], "-nolerp"))
-                {
-                    g_lerp_enabled = false;
                 }
                 else if (!strcasecmp(argv[i], "-chop"))
                 {

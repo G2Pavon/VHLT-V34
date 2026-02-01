@@ -5,8 +5,6 @@
 #include "hlrad.h"
 #include "common/log.h"
 
-int g_lerp_enabled = DEFAULT_LERP_ENABLED;
-
 struct interpolation_t
 {
     struct Point
@@ -745,7 +743,7 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
         // Calculate local interpolations and their weights
         localweights.resize(0);
         localinterps.resize(0);
-        if (g_lerp_enabled)
+        // radiosity interpolation
         {
             for (int i = 0; i < (int)ft->neighbors.size(); i++) // for this face and each of its neighbors
             {
@@ -967,12 +965,6 @@ static void GatherPatches(localtriangulation_t *lt, const facetriangulation_t *f
     localtriangulation_t::Wedge point;
     std::vector<localtriangulation_t::Wedge> points;
     std::vector<std::pair<vec_t, int>> angles;
-
-    if (!g_lerp_enabled)
-    {
-        lt->sortedwedges.resize(0);
-        return;
-    }
 
     points.resize(0);
     for (int i = 0; i < (int)lt->neighborfaces.size(); i++)
