@@ -38,7 +38,6 @@ static constexpr int MIN_MAXNODE_SIZE = 64;
 static constexpr int MAX_MAXNODE_SIZE = 65536;
 
 static constexpr bool DEFAULT_NOFILL = false;
-static constexpr bool DEFAULT_NOINSIDEFILL = false;
 static constexpr bool DEFAULT_NOTJUNC = false;
 static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_NOCLIP = false;
@@ -73,7 +72,6 @@ char g_extentfilename[_MAX_PATH];
 
 // command line flags
 bool g_nofill = DEFAULT_NOFILL; // dont fill "-nofill"
-static bool g_noinsidefill = DEFAULT_NOINSIDEFILL;
 bool g_notjunc = DEFAULT_NOTJUNC;
 bool g_nobrink = DEFAULT_NOBRINK;
 bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
@@ -1098,8 +1096,7 @@ static bool ProcessModel()
     // some portals are solid polygons, and some are paths to other leafs
     if (g_nummodels == 1 && !g_nofill) // assume non-world bmodels are simple
     {
-        if (!g_noinsidefill)
-            FillInside(nodes);
+        FillInside(nodes);
         nodes = FillOutside(nodes, (g_bLeaked != true), 0); // make a leakfile if bad
     }
 
@@ -1289,7 +1286,6 @@ static void Usage()
     Log("    -nobrink       : Don't smooth brinks                  (not for final runs)\n");
     Log("    -noclip        : Don't process the clipping hull      (not for final runs)\n");
     Log("    -nofill        : Don't fill outside (will mask LEAKs) (not for final runs)\n");
-    Log("    -noinsidefill  : Don't fill empty spaces\n");
     Log("    -texdata #     : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #   : Alter maximum lighting memory limit (in kb)\n");
     Log("    -chart         : display bsp statitics\n");
@@ -1354,7 +1350,6 @@ static void Settings()
     // HLBSP Specific Settings
     Log("noclip              [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off");
     Log("nofill              [ %7s ] [ %7s ]\n", g_nofill ? "on" : "off", DEFAULT_NOFILL ? "on" : "off");
-    Log("noinsidefill        [ %7s ] [ %7s ]\n", g_noinsidefill ? "on" : "off", DEFAULT_NOINSIDEFILL ? "on" : "off");
     Log("notjunc             [ %7s ] [ %7s ]\n", g_notjunc ? "on" : "off", DEFAULT_NOTJUNC ? "on" : "off");
     Log("nobrink             [ %7s ] [ %7s ]\n", g_nobrink ? "on" : "off", DEFAULT_NOBRINK ? "on" : "off");
     Log("subdivide size      [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
@@ -1558,10 +1553,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-nofill"))
                 {
                     g_nofill = true;
-                }
-                else if (!strcasecmp(argv[i], "-noinsidefill"))
-                {
-                    g_noinsidefill = true;
                 }
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
