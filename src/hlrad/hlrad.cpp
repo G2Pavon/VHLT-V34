@@ -71,7 +71,6 @@ static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
 static constexpr bool DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT = false;
 // RGB Transfers support for HLRAD .. to be used with -customshadowwithbounce
 static constexpr bool DEFAULT_RGB_TRANSFERS = false;
-static constexpr float DEFAULT_TRANSTOTAL_HACK = 0.2; //0.5 //vluzacn
 static constexpr unsigned int DEFAULT_MINLIGHT = 0;
 static constexpr float_type DEFAULT_TRANSFER_COMPRESS_TYPE = FLOAT16;
 static constexpr vector_type DEFAULT_RGBTRANSFER_COMPRESS_TYPE = VECTOR32;
@@ -99,7 +98,6 @@ static float g_lightscale = DEFAULT_LIGHTSCALE;
 static float g_dlight_threshold = DEFAULT_DLIGHT_THRESHOLD; // was DIRECT_LIGHT constant
 static float g_smoothing_value = DEFAULT_SMOOTHING_VALUE;
 static float g_smoothing_value_2 = DEFAULT_SMOOTHING2_VALUE;
-static float g_transtotal_hack = DEFAULT_TRANSTOTAL_HACK;
 static int g_blockopaque = DEFAULT_BLOCKOPAQUE;
 // Cosine of smoothing angle(in radians)
 static float g_coring = DEFAULT_CORING;      // Light threshold to force to blackness(minimizes lightmaps)
@@ -3231,19 +3229,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-rgbtransfers"))
                 {
                     g_rgb_transfers = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-bscale"))
-                {
-                    Error("'-bscale' is obsolete.");
-                    if (i + 1 < argc)
-                    {
-                        g_transtotal_hack = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
                 }
 
                 else if (!strcasecmp(argv[i], "-minlight"))
