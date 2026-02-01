@@ -2640,7 +2640,6 @@ static void Usage()
     Log("    -lightdata #    : Alter maximum lighting memory limit (in kb)\n"); //lightdata
     Log("    -chart          : display bsp statitics\n");
     Log("    -low | -high    : run program an altered priority level\n");
-    Log("    -nolog          : Do not generate the compile logfiles\n");
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -verbose        : compile with verbose messages\n");
@@ -2721,7 +2720,6 @@ static void Settings()
     }
 
     Log("verbose              [ %17s ] [ %17s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
-    Log("log                  [ %17s ] [ %17s ]\n", g_log ? "on" : "off", DEFAULT_LOG ? "on" : "off");
     Log("developer            [ %17d ] [ %17d ]\n", g_developer, DEFAULT_DEVELOPER);
     Log("chart                [ %17s ] [ %17s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate             [ %17s ] [ %17s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
@@ -3199,10 +3197,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-high"))
                 {
                     g_threadpriority = eThreadPriorityHigh;
-                }
-                else if (!strcasecmp(argv[i], "-nolog"))
-                {
-                    g_log = false;
                 }
                 else if (!strcasecmp(argv[i], "-gamma"))
                 {
