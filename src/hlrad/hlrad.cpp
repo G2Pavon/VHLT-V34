@@ -111,7 +111,6 @@ static float g_smoothing_value_2 = DEFAULT_SMOOTHING2_VALUE;
 static float g_transtotal_hack = DEFAULT_TRANSTOTAL_HACK;
 static int g_blockopaque = DEFAULT_BLOCKOPAQUE;
 static bool g_drawpatch = false;
-static bool g_drawedge = false;
 // Cosine of smoothing angle(in radians)
 static float g_coring = DEFAULT_CORING;      // Light threshold to force to blackness(minimizes lightmaps)
 static unsigned g_max_opaque_face_count = 0; // Current array maximum (used for reallocs)
@@ -2493,38 +2492,6 @@ static void RadWorld()
     CheckMaxPatches(); // Check here for exceeding max patches, to prevent a lot of work from occuring before an error occurs
     SortPatches();     // Makes the runs in the Transfer Compression really good
     PairEdges();
-    if (g_drawedge)
-    {
-        char name[_MAX_PATH + 20];
-        std::sprintf(name, "%s_edge.pts", g_Mapname);
-        Log("Writing '%s' ...\n", name);
-        std::FILE *f = std::fopen(name, "w");
-        if (f)
-        {
-            const int pos_count = 15;
-            const vec3_t pos[pos_count] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}, {1, 0, 0}, {0, 0, 1}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 0, -1}, {1, 0, 0}, {0, 0, 0}};
-            int j;
-            edgeshare_t *es;
-            vec3_t v;
-            for (j = 0, es = g_edgeshare; j < MAX_MAP_EDGES; j++, es++)
-            {
-                if (es->smooth)
-                {
-                    int v0 = g_dedges[j].v[0], v1 = g_dedges[j].v[1];
-                    VectorAdd(g_dvertexes[v0].point, g_dvertexes[v1].point, v);
-                    VectorScale(v, 0.5, v);
-                    VectorAdd(v, es->interface_normal, v);
-                    VectorAdd(v, g_face_offset[es->faces[0] - g_dfaces], v);
-                    for (int k = 0; k < pos_count; ++k)
-                        std::fprintf(f, "%g %g %g\n", v[0] + pos[k][0], v[1] + pos[k][1], v[2] + pos[k][2]);
-                }
-            }
-            std::fclose(f);
-            Log("OK.\n");
-        }
-        else
-            Log("Error.\n");
-    }
 
     BuildDiffuseNormals();
     // create directlights out of g_patches and lights
@@ -2681,7 +2648,6 @@ static void Usage()
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
     Log("   -drawpatch     : Export light patch positions to file 'mapname_patch.pts'.\n");
     Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
-    Log("   -drawedge      : Export smooth edge positions to file 'mapname_edge.pts'.\n");
     Log("   -drawoverload  : Highlight fullbright spots\n");
 
     Log("    mapfile       : The mapfile to compile\n\n");
@@ -3476,10 +3442,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-                else if (!strcasecmp(argv[i], "-drawedge"))
-                {
-                    g_drawedge = true;
                 }
                 else if (!strcasecmp(argv[i], "-compress"))
                 {
