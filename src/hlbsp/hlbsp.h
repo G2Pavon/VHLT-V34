@@ -220,7 +220,6 @@ void CullStuff();
 extern bool g_nofill;
 extern bool g_notjunc;
 extern bool g_nobrink;
-extern bool g_noclipnodemerge;
 extern int g_maxnode_size;
 extern int g_subdivide_size;
 extern int g_hullnum;

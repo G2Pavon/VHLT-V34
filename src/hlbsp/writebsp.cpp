@@ -139,7 +139,7 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     }
     clipnodemap_t::iterator output;
     output = outputmap->find(MakeKey(*cn));
-    if (g_noclipnodemerge || output == outputmap->end())
+    if (output == outputmap->end())
     {
         hlassume(c < MAX_MAP_CLIPNODES, assume_MAX_MAP_CLIPNODES);
         g_dclipnodes[c] = *cn;
@@ -557,10 +557,9 @@ void FinishBSPFile()
         Warning("Number of world faces(%d) exceeded %d. Some faces will disappear in game.\nTo reduce world faces, change some world brushes (including func_details) to func_walls.\n", g_dmodels[0].numfaces, MAX_MAP_WORLDFACES);
     }
     Developer(DEVELOPER_LEVEL_MESSAGE, "count_mergedclipnodes = %d\n", count_mergedclipnodes);
-    if (!g_noclipnodemerge)
-    {
-        Log("Reduced %d clipnodes to %d\n", g_numclipnodes + count_mergedclipnodes, g_numclipnodes);
-    }
+
+    Log("Reduced %d clipnodes to %d\n", g_numclipnodes + count_mergedclipnodes, g_numclipnodes);
+
     if (!g_noopt)
     {
         {
