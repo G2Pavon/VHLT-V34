@@ -34,7 +34,6 @@
 static constexpr bool DEFAULT_FASTMODE = false;
 static constexpr float DEFAULT_FADE = 1.0;
 static constexpr int DEFAULT_BOUNCE = 8;
-static constexpr bool DEFAULT_DUMPPATCHES = false;
 static constexpr float DEFAULT_AMBIENT_RED = 0.0;
 static constexpr float DEFAULT_AMBIENT_GREEN = 0.0;
 static constexpr float DEFAULT_AMBIENT_BLUE = 0.0;
@@ -97,7 +96,6 @@ typedef enum
 } eVisMethods;
 
 static unsigned g_numbounce = DEFAULT_BOUNCE; // 3; /* Originally this was 8 */
-static bool g_dumppatches = DEFAULT_DUMPPATCHES;
 static float g_lightscale = DEFAULT_LIGHTSCALE;
 static float g_dlight_threshold = DEFAULT_DLIGHT_THRESHOLD; // was DIRECT_LIGHT constant
 static float g_smoothing_value = DEFAULT_SMOOTHING_VALUE;
@@ -1919,38 +1917,6 @@ static void FreePatches()
     g_patches = nullptr;
 }
 
-//=====================================================================
-
-// =====================================================================================
-//  WriteWorld
-// =====================================================================================
-static void WriteWorld(const char *const name)
-{
-    unsigned j;
-    patch_t *patch;
-
-    std::FILE *out = std::fopen(name, "w");
-
-    if (!out)
-        Error("Couldn't open %s", name);
-
-    for (j = 0, patch = g_patches; j < g_num_patches; j++, patch++)
-    {
-        Winding *w = patch->winding;
-        Log("%i\n", w->m_NumPoints);
-        for (unsigned i = 0; i < w->m_NumPoints; i++)
-        {
-            Log("%5.2f %5.2f %5.2f %5.3f %5.3f %5.3f\n",
-                w->m_Points[i][0],
-                w->m_Points[i][1],
-                w->m_Points[i][2], patch->totallight[0][0] / 256, patch->totallight[0][1] / 256, patch->totallight[0][2] / 256); //LRC
-        }
-        Log("\n");
-    }
-
-    std::fclose(out);
-}
-
 // =====================================================================================
 //  CollectLight
 // =====================================================================================
@@ -2327,12 +2293,6 @@ static void BounceLight()
             NamedRunThreadsOn(g_num_patches, g_estimate, GatherLight);
         }
         CollectLight();
-
-        if (g_dumppatches)
-        {
-            std::sprintf(name, "bounce%u.txt", i);
-            WriteWorld(name);
-        }
     }
     for (unsigned i = 0; i < g_num_patches; i++)
     {
@@ -2561,7 +2521,6 @@ static void Usage()
     Log("    -lights file    : Manually specify a lights.rad file to use\n");
     Log("    -noskyfix       : Disable light_environment being global\n");
     Log("    -incremental    : Use or create an incremental transfer list file\n\n");
-    Log("    -dump           : Dumps light patches to a file for hlrad debugging info\n\n");
     Log("    -texdata #      : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #    : Alter maximum lighting memory limit (in kb)\n"); //lightdata
     Log("    -chart          : display bsp statitics\n");
@@ -2743,7 +2702,6 @@ static void Settings()
     Log("opaque entities      [ %17s ] [ %17s ]\n", g_allow_opaques ? "on" : "off", DEFAULT_ALLOW_OPAQUES ? "on" : "off");
     Log("sky lighting fix     [ %17s ] [ %17s ]\n", g_sky_lighting_fix ? "on" : "off", DEFAULT_SKY_LIGHTING_FIX ? "on" : "off");
     Log("incremental          [ %17s ] [ %17s ]\n", g_incremental ? "on" : "off", DEFAULT_INCREMENTAL ? "on" : "off");
-    Log("dump                 [ %17s ] [ %17s ]\n", g_dumppatches ? "on" : "off", DEFAULT_DUMPPATCHES ? "on" : "off");
 
     // ------------------------------------------------------------------------
 
@@ -2879,11 +2837,7 @@ int main(const int argc, char **argv)
 
             for (int i = 1; i < argc; i++)
             {
-                if (!strcasecmp(argv[i], "-dump"))
-                {
-                    g_dumppatches = true;
-                }
-                else if (!strcasecmp(argv[i], "-console"))
+                if (!strcasecmp(argv[i], "-console"))
                 {
                     if (i + 1 < argc)
                         ++i;
