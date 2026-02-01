@@ -275,7 +275,6 @@ extern bool g_softsky;
 extern bool g_drawsample;
 extern vec3_t g_drawsample_origin;
 extern vec_t g_drawsample_radius;
-extern bool g_drawlerp;
 extern vec_t g_corings[ALLSTYLES];
 extern int stylewarningcount; // not thread safe
 extern int stylewarningnext;  // not thread safe

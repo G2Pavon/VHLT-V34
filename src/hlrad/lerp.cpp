@@ -165,18 +165,10 @@ static vec_t GetFrac(const vec3_t leftspot, const vec3_t rightspot, const vec3_t
     // dot1 <= 0 < dot2
     if (dot1 >= -NORMAL_EPSILON)
     {
-        if (g_drawlerp && dot1 > ON_EPSILON)
-        {
-            Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 1.\n");
-        }
         frac = 0.0;
     }
     else if (dot2 <= NORMAL_EPSILON)
     {
-        if (g_drawlerp && dot2 < -ON_EPSILON)
-        {
-            Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 2.\n");
-        }
         frac = 1.0;
     }
     else
@@ -356,10 +348,6 @@ static void CalcInterpolation_Square(const localtriangulation_t *lt, int i, cons
     VectorScale(mid_near, 1 - ratio, test);
     VectorMA(test, ratio, mid_far, test);
     VectorSubtract(test, spot, test);
-    if (g_drawlerp && VectorLength(test) > 4 * ON_EPSILON)
-    {
-        Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 12.\n");
-    }
 
     weights[0] += 0.5 * (1 - ratio) * (1 - frac_near);
     weights[3] += 0.5 * (1 - ratio) * frac_near;
@@ -441,10 +429,6 @@ static void CalcInterpolation_Square(const localtriangulation_t *lt, int i, cons
     VectorScale(mid_near, 1 - ratio, test);
     VectorMA(test, ratio, mid_far, test);
     VectorSubtract(test, spot, test);
-    if (g_drawlerp && VectorLength(test) > 4 * ON_EPSILON)
-    {
-        Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 13.\n");
-    }
 
     weights[0] += 0.5 * (1 - ratio) * (1 - frac_near);
     weights[1] += 0.5 * (1 - ratio) * frac_near;
@@ -587,10 +571,6 @@ static void CalcInterpolation(const localtriangulation_t *lt, const vec3_t spot,
             vec_t dot = 0 - DotProduct(spot, w->wedgenormal);
             // for eConvex type: dot1 < dot < dot2
 
-            if (g_drawlerp && (dot1 > dot || dot > dot2))
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 3.\n");
-            }
             if (dot1 >= -NORMAL_EPSILON) // 0 <= dot1 < dot < dot2
             {
                 interp->isbiased = true;
@@ -645,10 +625,7 @@ static void CalcInterpolation(const localtriangulation_t *lt, const vec3_t spot,
         {
             len = DotProduct(w->leftspot, w->leftdirection);
             dist = DotProduct(spot, w->leftdirection);
-            if (g_drawlerp && len <= ON_EPSILON)
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 4.\n");
-            }
+
             if (dist <= NORMAL_EPSILON)
             {
                 interp->isbiased = true;
@@ -683,10 +660,7 @@ static void CalcInterpolation(const localtriangulation_t *lt, const vec3_t spot,
         {
             len = DotProduct(wnext->leftspot, wnext->leftdirection);
             dist = DotProduct(spot, wnext->leftdirection);
-            if (g_drawlerp && len <= ON_EPSILON)
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 5.\n");
-            }
+
             if (dist <= NORMAL_EPSILON)
             {
                 interp->isbiased = true;
@@ -781,10 +755,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                     const localtriangulation_t *lt = ft2->localtriangulations[j];
                     if (!CalcAdaptedSpot(lt, position, surface, spot))
                     {
-                        if (g_drawlerp && ft2 == ft)
-                        {
-                            Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 6.\n");
-                        }
                         continue;
                     }
                     if (!CalcWeight(lt, spot, &weight))
@@ -828,16 +798,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
         if (maininterp->totalweight > 0)
         {
             ApplyInterpolation(maininterp, numstyles, styles, outs);
-            if (g_drawlerp)
-            {
-                for (int j = 0; j < numstyles; j++)
-                {
-                    // white or yellow
-                    outs[j][0] = 100;
-                    outs[j][1] = 100;
-                    outs[j][2] = (maininterp->isbiased ? 0 : 100);
-                }
-            }
         }
         else
         {
@@ -868,16 +828,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
             if (maininterp->totalweight > 0)
             {
                 ApplyInterpolation(maininterp, numstyles, styles, outs);
-                if (g_drawlerp)
-                {
-                    for (int j = 0; j < numstyles; j++)
-                    {
-                        // red
-                        outs[j][0] = 100;
-                        outs[j][1] = 0;
-                        outs[j][2] = (maininterp->isbiased ? 0 : 100);
-                    }
-                }
             }
             else
             {
@@ -916,16 +866,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                         maininterp->totalweight += maininterp->points[j].weight;
                     }
                     ApplyInterpolation(maininterp, numstyles, styles, outs);
-                    if (g_drawlerp)
-                    {
-                        for (int j = 0; j < numstyles; j++)
-                        {
-                            // green
-                            outs[j][0] = 0;
-                            outs[j][1] = 100;
-                            outs[j][2] = (maininterp->isbiased ? 0 : 100);
-                        }
-                    }
                 }
                 else
                 {
@@ -933,16 +873,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                     maininterp->totalweight = 0;
                     maininterp->points.resize(0);
                     ApplyInterpolation(maininterp, numstyles, styles, outs);
-                    if (g_drawlerp)
-                    {
-                        for (int j = 0; j < numstyles; j++)
-                        {
-                            // black
-                            outs[j][0] = 0;
-                            outs[j][1] = 0;
-                            outs[j][2] = 0;
-                        }
-                    }
                 }
             }
         }
@@ -1090,10 +1020,6 @@ static void GatherPatches(localtriangulation_t *lt, const facetriangulation_t *f
         vec_t angle = GetAngle(points[0].leftdirection, points[i].leftdirection, lt->normal);
         if (i == 0)
         {
-            if (g_drawlerp && std::abs(angle) > NORMAL_EPSILON)
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 7.\n");
-            }
             angle = 0.0;
         }
         angles[i].first = GetAngleDiff(angle, 0);
@@ -1236,10 +1162,6 @@ static void PlaceHullPoints(localtriangulation_t *lt)
         lt->sortedhullpoints.resize(0);
         for (int i = 0; i < (int)spots.size(); i++)
         {
-            if (g_drawlerp && angles[i].second != i)
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 8.\n");
-            }
             lt->sortedhullpoints.push_back(spots[angles[i].second]);
         }
         return;
@@ -1438,10 +1360,6 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
         localtriangulation_t::Wedge *wnext = &lt->sortedwedges[(i + 1) % (int)lt->sortedwedges.size()];
 
         vec_t angle = GetAngle(w->leftdirection, wnext->leftdirection, lt->normal);
-        if (g_drawlerp && ((int)lt->sortedwedges.size() >= 2 && std::abs(angle) <= (0.9 * Q_PI / 180)))
-        {
-            Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 9.\n");
-        }
         angle = GetAngleDiff(angle, 0);
         if ((int)lt->sortedwedges.size() == 1)
         {
@@ -1471,15 +1389,7 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
             VectorSubtract(wnext->leftdirection, w->leftdirection, v);
             VectorAdd(normal, v, normal);
             GetDirection(normal, lt->normal, w->wedgenormal);
-            if (g_drawlerp && VectorLength(w->wedgenormal) == 0)
-            {
-                Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 10.\n");
-            }
         }
-    }
-    if (g_drawlerp && ((int)lt->sortedwedges.size() > 0 && std::abs(total - 2 * Q_PI) > 10 * NORMAL_EPSILON))
-    {
-        Developer(DEVELOPER_LEVEL_SPAM, "Debug: triangulation: internal error 11.\n");
     }
     FindSquares(lt);
 

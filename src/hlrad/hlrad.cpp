@@ -161,7 +161,6 @@ vec_t g_texreflectscale = DEFAULT_TEXREFLECTSCALE;
 bool g_drawsample = false;
 vec3_t g_drawsample_origin = {0, 0, 0};
 vec_t g_drawsample_radius = 0;
-bool g_drawlerp = false;
 bool g_chart = DEFAULT_CHART;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_info = DEFAULT_INFO;
@@ -2683,7 +2682,6 @@ static void Usage()
     Log("   -drawpatch     : Export light patch positions to file 'mapname_patch.pts'.\n");
     Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
     Log("   -drawedge      : Export smooth edge positions to file 'mapname_edge.pts'.\n");
-    Log("   -drawlerp      : Show bounce light triangulation status.\n");
     Log("   -drawoverload  : Highlight fullbright spots\n");
 
     Log("    mapfile       : The mapfile to compile\n\n");
@@ -3483,10 +3481,6 @@ int main(const int argc, char **argv)
                 {
                     g_drawedge = true;
                 }
-                else if (!strcasecmp(argv[i], "-drawlerp"))
-                {
-                    g_drawlerp = true;
-                }
                 else if (!strcasecmp(argv[i], "-compress"))
                 {
                     if (i + 1 < argc)
@@ -3695,10 +3689,6 @@ int main(const int argc, char **argv)
             if (g_colour_lightscale[0] != 2.0 || g_colour_lightscale[1] != 2.0 || g_colour_lightscale[2] != 2.0)
             {
                 Warning("light scale value should be 2.0 for final compile.\nValues other than 2.0 will result in incorrect interpretation of light_environment's brightness when the engine loads the map.");
-            }
-            if (g_drawlerp)
-            {
-                g_direct_scale = 0.0;
             }
 
             if (!g_visdatasize)
