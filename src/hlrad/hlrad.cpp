@@ -162,7 +162,6 @@ bool g_drawsample = false;
 vec3_t g_drawsample_origin = {0, 0, 0};
 vec_t g_drawsample_radius = 0;
 bool g_drawlerp = false;
-bool g_drawnudge = false;
 bool g_chart = DEFAULT_CHART;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_info = DEFAULT_INFO;
@@ -2686,7 +2685,6 @@ static void Usage()
     Log("   -drawsample x y z r    : Export light sample positions in an area to file 'mapname_sample.pts'.\n");
     Log("   -drawedge      : Export smooth edge positions to file 'mapname_edge.pts'.\n");
     Log("   -drawlerp      : Show bounce light triangulation status.\n");
-    Log("   -drawnudge     : Show nudged samples.\n");
     Log("   -drawoverload  : Highlight fullbright spots\n");
 
     Log("    mapfile       : The mapfile to compile\n\n");
@@ -3495,11 +3493,6 @@ int main(const int argc, char **argv)
                 {
                     g_drawlerp = true;
                 }
-                else if (!strcasecmp(argv[i], "-drawnudge"))
-                {
-                    g_drawnudge = true;
-                }
-
                 else if (!strcasecmp(argv[i], "-compress"))
                 {
                     if (i + 1 < argc)
