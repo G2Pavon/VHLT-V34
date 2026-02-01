@@ -430,11 +430,6 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
     Verbose("----- FillOutside ----\n");
 
-    if (g_nofill)
-    {
-        Log("skipped\n");
-        return node;
-    }
     if (hullnum == 2 && g_nohull2)
         return node;
 
