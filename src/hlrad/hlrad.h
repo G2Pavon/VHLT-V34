@@ -243,7 +243,6 @@ extern vec_t *g_smoothvalues; //[nummiptex]
 extern bool g_estimate;
 extern char g_source[_MAX_PATH];
 extern vec_t g_fade;
-extern bool g_incremental;
 extern bool g_circus;
 extern bool g_allow_spread;
 extern bool g_sky_lighting_fix;
@@ -360,8 +359,6 @@ void MakeScalesNoVismatrix();
 
 // transfers.c
 extern std::size_t g_total_transfer;
-bool readtransfers(const char *const transferfile, long numpatches);
-void writetransfers(const char *const transferfile, long total_patches);
 
 // vismatrixutil.c (shared between vismatrix.c and sparse.c)
 void MakeScales(int threadnum);

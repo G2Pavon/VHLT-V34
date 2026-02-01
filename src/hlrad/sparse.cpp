@@ -409,42 +409,28 @@ static void DumpVismatrixInfo()
 
 void MakeScalesSparseVismatrix()
 {
-    char transferfile[_MAX_PATH];
 
     hlassume(g_num_patches < MAX_SPARSE_VISMATRIX_PATCHES, assume_MAX_PATCHES);
 
-    safe_snprintf(transferfile, _MAX_PATH, "%s.inc", g_Mapname);
+    // determine visibility between g_patches
+    BuildVisMatrix();
+    DumpVismatrixInfo();
+    g_CheckVisBit = CheckVisBitSparse;
 
-    if (!g_incremental || !readtransfers(transferfile, g_num_patches))
+    CreateFinalTransparencyArrays("custom shadow array");
+
+    if (g_rgb_transfers)
     {
-        // determine visibility between g_patches
-        BuildVisMatrix();
-        DumpVismatrixInfo();
-        g_CheckVisBit = CheckVisBitSparse;
-
-        CreateFinalTransparencyArrays("custom shadow array");
-
-        if (g_rgb_transfers)
-        {
-            NamedRunThreadsOn(g_num_patches, g_estimate, MakeRGBScales);
-        }
-        else
-        {
-            NamedRunThreadsOn(g_num_patches, g_estimate, MakeScales);
-        }
-        FreeVisMatrix();
-        FreeTransparencyArrays();
-
-        if (g_incremental)
-        {
-            writetransfers(transferfile, g_num_patches);
-        }
-        else
-        {
-            _unlink(transferfile);
-        }
-        // release visibility matrix
-        DumpTransfersMemoryUsage();
-        CreateFinalStyleArrays("dynamic shadow array");
+        NamedRunThreadsOn(g_num_patches, g_estimate, MakeRGBScales);
     }
+    else
+    {
+        NamedRunThreadsOn(g_num_patches, g_estimate, MakeScales);
+    }
+    FreeVisMatrix();
+    FreeTransparencyArrays();
+
+    // release visibility matrix
+    DumpTransfersMemoryUsage();
+    CreateFinalStyleArrays("dynamic shadow array");
 }

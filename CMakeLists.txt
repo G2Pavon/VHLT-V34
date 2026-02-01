@@ -112,7 +112,6 @@ add_executable(hlrad
     ${SRC_DIR}/hlrad/hlradutil.cpp
     ${SRC_DIR}/hlrad/sparse.cpp
     ${SRC_DIR}/hlrad/trace.cpp
-    ${SRC_DIR}/hlrad/transfers.cpp
     ${SRC_DIR}/hlrad/transparency.cpp
     ${SRC_DIR}/hlrad/vismatrix.cpp
     ${SRC_DIR}/hlrad/vismatrixutil.cpp

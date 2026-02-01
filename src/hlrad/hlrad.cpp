@@ -48,7 +48,6 @@ static constexpr float DEFAULT_DLIGHT_THRESHOLD = 10.0;
 static constexpr float DEFAULT_DLIGHT_SCALE = 1.0; //2.0 //vluzacn
 static constexpr float DEFAULT_SMOOTHING_VALUE = 50.0;
 static constexpr float DEFAULT_SMOOTHING2_VALUE = -1.0;
-static constexpr bool DEFAULT_INCREMENTAL = false;
 static constexpr float DEFAULT_INDIRECT_SUN = 1.0;
 static constexpr bool DEFAULT_EXTRA = false;
 static constexpr bool DEFAULT_CIRCUS = false;
@@ -123,7 +122,6 @@ vec_t g_direct_scale = DEFAULT_DLIGHT_SCALE;
 vec3_t g_ambient = {DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE};
 vec_t g_limitthreshold = DEFAULT_LIMITTHRESHOLD;
 char g_source[_MAX_PATH] = "";
-bool g_incremental = DEFAULT_INCREMENTAL;
 float g_indirect_sun = DEFAULT_INDIRECT_SUN;
 bool g_extra = DEFAULT_EXTRA;
 bool g_texscale = DEFAULT_TEXSCALE;
@@ -2512,7 +2510,6 @@ static void Usage()
     Log("    -sky #          : Set ambient sunlight contribution in the shade outside\n");
     Log("    -lights file    : Manually specify a lights.rad file to use\n");
     Log("    -noskyfix       : Disable light_environment being global\n");
-    Log("    -incremental    : Use or create an incremental transfer list file\n\n");
     Log("    -texdata #      : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #    : Alter maximum lighting memory limit (in kb)\n"); //lightdata
     Log("    -chart          : display bsp statitics\n");
@@ -2685,7 +2682,6 @@ static void Settings()
     Log("\n");
     Log("spread angles        [ %17s ] [ %17s ]\n", g_allow_spread ? "on" : "off", DEFAULT_ALLOW_SPREAD ? "on" : "off");
     Log("sky lighting fix     [ %17s ] [ %17s ]\n", g_sky_lighting_fix ? "on" : "off", DEFAULT_SKY_LIGHTING_FIX ? "on" : "off");
-    Log("incremental          [ %17s ] [ %17s ]\n", g_incremental ? "on" : "off", DEFAULT_INCREMENTAL ? "on" : "off");
 
     // ------------------------------------------------------------------------
 
@@ -3014,10 +3010,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-noskyfix"))
                 {
                     g_sky_lighting_fix = false;
-                }
-                else if (!strcasecmp(argv[i], "-incremental"))
-                {
-                    g_incremental = true;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {

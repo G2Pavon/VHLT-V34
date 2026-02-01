@@ -165,33 +165,18 @@ bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &bac
 
 void MakeScalesNoVismatrix()
 {
-    char transferfile[_MAX_PATH];
-
     hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
 
-    safe_snprintf(transferfile, _MAX_PATH, "%s.inc", g_Mapname);
-
-    if (!g_incremental || !readtransfers(transferfile, g_num_patches))
+    g_CheckVisBit = CheckVisBitNoVismatrix;
+    if (g_rgb_transfers)
     {
-        g_CheckVisBit = CheckVisBitNoVismatrix;
-        if (g_rgb_transfers)
-        {
-            NamedRunThreadsOn(g_num_patches, g_estimate, MakeRGBScales);
-        }
-        else
-        {
-            NamedRunThreadsOn(g_num_patches, g_estimate, MakeScales);
-        }
-
-        if (g_incremental)
-        {
-            writetransfers(transferfile, g_num_patches);
-        }
-        else
-        {
-            unlink(transferfile);
-        }
-        DumpTransfersMemoryUsage();
-        CreateFinalStyleArrays("dynamic shadow array");
+        NamedRunThreadsOn(g_num_patches, g_estimate, MakeRGBScales);
     }
+    else
+    {
+        NamedRunThreadsOn(g_num_patches, g_estimate, MakeScales);
+    }
+
+    DumpTransfersMemoryUsage();
+    CreateFinalStyleArrays("dynamic shadow array");
 }
