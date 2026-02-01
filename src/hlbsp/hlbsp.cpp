@@ -42,7 +42,6 @@ static constexpr bool DEFAULT_NOINSIDEFILL = false;
 static constexpr bool DEFAULT_NOTJUNC = false;
 static constexpr bool DEFAULT_NOBRINK = false;
 static constexpr bool DEFAULT_NOCLIP = false;
-static constexpr bool DEFAULT_LEAKONLY = false;
 static constexpr bool DEFAULT_CHART = false;
 static constexpr bool DEFAULT_INFO = true;
 static constexpr bool DEFAULT_NULLTEX = true;
@@ -83,7 +82,6 @@ bool g_noclip = DEFAULT_NOCLIP;            // no clipping hull "-noclip"
 bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
 static bool g_estimate = DEFAULT_ESTIMATE; // estimate mode "-estimate"
 bool g_info = DEFAULT_INFO;
-bool g_bLeakOnly = DEFAULT_LEAKONLY; // leakonly mode "-leakonly"
 bool g_bLeaked = false;
 int g_subdivide_size = DEFAULT_SUBDIVIDE_SIZE;
 bool g_bUseNullTex = DEFAULT_NULLTEX; // "-nonulltex"
@@ -139,31 +137,6 @@ void GetParamsFromEnt(entity_t *mapent)
         g_threadpriority = eThreadPriorityLow;
         Log("%30s [ %-9s ]\n", "Thread Priority", "low");
     }
-
-    /*
-    hlbsp(choices) : "HLBSP" : 0 =
-    [
-       0 : "Off"
-       1 : "Normal"
-       2 : "Leakonly"
-    ]
-    */
-    iTmp = IntForKey(mapent, "hlbsp");
-    if (iTmp == 0)
-    {
-        Fatal(assume_TOOL_CANCEL,
-              "%s flag was not checked in info_compile_parameters entity, execution of %s cancelled", g_Program, g_Program);
-        CheckFatal();
-    }
-    else if (iTmp == 1)
-    {
-        g_bLeakOnly = false;
-    }
-    else if (iTmp == 2)
-    {
-        g_bLeakOnly = true;
-    }
-    Log("%30s [ %-9s ]\n", "Leakonly Mode", g_bLeakOnly ? "on" : "off");
 
     /*
     nocliphull(choices) : "Generate clipping hulls" : 0 =
@@ -1321,7 +1294,6 @@ static void Usage()
 
     Log("\n-= %s Options =-\n\n", g_Program);
     Log("    -console #     : Set to 0 to turn off the pop-up console (default is 1)\n");
-    Log("    -leakonly      : Run BSP only enough to check for LEAKs\n");
     Log("    -subdivide #   : Sets the face subdivide size\n");
     Log("    -maxnodesize # : Sets the maximum portal node size\n\n");
     Log("    -notjunc       : Don't break edges on t-junctions     (not for final runs)\n");
@@ -1634,10 +1606,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-noinfo"))
                 {
                     g_info = false;
-                }
-                else if (!strcasecmp(argv[i], "-leakonly"))
-                {
-                    g_bLeakOnly = true;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {

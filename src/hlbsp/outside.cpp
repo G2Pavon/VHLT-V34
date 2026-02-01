@@ -552,11 +552,6 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
             Log("Leak pointfile generated\n\n");
         }
 
-        if (g_bLeakOnly)
-        {
-            Error("Stopped by leak.");
-        }
-
         g_bLeaked = true;
 
         return node;
