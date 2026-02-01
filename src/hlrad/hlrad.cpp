@@ -55,7 +55,6 @@ static constexpr bool DEFAULT_CIRCUS = false;
 static constexpr float DEFAULT_CORING = 0.01;
 static constexpr bool DEFAULT_SUBDIVIDE = true;
 static constexpr bool DEFAULT_CHART = false;
-static constexpr bool DEFAULT_ALLOW_OPAQUES = true;
 static constexpr bool DEFAULT_ALLOW_SPREAD = true;
 static constexpr float DEFAULT_COLOUR_GAMMA_RED = 0.55;
 static constexpr float DEFAULT_COLOUR_GAMMA_GREEN = 0.55;
@@ -129,7 +128,6 @@ float g_indirect_sun = DEFAULT_INDIRECT_SUN;
 bool g_extra = DEFAULT_EXTRA;
 bool g_texscale = DEFAULT_TEXSCALE;
 bool g_circus = DEFAULT_CIRCUS;
-bool g_allow_opaques = DEFAULT_ALLOW_OPAQUES;
 bool g_allow_spread = DEFAULT_ALLOW_SPREAD;
 bool g_customshadow_with_bouncelight = DEFAULT_CUSTOMSHADOW_WITH_BOUNCELIGHT;
 bool g_rgb_transfers = DEFAULT_RGB_TRANSFERS;
@@ -1544,7 +1542,7 @@ static void LoadOpaqueEntities()
             }
             bool opaque = false;
             {
-                if (g_allow_opaques && (IntForKey(ent, "zhlt_lightflags") & eModelLightmodeOpaque))
+                if ((IntForKey(ent, "zhlt_lightflags") & eModelLightmodeOpaque))
                     opaque = true;
             }
             vec3_t d_transparency;
@@ -2500,7 +2498,6 @@ static void Usage()
     Log("    -limiter #      : Set light clipping threshold (-1=None)\n");
     Log("    -circus         : Enable 'circus' mode for locating unlit lightmaps\n");
     Log("    -nospread       : Disable sunlight spread angles for this compile\n");
-    Log("    -nopaque        : Disable the opaque zhlt_lightflags for this compile\n\n");
     Log("    -smooth #       : Set smoothing threshold for blending (in degrees)\n");
     Log("    -smooth2 #      : Set smoothing threshold between different textures\n");
     Log("    -chop #         : Set radiosity patch size for normal textures\n");
@@ -2687,7 +2684,6 @@ static void Settings()
 
     Log("\n");
     Log("spread angles        [ %17s ] [ %17s ]\n", g_allow_spread ? "on" : "off", DEFAULT_ALLOW_SPREAD ? "on" : "off");
-    Log("opaque entities      [ %17s ] [ %17s ]\n", g_allow_opaques ? "on" : "off", DEFAULT_ALLOW_OPAQUES ? "on" : "off");
     Log("sky lighting fix     [ %17s ] [ %17s ]\n", g_sky_lighting_fix ? "on" : "off", DEFAULT_SKY_LIGHTING_FIX ? "on" : "off");
     Log("incremental          [ %17s ] [ %17s ]\n", g_incremental ? "on" : "off", DEFAULT_INCREMENTAL ? "on" : "off");
 
@@ -3174,10 +3170,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-nospread"))
                 {
                     g_allow_spread = false;
-                }
-                else if (!strcasecmp(argv[i], "-nopaque") || !strcasecmp(argv[i], "-noopaque")) //--vluzacn
-                {
-                    g_allow_opaques = false;
                 }
                 else if (!strcasecmp(argv[i], "-dscale"))
                 {
