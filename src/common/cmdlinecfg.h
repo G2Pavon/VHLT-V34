@@ -9,11 +9,12 @@ typedef enum
     DEFINE,
     UNDEF
 } command_t;
-typedef struct
+
+struct execute_t
 {
     int stack;
     bool skip;
     int skipstack;
-} execute_t;
+};
 
 void ParseParamFile(const int argc, char **const argv, int &argcnew, char **&argvnew);

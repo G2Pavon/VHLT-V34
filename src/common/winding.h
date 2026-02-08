@@ -22,13 +22,13 @@ constexpr int SIDE_CROSS = -2;
 #endif
 #define dplane_t plane_t
 #define g_dplanes g_mapplanes
-typedef struct
+struct dplane_t
 {
     vec3_t normal;
     vec3_t unused_origin;
     vec_t dist;
     planetypes type;
-} dplane_t;
+};
 extern dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 #endif
 class Winding

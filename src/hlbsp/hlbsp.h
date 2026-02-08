@@ -27,61 +27,62 @@ typedef enum
     face_discardable, // contents must not differ between front and back
 } facestyle_e;
 
-typedef struct face_s // This structure is layed out so 'pts' is on a quad-word boundary (and the pointers are as well)
+struct face_t // This structure is layed out so 'pts' is on a quad-word boundary (and the pointers are as well)
 {
-    struct face_s *next;
+    face_t *next;
     int planenum;
     int texturenum;
     int contents;     // contents in front of face
     int detaillevel;  // defined by hlcsg
     int *outputedges; // used in WriteDrawNodes
 
-    struct face_s *original; // face on node
-    int outputnumber;        // only valid for original faces after write surfaces
+    face_t *original; // face on node
+    int outputnumber; // only valid for original faces after write surfaces
     int numpoints;
     facestyle_e facestyle;
     int referenced; // only valid for original faces
 
     // vector quad word aligned
     vec3_t pts[MAXEDGES]; // FIXME: change to use winding_t
+};
 
-} face_t;
-
-typedef struct surface_s
+struct node_t;
+struct surface_t
 {
-    struct surface_s *next;
+    surface_t *next;
     int planenum;
     vec3_t mins, maxs;
-    struct node_s *onnode; // true if surface has already been used
+    node_t *onnode; // true if surface has already been used
     // as a splitting node
     face_t *faces;   // links to all the faces on either side of the surf
     int detaillevel; // minimum detail level of its faces
-} surface_t;
+};
 
-typedef struct
+struct surfchain_t
 {
     vec3_t mins, maxs;
     surface_t *surfaces;
-} surfchain_t;
+};
 
-typedef struct side_s
+struct side_t
 {
-    struct side_s *next;
+    side_t *next;
     dplane_t plane; // facing inside (reversed when loading brush file)
     Winding *w;     // (also reversed)
-} side_t;
+};
 
-typedef struct brush_s
+struct brush_t
 {
-    struct brush_s *next;
+    brush_t *next;
     side_t *sides;
-} brush_t;
+};
 
 //
 // there is a node_t structure for every node and leaf in the bsp tree
 //
 
-typedef struct node_s
+struct portal_t;
+struct node_t
 {
     surface_t *surfaces;
     brush_t *detailbrushes;
@@ -94,19 +95,19 @@ typedef struct node_s
     vec3_t mins, maxs;     // bounding volume of portals;
 
     // information for decision nodes
-    int planenum;               // -1 = leaf node
-    struct node_s *children[2]; // only valid for decision nodes
-    face_t *faces;              // decision nodes only, list for both sides
+    int planenum;        // -1 = leaf node
+    node_t *children[2]; // only valid for decision nodes
+    face_t *faces;       // decision nodes only, list for both sides
 
     // information for leafs
     int contents;       // leaf nodes (0 for decision nodes)
     face_t **markfaces; // leaf nodes only, point to node faces
-    struct portal_s *portals;
+    portal_t *portals;
     int visleafnum; // -1 = solid
     int valid;      // for flood filling
     int occupied;   // light number in leaf for outside filling
     int empty;
-} node_t;
+};
 
 constexpr int NUM_HULLS = 4; // engine constant
 
@@ -129,14 +130,14 @@ int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f);
 
 //=============================================================================
 // portals.c
-typedef struct portal_s
+struct portal_t
 {
     dplane_t plane;
     node_t *onnode;   // NULL = outside box
     node_t *nodes[2]; // [0] = front side of plane
-    struct portal_s *next[2];
+    portal_t *next[2];
     Winding *winding;
-} portal_t;
+};
 
 extern node_t g_outside_node; // portals outside the world face this
 
@@ -173,8 +174,8 @@ void GetParamsFromEnt(entity_t *mapent);
 face_t *AllocFace();
 void FreeFace(face_t *f);
 
-struct portal_s *AllocPortal();
-void FreePortal(struct portal_s *p);
+portal_t *AllocPortal();
+void FreePortal(portal_t *p);
 
 surface_t *AllocSurface();
 void FreeSurface(surface_t *s);

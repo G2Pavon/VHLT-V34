@@ -31,10 +31,10 @@ constexpr int ALLSTYLES = 64; // HL limit. //--vluzacn
 
 #define BOGUS_RANGE 131072
 
-typedef struct
+struct matrix_t
 {
     vec_t v[4][3];
-} matrix_t;
+};
 
 // a 4x4 matrix that represents the following transformation (see the ApplyMatrix function)
 //
@@ -55,9 +55,10 @@ typedef enum
     emit_skylight
 } emittype_t;
 
-typedef struct directlight_s
+struct patch_t;
+struct directlight_t
 {
-    struct directlight_s *next;
+    directlight_t *next;
     emittype_t type;
     int style;
     vec3_t origin;
@@ -83,16 +84,16 @@ typedef struct directlight_s
 
     vec_t patch_area;
     vec_t patch_emitter_range;
-    struct patch_s *patch;
+    patch_t *patch;
     vec_t texlightgap;
     bool topatch;
-} directlight_t;
+};
 
-typedef struct
+struct transfer_index_t
 {
     unsigned size : 12;
     unsigned index : 20;
-} transfer_index_t;
+};
 
 typedef unsigned transfer_raw_index_t;
 typedef unsigned char transfer_data_t;
@@ -109,11 +110,11 @@ typedef enum
     ePatchFlagOutside = 1
 } ePatchFlags;
 
-typedef struct patch_s
+struct patch_t
 {
-    struct patch_s *next; // next in face
-    vec3_t origin;        // Center centroid of winding (cached info calculated from winding)
-    vec_t area;           // Surface area of this patch (cached info calculated from winding)
+    patch_t *next; // next in face
+    vec3_t origin; // Center centroid of winding (cached info calculated from winding)
+    vec_t area;    // Surface area of this patch (cached info calculated from winding)
     vec_t exposure;
     vec_t emitter_range;  // Range from patch origin (cached info calculated from winding)
     int emitter_skylevel; // The "skylevel" used for sampling of normals, when the receiver patch is within the range of ACCURATEBOUNCE_THRESHOLD * this->radius. (cached info calculated from winding)
@@ -151,17 +152,17 @@ typedef struct patch_s
     vec3_t *totallight_all;        // NULL, or [ALLSTYLES] during BuildFacelights
     vec3_t *directlight_all;       // NULL, or [ALLSTYLES] during BuildFacelights
     int leafnum;
-} patch_t;
+};
 
 //LRC
 vec3_t *GetTotalLight(patch_t *patch, int style);
 
-typedef struct facelist_s
+struct facelist_t
 {
     dface_t *face;
-    facelist_s *next;
-} facelist_t;
-typedef struct
+    facelist_t *next;
+};
+struct edgeshare_t
 {
     dface_t *faces[2];
     vec3_t interface_normal; // HLRAD_GetPhongNormal_VL: this field must be set when smooth==true
@@ -171,7 +172,7 @@ typedef struct
     bool smooth;
     facelist_t *vertex_facelist[2]; //possible smooth faces, not include faces[0] and faces[1]
     matrix_t textotex[2];           // how we translate texture coordinates from one face to the other face
-} edgeshare_t;
+};
 
 extern edgeshare_t g_edgeshare[MAX_MAP_EDGES];
 
@@ -187,7 +188,7 @@ typedef enum
     eModelLightmodeNonsolid = 0x08, // for opaque entities with {texture
 } eModelLightmodes;
 
-typedef struct
+struct opaqueList_t
 {
     int entitynum;
     int modelnum;
@@ -198,17 +199,16 @@ typedef struct
     int style; // -1 = no style; transparency must be false if style >= 0
     // style0 and same style will change to this style, other styles will be blocked.
     bool block; // this entity can't be seen inside, so all lightmap sample should move outside.
+};
 
-} opaqueList_t;
-
-typedef struct
+struct radtexture_t
 {
     char name[MAX_TEXTURE_NAME_LENGTH]; // not always same with the name in texdata
     int width, height;
     byte *canvas; //[height][width]
     byte palette[256][3];
     vec3_t reflectivity;
-} radtexture_t;
+};
 extern int g_numtextures;
 extern radtexture_t *g_textures;
 void AddWadFolder(const char *path);
@@ -295,11 +295,11 @@ void AddPatchLights(int facenum);
 void FreeFacelightDependencyList();
 int TestLine(const vec3_t start, const vec3_t stop, vec_t *skyhitout = nullptr);
 
-typedef struct
+struct opaquemodel_t
 {
     vec3_t mins, maxs;
     int headnode;
-} opaquemodel_t;
+};
 extern opaquemodel_t *opaquemodels;
 
 void CreateOpaqueNodes();
