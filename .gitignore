@@ -1,157 +1,67 @@
-# Windows image file caches
 Thumbs.db
 ehthumbs.db
-
-# Folder config file
 Desktop.ini
-
-# Recycle Bin used on file shares
 $RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
 *.lnk
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
 
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Thumbnails
 ._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
 .Spotlight-V100
-.TemporaryItems
 .Trashes
-.VolumeIcon.icns
 
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
+.vs/
+*.user
+*.suo
+*.aps
+*.opendb
+*.browse.vc
+*.slnx.sqlite
+
+build/
+out/
+bin/
+
+Debug/
+Release/
+x64/
+x86/
+
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+!CMakeLists.txt
 
 *.obj
-*.exe
-*.tlog
-*.pdb
-*.mdl
-*.sdf
-*.opendb
-*.db
-*.suo
-*.log
-*.idb
-*.ilk
-*.user
-*.bmp
 *.iobj
+*.pdb
 *.ipdb
 *.ipch
+*.ilk
+*.idb
+*.tlog
 *.res
+*.sbr
 *.exp
-*.lastcodeanalysissucceeded
-*.nativecodeanalysis.all.xml
+*.lib
+
+*.exe
+*.dll
+*.so
+*.dylib
+
+*.log
 *.nativecodeanalysis.xml
-*.aps
-*.bsc
-.vs/CMake Overview
-.vs/ProjectSettings.json
-.vs/slnx.sqlite
-.vs/VSWorkspaceState.json
-.vs/VHLT-V34.slnx/FileContentIndex/9f5a538e-45db-47a7-bd13-0b4dda84f1ed.vsidx
-.vs/VHLT-V34.slnx/FileContentIndex/15fdae9a-dd7c-4bfb-a88f-845baf800408.vsidx
-.vs/VHLT-V34.slnx/FileContentIndex/773ef2ce-139e-483a-8a3a-eeef3f095976.vsidx
-.vs/VHLT-V34.slnx/FileContentIndex/3931c2f6-90c3-41de-83e9-4250f391b3e7.vsidx
-.vs/VHLT-V34.slnx/FileContentIndex/cc348aef-feb5-4792-903f-0384ed5e32f9.vsidx
-.vs/VHLT-V34.slnx/v18/.wsuo
-.vs/VHLT-V34.slnx/v18/DocumentLayout.backup.json
-.vs/VHLT-V34.slnx/v18/DocumentLayout.json
-build/ALL_BUILD.vcxproj
-build/ALL_BUILD.vcxproj.filters
-build/cmake_install.cmake
-build/CMakeCache.txt
-build/hlbsp.vcxproj
-build/hlbsp.vcxproj.filters
-build/hlcsg.vcxproj
-build/hlcsg.vcxproj.filters
-build/hlrad.vcxproj
-build/hlrad.vcxproj.filters
-build/hlvis.vcxproj
-build/hlvis.vcxproj.filters
-build/ripent.vcxproj
-build/ripent.vcxproj.filters
-build/VHLT.slnx
-build/ZERO_CHECK.vcxproj
-build/ZERO_CHECK.vcxproj.filters
-build/bin/Release/test.bsp
-build/bin/Release/test.ext
-build/bin/Release/test.map
-build/bin/Release/test.prt
-build/bin/Release/test.wa_
-build/CMakeFiles/cmake.check_cache
-build/CMakeFiles/CMakeConfigureLog.yaml
-build/CMakeFiles/generate.stamp
-build/CMakeFiles/generate.stamp.depend
-build/CMakeFiles/generate.stamp.list
-build/CMakeFiles/InstallScripts.json
-build/CMakeFiles/TargetDirectories.txt
-build/CMakeFiles/4.2.0/CMakeCXXCompiler.cmake
-build/CMakeFiles/4.2.0/CMakeDetermineCompilerABI_CXX.bin
-build/CMakeFiles/4.2.0/CMakeRCCompiler.cmake
-build/CMakeFiles/4.2.0/CMakeSystem.cmake
-build/CMakeFiles/4.2.0/VCTargetsPath.txt
-build/CMakeFiles/4.2.0/VCTargetsPath.vcxproj
-build/CMakeFiles/4.2.0/CompilerIdCXX/CMakeCXXCompilerId.cpp
-build/CMakeFiles/4.2.0/CompilerIdCXX/CompilerIdCXX.vcxproj
-build/CMakeFiles/4.2.0/CompilerIdCXX/Debug/CompilerIdCXX.exe.recipe
-build/CMakeFiles/4.2.0/VCTargetsPath/x64/Debug/VCTargetsPath.recipe
-build/CMakeFiles/bf1817d2e88ebda96604d2490e2daf27/generate.stamp.rule
-build/hlbsp.dir/Release/hlbsp.exe.recipe
-build/hlcsg.dir/Release/hlcsg.exe.recipe
-build/hlrad.dir/Release/hlrad.exe.recipe
-build/hlvis.dir/Release/hlvis.exe.recipe
-build/ripent.dir/Release/ripent.exe.recipe
-build/x64/Release/ALL_BUILD/ALL_BUILD.recipe
-build/x64/Release/ZERO_CHECK/ZERO_CHECK.recipe
-src/.vs/zhlt/FileContentIndex/3095b206-3172-44fc-8d5f-fd700bd47a64.vsidx
-src/.vs/zhlt/v18/.wsuo
-src/.vs/zhlt/v18/DocumentLayout.backup.json
-src/.vs/zhlt/v18/DocumentLayout.json
-src/hlbsp/Release/blockmem.sbr
-src/hlbsp/Release/brink.sbr
-src/hlbsp/Release/bspfile.sbr
-src/hlbsp/Release/cmdlib.sbr
-src/hlbsp/Release/cmdlinecfg.sbr
-src/hlbsp/Release/filelib.sbr
-src/hlbsp/Release/hlbsp.exe.recipe
-src/hlbsp/Release/hlbsp.vcxproj.FileListAbsolute.txt
-src/hlbsp/Release/log.sbr
-src/hlbsp/Release/mathlib.sbr
-src/hlbsp/Release/merge.sbr
-src/hlbsp/Release/messages.sbr
-src/hlbsp/Release/outside.sbr
-src/hlbsp/Release/portals.sbr
-src/hlbsp/Release/qbsp.sbr
-src/hlbsp/Release/scriplib.sbr
-src/hlbsp/Release/solidbsp.sbr
-src/hlbsp/Release/surfaces.sbr
-src/hlbsp/Release/threads.sbr
-src/hlbsp/Release/tjunc.sbr
-src/hlbsp/Release/winding.sbr
-src/hlbsp/Release/writebsp.sbr
+*.lastcodeanalysissucceeded
+
+
+*.bsp
+*.map
+*.prt
+*.wa_
+*.ext
+*.wad
+*.mdl
+*.spr
+*.tga
