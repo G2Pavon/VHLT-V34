@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 *.opendb
 *.browse.vc
 *.slnx.sqlite
+.idea/
 
 build/
 out/
