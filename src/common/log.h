@@ -49,7 +49,7 @@ void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const error,
 void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const message, ...);
 void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
 void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
-#define IfDebug(x) // TODO: delete this
+
 void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
 void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
 void Banner();
