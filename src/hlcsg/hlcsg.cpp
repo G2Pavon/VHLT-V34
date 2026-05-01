@@ -1278,7 +1278,6 @@ static void Usage()
     Log("    -verbose         : compile with verbose messages\n");
     Log("    -nolightopt      : don't optimize engine light entities\n");
     Log("    -notextconvert   : don't convert game_text message from Windows ANSI to UTF8 format\n");
-    Log("    -dev #           : compile with developer message\n\n");
     Log("    -wadautodetect   : Force auto-detection of wadfiles\n");
     Log("    mapfile          : The mapfile to compile\n\n");
 
@@ -1322,7 +1321,6 @@ static void Settings()
 
     Log("verbose               [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
 
-    Log("developer             [ %7d ] [ %7d ]\n", g_developer, DEFAULT_DEVELOPER);
     Log("chart                 [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate              [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory    [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -1426,17 +1424,6 @@ int main(const int argc, char **argv)
                     g_estimate = true;
                 }
 
-                else if (!strcasecmp(argv[i], "-dev"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_developer = (developer_level_t)std::atoi(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
                     g_verbose = true;

@@ -871,7 +871,6 @@ static surfchain_t *ReadSurfs(std::FILE *file)
         }
         if (planenum == -1) // end of model
         {
-            Developer(DEVELOPER_LEVEL_MEGASPAM, "inaccuracy: average %.8f max %.8f\n", inaccuracy_total / inaccuracy_count, inaccuracy_max);
             break;
         }
         if (r != 5)
@@ -933,14 +932,6 @@ static surfchain_t *ReadSurfs(std::FILE *file)
                 Error("::ReadSurfs (face_normal), fscanf of points failed at line %i", line);
             }
             VectorCopy(v, f->pts[i]);
-            if (DEVELOPER_LEVEL_MEGASPAM <= g_developer)
-            {
-                const dplane_t *plane = &g_dplanes[f->planenum];
-                double inaccuracy = std::abs(DotProduct(f->pts[i], plane->normal) - plane->dist);
-                inaccuracy_count++;
-                inaccuracy_total += inaccuracy;
-                inaccuracy_max = qmax(inaccuracy, inaccuracy_max);
-            }
         }
         std::fscanf(file, "\n");
     }
@@ -1034,11 +1025,7 @@ static bool ProcessModel()
     VectorFill(model->mins, 99999);
     VectorFill(model->maxs, -99999);
     {
-        if (surfs->mins[0] > surfs->maxs[0])
-        {
-            Developer(DEVELOPER_LEVEL_FLUFF, "model %d hull %d empty\n", modnum, g_hullnum);
-        }
-        else
+        if (surfs->mins[0] <= surfs->maxs[0])
         {
             vec3_t mins, maxs;
             VectorSubtract(surfs->mins, g_hull_size[g_hullnum][0], mins);
@@ -1132,11 +1119,7 @@ static bool ProcessModel()
         detailbrushes = ReadBrushes(brushfiles[g_hullnum]);
         {
             int hullnum = g_hullnum;
-            if (surfs->mins[0] > surfs->maxs[0])
-            {
-                Developer(DEVELOPER_LEVEL_MESSAGE, "model %d hull %d empty\n", modnum, hullnum);
-            }
-            else
+            if (surfs->mins[0] <= surfs->maxs[0])
             {
                 vec3_t mins, maxs;
                 VectorSubtract(surfs->mins, g_hull_size[hullnum][0], mins);
@@ -1197,8 +1180,7 @@ skipclip:
         }
     }
 }
-    Developer(DEVELOPER_LEVEL_MESSAGE, "model %d - mins=(%g,%g,%g) maxs=(%g,%g,%g)\n", modnum,
-              model->mins[0], model->mins[1], model->mins[2], model->maxs[0], model->maxs[1], model->maxs[2]);
+
     if (model->mins[0] > model->maxs[0])
     {
         entity_t *ent = EntityForModel(g_nummodels - 1);
@@ -1254,7 +1236,6 @@ static void Usage()
     Log("    -viewportal    : Show portal boundaries in 'mapname_portal.pts' file\n");
 
     Log("    -verbose       : compile with verbose messages\n");
-    Log("    -dev #         : compile with developer message\n\n");
     Log("    mapfile        : The mapfile to compile\n\n");
 
     std::exit(1);
@@ -1282,7 +1263,6 @@ static void Settings()
     }
 
     Log("verbose             [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
-    Log("developer           [ %7d ] [ %7d ]\n", g_developer, DEFAULT_DEVELOPER);
     Log("chart               [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -1495,17 +1475,6 @@ int main(const int argc, char **argv)
                     g_estimate = true;
                 }
 
-                else if (!strcasecmp(argv[i], "-dev"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_developer = (developer_level_t)std::atoi(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
                     g_verbose = true;

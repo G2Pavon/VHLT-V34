@@ -854,10 +854,6 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plan
                     }
                 }
             }
-            if (vertexes.size() != 2)
-            {
-                Developer(DEVELOPER_LEVEL_WARNING, "SplitTreeLeaf: got invalid edge from split\n");
-            }
 
             while (1)
             {
@@ -883,10 +879,6 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plan
                 {
                     PrintOnce("SplitTreeLeaf: internal error: couldn't link edges");
                     hlassume(false, assume_first);
-                }
-                if (vertex->second != 1 || vertex2->second != -1)
-                {
-                    Developer(DEVELOPER_LEVEL_WARNING, "SplitTreeLeaf: got deformed edge from split\n");
                 }
                 if (vertex->first->tmp_side != SIDE_ON || vertex2->first->tmp_side != SIDE_ON)
                 {
@@ -1480,13 +1472,8 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 hlassume(false, assume_first);
             }
             // because a brink won't necessarily be split twice after its creation
-            if (b->numnodes == 3)
+            if (b->numnodes == 3) // brink wasn't split by the second plane
             {
-                if (g_developer >= DEVELOPER_LEVEL_FLUFF)
-                {
-                    Developer(DEVELOPER_LEVEL_FLUFF, "Brink wasn't split by the second plane:\n");
-                    PrintBrink(b);
-                }
                 countinvalid++;
             }
             else
@@ -1496,25 +1483,15 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
             continue;
         }
 
-        if (b->numnodes > 2 * MAXBRINKWEDGES - 1)
+        if (b->numnodes > 2 * MAXBRINKWEDGES - 1) // skipping complicated brink
         {
-            if (g_developer >= DEVELOPER_LEVEL_MEGASPAM)
-            {
-                Developer(DEVELOPER_LEVEL_MEGASPAM, "Skipping complicated brink:\n");
-                PrintBrink(b);
-            }
             countskipped++;
             continue;
         }
         bcircle_t c;
         // build the circle to find out the planes a player may move along
-        if (!CalculateCircle(b, &c))
+        if (!CalculateCircle(b, &c)) // calculate failed for brink
         {
-            if (g_developer >= DEVELOPER_LEVEL_FLUFF)
-            {
-                Developer(DEVELOPER_LEVEL_FLUFF, "CalculateCircle failed for brink:\n");
-                PrintBrink(b);
-            }
             countinvalid++;
             continue;
         }
@@ -1548,13 +1525,8 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
             (c.surfaces[0][0].prev->content == CONTENTS_SOLID) != (c.surfaces[0][0].next->content == CONTENTS_SOLID) ||
             (c.surfaces[1][0].prev->content == CONTENTS_SOLID) != (c.surfaces[1][0].next->content == CONTENTS_SOLID))
         {
+            // skipping complicated brink,
             // there must at least 3 transition surfaces now, which is too complicated. just leave it unfixed
-            if (g_developer >= DEVELOPER_LEVEL_MEGASPAM)
-            {
-                Developer(DEVELOPER_LEVEL_MEGASPAM, "Skipping complicated brink:\n");
-                PrintBrink(b);
-                PrintCircle(&c);
-            }
             countskipped++;
             continue;
         }
@@ -1633,9 +1605,8 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 {
                     break;
                 }
-                if (snext == (transitionside[!side] ? &c.surfaces[side][0] : &c.surfaces[!side][0]))
+                if (snext == (transitionside[!side] ? &c.surfaces[side][0] : &c.surfaces[!side][0])) // surface past 0
                 {
-                    Developer(DEVELOPER_LEVEL_ERROR, "AnalyzeBrinks: surface past 0\n");
                     break;
                 }
                 bfix = true;
@@ -1661,13 +1632,8 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 }
             }
         }
-        if (berror)
+        if (berror) // failed for brink
         {
-            if (g_developer >= DEVELOPER_LEVEL_FLUFF)
-            {
-                Developer(DEVELOPER_LEVEL_FLUFF, "AddPartition failed for brink:\n");
-                PrintBrink(b);
-            }
             countinvalid++;
         }
         else if (!bfix)
@@ -1679,7 +1645,6 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
             countfixed++;
         }
     }
-    Developer(DEVELOPER_LEVEL_MESSAGE, "brinks: good = %d skipped = %d fixed = %d invalid = %d\n", countgood, countskipped, countfixed, countinvalid);
 }
 
 static void DeleteClipnodes(bbrinkinfo_t *info)
@@ -1765,7 +1730,6 @@ static void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes
             *pp = current;
         }
     }
-    Developer(DEVELOPER_LEVEL_MESSAGE, "partitions: floorblocking = %d floor = %d wallblocking = %d wall = %d any = %d\n", countfloorblocking, countfloor, countwallblocking, countwall, countany);
 }
 
 void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)

@@ -247,7 +247,6 @@ static bool TEX_InitFromWad()
                 texfiles[nTexFiles] = std::fopen(tmp, "rb");
                 if (texfiles[nTexFiles])
                 {
-                    Developer(DEVELOPER_LEVEL_MESSAGE, "wad file found in drive '%c:' : %s\n", l, pszWadFile);
                     break;
                 }
             }
@@ -437,7 +436,6 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
         }
         else
         {
-            Developer(DEVELOPER_LEVEL_MESSAGE, "Including texture %s\n", source->name);
             // Load the entire texture here so the BSP contains the texture
             hlassume(source->disksize <= dest_maxsize, assume_MAX_MAP_MIPTEX);
             SafeRead(texfiles[source->iTexFile], dest, source->disksize);

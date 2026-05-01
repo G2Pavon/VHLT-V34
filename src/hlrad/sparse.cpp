@@ -305,9 +305,8 @@ static void BuildVisLeafs(int threadnum)
         }
         else
         {
-            if (srcleaf->visofs == -1)
+            if (srcleaf->visofs == -1) // No visdata for this leaf
             {
-                Developer(DEVELOPER_LEVEL_ERROR, "Error: No visdata for leaf %d\n", i);
                 continue;
             }
             DecompressVis(&g_dvisdata[srcleaf->visofs], pvs, sizeof(pvs));

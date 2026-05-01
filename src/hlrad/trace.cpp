@@ -42,9 +42,9 @@ static void MakeTnode(const int nodenum)
     VectorCopy(plane->normal, t->normal);
     if (plane->normal[(plane->type) % 3] < 0)
         if (plane->type < 3)
+        {
             Warning("MakeTnode: negative plane");
-        else
-            Developer(DEVELOPER_LEVEL_MESSAGE, "Warning: MakeTnode: negative plane\n");
+        }
     t->dist = plane->dist;
 
     for (int i = 0; i < 2; i++)
@@ -254,10 +254,9 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     dplane_t pl1, pl2;
 
     VectorSubtract(p2D, pA, e1);
-    CrossProduct(normal, e1, pl1.normal); // pointing outward
-    if (VectorNormalize(pl1.normal) == 0.0)
+    CrossProduct(normal, e1, pl1.normal);   // pointing outward
+    if (VectorNormalize(pl1.normal) == 0.0) // Empty edge
     {
-        Developer(DEVELOPER_LEVEL_WARNING, "Warning: TryMerge: Empty edge.\n");
         return false;
     }
     pl1.dist = DotProduct(pA, pl1.normal);
@@ -268,10 +267,9 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     int side1 = (DotProduct(pB, pl1.normal) - pl1.dist > ON_EPSILON) ? 1 : 0;
 
     VectorSubtract(pD, p2A, e2);
-    CrossProduct(normal, e2, pl2.normal); // pointing outward
-    if (VectorNormalize(pl2.normal) == 0.0)
+    CrossProduct(normal, e2, pl2.normal);   // pointing outward
+    if (VectorNormalize(pl2.normal) == 0.0) // Emtpy edge
     {
-        Developer(DEVELOPER_LEVEL_WARNING, "Warning: TryMerge: Empty edge.\n");
         return false;
     }
     pl2.dist = DotProduct(p2A, pl2.normal);
@@ -305,9 +303,8 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
         k++;
     }
     neww->RemoveColinearPoints();
-    if (neww->m_NumPoints < 3)
+    if (neww->m_NumPoints < 3) // Empty winding
     {
-        Developer(DEVELOPER_LEVEL_WARNING, "Warning: TryMerge: Empty winding.\n");
         delete neww;
         neww = nullptr;
     }
@@ -364,9 +361,8 @@ static void BuildFaceEdges(opaqueface_t *f)
         dplane_t *pl = &f->edges[x];
         VectorSubtract(p2, p1, e);
         CrossProduct(n, e, pl->normal);
-        if (VectorNormalize(pl->normal) == 0.0)
+        if (VectorNormalize(pl->normal) == 0.0) // Empty edge
         {
-            Developer(DEVELOPER_LEVEL_WARNING, "Warning: BuildFaceEdges: Empty edge.\n");
             VectorClear(pl->normal);
             pl->dist = -1;
             continue;
@@ -459,9 +455,8 @@ void DeleteOpaqueNodes()
 static int TestLineOpaque_face(int facenum, const vec3_t hit)
 {
     opaqueface_t *thisface = &opaquefaces[facenum];
-    if (thisface->numedges == 0)
+    if (thisface->numedges == 0) // Empty face
     {
-        Developer(DEVELOPER_LEVEL_WARNING, "Warning: TestLineOpaque: Empty face.\n");
         return 0;
     }
     for (int x = 0; x < thisface->numedges; x++)

@@ -64,7 +64,6 @@ static void InitHash(const vec3_t mins, const vec3_t maxs)
     hash_numslots[1] = (int)std::floor(size[1] / scale);
     while (hash_numslots[0] * hash_numslots[1] > NUM_HASH)
     {
-        Developer(DEVELOPER_LEVEL_WARNING, "hash_numslots[0] * hash_numslots[1] > NUM_HASH");
         hash_numslots[0]--;
         hash_numslots[1]--;
     }

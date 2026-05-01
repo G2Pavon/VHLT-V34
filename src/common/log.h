@@ -3,17 +3,6 @@
 #include "win32fix.h"
 #include "messages.h"
 
-typedef enum
-{
-    DEVELOPER_LEVEL_ALWAYS,
-    DEVELOPER_LEVEL_ERROR,
-    DEVELOPER_LEVEL_WARNING,
-    DEVELOPER_LEVEL_MESSAGE,
-    DEVELOPER_LEVEL_FLUFF,
-    DEVELOPER_LEVEL_SPAM,
-    DEVELOPER_LEVEL_MEGASPAM
-} developer_level_t;
-
 //
 // log.c globals
 //
@@ -21,11 +10,9 @@ typedef enum
 extern char *g_Program;
 extern char g_Mapname[_MAX_PATH];
 
-#define DEFAULT_DEVELOPER DEVELOPER_LEVEL_ALWAYS
 #define DEFAULT_VERBOSE false
 #define DEFAULT_LOG true
 
-extern developer_level_t g_developer;
 extern bool g_verbose;
 extern bool g_log;
 extern unsigned long g_clientid;     // Client id of this program
@@ -50,7 +37,6 @@ void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const message, ...);
 void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...);
 void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const message, ...);
 
-void CDECL FORMAT_PRINTF(2, 3) Developer(developer_level_t level, const char *const message, ...);
 void CDECL FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
 void Banner();
 void LogStart(const int argc, char **argv);

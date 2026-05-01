@@ -688,7 +688,6 @@ static void Usage()
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -maxdistance #  : Alter the maximum distance for visibility\n");
     Log("    -verbose        : compile with verbose messages\n");
-    Log("    -dev #          : compile with developer message\n\n");
     Log("    mapfile         : The mapfile to compile\n\n");
     std::exit(1);
 }
@@ -715,7 +714,6 @@ static void Settings()
     }
 
     Log("verbose             [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
-    Log("developer           [ %7d ] [ %7d ]\n", g_developer, DEFAULT_DEVELOPER);
     Log("chart               [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -828,17 +826,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-full"))
                 {
                     g_fullvis = true;
-                }
-                else if (!strcasecmp(argv[i], "-dev"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_developer = (developer_level_t)std::atoi(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
                 }
                 else if (!strcasecmp(argv[i], "-verbose"))
                 {
