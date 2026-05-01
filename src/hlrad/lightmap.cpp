@@ -129,7 +129,6 @@ static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int
     }
     if (count1 != 1 || count2 != 1)
     {
-        AddFaceForVertexNormal_printerror(edgeabs, edgeend, f);
         return -1;
     }
 
@@ -154,7 +153,6 @@ static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int
     }
     else
     {
-        AddFaceForVertexNormal_printerror(edgeabs, edgeend, f);
         return -1;
     }
     VectorNormalize(vec1);
@@ -172,7 +170,6 @@ static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int
         fnext = es->faces[0];
     else
     {
-        AddFaceForVertexNormal_printerror(edgeabs, edgeend, f);
         return -1;
     }
     return 0;
