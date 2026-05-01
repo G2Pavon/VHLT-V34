@@ -16,10 +16,6 @@
 #define SYSTEM_SLASH_CHAR '\\'
 #define SYSTEM_SLASH_STR "\\"
 
-// the dec offsetof macro doesn't work very well...
-#define myoffsetof(type, identifier) ((std::size_t)&((type *)0)->identifier)
-#define sizeofElement(type, identifier) (sizeof((type *)0)->identifier)
-
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (zoner@gearboxsoftware.com)\n"
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (merlinis@bigpond.net.au)\n"
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (amckern@yahoo.com)\n"
