@@ -13,8 +13,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
+#endif
 
 #include "hlcsg.h"
 #include "wadpath.h"
@@ -1624,6 +1627,7 @@ int main(const int argc, char **argv)
             ThreadSetPriority(g_threadpriority);
             Settings();
 
+#ifdef _WIN32
             if (!g_noutf8)
             {
                 int count = 0;
@@ -1655,6 +1659,7 @@ int main(const int argc, char **argv)
                     Log("%d game_text messages converted from Windows ANSI(CP_ACP) to UTF-8 encoding\n", count);
                 }
             }
+#endif
 
             if (!g_onlyents)
             {

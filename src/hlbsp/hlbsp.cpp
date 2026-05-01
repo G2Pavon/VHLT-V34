@@ -11,8 +11,11 @@
 #include <cstdio>
 #include <cmath>
 #include <cstring>
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
 
 #include "hlbsp.h"
 #include "common/cmdlib.h"

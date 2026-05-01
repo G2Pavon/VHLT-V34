@@ -2,8 +2,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdarg>
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
 
 #include "log.h"
 #include "messages.h"

@@ -14,9 +14,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cctype>
-#include <conio.h>
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
 
 #include "ripent.h"
 #include "common/hlassert.h"
@@ -761,12 +763,12 @@ static void Usage(void)
     std::exit(1);
 }
 
-void pause()
+void waitForKey()
 {
     if (g_pause)
     {
         Log("\nPress any key to continue\n");
-        getch();
+        std::getchar();
     }
 }
 
@@ -843,7 +845,7 @@ int main(int argc, char **argv)
 
     g_Program = "ripent";
 
-    std::atexit(&pause);
+    std::atexit(&waitForKey);
     int argcold = argc;
     char **argvold = argv;
     {

@@ -1,4 +1,3 @@
-#include <io.h>
 
 #include "hlrad.h"
 #include "common/threads.h"

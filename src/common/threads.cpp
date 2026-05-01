@@ -1,8 +1,12 @@
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
+
 #include <cstdlib>
 
 #include "threads.h"
+#include "win32fix.h"
 #include "cmdlib.h"
 #include "messages.h"
 #include "log.h"
@@ -14,7 +18,6 @@ const int DEFAULT_NUMTHREADS = -1;
 static constexpr q_threadpriority DEFAULT_THREAD_PRIORITY = eThreadPriorityNormal;
 
 q_threadfunction q_entry;
-
 q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
 
 static constexpr int THREADTIMES_SIZE = 100;
@@ -27,6 +30,13 @@ static bool pacifier = false;
 static bool threaded = false;
 static double threadstart = 0;
 static double threadtimes[THREADTIMES_SIZE];
+
+int g_numthreads = DEFAULT_NUMTHREADS;
+
+#ifdef _WIN32
+static CRITICAL_SECTION crit;
+static int enter;
+#endif
 
 int GetThreadWork()
 {
@@ -44,17 +54,7 @@ int GetThreadWork()
         oldf = 0;
     }
 
-    if (dispatch > workcount)
-    {
-        ThreadUnlock();
-        return -1;
-    }
-    if (dispatch == workcount) // work is complete
-    {
-        ThreadUnlock();
-        return -1;
-    }
-    if (dispatch < 0)
+    if (dispatch >= workcount || dispatch < 0)
     {
         ThreadUnlock();
         return -1;
@@ -68,7 +68,6 @@ int GetThreadWork()
         if (f != oldf)
         {
             double ct = I_FloatTime();
-            /* Fill in current time for threadtimes record */
             for (int i = oldf; i <= f; i++)
             {
                 if (threadtimes[i] < 1)
@@ -86,8 +85,7 @@ int GetThreadWork()
 
                 if (finish > 1.0)
                 {
-                    PrintConsole(s1, f, (long)(finish), (long)(finish2),
-                                 (long)(finish3));
+                    PrintConsole(s1, f, (long)(finish), (long)(finish2), (long)(finish3));
                 }
                 else
                 {
@@ -129,20 +127,14 @@ int GetThreadWork()
 
 q_threadfunction workfunction;
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
-
 static void ThreadWorkerFunction(int unused)
 {
     int work;
-
     while ((work = GetThreadWork()) != -1)
     {
         workfunction(work);
     }
 }
-
-#pragma warning(pop)
 
 void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction func)
 {
@@ -150,84 +142,62 @@ void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction fun
     RunThreadsOn(workcnt, showpacifier, ThreadWorkerFunction);
 }
 
-#define USED
-#include <windows.h>
-
-int g_numthreads = DEFAULT_NUMTHREADS;
-static CRITICAL_SECTION crit;
-static int enter;
+#ifdef _WIN32
 
 void ThreadSetPriority(q_threadpriority type)
 {
     int val;
-
     g_threadpriority = type;
-
     switch (g_threadpriority)
     {
     case eThreadPriorityLow:
         val = IDLE_PRIORITY_CLASS;
         break;
-
     case eThreadPriorityHigh:
         val = HIGH_PRIORITY_CLASS;
         break;
-
-    case eThreadPriorityNormal:
     default:
         val = NORMAL_PRIORITY_CLASS;
         break;
     }
-
     SetPriorityClass(GetCurrentProcess(), val);
 }
 
 void ThreadSetDefault()
 {
     SYSTEM_INFO info;
-
-    if (g_numthreads == -1) // not set manually
+    if (g_numthreads == -1)
     {
         GetSystemInfo(&info);
         g_numthreads = info.dwNumberOfProcessors;
         if (g_numthreads < 1 || g_numthreads > 32)
-        {
             g_numthreads = 1;
-        }
     }
 }
 
 void ThreadLock()
 {
     if (!threaded)
-    {
         return;
-    }
     EnterCriticalSection(&crit);
     if (enter)
-    {
         Warning("Recursive ThreadLock\n");
-    }
     enter++;
 }
 
 void ThreadUnlock()
 {
     if (!threaded)
-    {
         return;
-    }
     if (!enter)
-    {
         Error("ThreadUnlock without lock\n");
-    }
     enter--;
     LeaveCriticalSection(&crit);
 }
 
 static DWORD WINAPI ThreadEntryStub(LPVOID pParam)
 {
-    q_entry((int)pParam);
+    q_entry((int)(size_t)pParam);
     return 0;
 }
 
@@ -250,9 +220,8 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     threadstart = I_FloatTime();
     double start = threadstart;
     for (int i = 0; i < THREADTIMES_SIZE; i++)
-    {
         threadtimes[i] = 0;
-    }
+
     dispatch = 0;
     workcount = workcnt;
     oldf = -1;
@@ -261,78 +230,67 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     q_entry = func;
 
     hlassume(workcount >= dispatch, assume_BadWorkcount);
+    ThreadSetDefault();
 
-    //
-    // Create all the threads (suspended)
-    //
     threads_InitCrit();
     for (int i = 0; i < g_numthreads; i++)
     {
-        HANDLE hThread = CreateThread(NULL,
-                                      0,
-                                      (LPTHREAD_START_ROUTINE)ThreadEntryStub,
-                                      (LPVOID)i,
-                                      CREATE_SUSPENDED,
-                                      &threadid[i]);
-
+        HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadEntryStub, (LPVOID)(size_t)i, CREATE_SUSPENDED, &threadid[i]);
         if (hThread != NULL)
-        {
             threadhandle[i] = hThread;
-        }
         else
-        {
-            LPVOID lpMsgBuf;
-
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                              FORMAT_MESSAGE_FROM_SYSTEM |
-                              FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-                          (LPTSTR)&lpMsgBuf, 0, NULL);
-            // Process any inserts in lpMsgBuf.
-            // ...
-            // Display the string.
             Fatal(assume_THREAD_ERROR, "Unable to create thread #%d", i);
-            // Free the buffer.
-            LocalFree(lpMsgBuf);
-        }
     }
-    CheckFatal();
 
-    // Start all the threads
     for (int i = 0; i < g_numthreads; i++)
     {
         if (ResumeThread(threadhandle[i]) == 0xFFFFFFFF)
-        {
-            LPVOID lpMsgBuf;
-
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                              FORMAT_MESSAGE_FROM_SYSTEM |
-                              FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-                          (LPTSTR)&lpMsgBuf, 0, NULL);
-            // Process any inserts in lpMsgBuf.
-            // ...
-            // Display the string.
             Fatal(assume_THREAD_ERROR, "Unable to start thread #%d", i);
-            // Free the buffer.
-            LocalFree(lpMsgBuf);
-        }
     }
-    CheckFatal();
 
-    // Wait for threads to complete
     for (int i = 0; i < g_numthreads; i++)
-    {
         WaitForSingleObject(threadhandle[i], INFINITE);
-    }
+
     threads_UninitCrit();
 
     q_entry = NULL;
     threaded = false;
     double end = I_FloatTime();
     if (pacifier)
-    {
         PrintConsole("\r%60s\r", "");
-    }
     Log(" (%.2f seconds)\n", end - start);
 }
+
+#else
+
+void ThreadSetPriority(q_threadpriority type) { g_threadpriority = type; }
+void ThreadSetDefault() { g_numthreads = 1; }
+void ThreadLock() {}
+void ThreadUnlock() {}
+static void threads_InitCrit() { threaded = false; }
+static void threads_UninitCrit() {}
+
+void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
+{
+    threadstart = I_FloatTime();
+    double start = threadstart;
+    for (int i = 0; i < THREADTIMES_SIZE; i++)
+        threadtimes[i] = 0;
+
+    dispatch = 0;
+    workcount = workcnt;
+    oldf = -1;
+    pacifier = showpacifier;
+    threaded = false;
+
+    Log("Running Single-Threaded\n");
+
+    func(0);
+
+    double end = I_FloatTime();
+    if (pacifier)
+        PrintConsole("\r%60s\r", "");
+    Log(" (%.2f seconds)\n", end - start);
+}
+
+#endif

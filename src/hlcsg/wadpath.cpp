@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "win32fix.h"
 #include "wadpath.h"
 #include "common/log.h"
 #include "common/mathlib.h"

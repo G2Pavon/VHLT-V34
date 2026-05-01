@@ -1,6 +1,5 @@
 #include <cstdlib>
 #include <cstring>
-#include <io.h>
 
 #include "hlrad.h"
 #include "common/blockmem.h"

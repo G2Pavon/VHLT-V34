@@ -549,8 +549,8 @@ static void CalcFaceExtents(lightinfo_t *l)
 
     dface_t *s = l->face;
 
-    float mins[2] = {99999999, 99999999};
-    float maxs[2] = {-99999999, -99999999};
+    float mins[2] = {99999999.0f, 99999999.0f};
+    float maxs[2] = {-99999999.0f, -99999999.0f};
 
     texinfo_t *tex = &g_texinfo[s->texinfo];
 
