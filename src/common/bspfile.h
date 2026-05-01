@@ -348,7 +348,6 @@ typedef struct lightmapblock_s
 int CountBlocks();
 
 void PrintBSPFileSizes();
-int ParseTexinfoForFace(const dface_t *f);
 void DeleteEmbeddedLightmaps();
 
 //

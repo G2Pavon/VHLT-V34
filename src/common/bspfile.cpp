@@ -571,6 +571,62 @@ bool CalcFaceExtents_test()
     return ok;
 }
 
+// =====================================================================================
+//  ParseImplicitTexinfoFromTexture
+//      purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
+// =====================================================================================
+static int ParseImplicitTexinfoFromTexture(int miptex)
+{
+    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    char name[MAX_TEXTURE_NAME_LENGTH];
+
+    if (miptex < 0 || miptex >= numtextures)
+    {
+        Warning("ParseImplicitTexinfoFromTexture: internal error: invalid texture number %d.", miptex);
+        return -1;
+    }
+    int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
+    int size = g_texdatasize - offset;
+    if (offset < 0 || g_dtexdata + offset < (byte *)&((dmiptexlump_t *)g_dtexdata)->dataofs[numtextures] ||
+        size < (int)sizeof(miptex_t))
+    {
+        return -1;
+    }
+
+    miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
+    safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
+
+    if (!(std::strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
+    {
+        return -1;
+    }
+
+    int texinfo = std::atoi(&name[5]);
+    if (texinfo < 0 || texinfo >= g_numtexinfo)
+    {
+        Warning("Invalid index of original texinfo: %d parsed from texture name '%s'.", texinfo, name);
+        return -1;
+    }
+
+    return texinfo;
+}
+
+static int ParseTexinfoForFace(const dface_t *f)
+{
+    int texinfo = f->texinfo;
+    int miptex = g_texinfo[texinfo].miptex;
+    if (miptex != -1)
+    {
+        int texinfo2 = ParseImplicitTexinfoFromTexture(miptex);
+        if (texinfo2 != -1)
+        {
+            texinfo = texinfo2;
+        }
+    }
+
+    return texinfo;
+}
+
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
     dvertex_t *v;
@@ -940,62 +996,6 @@ void PrintBSPFileSizes()
     {
         std::free(wadvalue);
     }
-}
-
-// =====================================================================================
-//  ParseImplicitTexinfoFromTexture
-//      purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
-// =====================================================================================
-static int ParseImplicitTexinfoFromTexture(int miptex)
-{
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
-    char name[MAX_TEXTURE_NAME_LENGTH];
-
-    if (miptex < 0 || miptex >= numtextures)
-    {
-        Warning("ParseImplicitTexinfoFromTexture: internal error: invalid texture number %d.", miptex);
-        return -1;
-    }
-    int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
-    int size = g_texdatasize - offset;
-    if (offset < 0 || g_dtexdata + offset < (byte *)&((dmiptexlump_t *)g_dtexdata)->dataofs[numtextures] ||
-        size < (int)sizeof(miptex_t))
-    {
-        return -1;
-    }
-
-    miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
-    safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
-
-    if (!(std::strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
-    {
-        return -1;
-    }
-
-    int texinfo = std::atoi(&name[5]);
-    if (texinfo < 0 || texinfo >= g_numtexinfo)
-    {
-        Warning("Invalid index of original texinfo: %d parsed from texture name '%s'.", texinfo, name);
-        return -1;
-    }
-
-    return texinfo;
-}
-
-static int ParseTexinfoForFace(const dface_t *f)
-{
-    int texinfo = f->texinfo;
-    int miptex = g_texinfo[texinfo].miptex;
-    if (miptex != -1)
-    {
-        int texinfo2 = ParseImplicitTexinfoFromTexture(miptex);
-        if (texinfo2 != -1)
-        {
-            texinfo = texinfo2;
-        }
-    }
-
-    return texinfo;
 }
 
 // =====================================================================================
