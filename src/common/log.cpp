@@ -433,7 +433,6 @@ void LogStart(int argc, char **argv)
     Banner();
     Log("-----  BEGIN  %s -----\n", g_Program);
     LogArgs(argc, argv);
-    DisplayDeveloperLevel();
 }
 
 // =====================================================================================
