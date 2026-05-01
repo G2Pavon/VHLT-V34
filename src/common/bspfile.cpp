@@ -21,87 +21,52 @@ int g_max_map_lightdata = DEFAULT_MAX_MAP_LIGHTDATA;
 
 int g_nummodels;
 dmodel_t g_dmodels[MAX_MAP_MODELS];
-int g_dmodels_checksum;
 
 int g_visdatasize;
 byte g_dvisdata[MAX_MAP_VISIBILITY];
-int g_dvisdata_checksum;
 
 int g_lightdatasize;
 byte *g_dlightdata;
-int g_dlightdata_checksum;
 
 int g_texdatasize;
 byte *g_dtexdata; // (dmiptexlump_t)
-int g_dtexdata_checksum;
 
 int g_entdatasize;
 char g_dentdata[MAX_MAP_ENTSTRING];
-int g_dentdata_checksum;
 
 int g_numleafs;
 dleaf_t g_dleafs[MAX_MAP_LEAFS];
-int g_dleafs_checksum;
 
 int g_numplanes;
 dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
-int g_dplanes_checksum;
 
 int g_numvertexes;
 dvertex_t g_dvertexes[MAX_MAP_VERTS];
-int g_dvertexes_checksum;
 
 int g_numnodes;
 dnode_t g_dnodes[MAX_MAP_NODES];
-int g_dnodes_checksum;
 
 int g_numtexinfo;
 
 texinfo_t g_texinfo[MAX_INTERNAL_MAP_TEXINFO];
-int g_texinfo_checksum;
 
 int g_numfaces;
 dface_t g_dfaces[MAX_MAP_FACES];
-int g_dfaces_checksum;
 
 int g_numclipnodes;
 dclipnode_t g_dclipnodes[MAX_MAP_CLIPNODES];
-int g_dclipnodes_checksum;
 
 int g_numedges;
 dedge_t g_dedges[MAX_MAP_EDGES];
-int g_dedges_checksum;
 
 int g_nummarksurfaces;
 unsigned short g_dmarksurfaces[MAX_MAP_MARKSURFACES];
-int g_dmarksurfaces_checksum;
 
 int g_numsurfedges;
 int g_dsurfedges[MAX_MAP_SURFEDGES];
-int g_dsurfedges_checksum;
 
 int g_numentities;
 entity_t g_entities[MAX_MAP_ENTITIES];
-
-/*
- * ===============
- * FastChecksum
- * ===============
- */
-
-static int FastChecksum(const void *const buffer, int bytes)
-{
-    int checksum = 0;
-    char *buf = (char *)buffer;
-
-    while (bytes--)
-    {
-        checksum = rotl(checksum, 4) ^ (*buf);
-        buf++;
-    }
-
-    return checksum;
-}
 
 /*
  * ===============
@@ -441,22 +406,6 @@ static void LoadBSPImage(dheader_t *const header)
     // swap everything
     //
     SwapBSPFile(false);
-
-    g_dmodels_checksum = FastChecksum(g_dmodels, g_nummodels * sizeof(g_dmodels[0]));
-    g_dvertexes_checksum = FastChecksum(g_dvertexes, g_numvertexes * sizeof(g_dvertexes[0]));
-    g_dplanes_checksum = FastChecksum(g_dplanes, g_numplanes * sizeof(g_dplanes[0]));
-    g_dleafs_checksum = FastChecksum(g_dleafs, g_numleafs * sizeof(g_dleafs[0]));
-    g_dnodes_checksum = FastChecksum(g_dnodes, g_numnodes * sizeof(g_dnodes[0]));
-    g_texinfo_checksum = FastChecksum(g_texinfo, g_numtexinfo * sizeof(g_texinfo[0]));
-    g_dclipnodes_checksum = FastChecksum(g_dclipnodes, g_numclipnodes * sizeof(g_dclipnodes[0]));
-    g_dfaces_checksum = FastChecksum(g_dfaces, g_numfaces * sizeof(g_dfaces[0]));
-    g_dmarksurfaces_checksum = FastChecksum(g_dmarksurfaces, g_nummarksurfaces * sizeof(g_dmarksurfaces[0]));
-    g_dsurfedges_checksum = FastChecksum(g_dsurfedges, g_numsurfedges * sizeof(g_dsurfedges[0]));
-    g_dedges_checksum = FastChecksum(g_dedges, g_numedges * sizeof(g_dedges[0]));
-    g_dtexdata_checksum = FastChecksum(g_dtexdata, g_texdatasize * sizeof(g_dtexdata[0]));
-    g_dvisdata_checksum = FastChecksum(g_dvisdata, g_visdatasize * sizeof(g_dvisdata[0]));
-    g_dlightdata_checksum = FastChecksum(g_dlightdata, g_lightdatasize * sizeof(g_dlightdata[0]));
-    g_dentdata_checksum = FastChecksum(g_dentdata, g_entdatasize * sizeof(g_dentdata[0]));
 }
 
 // =====================================================================================

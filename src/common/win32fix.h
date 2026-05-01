@@ -12,7 +12,6 @@
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
-#define rotl _rotl
 
 #define STDCALL __stdcall
 #define FASTCALL __fastcall
@@ -118,8 +117,6 @@ static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s)
         f[0] = '\0';
     return 0;
 }
-
-static inline uint32_t rotl(uint32_t v, int s) { return (v << s) | (v >> (32 - s)); }
 
 static inline void GetSystemTimeAsFileTime(FILETIME *ft)
 {
