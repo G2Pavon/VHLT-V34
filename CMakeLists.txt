@@ -42,6 +42,7 @@ set(COMMON_SOURCES
     ${COMMON_DIR}/log.cpp
     ${COMMON_DIR}/messages.cpp
     ${COMMON_DIR}/scriplib.cpp
+    ${COMMON_DIR}/stringlib.cpp
     ${COMMON_DIR}/threads.cpp
     ${COMMON_DIR}/winding.cpp
 )
