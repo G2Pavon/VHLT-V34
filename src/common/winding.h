@@ -1,6 +1,7 @@
 #pragma once
 
-#include "basictypes.h"
+#include <cstdint>
+
 #include "mathtypes.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -60,20 +61,20 @@ class Winding
     int WindingOnPlaneSide(const vec3_t normal, const vec_t dist, vec_t epsilon = ON_EPSILON);
     void CopyPoints(vec3_t *points, int &numpoints);
 
-    void initFromPoints(vec3_t *points, UINT32 numpoints);
+    void initFromPoints(vec3_t *points, std::uint32_t numpoints);
     void Reset(void); // Resets the structure
 
   protected:
-    void resize(UINT32 newsize);
+    void resize(std::uint32_t newsize);
 
   public:
     // Construction
-    Winding();                                 // Do nothing :)
-    Winding(vec3_t *points, UINT32 numpoints); // Create from raw points
+    Winding();                                        // Do nothing :)
+    Winding(vec3_t *points, std::uint32_t numpoints); // Create from raw points
     Winding(const dface_t &face, vec_t epsilon = ON_EPSILON);
     Winding(const dplane_t &face);
     Winding(const vec3_t normal, const vec_t dist);
-    Winding(UINT32 points);
+    Winding(std::uint32_t points);
     Winding(const Winding &other);
     virtual ~Winding();
     Winding &operator=(const Winding &other);
@@ -84,9 +85,9 @@ class Winding
 
   public:
     // Data
-    UINT32 m_NumPoints;
+    std::uint32_t m_NumPoints;
     vec3_t *m_Points;
 
   protected:
-    UINT32 m_MaxPoints;
+    std::uint32_t m_MaxPoints;
 };
