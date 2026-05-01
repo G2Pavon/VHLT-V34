@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 
+#include "win32fix.h"
+
 constexpr int MAXTOKEN = 4096;
 extern char g_token[MAXTOKEN];
 
