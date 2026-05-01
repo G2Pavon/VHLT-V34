@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <cerrno>
 
 #include "bspfile.h"
 #include "filelib.h"
@@ -693,7 +694,7 @@ void WriteExtentFile(const char *const filename)
     std::FILE *f = std::fopen(filename, "w");
     if (!f)
     {
-        Error("Error opening %s: %s", filename, strerror(errno));
+        Error("Error opening %s: %s", filename, std::strerror(errno));
     }
     std::fprintf(f, "%i\n", g_numfaces);
     for (int i = 0; i < g_numfaces; i++)

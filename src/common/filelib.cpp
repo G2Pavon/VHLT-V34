@@ -47,7 +47,7 @@ std::FILE *SafeOpenWrite(const char *const filename)
     std::FILE *f = std::fopen(filename, "wb");
 
     if (!f)
-        Error("Error opening %s: %s", filename, strerror(errno));
+        Error("Error opening %s: %s", filename, std::strerror(errno));
 
     return f;
 }
@@ -57,7 +57,7 @@ std::FILE *SafeOpenRead(const char *const filename)
     std::FILE *f = std::fopen(filename, "rb");
 
     if (!f)
-        Error("Error opening %s: %s", filename, strerror(errno));
+        Error("Error opening %s: %s", filename, std::strerror(errno));
 
     return f;
 }
