@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <cstdlib>
+#include <cstdint>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -27,7 +28,7 @@ double I_FloatTime()
     GetSystemTimeAsFileTime(&ftime);
 
     double rval = ftime.dwLowDateTime;
-    rval += ((__int64)ftime.dwHighDateTime) << 32;
+    rval += ((std::int64_t)ftime.dwHighDateTime) << 32;
 
     return (rval / 10000000.0);
 }
