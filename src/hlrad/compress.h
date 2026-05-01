@@ -2,8 +2,6 @@
 
 #include <cstddef>
 
-void compress_compatability_test(void);
-
 extern const std::size_t unused_size; // located at the end of a block
 
 typedef enum

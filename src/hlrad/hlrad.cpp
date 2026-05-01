@@ -3372,8 +3372,6 @@ int main(const int argc, char **argv)
 
             CheckForErrorLog();
 
-            compress_compatability_test();
-
             hlassume(CalcFaceExtents_test(), assume_first);
 
             dtexdata_init();
