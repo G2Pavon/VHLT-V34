@@ -115,18 +115,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
-    {
-        g_threadpriority = eThreadPriorityHigh;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "high");
-    }
-    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
-    {
-        g_threadpriority = eThreadPriorityLow;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "low");
-    }
-
     Verbose("\n");
 }
 
@@ -1270,22 +1258,6 @@ static void Settings()
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
 
-    switch (g_threadpriority)
-    {
-    case eThreadPriorityNormal:
-    default:
-        tmp = "Normal";
-        break;
-    case eThreadPriorityLow:
-        tmp = "Low";
-        break;
-    case eThreadPriorityHigh:
-        tmp = "High";
-        break;
-    }
-    Log("priority            [ %7s ] [ %7s ]\n", tmp, "Normal");
-    Log("\n");
-
     // HLBSP Specific Settings
     Log("subdivide size      [ %7d ] [ %7d ] (Min %d) (Max %d)\n",
         g_subdivide_size, DEFAULT_SUBDIVIDE_SIZE, MIN_SUBDIVIDE_SIZE, MAX_SUBDIVIDE_SIZE);
@@ -1486,14 +1458,6 @@ int main(const int argc, char **argv)
                 {
                     g_chart = true;
                 }
-                else if (!strcasecmp(argv[i], "-low"))
-                {
-                    g_threadpriority = eThreadPriorityLow;
-                }
-                else if (!strcasecmp(argv[i], "-high"))
-                {
-                    g_threadpriority = eThreadPriorityHigh;
-                }
 
                 else if (!strcasecmp(argv[i], "-nohull2"))
                 {
@@ -1610,7 +1574,6 @@ int main(const int argc, char **argv)
             OpenLog(g_clientid);
             std::atexit(CloseLog);
             ThreadSetDefault();
-            ThreadSetPriority(g_threadpriority);
             LogStart(argcold, argvold);
             {
                 int i;

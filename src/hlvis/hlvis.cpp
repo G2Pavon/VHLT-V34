@@ -100,18 +100,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
-    {
-        g_threadpriority = eThreadPriorityHigh;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "high");
-    }
-    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
-    {
-        g_threadpriority = eThreadPriorityLow;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "low");
-    }
-
     /*
     hlvis(choices) : "HLVIS" : 2 = 
     [ 
@@ -724,22 +712,6 @@ static void Settings()
     Log("max vis distance    [ %7d ] [ %7d ]\n", g_maxdistance, DEFAULT_MAXDISTANCE_RANGE);
     //Log("max dist only       [ %7s ] [ %7s ]\n", g_postcompile ? "on" : "off", DEFAULT_POST_COMPILE ? "on" : "off");
 
-    switch (g_threadpriority)
-    {
-    case eThreadPriorityNormal:
-    default:
-        tmp = "Normal";
-        break;
-    case eThreadPriorityLow:
-        tmp = "Low";
-        break;
-    case eThreadPriorityHigh:
-        tmp = "High";
-        break;
-    }
-    Log("priority            [ %7s ] [ %7s ]\n", tmp, "Normal");
-    Log("\n");
-
     // HLVIS Specific Settings
     Log("fast vis            [ %7s ] [ %7s ]\n", fastvis ? "on" : "off", DEFAULT_FASTVIS ? "on" : "off");
     Log("full vis            [ %7s ] [ %7s ]\n", g_fullvis ? "on" : "off", DEFAULT_FULLVIS ? "on" : "off");
@@ -839,14 +811,6 @@ int main(const int argc, char **argv)
                 {
                     g_chart = true;
                 }
-                else if (!strcasecmp(argv[i], "-low"))
-                {
-                    g_threadpriority = eThreadPriorityLow;
-                }
-                else if (!strcasecmp(argv[i], "-high"))
-                {
-                    g_threadpriority = eThreadPriorityHigh;
-                }
                 else if (!strcasecmp(argv[i], "-texdata"))
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
@@ -920,7 +884,6 @@ int main(const int argc, char **argv)
             OpenLog(g_clientid);
             std::atexit(CloseLog);
             ThreadSetDefault();
-            ThreadSetPriority(g_threadpriority);
             LogStart(argcold, argvold);
             {
                 int i;

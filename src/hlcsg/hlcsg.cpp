@@ -102,18 +102,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    // priority(choices) : "Priority Level" : 0 = [	0 : "Normal" 1 : "High"	-1 : "Low" ]
-    if (!std::strcmp(ValueForKey(mapent, "priority"), "1"))
-    {
-        g_threadpriority = eThreadPriorityHigh;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "high");
-    }
-    else if (!std::strcmp(ValueForKey(mapent, "priority"), "-1"))
-    {
-        g_threadpriority = eThreadPriorityLow;
-        Log("%30s [ %-9s ]\n", "Thread Priority", "low");
-    }
-
     // texdata(string) : "Texture Data Memory" : "4096"
     iTmp = IntForKey(mapent, "texdata") * 1024;
     if (iTmp > g_max_map_miptex)
@@ -1329,21 +1317,6 @@ static void Settings()
     Log("max texture memory    [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
     Log("max lighting memory   [ %7d ] [ %7d ]\n", g_max_map_lightdata, DEFAULT_MAX_MAP_LIGHTDATA);
 
-    switch (g_threadpriority)
-    {
-    case eThreadPriorityNormal:
-    default:
-        tmp = "Normal";
-        break;
-    case eThreadPriorityLow:
-        tmp = "Low";
-        break;
-    case eThreadPriorityHigh:
-        tmp = "High";
-        break;
-    }
-    Log("priority              [ %7s ] [ %7s ]\n", tmp, "Normal");
-    Log("\n");
     // HLCSG Specific Settings
     Log("clipnode economy mode [ %7s ] [ %7s ]\n", g_bClipNazi ? "on" : "off", DEFAULT_CLIPNAZI ? "on" : "off");
     Log("clip hull type        [ %7s ] [ %7s ]\n", GetClipTypeString(g_cliptype), GetClipTypeString(DEFAULT_CLIPTYPE));
@@ -1434,14 +1407,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
                     g_chart = true;
-                }
-                else if (!strcasecmp(argv[i], "-low"))
-                {
-                    g_threadpriority = eThreadPriorityLow;
-                }
-                else if (!strcasecmp(argv[i], "-high"))
-                {
-                    g_threadpriority = eThreadPriorityHigh;
                 }
                 else if (!strcasecmp(argv[i], "-noskyclip"))
                 {
@@ -1624,7 +1589,6 @@ int main(const int argc, char **argv)
 
             LoadMapFile(name);
             ThreadSetDefault();
-            ThreadSetPriority(g_threadpriority);
             Settings();
 
 #ifdef _WIN32

@@ -1,9 +1,10 @@
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#include <cstdlib>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
 
 #include "threads.h"
 #include "win32fix.h"
@@ -13,126 +14,139 @@
 #include "blockmem.h"
 #include "hlassert.h"
 
+static std::mutex g_thread_mutex;
+static std::atomic<int> g_enter_count{0};
+static std::atomic<bool> g_is_threaded{false};
+
 static constexpr int MAX_THREADS = 64;
-const int DEFAULT_NUMTHREADS = -1;
-static constexpr q_threadpriority DEFAULT_THREAD_PRIORITY = eThreadPriorityNormal;
-
-q_threadfunction q_entry;
-q_threadpriority g_threadpriority = DEFAULT_THREAD_PRIORITY;
-
-static constexpr int THREADTIMES_SIZE = 100;
-#define THREADTIMES_SIZEf (float)(THREADTIMES_SIZE)
-
-static int dispatch = 0;
-static int workcount = 0;
-static int oldf = 0;
-static bool pacifier = false;
-static bool threaded = false;
-static double threadstart = 0;
-static double threadtimes[THREADTIMES_SIZE];
-
 int g_numthreads = DEFAULT_NUMTHREADS;
 
-#ifdef _WIN32
-static CRITICAL_SECTION crit;
-static int enter;
-#endif
+static q_threadfunction q_entry;
+
+static std::atomic<int> g_dispatch_index{0};
+static int g_work_count = 0;
+static int g_old_percentage = -1;
+static bool g_show_pacifier = false;
+
+static constexpr int THREADTIMES_SIZE = 100;
+static constexpr float THREADTIMES_SIZE_F = static_cast<float>(THREADTIMES_SIZE);
+static double g_thread_start_time = 0;
+static double g_thread_times[THREADTIMES_SIZE];
+
+q_threadfunction workfunction;
+
+void ThreadLock()
+{
+    if (!g_is_threaded)
+        return;
+
+    g_thread_mutex.lock();
+    if (g_enter_count > 0)
+    {
+        Warning("Recursive ThreadLock detected\n");
+    }
+    g_enter_count++;
+}
+
+void ThreadUnlock()
+{
+    if (!g_is_threaded)
+        return;
+
+    if (g_enter_count <= 0)
+    {
+        Error("ThreadUnlock without corresponding lock\n");
+    }
+    g_enter_count--;
+    g_thread_mutex.unlock();
+}
 
 int GetThreadWork()
 {
-    static const char *s1 = nullptr;
-    static const char *s2 = nullptr;
+    std::lock_guard<std::mutex> lock(g_thread_mutex);
 
-    ThreadLock();
-    if (s1 == nullptr)
-        s1 = "  (%d%%: est. time to completion %ld/%ld/%ld secs)   ";
-    if (s2 == nullptr)
-        s2 = "  (%d%%: est. time to completion <1 sec)   ";
-
-    if (dispatch == 0)
+    if (g_dispatch_index == 0)
     {
-        oldf = 0;
+        g_old_percentage = 0;
     }
 
-    if (dispatch >= workcount || dispatch < 0)
+    if (g_dispatch_index < 0 || g_dispatch_index >= g_work_count)
     {
-        ThreadUnlock();
         return -1;
     }
 
-    int f = THREADTIMES_SIZE * dispatch / workcount;
-    if (pacifier)
-    {
-        PrintConsole("\r%6d /%6d", dispatch, workcount);
+    int current_percentage = (THREADTIMES_SIZE * g_dispatch_index) / g_work_count;
 
-        if (f != oldf)
+    if (g_show_pacifier)
+    {
+        PrintConsole("\r%6d /%6d", g_dispatch_index.load(), g_work_count);
+
+        if (current_percentage != g_old_percentage)
         {
-            double ct = I_FloatTime();
-            for (int i = oldf; i <= f; i++)
+            double current_time = I_FloatTime();
+            for (int i = g_old_percentage; i <= current_percentage; i++)
             {
-                if (threadtimes[i] < 1)
+                if (g_thread_times[i] < 1.0)
                 {
-                    threadtimes[i] = ct;
+                    g_thread_times[i] = current_time;
                 }
             }
-            oldf = f;
+            g_old_percentage = current_percentage;
 
-            if (f > 10)
+            if (current_percentage > 10)
             {
-                double finish = (ct - threadtimes[0]) * (THREADTIMES_SIZEf - f) / f;
-                double finish2 = 10.0 * (ct - threadtimes[f - 10]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
-                double finish3 = THREADTIMES_SIZEf * (ct - threadtimes[f - 1]) * (THREADTIMES_SIZEf - f) / THREADTIMES_SIZEf;
+                double time_from_start = current_time - g_thread_times[0];
+                double est_finish = (time_from_start) * (THREADTIMES_SIZE_F - current_percentage) / current_percentage;
+                double est_finish2 = 10.0 * (current_time - g_thread_times[current_percentage - 10]) * (THREADTIMES_SIZE_F - current_percentage) / THREADTIMES_SIZE_F;
+                double est_finish3 = THREADTIMES_SIZE_F * (current_time - g_thread_times[current_percentage - 1]) * (THREADTIMES_SIZE_F - current_percentage) / THREADTIMES_SIZE_F;
 
-                if (finish > 1.0)
+                if (est_finish > 1.0)
                 {
-                    PrintConsole(s1, f, (long)(finish), (long)(finish2), (long)(finish3));
+                    PrintConsole("  (%d%%: est. time %ld/%ld/%ld secs)   ",
+                                 current_percentage, (long)est_finish, (long)est_finish2, (long)est_finish3);
                 }
                 else
                 {
-                    PrintConsole(s2, f);
+                    PrintConsole("  (%d%%: est. time <1 sec)   ", current_percentage);
                 }
             }
         }
     }
     else
     {
-        if (f != oldf)
+        if (current_percentage != g_old_percentage)
         {
-            oldf = f;
-            switch (f)
+            g_old_percentage = current_percentage;
+            if (current_percentage > 0 && current_percentage % 10 == 0)
             {
-            case 10:
-            case 20:
-            case 30:
-            case 40:
-            case 50:
-            case 60:
-            case 70:
-            case 80:
-            case 90:
-            case 100:
-                PrintConsole("%d%%...", f);
-            default:
-                break;
+                PrintConsole("%d%%...", current_percentage);
             }
         }
     }
 
-    int r = dispatch;
-    dispatch++;
-
-    ThreadUnlock();
-    return r;
+    return g_dispatch_index++;
 }
 
-q_threadfunction workfunction;
-
-static void ThreadWorkerFunction(int unused)
+static void ThreadWorkerFunction(int)
 {
     int work;
     while ((work = GetThreadWork()) != -1)
     {
         workfunction(work);
+    }
+}
+
+void ThreadSetDefault()
+{
+    if (g_numthreads == -1)
+    {
+        unsigned int n = std::thread::hardware_concurrency();
+        g_numthreads = (n > 0) ? static_cast<int>(n) : 1;
+
+        if (g_numthreads > MAX_THREADS)
+        {
+            g_numthreads = MAX_THREADS;
+        }
     }
 }
 
@@ -142,155 +156,52 @@ void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction fun
     RunThreadsOn(workcnt, showpacifier, ThreadWorkerFunction);
 }
 
-#ifdef _WIN32
-
-void ThreadSetPriority(q_threadpriority type)
-{
-    int val;
-    g_threadpriority = type;
-    switch (g_threadpriority)
-    {
-    case eThreadPriorityLow:
-        val = IDLE_PRIORITY_CLASS;
-        break;
-    case eThreadPriorityHigh:
-        val = HIGH_PRIORITY_CLASS;
-        break;
-    default:
-        val = NORMAL_PRIORITY_CLASS;
-        break;
-    }
-    SetPriorityClass(GetCurrentProcess(), val);
-}
-
-void ThreadSetDefault()
-{
-    SYSTEM_INFO info;
-    if (g_numthreads == -1)
-    {
-        GetSystemInfo(&info);
-        g_numthreads = info.dwNumberOfProcessors;
-        if (g_numthreads < 1 || g_numthreads > 32)
-            g_numthreads = 1;
-    }
-}
-
-void ThreadLock()
-{
-    if (!threaded)
-        return;
-    EnterCriticalSection(&crit);
-    if (enter)
-        Warning("Recursive ThreadLock\n");
-    enter++;
-}
-
-void ThreadUnlock()
-{
-    if (!threaded)
-        return;
-    if (!enter)
-        Error("ThreadUnlock without lock\n");
-    enter--;
-    LeaveCriticalSection(&crit);
-}
-
-static DWORD WINAPI ThreadEntryStub(LPVOID pParam)
-{
-    q_entry((int)(size_t)pParam);
-    return 0;
-}
-
-static void threads_InitCrit()
-{
-    InitializeCriticalSection(&crit);
-    threaded = true;
-}
-
-static void threads_UninitCrit()
-{
-    DeleteCriticalSection(&crit);
-}
-
 void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
 {
-    DWORD threadid[MAX_THREADS];
-    HANDLE threadhandle[MAX_THREADS];
+    g_thread_start_time = I_FloatTime();
 
-    threadstart = I_FloatTime();
-    double start = threadstart;
-    for (int i = 0; i < THREADTIMES_SIZE; i++)
-        threadtimes[i] = 0;
+    std::fill(std::begin(g_thread_times), std::end(g_thread_times), 0.0);
 
-    dispatch = 0;
-    workcount = workcnt;
-    oldf = -1;
-    pacifier = showpacifier;
-    threaded = true;
+    g_dispatch_index = 0;
+    g_work_count = workcnt;
+    g_old_percentage = -1;
+    g_show_pacifier = showpacifier;
+    g_is_threaded = true;
     q_entry = func;
 
-    hlassume(workcount >= dispatch, assume_BadWorkcount);
+    hlassume(g_work_count >= 0, assume_BadWorkcount);
+
     ThreadSetDefault();
 
-    threads_InitCrit();
-    for (int i = 0; i < g_numthreads; i++)
-    {
-        HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadEntryStub, (LPVOID)(size_t)i, CREATE_SUSPENDED, &threadid[i]);
-        if (hThread != NULL)
-            threadhandle[i] = hThread;
-        else
-            Fatal(assume_THREAD_ERROR, "Unable to create thread #%d", i);
-    }
+    Log("Running with %d threads\n", g_numthreads);
+
+    // RAII: Los hilos se gestionan en este vector
+    std::vector<std::thread> workers;
+    workers.reserve(g_numthreads);
 
     for (int i = 0; i < g_numthreads; i++)
     {
-        if (ResumeThread(threadhandle[i]) == 0xFFFFFFFF)
-            Fatal(assume_THREAD_ERROR, "Unable to start thread #%d", i);
+        // Usamos una lambda para invocar la función de entrada
+        workers.emplace_back([i]()
+                             { q_entry(i); });
     }
 
-    for (int i = 0; i < g_numthreads; i++)
-        WaitForSingleObject(threadhandle[i], INFINITE);
+    // Esperar a que todos los hilos terminen
+    for (auto &t : workers)
+    {
+        if (t.joinable())
+        {
+            t.join();
+        }
+    }
 
-    threads_UninitCrit();
+    q_entry = nullptr;
+    g_is_threaded = false;
+    double total_time = I_FloatTime() - g_thread_start_time;
 
-    q_entry = NULL;
-    threaded = false;
-    double end = I_FloatTime();
-    if (pacifier)
+    if (g_show_pacifier)
+    {
         PrintConsole("\r%60s\r", "");
-    Log(" (%.2f seconds)\n", end - start);
+    }
+    Log(" (%.2f seconds)\n", total_time);
 }
-
-#else
-
-void ThreadSetPriority(q_threadpriority type) { g_threadpriority = type; }
-void ThreadSetDefault() { g_numthreads = 1; }
-void ThreadLock() {}
-void ThreadUnlock() {}
-static void threads_InitCrit() { threaded = false; }
-static void threads_UninitCrit() {}
-
-void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
-{
-    threadstart = I_FloatTime();
-    double start = threadstart;
-    for (int i = 0; i < THREADTIMES_SIZE; i++)
-        threadtimes[i] = 0;
-
-    dispatch = 0;
-    workcount = workcnt;
-    oldf = -1;
-    pacifier = showpacifier;
-    threaded = false;
-
-    Log("Running Single-Threaded\n");
-
-    func(0);
-
-    double end = I_FloatTime();
-    if (pacifier)
-        PrintConsole("\r%60s\r", "");
-    Log(" (%.2f seconds)\n", end - start);
-}
-
-#endif
