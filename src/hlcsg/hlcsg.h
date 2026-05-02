@@ -45,7 +45,7 @@ struct brush_texture_t
     char name[32];
 };
 
-struct side_t
+struct bside_t
 {
     brush_texture_t td;
     bool bevel;
@@ -150,7 +150,7 @@ extern brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 
 constexpr int MAX_MAP_SIDES = (MAX_MAP_BRUSHES * 6);
 
-extern side_t g_brushsides[MAX_MAP_SIDES];
+extern bside_t g_brushsides[MAX_MAP_SIDES];
 
 extern void LoadMapFile(const char *const filename);
 

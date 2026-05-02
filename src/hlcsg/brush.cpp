@@ -826,7 +826,7 @@ static bool MakeBrushPlanes(brush_t *b)
     // for each side in this brush
     for (int i = 0; i < b->numsides; i++)
     {
-        side_t *s = &g_brushsides[b->firstside + i];
+        bside_t *s = &g_brushsides[b->firstside + i];
         for (int j = 0; j < 3; j++)
         {
             VectorSubtract(s->planepts[j], origin, s->planepts[j]);
@@ -1002,7 +1002,7 @@ contents_t CheckBrushContents(const brush_t *const b)
 {
     bool assigned = false;
 
-    side_t *s = &g_brushsides[b->firstside];
+    bside_t *s = &g_brushsides[b->firstside];
 
     // cycle though the sides of the brush and attempt to get our best side contents for
     //  determining overall brush contents
@@ -1171,7 +1171,7 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
 
     for (int i = 0; i < b->numsides; i++)
     {
-        side_t *s;
+        bside_t *s;
         vec3_t p[3];
         vec3_t v1;
         vec3_t v2;

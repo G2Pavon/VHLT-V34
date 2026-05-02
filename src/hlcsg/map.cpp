@@ -18,7 +18,7 @@ int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 
 static int g_numbrushsides;
-side_t g_brushsides[MAX_MAP_SIDES];
+bside_t g_brushsides[MAX_MAP_SIDES];
 
 static int g_nMapFileVersion; // map file version 220
 
@@ -59,7 +59,7 @@ static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
     newb->firstside = g_numbrushsides;
     g_numbrushsides += brush->numsides;
     hlassume(g_numbrushsides <= MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
-    std::memcpy(&g_brushsides[newb->firstside], &g_brushsides[brush->firstside], brush->numsides * sizeof(side_t));
+    std::memcpy(&g_brushsides[newb->firstside], &g_brushsides[brush->firstside], brush->numsides * sizeof(bside_t));
     newb->entitynum = entity - g_entities;
     newb->brushnum = entity->numbrushes;
     entity->numbrushes++;
@@ -95,7 +95,7 @@ static void DeleteCurrentEntity(entity_t *entity)
             Error("DeleteCurrentEntity: internal error. (Entity %i, Brush %i)",
                   b->originalentitynum, b->originalbrushnum);
         }
-        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
+        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(bside_t));
         g_numbrushsides -= b->numsides;
         for (int h = 0; h < NUM_HULLS; h++)
         {
@@ -216,7 +216,7 @@ static void ParseBrush(entity_t *mapent)
         }
 
         hlassume(g_numbrushsides < MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
-        side_t *side = &g_brushsides[g_numbrushsides];
+        bside_t *side = &g_brushsides[g_numbrushsides];
         g_numbrushsides++;
 
         b->numsides++;
@@ -364,7 +364,7 @@ static void ParseBrush(entity_t *mapent)
     b->contents = contents;
     for (int j = 0; j < b->numsides; j++)
     {
-        side_t *side = &g_brushsides[b->firstside + j];
+        bside_t *side = &g_brushsides[b->firstside + j];
         if (nullify && strncasecmp(side->td.name, "BEVEL", 5) && strncasecmp(side->td.name, "ORIGIN", 6) && strncasecmp(side->td.name, "HINT", 4) && strncasecmp(side->td.name, "SKIP", 4) && strncasecmp(side->td.name, "SOLIDHINT", 9) && strncasecmp(side->td.name, "SPLITFACE", 9) && strncasecmp(side->td.name, "BOUNDINGBOX", 11) && strncasecmp(side->td.name, "CONTENT", 7) && strncasecmp(side->td.name, "SKY", 3))
         {
             safe_strncpy(side->td.name, "NULL", sizeof(side->td.name));
@@ -373,7 +373,7 @@ static void ParseBrush(entity_t *mapent)
     for (int j = 0; j < b->numsides; j++)
     {
         // change to SKIP now that we have set brush content.
-        side_t *side = &g_brushsides[b->firstside + j];
+        bside_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "SPLITFACE", 9))
         {
             std::strcpy(side->td.name, "SKIP");
@@ -381,7 +381,7 @@ static void ParseBrush(entity_t *mapent)
     }
     for (int j = 0; j < b->numsides; j++)
     {
-        side_t *side = &g_brushsides[b->firstside + j];
+        bside_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "CONTENT", 7))
         {
             std::strcpy(side->td.name, "NULL");
@@ -390,7 +390,7 @@ static void ParseBrush(entity_t *mapent)
 
     for (int j = 0; j < b->numsides; j++)
     {
-        side_t *side = &g_brushsides[b->firstside + j];
+        bside_t *side = &g_brushsides[b->firstside + j];
         if (!strncasecmp(side->td.name, "AAATRIGGER", 10))
         {
             std::strcpy(side->td.name, "NULL");
@@ -433,7 +433,7 @@ static void ParseBrush(entity_t *mapent)
     }
     if (*ValueForKey(&g_entities[b->entitynum], "zhlt_usemodel"))
     {
-        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(side_t));
+        std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(bside_t));
         g_numbrushsides -= b->numsides;
         for (int h = 0; h < NUM_HULLS; h++)
         {
@@ -499,7 +499,7 @@ static void ParseBrush(entity_t *mapent)
         newb->cliphull = ~0;
         for (int j = 0; j < newb->numsides; j++)
         {
-            side_t *side = &g_brushsides[newb->firstside + j];
+            bside_t *side = &g_brushsides[newb->firstside + j];
             std::strcpy(side->td.name, "NULL");
         }
     }
@@ -509,7 +509,7 @@ static void ParseBrush(entity_t *mapent)
         bool mixed = false;
         for (int j = 0; j < b->numsides; j++)
         {
-            side_t *side = &g_brushsides[b->firstside + j];
+            bside_t *side = &g_brushsides[b->firstside + j];
             if (!strncasecmp(side->td.name, "NULL", 4))
             { // this is not supposed to be a HINT brush, so remove all invisible faces from hull 0.
                 std::strcpy(side->td.name, "SKIP");
@@ -525,7 +525,7 @@ static void ParseBrush(entity_t *mapent)
         b->contents = CONTENTS_SOLID;
         for (int j = 0; j < b->numsides; j++)
         {
-            side_t *side = &g_brushsides[b->firstside + j];
+            bside_t *side = &g_brushsides[b->firstside + j];
             std::strcpy(side->td.name, "NULL");
         }
     }
@@ -650,7 +650,7 @@ static bool ParseMapEntity()
 
             int ibrush, iside;
             brush_t *brush;
-            side_t *side;
+            bside_t *side;
             vec_t *point;
             for (ibrush = 0, brush = g_mapbrushes + mapent->firstbrush; ibrush < mapent->numbrushes; ++ibrush, ++brush)
             {
