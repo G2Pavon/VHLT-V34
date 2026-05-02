@@ -184,18 +184,7 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Lighting Data Memory", szTmp);
     }
 
-    // verbose(choices) : "Verbose compile messages" : 0 = [ 0 : "Off" 1 : "On" ]
-    iTmp = IntForKey(mapent, "verbose");
-    if (iTmp == 1)
-    {
-        g_verbose = true;
-    }
-    else if (iTmp == 0)
-    {
-        g_verbose = false;
-    }
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
-    Log("%30s [ %-9s ]\n", "Verbose Compile Messages", g_verbose ? "on" : "off");
 
     // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
@@ -2018,11 +2007,6 @@ static void GatherLight(int threadnum)
                         }
                         VectorAdd(adds[addstyle], v, adds[addstyle]);
                     }
-                    else
-                    {
-                        Verbose("GatherLight, v (%4.3f %4.3f %4.3f)@(%4.3f %4.3f %4.3f)\n",
-                                v[0], v[1], v[2], patch->origin[0], patch->origin[1], patch->origin[2]);
-                    }
                 }
                 //LRC (ends)
             }
@@ -2167,11 +2151,6 @@ static void GatherRGBLight(int threadnum)
                                 continue;
                         }
                         VectorAdd(adds[addstyle], v, adds[addstyle]);
-                    }
-                    else
-                    {
-                        Verbose("GatherLight, v (%4.3f %4.3f %4.3f)@(%4.3f %4.3f %4.3f)\n",
-                                v[0], v[1], v[2], patch->origin[0], patch->origin[1], patch->origin[2]);
                     }
                 }
                 //LRC (ends)
@@ -2438,10 +2417,8 @@ static void RadWorld()
     FreeTriangulations();
 
     NamedRunThreadsOnIndividual(g_numfaces, g_estimate, FinalLightFace);
-    if (g_maxdiscardedlight > 0.01)
-    {
-        Verbose("Maximum brightness loss (too many light styles on a face) = %f @(%f, %f, %f)\n", g_maxdiscardedlight, g_maxdiscardedpos[0], g_maxdiscardedpos[1], g_maxdiscardedpos[2]);
-    }
+    // g_maxdiscardedlight > 0.01 Maximum brightness loss (too many light styles on a face)
+
     MdlLightHack();
     ReduceLightmap();
     if (g_lightdatasize == 0)
@@ -2490,7 +2467,6 @@ static void Usage()
     Log("    -low | -high    : run program an altered priority level\n");
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
-    Log("    -verbose        : compile with verbose messages\n");
 
     // ------------------------------------------------------------------------
     // Changes by Adam Foster - afoster@compsoc.man.ac.uk
@@ -2552,8 +2528,6 @@ static void Settings()
     {
         Log("threads              [ %17d ] [ %17d ]\n", g_numthreads, DEFAULT_NUMTHREADS);
     }
-
-    Log("verbose              [ %17s ] [ %17s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
     Log("chart                [ %17s ] [ %17s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate             [ %17s ] [ %17s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory   [ %17d ] [ %17d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -2795,10 +2769,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-                else if (!strcasecmp(argv[i], "-verbose"))
-                {
-                    g_verbose = true;
                 }
                 else if (!strcasecmp(argv[i], "-threads"))
                 {

@@ -18,7 +18,6 @@
 char *g_Program = "Uninitialized variable ::g_Program";
 char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
 
-bool g_verbose = DEFAULT_VERBOSE;
 bool g_log = DEFAULT_LOG;
 
 unsigned long g_clientid = 0;
@@ -353,26 +352,6 @@ void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Warning: ", message);
     WriteLog(message2);
-}
-
-// =====================================================================================
-//  Verbose
-//      Same as log but only prints when in verbose mode
-// =====================================================================================
-void CDECL FORMAT_PRINTF(1, 2) Verbose(const char *const warning, ...)
-{
-    if (g_verbose)
-    {
-        char message[MAX_MESSAGE];
-
-        va_list argptr;
-
-        va_start(argptr, warning);
-        std::vsnprintf(message, MAX_MESSAGE, warning, argptr);
-        va_end(argptr);
-
-        WriteLog(message);
-    }
 }
 
 // =====================================================================================

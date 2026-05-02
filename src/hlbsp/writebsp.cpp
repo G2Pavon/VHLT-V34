@@ -535,7 +535,6 @@ void BeginBSPFile()
 // =====================================================================================
 void FinishBSPFile()
 {
-    Verbose("--- FinishBSPFile ---\n");
 
     if (g_dmodels[0].visleafs > MAX_MAP_LEAFS_ENGINE)
     {

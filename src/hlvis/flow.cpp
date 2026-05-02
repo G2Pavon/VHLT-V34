@@ -649,7 +649,6 @@ void BasePortalVis(int unused)
         }
 
         SimpleFlood(p->mightsee, p->leaf, portalsee, &p->nummightsee);
-        Verbose("portal:%4i  nummightsee:%4i \n", i, p->nummightsee);
     }
 }
 

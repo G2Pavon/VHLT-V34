@@ -239,8 +239,6 @@ void MergePlaneFaces(surface_t *plane)
 // =====================================================================================
 void MergeAll(surface_t *surfhead)
 {
-    Verbose("---- MergeAll ----\n");
-
     int mergefaces = 0;
     for (surface_t *surf = surfhead; surf; surf = surf->next)
     {
@@ -250,6 +248,4 @@ void MergeAll(surface_t *surfhead)
             mergefaces++;
         }
     }
-
-    Verbose("%i mergefaces\n", mergefaces);
 }

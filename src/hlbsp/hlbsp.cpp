@@ -91,18 +91,7 @@ void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
 
-    // verbose(choices) : "Verbose compile messages" : 0 = [ 0 : "Off" 1 : "On" ]
-    int iTmp = IntForKey(mapent, "verbose");
-    if (iTmp == 1)
-    {
-        g_verbose = true;
-    }
-    else if (iTmp == 0)
-    {
-        g_verbose = false;
-    }
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
-    Log("%30s [ %-9s ]\n", "Verbose Compile Messages", g_verbose ? "on" : "off");
 
     // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
@@ -114,8 +103,6 @@ void GetParamsFromEnt(entity_t *mapent)
         g_estimate = false;
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
-
-    Verbose("\n");
 }
 
 // =====================================================================================
@@ -887,12 +874,9 @@ static surfchain_t *ReadSurfs(std::FILE *file)
 
         if (!strcasecmp(GetTextureByNumber(g_texinfo), "skip"))
         {
-            Verbose("ReadSurfs (line %i): skipping a surface", line);
-
             for (int i = 0; i < numpoints; i++)
             {
                 line++;
-                //Verbose("skipping line %d", line);
                 r = std::fscanf(file, "%lf %lf %lf\n", &v[0], &v[1], &v[2]);
                 if (r != 3)
                 {
@@ -1221,12 +1205,8 @@ static void Usage()
     Log("    -low | -high   : run program an altered priority level\n");
     Log("    -threads #     : manually specify the number of threads to run\n");
     Log("    -estimate      : display estimated time during compile\n");
-
     Log("    -nohull2       : Don't generate hull 2 (the clipping hull for large monsters and pushables)\n");
-
     Log("    -viewportal    : Show portal boundaries in 'mapname_portal.pts' file\n");
-
-    Log("    -verbose       : compile with verbose messages\n");
     Log("    mapfile        : The mapfile to compile\n\n");
 
     std::exit(1);
@@ -1252,8 +1232,6 @@ static void Settings()
     {
         Log("threads             [ %7d ] [ %7d ]\n", g_numthreads, DEFAULT_NUMTHREADS);
     }
-
-    Log("verbose             [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
     Log("chart               [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -1448,11 +1426,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
                     g_estimate = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-verbose"))
-                {
-                    g_verbose = true;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {

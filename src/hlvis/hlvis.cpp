@@ -76,18 +76,7 @@ void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
 
-    // verbose(choices) : "Verbose compile messages" : 0 = [ 0 : "Off" 1 : "On" ]
-    int iTmp = IntForKey(mapent, "verbose");
-    if (iTmp == 1)
-    {
-        g_verbose = true;
-    }
-    else if (iTmp == 0)
-    {
-        g_verbose = false;
-    }
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
-    Log("%30s [ %-9s ]\n", "Verbose Compile Messages", g_verbose ? "on" : "off");
 
     // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
@@ -109,7 +98,7 @@ void GetParamsFromEnt(entity_t *mapent)
         3 : "Full"
     ]
     */
-    iTmp = IntForKey(mapent, "hlvis");
+    int iTmp = IntForKey(mapent, "hlvis");
     if (iTmp == 0)
     {
         Fatal(assume_TOOL_CANCEL,
@@ -229,8 +218,6 @@ static void LeafThread(int unused)
         }
 
         PortalFlow(p);
-
-        Verbose("portal:%4i  mightsee:%4i  cansee:%4i\n", (int)(p - g_portals), p->nummightsee, p->numcansee);
     }
 }
 
@@ -313,7 +300,6 @@ static void LeafFlow(const int leafnum)
     //
     // compress the bit string
     //
-    Verbose("leaf %4i : %4i visible\n", leafnum, numvis);
     totalvis += numvis;
 
     byte buffer2[MAX_MAP_LEAFS / 8];
@@ -678,7 +664,6 @@ static void Usage()
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -maxdistance #  : Alter the maximum distance for visibility\n");
-    Log("    -verbose        : compile with verbose messages\n");
     Log("    mapfile         : The mapfile to compile\n\n");
     std::exit(1);
 }
@@ -704,7 +689,6 @@ static void Settings()
         Log("threads             [ %7d ] [ %7d ]\n", g_numthreads, DEFAULT_NUMTHREADS);
     }
 
-    Log("verbose             [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
     Log("chart               [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
@@ -802,11 +786,6 @@ int main(const int argc, char **argv)
                 {
                     g_fullvis = true;
                 }
-                else if (!strcasecmp(argv[i], "-verbose"))
-                {
-                    g_verbose = true;
-                }
-
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
                     g_chart = true;

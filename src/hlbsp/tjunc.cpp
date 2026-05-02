@@ -510,9 +510,6 @@ static void tjunc_fix_r(node_t *node)
 void tjunc(node_t *headnode)
 {
     vec3_t maxs, mins;
-
-    Verbose("---- tjunc ----\n");
-
     //
     // identify all points on common edges
     //
@@ -537,15 +534,10 @@ void tjunc(node_t *headnode)
 
     tjunc_find_r(headnode);
 
-    Verbose("%i world edges  %i edge points\n", numwedges, numwverts);
-
     //
     // add extra vertexes on edges where needed
     //
     tjuncs = tjuncfaces = 0;
 
     tjunc_fix_r(headnode);
-
-    Verbose("%i edges added by tjunctions\n", tjuncs);
-    Verbose("%i faces added by tjunctions\n", tjuncfaces);
 }

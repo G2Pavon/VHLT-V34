@@ -78,18 +78,7 @@ void GetParamsFromEnt(entity_t *mapent)
 
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
 
-    // verbose(choices) : "Verbose compile messages" : 0 = [ 0 : "Off" 1 : "On" ]
-    int iTmp = IntForKey(mapent, "verbose");
-    if (iTmp == 1)
-    {
-        g_verbose = true;
-    }
-    else if (iTmp == 0)
-    {
-        g_verbose = false;
-    }
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
-    Log("%30s [ %-9s ]\n", "Verbose Compile Messages", g_verbose ? "on" : "off");
 
     // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
@@ -103,7 +92,7 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
     // texdata(string) : "Texture Data Memory" : "4096"
-    iTmp = IntForKey(mapent, "texdata") * 1024;
+    int iTmp = IntForKey(mapent, "texdata") * 1024;
     if (iTmp > g_max_map_miptex)
     {
         g_max_map_miptex = iTmp;
@@ -1238,10 +1227,6 @@ static void BoundWorld()
         }
         world_bounds.add(h->bounds);
     }
-
-    Verbose("World bounds: (%i %i %i) to (%i %i %i)\n",
-            (int)world_bounds.m_Mins[0], (int)world_bounds.m_Mins[1], (int)world_bounds.m_Mins[2],
-            (int)world_bounds.m_Maxs[0], (int)world_bounds.m_Maxs[1], (int)world_bounds.m_Maxs[2]);
 }
 
 // =====================================================================================
@@ -1266,7 +1251,6 @@ static void Usage()
     Log("    -low | -high     : run program an altered priority level\n");
     Log("    -threads #       : manually specify the number of threads to run\n");
     Log("    -estimate        : display estimated time during compile\n");
-    Log("    -verbose         : compile with verbose messages\n");
     Log("    -nolightopt      : don't optimize engine light entities\n");
     Log("    -notextconvert   : don't convert game_text message from Windows ANSI to UTF8 format\n");
     Log("    -wadautodetect   : Force auto-detection of wadfiles\n");
@@ -1309,8 +1293,6 @@ static void Settings()
     {
         Log("threads               [ %7d ] [ %7d ]\n", g_numthreads, DEFAULT_NUMTHREADS);
     }
-
-    Log("verbose               [ %7s ] [ %7s ]\n", g_verbose ? "on" : "off", DEFAULT_VERBOSE ? "on" : "off");
 
     Log("chart                 [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate              [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
@@ -1398,11 +1380,6 @@ int main(const int argc, char **argv)
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
                     g_estimate = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-verbose"))
-                {
-                    g_verbose = true;
                 }
                 else if (!strcasecmp(argv[i], "-chart"))
                 {
@@ -1664,8 +1641,6 @@ int main(const int argc, char **argv)
             // boundworld
             BoundWorld();
 
-            Verbose("%5i map planes\n", g_nummapplanes);
-
             // Set model centers
             for (int i = 0; i < g_numentities; i++)
                 SetModelCenters(i); //NamedRunThreadsOnIndividual(g_numentities, g_estimate, SetModelCenters); //--vluzacn
@@ -1706,9 +1681,6 @@ int main(const int argc, char **argv)
             }
 
             ProcessModels();
-
-            Verbose("%5i csg faces\n", c_csgfaces);
-            Verbose("%5i used faces\n", c_outfaces);
 
             // close hull files
             for (int i = 0; i < NUM_HULLS; i++)

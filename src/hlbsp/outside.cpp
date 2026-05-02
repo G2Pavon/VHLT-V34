@@ -411,8 +411,6 @@ void LoadAllowableOutsideList(const char *const filename)
 
                         g_strAllowableOutsideList[y++] = pszData;
                         g_nAllowableOutside++;
-
-                        Verbose("Adding entity '%s' to the allowable void list\n", pszData);
                     }
                     pszData = pData + x + 1;
                 }
@@ -427,9 +425,6 @@ void LoadAllowableOutsideList(const char *const filename)
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 {
     vec3_t origin;
-
-    Verbose("----- FillOutside ----\n");
-
     if (hullnum == 2 && g_nohull2)
         return node;
 
@@ -566,11 +561,6 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     c_free_faces = 0;
     c_keep_faces = 0;
     node = ClearOutFaces_r(node);
-
-    Verbose("%5i outleafs\n", outleafs);
-    Verbose("%5i freed faces\n", c_free_faces);
-    Verbose("%5i keep faces\n", c_keep_faces);
-    Verbose("%5i falsenodes\n", c_falsenodes);
 
     // save portal file for vis tracing
     if ((hullnum == 0) && leakfile)
