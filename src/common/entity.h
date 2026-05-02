@@ -2,20 +2,20 @@
 
 #include "mathtypes.h"
 
-typedef struct epair_s
+struct epair_t
 {
-    struct epair_s *next;
+    struct epair_t *next;
     char *key;
     char *value;
-} epair_t;
+};
 
-typedef struct
+struct entity_t
 {
     vec3_t origin;
     int firstbrush;
     int numbrushes;
     epair_t *epairs;
-} entity_t;
+};
 
 void DeleteKey(entity_t *ent, const char *const key);
 void SetKeyValue(entity_t *ent, const char *const key, const char *const value);

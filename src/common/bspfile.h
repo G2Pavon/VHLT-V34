@@ -119,47 +119,47 @@ constexpr int LUMP_SURFEDGES = 13;
 constexpr int LUMP_MODELS = 14;
 constexpr int HEADER_LUMPS = 15;
 
-typedef struct
+struct dmodel_t
 {
     float mins[3], maxs[3];
     float origin[3];
     int headnode[MAX_MAP_HULLS];
     int visleafs; // not including the solid leaf 0
     int firstface, numfaces;
-} dmodel_t;
+};
 
-typedef struct
+struct dheader_t
 {
     int version;
     lump_t lumps[HEADER_LUMPS];
-} dheader_t;
+};
 
-typedef struct
+struct dmiptexlump_t
 {
     int nummiptex;
     int dataofs[4]; // [nummiptex]
-} dmiptexlump_t;
+};
 
 constexpr int MIPLEVELS = 4;
 constexpr int MAX_TEXTURE_NAME_LENGTH = 16;
-typedef struct miptex_s
+struct miptex_t
 {
     char name[MAX_TEXTURE_NAME_LENGTH];
     unsigned width, height;
     unsigned offsets[MIPLEVELS]; // four mip maps stored
-} miptex_t;
+};
 
-typedef struct
+struct dvertex_t
 {
     float point[3];
-} dvertex_t;
+};
 
-typedef struct
+struct dplane_t
 {
     float normal[3];
     float dist;
     planetypes type; // PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
-} dplane_t;
+};
 
 typedef enum
 {
@@ -189,7 +189,7 @@ typedef enum
 } contents_t;
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct
+struct dnode_t
 {
     int planenum;
     short children[2]; // negative numbers are -(leafs+1), not nodes
@@ -197,32 +197,32 @@ typedef struct
     short maxs[3];
     unsigned short firstface;
     unsigned short numfaces; // counting both sides
-} dnode_t;
+};
 
-typedef struct
+struct dclipnode_t
 {
     int planenum;
     short children[2]; // negative numbers are contents
-} dclipnode_t;
+};
 
-typedef struct texinfo_s
+struct texinfo_t
 {
     float vecs[2][4]; // [s/t][xyz offset]
     int miptex;
     int flags;
-} texinfo_t;
+};
 
 constexpr int TEX_SPECIAL = 1; // sky or slime or null, no lightmap or 256 subdivision
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
-typedef struct
+struct dedge_t
 {
     unsigned short v[2]; // vertex numbers
-} dedge_t;
+};
 
 constexpr int MAXLIGHTMAPS = 4;
-typedef struct
+struct dface_t
 {
     unsigned short planenum;
     short side;
@@ -234,7 +234,7 @@ typedef struct
     // lighting info
     byte styles[MAXLIGHTMAPS];
     int lightofs; // start of [numstyles*surfsize] samples
-} dface_t;
+};
 
 constexpr int AMBIENT_WATER = 0;
 constexpr int AMBIENT_SKY = 1;
@@ -245,7 +245,7 @@ constexpr int NUM_AMBIENTS = 4; // automatic ambient sounds
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
-typedef struct
+struct dleaf_t
 {
     int contents;
     int visofs; // -1 = no visibility info
@@ -257,7 +257,7 @@ typedef struct
     unsigned short nummarksurfaces;
 
     byte ambient_level[NUM_AMBIENTS];
-} dleaf_t;
+};
 
 //============================================================================
 
@@ -324,12 +324,12 @@ void WriteExtentFile(const char *const filename);
 
 constexpr int BLOCK_WIDTH = 128;
 constexpr int BLOCK_HEIGHT = 128;
-typedef struct lightmapblock_s
+struct lightmapblock_t
 {
-    lightmapblock_s *next;
+    lightmapblock_t *next;
     bool used;
     int allocated[BLOCK_WIDTH];
-} lightmapblock_t;
+};
 
 int CountBlocks();
 
