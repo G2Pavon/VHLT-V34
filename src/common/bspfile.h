@@ -322,16 +322,15 @@ bool CalcFaceExtents_test();
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
 void WriteExtentFile(const char *const filename);
 
-constexpr int BLOCK_WIDTH = 128;
-constexpr int BLOCK_HEIGHT = 128;
 struct lightmapblock_t
 {
+    static constexpr int BLOCK_WIDTH = 128;
+    static constexpr int BLOCK_HEIGHT = 128;
+
     lightmapblock_t *next;
     bool used;
     int allocated[BLOCK_WIDTH];
 };
-
-int CountBlocks();
 
 void PrintBSPFileSizes();
 void DeleteEmbeddedLightmaps();

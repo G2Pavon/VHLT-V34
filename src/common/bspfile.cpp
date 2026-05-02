@@ -671,8 +671,8 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
     }
     for (block = blocks; block; block = block->next)
     {
-        int best = BLOCK_HEIGHT;
-        for (int i = 0; i < BLOCK_WIDTH - w; i++)
+        int best = lightmapblock_t::BLOCK_HEIGHT;
+        for (int i = 0; i < lightmapblock_t::BLOCK_WIDTH - w; i++)
         {
             int best2 = 0;
             for (j = 0; j < w; j++)
@@ -688,7 +688,7 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
                 y = best = best2;
             }
         }
-        if (best + h <= BLOCK_HEIGHT)
+        if (best + h <= lightmapblock_t::BLOCK_HEIGHT)
         {
             block->used = true;
             for (int i = 0; i < w; i++)
@@ -710,7 +710,8 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
         }
     }
 }
-int CountBlocks()
+
+static int CountBlocks()
 {
     lightmapblock_t *blocks = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
     hlassume(blocks != nullptr, assume_NoMemory);
@@ -767,6 +768,7 @@ int CountBlocks()
     }
     return count;
 }
+
 static bool NoWadTextures()
 {
     // copied from loadtextures.cpp
