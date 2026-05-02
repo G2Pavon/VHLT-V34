@@ -1212,27 +1212,31 @@ static void SetModelCenters(int entitynum)
 //
 // =====================================================================================
 //
-#ifdef _WIN32
 static void ConvertGameTextToUTF8()
 {
-    if (!g_noutf8)
+
+    int count = 0;
+
+    for (int i = 0; i < g_numentities; i++)
     {
-        int count = 0;
+        entity_t *ent = &g_entities[i];
 
-        for (int i = 0; i < g_numentities; i++)
+        if (std::strcmp(ValueForKey(ent, "classname"), "game_text") != 0)
+            continue;
+
+        const char *value = ValueForKey(ent, "message");
+
+        if (value && *value)
         {
-            entity_t *ent = &g_entities[i];
-
-            if (std::strcmp(ValueForKey(ent, "classname"), "game_text"))
+            if (IsValidUTF8(value))
             {
                 continue;
             }
 
-            const char *value = ValueForKey(ent, "message");
-            if (*value)
+            char *newvalue = ANSItoUTF8(value);
+            if (newvalue)
             {
-                char *newvalue = ANSItoUTF8(value);
-                if (std::strcmp(newvalue, value))
+                if (std::strcmp(newvalue, value) != 0)
                 {
                     SetKeyValue(ent, "message", newvalue);
                     count++;
@@ -1240,14 +1244,13 @@ static void ConvertGameTextToUTF8()
                 std::free(newvalue);
             }
         }
+    }
 
-        if (count)
-        {
-            Log("%d game_text messages converted from Windows ANSI(CP_ACP) to UTF-8 encoding\n", count);
-        }
+    if (count > 0)
+    {
+        Log("%d game_text messages converted from Windows(CP1252) to UTF-8\n", count);
     }
 }
-#endif
 
 // =====================================================================================
 //  BoundWorld
@@ -1595,9 +1598,10 @@ int main(const int argc, char **argv)
             ThreadSetDefault();
             Settings();
 
-#ifdef _WIN32
-            ConvertGameTextToUTF8();
-#endif
+            if (!g_noutf8)
+            {
+                ConvertGameTextToUTF8();
+            }
 
             if (!g_onlyents)
             {
