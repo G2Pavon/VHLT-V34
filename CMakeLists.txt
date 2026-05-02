@@ -38,6 +38,7 @@ set(COMMON_SOURCES
     ${COMMON_DIR}/bspfile.cpp
     ${COMMON_DIR}/cmdlib.cpp
     ${COMMON_DIR}/cmdlinecfg.cpp
+    ${COMMON_DIR}/entity.cpp
     ${COMMON_DIR}/filelib.cpp
     ${COMMON_DIR}/log.cpp
     ${COMMON_DIR}/messages.cpp

@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+#include "entity.h"
 #include "mathtypes.h"
 #include "mathlib.h"
 #include "win32fix.h"
@@ -339,21 +340,6 @@ void DeleteEmbeddedLightmaps();
 // Entity Related Stuff
 //
 
-typedef struct epair_s
-{
-    struct epair_s *next;
-    char *key;
-    char *value;
-} epair_t;
-
-typedef struct
-{
-    vec3_t origin;
-    int firstbrush;
-    int numbrushes;
-    epair_t *epairs;
-} entity_t;
-
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
@@ -362,12 +348,7 @@ extern void GetParamsFromEnt(entity_t *mapent);
 bool ParseEntity();
 void ParseEntities();
 void UnparseEntities();
-void DeleteKey(entity_t *ent, const char *const key);
-void SetKeyValue(entity_t *ent, const char *const key, const char *const value);
-const char *ValueForKey(const entity_t *const ent, const char *const key);
-int IntForKey(const entity_t *const ent, const char *const key);
-vec_t FloatForKey(const entity_t *const ent, const char *const key);
-void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec);
+
 entity_t *FindTargetEntity(const char *const target);
 //
 // Texture Related Stuff
