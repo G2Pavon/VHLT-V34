@@ -97,10 +97,11 @@ constexpr int TOOLVERSION = 2;
 // BSP File Structures
 //
 
-typedef struct
+struct lump_t
 {
-    int fileofs, filelen;
-} lump_t;
+    int fileofs;
+    int filelen;
+};
 
 constexpr int LUMP_ENTITIES = 0;
 constexpr int LUMP_PLANES = 1;
@@ -258,11 +259,6 @@ struct dleaf_t
 
     byte ambient_level[NUM_AMBIENTS];
 };
-
-//============================================================================
-
-constexpr float ANGLE_UP = -1.0f;   //--vluzacn
-constexpr float ANGLE_DOWN = -2.0f; //--vluzacn
 
 //
 // BSP File Data

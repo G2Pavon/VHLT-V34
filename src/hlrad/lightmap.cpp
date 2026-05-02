@@ -1538,6 +1538,9 @@ void CreateDirectLights()
     styleused[0] = true;
     int numstyles = 1;
 
+    static constexpr float ANGLE_UP = -1.0f;
+    static constexpr float ANGLE_DOWN = -2.0f;
+
     //
     // surfaces
     //
