@@ -27,7 +27,6 @@ static std::FILE *CompileLog = nullptr;
 static bool fatal = false;
 
 bool twice = false;
-bool useconsole = false;
 std::FILE *conout = nullptr;
 
 ////////
@@ -493,49 +492,6 @@ static void wait()
     Sleep(1000);
 }
 
-int InitConsole(int argc, char **argv)
-{
-    bool wrong = false;
-    twice = false;
-    useconsole = true;
-    for (int i = 1; i < argc; ++i)
-    {
-        if (!strcasecmp(argv[i], "-console"))
-        {
-            if (i + 1 < argc)
-            {
-                if (!strcasecmp(argv[i + 1], "0"))
-                    useconsole = false;
-                else if (!strcasecmp(argv[i + 1], "1"))
-                    useconsole = true;
-                else
-                    wrong = true;
-            }
-            else
-                wrong = true;
-        }
-    }
-    if (useconsole)
-        twice = AllocConsole();
-    if (useconsole)
-    {
-        conout = std::fopen("CONOUT$", "w");
-        if (!conout)
-        {
-            useconsole = false;
-            twice = false;
-            Warning("Can not open 'CONOUT$'");
-            if (twice)
-                FreeConsole();
-        }
-    }
-    if (twice)
-        std::atexit(&wait);
-    if (wrong)
-        return -1;
-    return 0;
-}
-
 void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];
@@ -547,13 +503,5 @@ void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
     std::vsnprintf(message, MAX_MESSAGE, warning, argptr);
     va_end(argptr);
 
-    if (useconsole)
-    {
-        std::fprintf(conout, "%s", message);
-        std::fflush(conout);
-    }
-    else
-    {
-        std::fprintf(stdout, "%s", message);
-    }
+    std::fprintf(stdout, "%s", message);
 }

@@ -41,5 +41,4 @@ void LogEnd();
 void hlassume(bool exp, assume_msgs msgid); // Should be in hlassert.h, but well so what
 void LogTimeElapsed(float elapsed_time);
 
-int InitConsole(int argc, char **argv);
 void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);

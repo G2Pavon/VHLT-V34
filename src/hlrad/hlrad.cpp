@@ -2437,7 +2437,6 @@ static void Usage()
     Banner();
 
     Log("\n-= %s Options =-\n\n", g_Program);
-    Log("    -console #      : Set to 0 to turn off the pop-up console (default is 1)\n");
     Log("    -waddir folder  : Search this folder for wad files.\n");
     Log("    -fast           : Fast rad\n");
     Log("    -vismatrix value: Set vismatrix method to normal, sparse or off .\n");
@@ -2740,21 +2739,12 @@ int main(const int argc, char **argv)
         char **argv;
         ParseParamFile(argcold, argvold, argc, argv);
         {
-            if (InitConsole(argc, argv) < 0)
-                Usage();
             if (argc == 1)
                 Usage();
 
             for (int i = 1; i < argc; i++)
             {
-                if (!strcasecmp(argv[i], "-console"))
-                {
-                    if (i + 1 < argc)
-                        ++i;
-                    else
-                        Usage();
-                }
-                else if (!strcasecmp(argv[i], "-bounce"))
+                if (!strcasecmp(argv[i], "-bounce"))
                 {
                     if (i + 1 < argc) //added "1" .--vluzacn
                     {

@@ -1238,7 +1238,6 @@ static void Usage()
     Banner(); // TODO: Call banner from main CSG process?
 
     Log("\n-= %s Options =-\n\n", g_Program);
-    Log("    -console #       : Set to 0 to turn off the pop-up console (default is 1)\n");
     Log("    -nowadtextures   : include all used textures into bsp\n");
     Log("    -wadinclude file : place textures used from wad specified into bsp\n");
     Log("    -clipeconomy     : turn clipnode economy mode on\n");
@@ -1338,8 +1337,6 @@ int main(const int argc, char **argv)
         char **argv;
         ParseParamFile(argcold, argvold, argc, argv);
         {
-            if (InitConsole(argc, argv) < 0)
-                Usage();
             if (argc == 1)
                 Usage();
 
@@ -1368,14 +1365,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-
-                else if (!strcasecmp(argv[i], "-console"))
-                {
-                    if (i + 1 < argc)
-                        ++i;
-                    else
-                        Usage();
                 }
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {

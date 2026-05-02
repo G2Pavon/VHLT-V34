@@ -740,8 +740,6 @@ static void Usage(void)
 
     Banner();
     Log("\n-= %s Options =-\n\n", g_Program);
-
-    Log("    -console #      : Set to 0 to turn off the pop-up console (default is 1)\n");
     Log("    -export         : Export entity data\n");
     Log("    -import         : Import entity data\n\n");
 
@@ -853,8 +851,6 @@ int main(int argc, char **argv)
         char **argv;
         ParseParamFile(argcold, argvold, argc, argv);
         {
-            if (InitConsole(argc, argv) < 0)
-                Usage();
             if (argc == 1)
             {
                 Usage();
@@ -865,13 +861,6 @@ int main(int argc, char **argv)
                 if (!strcasecmp(argv[i], "-import"))
                 {
                     g_mode = hl_import;
-                }
-                else if (!strcasecmp(argv[i], "-console"))
-                {
-                    if (i + 1 < argc)
-                        ++i;
-                    else
-                        Usage();
                 }
                 else if (!strcasecmp(argv[i], "-export"))
                 {

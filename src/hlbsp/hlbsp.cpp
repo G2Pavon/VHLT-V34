@@ -1196,7 +1196,6 @@ static void Usage()
     Banner();
 
     Log("\n-= %s Options =-\n\n", g_Program);
-    Log("    -console #     : Set to 0 to turn off the pop-up console (default is 1)\n");
     Log("    -subdivide #   : Sets the face subdivide size\n");
     Log("    -maxnodesize # : Sets the maximum portal node size\n\n");
     Log("    -texdata #     : Alter maximum texture memory limit (in kb)\n");
@@ -1390,9 +1389,6 @@ int main(const int argc, char **argv)
         char **argv;
         ParseParamFile(argcold, argvold, argc, argv);
         {
-            if (InitConsole(argc, argv) < 0)
-                Usage();
-            // if we dont have any command line argvars, print out usage and die
             if (argc == 1)
                 Usage();
 
@@ -1415,13 +1411,6 @@ int main(const int argc, char **argv)
                     {
                         Usage();
                     }
-                }
-                else if (!strcasecmp(argv[i], "-console"))
-                {
-                    if (i + 1 < argc)
-                        ++i;
-                    else
-                        Usage();
                 }
                 else if (!strcasecmp(argv[i], "-estimate"))
                 {
