@@ -139,8 +139,6 @@ struct hullshape_t
     hullbrush_t **brushes;
 };
 
-extern char *ANSItoUTF8(const char *);
-
 //=============================================================================
 // map.c
 

@@ -1,8 +1,9 @@
-#include <cstdlib>
+#include "ansitoutf8.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cstdlib>
 
 char *ANSItoUTF8(const char *string)
 {

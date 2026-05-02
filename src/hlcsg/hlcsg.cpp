@@ -9,6 +9,7 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
+
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -20,6 +21,7 @@
 #endif
 
 #include "hlcsg.h"
+#include "ansitoutf8.h"
 #include "wadpath.h"
 #include "common/cmdlib.h"
 #include "common/cmdlinecfg.h"
@@ -1210,6 +1212,42 @@ static void SetModelCenters(int entitynum)
 //
 // =====================================================================================
 //
+#ifdef _WIN32
+static void ConvertGameTextToUTF8()
+{
+    if (!g_noutf8)
+    {
+        int count = 0;
+
+        for (int i = 0; i < g_numentities; i++)
+        {
+            entity_t *ent = &g_entities[i];
+
+            if (std::strcmp(ValueForKey(ent, "classname"), "game_text"))
+            {
+                continue;
+            }
+
+            const char *value = ValueForKey(ent, "message");
+            if (*value)
+            {
+                char *newvalue = ANSItoUTF8(value);
+                if (std::strcmp(newvalue, value))
+                {
+                    SetKeyValue(ent, "message", newvalue);
+                    count++;
+                }
+                std::free(newvalue);
+            }
+        }
+
+        if (count)
+        {
+            Log("%d game_text messages converted from Windows ANSI(CP_ACP) to UTF-8 encoding\n", count);
+        }
+    }
+}
+#endif
 
 // =====================================================================================
 //  BoundWorld
@@ -1558,37 +1596,7 @@ int main(const int argc, char **argv)
             Settings();
 
 #ifdef _WIN32
-            if (!g_noutf8)
-            {
-                int count = 0;
-
-                for (int i = 0; i < g_numentities; i++)
-                {
-                    entity_t *ent = &g_entities[i];
-
-                    if (std::strcmp(ValueForKey(ent, "classname"), "game_text"))
-                    {
-                        continue;
-                    }
-
-                    const char *value = ValueForKey(ent, "message");
-                    if (*value)
-                    {
-                        char *newvalue = ANSItoUTF8(value);
-                        if (std::strcmp(newvalue, value))
-                        {
-                            SetKeyValue(ent, "message", newvalue);
-                            count++;
-                        }
-                        std::free(newvalue);
-                    }
-                }
-
-                if (count)
-                {
-                    Log("%d game_text messages converted from Windows ANSI(CP_ACP) to UTF-8 encoding\n", count);
-                }
-            }
+            ConvertGameTextToUTF8();
 #endif
 
             if (!g_onlyents)
