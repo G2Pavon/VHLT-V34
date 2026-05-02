@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
-#include <malloc.h> // for _alloca
 
 #include "hlvis.h"
 #include "common/threads.h"
