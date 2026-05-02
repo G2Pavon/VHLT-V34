@@ -4,7 +4,6 @@
 #include <deque>
 #include <string>
 
-#include "common/bspfile.h"
 #include "common/boundingbox.h"
 #include "common/winding.h"
 #include "common/mathtypes.h"
