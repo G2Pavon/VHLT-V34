@@ -27,7 +27,7 @@ static byte *s_vismatrix;
 //  TestPatchToFace
 //      Sets vis bits for all patches in the face
 // =====================================================================================
-static void TestPatchToFace(const unsigned patchnum, const int facenum, const int head, const unsigned int bitpos, byte *pvs)
+static void TestPatchToFace(const unsigned patchnum, const int facenum, const unsigned int bitpos, byte *pvs)
 {
     patch_t *patch = &g_patches[patchnum];
     patch_t *patch2 = g_face_patches[facenum];
@@ -132,7 +132,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const in
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-static void BuildVisLeafs(int threadnum)
+static void BuildVisLeafs(int /*threadnum*/)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
 
@@ -159,8 +159,6 @@ static void BuildVisLeafs(int threadnum)
             }
             DecompressVis(&g_dvisdata[srcleaf->visofs], pvs, sizeof(pvs));
         }
-        int head = 0;
-
         //
         // go through all the faces inside the
         // leaf, and process the patches that
@@ -176,7 +174,7 @@ static void BuildVisLeafs(int threadnum)
 
                 unsigned bitpos = patchnum * g_num_patches - (patchnum * (patchnum + 1)) / 2;
                 for (int facenum2 = facenum + 1; facenum2 < g_numfaces; facenum2++)
-                    TestPatchToFace(patchnum, facenum2, head, bitpos, pvs);
+                    TestPatchToFace(patchnum, facenum2, bitpos, pvs);
             }
         }
     }

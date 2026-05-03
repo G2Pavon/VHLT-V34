@@ -115,24 +115,6 @@ bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
     return b;
 }
 
-static void PrintBrink(const bbrink_t *b)
-{
-    Log("direction %f %f %f start %f %f %f stop %f %f %f\n", b->direction[0], b->direction[1], b->direction[2], b->start[0], b->start[1], b->start[2], b->stop[0], b->stop[1], b->stop[2]);
-    Log("numnodes %d\n", b->numnodes);
-    for (int i = 0; i < b->numnodes; i++)
-    {
-        bbrinknode_t *n = &(*b->nodes)[i];
-        if (n->isleaf)
-        {
-            Log("leaf[%d] content %d\n", i, n->content);
-        }
-        else
-        {
-            Log("node[%d]-[%d:%d] plane %f %f %f %f\n", i, n->children[0], n->children[1], n->plane->normal[0], n->plane->normal[1], n->plane->normal[2], n->plane->dist);
-        }
-    }
-}
-
 static void BrinkSplitClipnode(bbrink_t *b, const dplane_t *plane, int planenum, bclipnode_t *prev, bclipnode_t *n0, bclipnode_t *n1)
 {
     int found;
@@ -1393,23 +1375,6 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
         }
     }
     return true;
-}
-
-static void PrintCircle(const bcircle_t *c)
-{
-    Log("axis %f %f %f\n", c->axis[0], c->axis[1], c->axis[2]);
-    Log("basenormal %f %f %f\n", c->basenormal[0], c->basenormal[1], c->basenormal[2]);
-    Log("numwedges %d %d\n", c->numwedges[0], c->numwedges[1]);
-    for (int side = 0; side < 2; side++)
-    {
-        for (int i = 0; i < c->numwedges[side]; i++)
-        {
-            const bwedge_t *w = &c->wedges[side][i];
-            const bsurface_t *s = &c->surfaces[side][i];
-            Log("surface[%d][%d] nodenum %d nodeside %d normal %f %f %f\n", side, i, s->nodenum, s->nodeside, s->normal[0], s->normal[1], s->normal[2]);
-            Log("wedge[%d][%d] nodenum %d content %d\n", side, i, w->nodenum, w->content);
-        }
-    }
 }
 
 static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, int content, bbrinklevel_e brinktype)

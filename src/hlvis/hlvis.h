@@ -110,9 +110,9 @@ extern leaf_t *g_leafs;
 extern unsigned g_bitbytes;
 extern unsigned g_bitlongs;
 
-void BasePortalVis(int threadnum);
+void BasePortalVis(int /*threadnum*/);
 
-void MaxDistVis(int threadnum);
+void MaxDistVis(int /*threadnum*/);
 //extern void		PostMaxDistVis(int threadnum);
 
 void PortalFlow(portal_t *p);

@@ -97,7 +97,7 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-void MakeScales(const int threadnum)
+void MakeScales(int /*threadnum*/)
 {
     unsigned j;
     vec3_t delta;
@@ -127,7 +127,6 @@ void MakeScales(const int threadnum)
         VectorCopy(patch->origin, origin);
         const vec_t *normal1 = getPlaneFromFaceNumber(patch->faceNumber)->normal;
 
-        vec_t area = patch->area;
         vec3_t backorigin;
         vec3_t backnormal;
         if (patch->translucent_b)
@@ -326,7 +325,7 @@ void MakeScales(const int threadnum)
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-void MakeRGBScales(const int threadnum)
+void MakeRGBScales(int /*threadnum*/)
 {
     unsigned j;
     vec3_t delta;
@@ -357,7 +356,6 @@ void MakeRGBScales(const int threadnum)
         VectorCopy(patch->origin, origin);
         const vec_t *normal1 = getPlaneFromFaceNumber(patch->faceNumber)->normal;
 
-        vec_t area = patch->area;
         vec3_t backorigin;
         vec3_t backnormal;
         if (patch->translucent_b)

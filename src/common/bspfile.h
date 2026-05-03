@@ -91,7 +91,6 @@ constexpr int ENGINE_ENTITY_RANGE = 4096.0;
 //=============================================================================
 
 constexpr int BSPVERSION = 30;
-constexpr int TOOLVERSION = 2;
 
 //
 // BSP File Structures

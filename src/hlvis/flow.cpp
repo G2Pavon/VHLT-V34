@@ -591,7 +591,7 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const 
 // =====================================================================================
 //  BasePortalVis
 // =====================================================================================
-void BasePortalVis(int unused)
+void BasePortalVis(int /*threadnum*/)
 {
     int j, k;
     portal_t *tp;
@@ -894,12 +894,11 @@ static vec_t WindingDist(const winding_t *w[2])
 // =====================================================================================
 //  MaxDistVis
 // =====================================================================================
-void MaxDistVis(int unused)
+void MaxDistVis(int /*threadnum*/)
 {
     int j;
     leaf_t *tl;
     portalplane_t *boundary = nullptr;
-    vec3_t delta;
 
     while (1)
     {

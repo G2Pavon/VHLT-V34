@@ -504,16 +504,13 @@ void WriteMiptex()
 
     g_texdatasize = 0;
 
-    double start = I_FloatTime();
     {
         if (!TEX_InitFromWad())
             return;
 
         AddAnimatingTextures();
     }
-    double end = I_FloatTime();
 
-    start = I_FloatTime();
     {
         int i;
 
@@ -533,7 +530,6 @@ void WriteMiptex()
             }
         }
     }
-    end = I_FloatTime();
 
     // Now we have filled lumpinfo for each miptex and the number of used textures for each wad.
     {
@@ -579,7 +575,6 @@ void WriteMiptex()
         SetKeyValue(&g_entities[0], "wad", szTmpWad);
     }
 
-    start = I_FloatTime();
     {
         texinfo_t *tx = g_texinfo;
 
@@ -595,9 +590,6 @@ void WriteMiptex()
         }
         texmap_clear();
     }
-    end = I_FloatTime();
-
-    start = I_FloatTime();
     {
         // Now setup to get the miptex data (or just the headers if using -wadtextures) from the wadfile
         dmiptexlump_t *l = (dmiptexlump_t *)g_dtexdata;
@@ -671,7 +663,6 @@ void WriteMiptex()
         if (std::fclose(writewad_file))
             Error("File write failure");
     }
-    end = I_FloatTime();
     Log("Texture usage is at %1.2f mb (of %1.2f mb MAX)\n", (float)totaltexsize / (1024 * 1024),
         (float)g_max_map_miptex / (1024 * 1024));
 }
@@ -681,11 +672,8 @@ void WriteMiptex()
 // =====================================================================================
 //  TexinfoForBrushTexture
 // =====================================================================================
-int TexinfoForBrushTexture(const faceplane_t *const plane, brush_texture_t *bt, const vec3_t origin)
+int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
 {
-    vec3_t vecs[2];
-    int sv, tv;
-    vec_t sinv, cosv;
     texinfo_t tx;
     int i;
 

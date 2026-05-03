@@ -834,7 +834,6 @@ static surfchain_t *ReadSurfs(std::FILE *file)
     int planenum, g_texinfo, contents, numpoints;
     double v[3];
     int line = 0;
-    double inaccuracy_count = 0.0, inaccuracy_total = 0.0, inaccuracy_max = 0.0;
 
     // read in the polygons
     while (1)
@@ -1139,22 +1138,21 @@ static bool ProcessModel()
             WriteClipNodes(nodes);
         }
     }
-skipclip:
 
-{
-    entity_t *ent = EntityForModel(modnum);
-    if (ent != &g_entities[0] && *ValueForKey(ent, "zhlt_minsmaxs"))
     {
-        double origin[3], mins[3], maxs[3];
-        VectorClear(origin);
-        std::sscanf(ValueForKey(ent, "origin"), "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
-        if (std::sscanf(ValueForKey(ent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]) == 6)
+        entity_t *ent = EntityForModel(modnum);
+        if (ent != &g_entities[0] && *ValueForKey(ent, "zhlt_minsmaxs"))
         {
-            VectorSubtract(mins, origin, model->mins);
-            VectorSubtract(maxs, origin, model->maxs);
+            double origin[3], mins[3], maxs[3];
+            VectorClear(origin);
+            std::sscanf(ValueForKey(ent, "origin"), "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
+            if (std::sscanf(ValueForKey(ent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]) == 6)
+            {
+                VectorSubtract(mins, origin, model->mins);
+                VectorSubtract(maxs, origin, model->maxs);
+            }
         }
     }
-}
 
     if (model->mins[0] > model->maxs[0])
     {
@@ -1216,8 +1214,6 @@ static void Usage()
 // =====================================================================================
 static void Settings()
 {
-    char *tmp;
-
     Log("\nCurrent %s Settings\n", g_Program);
     Log("Name               |  Setting  |  Default\n"
         "-------------------|-----------|-------------------------\n");
@@ -1533,7 +1529,7 @@ int main(const int argc, char **argv)
             safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
             FlipSlashes(g_Mapname);
             StripExtension(g_Mapname);
-            OpenLog(g_clientid);
+            OpenLog();
             std::atexit(CloseLog);
             ThreadSetDefault();
             LogStart(argcold, argvold);

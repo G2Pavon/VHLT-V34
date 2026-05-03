@@ -99,7 +99,6 @@ static bool CheckVisBitNoVismatrix(unsigned patchnum1, unsigned patchnum2, vec3_
 }
 bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &backorigin, const vec3_t &backnormal, vec3_t &transparency_out)
 {
-    patch_t *patch = &g_patches[receiver];
     patch_t *emitpatch = &g_patches[emitter];
 
     VectorFill(transparency_out, 1.0);

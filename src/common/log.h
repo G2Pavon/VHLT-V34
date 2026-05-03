@@ -13,8 +13,6 @@ extern char g_Mapname[_MAX_PATH];
 #define DEFAULT_LOG true
 
 extern bool g_log;
-extern unsigned long g_clientid;     // Client id of this program
-extern unsigned long g_nextclientid; // Client id of next client to spawn from this server
 
 //
 // log.c Functions
@@ -25,7 +23,7 @@ void ResetLog();
 void ResetErrorLog();
 void CheckForErrorLog();
 void LogError(const char *const message);
-void CDECL OpenLog(int clientid);
+void CDECL OpenLog();
 void CDECL CloseLog();
 void CheckFatal();
 

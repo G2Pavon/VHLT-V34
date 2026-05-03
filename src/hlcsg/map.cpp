@@ -537,8 +537,6 @@ static void ParseBrush(entity_t *mapent)
 // =====================================================================================
 static bool ParseMapEntity()
 {
-    bool all_clip = true;
-
     g_numparsedbrushes = 0;
     if (!GetToken(true))
     {
@@ -591,17 +589,7 @@ static bool ParseMapEntity()
             std::free(e);
         }
     }
-    {
-        for (int i = 0; i < mapent->numbrushes; i++)
-        {
-            brush_t *brush = &g_mapbrushes[mapent->firstbrush + i];
-            if (
-                brush->cliphull == 0 && brush->contents != CONTENTS_ORIGIN && brush->contents != CONTENTS_BOUNDINGBOX)
-            {
-                all_clip = false;
-            }
-        }
-    }
+
     if (*ValueForKey(mapent, "zhlt_usemodel"))
     {
         if (!*ValueForKey(mapent, "origin"))

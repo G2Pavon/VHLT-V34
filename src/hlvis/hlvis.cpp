@@ -206,7 +206,7 @@ static portal_t *GetNextPortal()
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-static void LeafThread(int unused)
+static void LeafThread(int /*threadnum*/)
 {
     portal_t *p;
 
@@ -672,8 +672,6 @@ static void Usage()
 // =====================================================================================
 static void Settings()
 {
-    char *tmp;
-
     Log("\n-= Current %s Settings =-\n", g_Program);
     Log("Name               |  Setting  |  Default\n"
         "-------------------|-----------|-------------------------\n");
@@ -850,7 +848,7 @@ int main(const int argc, char **argv)
             safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
             FlipSlashes(g_Mapname);
             StripExtension(g_Mapname);
-            OpenLog(g_clientid);
+            OpenLog();
             std::atexit(CloseLog);
             ThreadSetDefault();
             LogStart(argcold, argvold);

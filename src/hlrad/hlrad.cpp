@@ -1477,7 +1477,6 @@ static void LoadOpaqueEntities()
 {
     for (int modelnum = 0; modelnum < g_nummodels; modelnum++)
     {
-        dmodel_t *model = &g_dmodels[modelnum];
         char stringmodel[16];
         std::sprintf(stringmodel, "*%i", modelnum);
         for (int entnum = 0; entnum < g_numentities; entnum++)
@@ -1919,7 +1918,7 @@ static void CollectLight()
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-static void GatherLight(int threadnum)
+static void GatherLight(int /*threadnum*/)
 {
     float f;
     vec3_t adds[ALLSTYLES];
@@ -2064,7 +2063,7 @@ static void GatherLight(int threadnum)
 }
 
 // RGB Transfer version
-static void GatherRGBLight(int threadnum)
+static void GatherRGBLight(int /*threadnum*/)
 {
 
     float f[3];
@@ -2215,8 +2214,6 @@ static void GatherRGBLight(int threadnum)
 // =====================================================================================
 static void BounceLight()
 {
-    char name[64];
-
     for (unsigned i = 0; i < g_num_patches; i++)
     {
         patch_t *patch = &g_patches[i];
@@ -2510,7 +2507,6 @@ static void Usage()
 // =====================================================================================
 static void Settings()
 {
-    char *tmp;
     char buf1[1024];
     char buf2[1024];
 
@@ -3273,7 +3269,7 @@ int main(const int argc, char **argv)
             safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
             FlipSlashes(g_Mapname);
             StripExtension(g_Mapname);
-            OpenLog(g_clientid);
+            OpenLog();
             std::atexit(CloseLog);
             ThreadSetDefault();
             LogStart(argcold, argvold);

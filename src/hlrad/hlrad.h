@@ -350,7 +350,7 @@ void TranslateWorldToTex(int facenum, matrix_t &m);
 bool InvertMatrix(const matrix_t &m, matrix_t &m_inverse);
 void FindFacePositions(int facenum);
 void FreePositionMaps();
-bool FindNearestPosition(int facenum, const Winding *texwinding, const dplane_t &texplane, vec_t s, vec_t t, vec3_t &pos, vec_t *best_s, vec_t *best_t, vec_t *best_dist, bool *nudged);
+bool FindNearestPosition(int facenum, const Winding *texwinding, vec_t s, vec_t t, vec3_t &pos, vec_t *best_s, vec_t *best_t, vec_t *best_dist, bool *nudged);
 
 // makescales.c
 void MakeScalesVismatrix();
@@ -361,9 +361,9 @@ void MakeScalesNoVismatrix();
 extern std::size_t g_total_transfer;
 
 // vismatrixutil.c (shared between vismatrix.c and sparse.c)
-void MakeScales(int threadnum);
+void MakeScales(int /*threadnum*/);
 void DumpTransfersMemoryUsage();
-void MakeRGBScales(int threadnum);
+void MakeRGBScales(int /*threadnum*/);
 
 // transparency.c (transparency array functions - shared between vismatrix.c and sparse.c)
 void GetTransparency(const unsigned p1, const unsigned p2, vec3_t &trans, unsigned int &next_index);

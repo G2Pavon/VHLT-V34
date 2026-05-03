@@ -34,7 +34,7 @@ inline unsigned int bitget(unsigned int i, unsigned int start, unsigned int end)
     return (i & ~(~0u << end)) >> start;
 }
 
-inline unsigned int bitput(unsigned int i, unsigned int start, unsigned int end)
+inline unsigned int bitput(unsigned int i, unsigned int start)
 {
     return i << start;
 }
@@ -107,13 +107,13 @@ inline void float_decompress(float_type t, const void *s, float *f)
         if (bitget(m[0], 0, 16) == 0)
             *p = 0;
         else
-            *p = bitput(1, 11, 12) | bitput(bitget(m[0], 0, 16), 12, 28) | bitput(3, 28, 32);
+            *p = bitput(1, 11) | bitput(bitget(m[0], 0, 16), 12) | bitput(3, 28);
         break;
     case FLOAT8:
         if (bitget(m[0], 0, 8) == 0)
             *p = 0;
         else
-            *p = bitput(1, 19, 20) | bitput(bitget(m[0], 0, 8), 20, 28) | bitput(3, 28, 32);
+            *p = bitput(1, 19) | bitput(bitget(m[0], 0, 8), 20) | bitput(3, 28);
         break;
     default:;
     }
@@ -144,11 +144,11 @@ inline void vector_compress(vector_type t, void *s, const float *f1, const float
         else
             m[0] |= bitget(*p1, 12, 28);
         if (float_istoobig(*p2))
-            m[0] |= bitput(bitget(~0u, 0, 16), 16, 32);
+            m[0] |= bitput(bitget(~0u, 0, 16), 16);
         else if (float_istoosmall(*p2))
             ;
         else
-            m[0] |= bitput(bitget(*p2, 12, 28), 16, 32);
+            m[0] |= bitput(bitget(*p2, 12, 28), 16);
         if (float_istoobig(*p3))
             m[1] |= bitget(~0u, 0, 16);
         else if (float_istoosmall(*p3))
@@ -167,14 +167,14 @@ inline void vector_compress(vector_type t, void *s, const float *f1, const float
             max = *p1 > *p2 ? (*p1 > *p3 ? *p1 : *p3) : (*p2 > *p3 ? *p2 : *p3);
             max = float_istoobig(max) ? 0x7F : float_istoosmall(max) ? 0x60
                                                                      : bitget(max, 23, 31);
-            i1 = float_istoobig(*p1) ? ~0u : (bitget(*p1, 0, 23) | bitput(1, 23, 24)) >> (1 + max - bitget(*p1, 23, 31));
-            i2 = float_istoobig(*p2) ? ~0u : (bitget(*p2, 0, 23) | bitput(1, 23, 24)) >> (1 + max - bitget(*p2, 23, 31));
-            i3 = float_istoobig(*p3) ? ~0u : (bitget(*p3, 0, 23) | bitput(1, 23, 24)) >> (1 + max - bitget(*p3, 23, 31));
+            i1 = float_istoobig(*p1) ? ~0u : (bitget(*p1, 0, 23) | bitput(1, 23)) >> (1 + max - bitget(*p1, 23, 31));
+            i2 = float_istoobig(*p2) ? ~0u : (bitget(*p2, 0, 23) | bitput(1, 23)) >> (1 + max - bitget(*p2, 23, 31));
+            i3 = float_istoobig(*p3) ? ~0u : (bitget(*p3, 0, 23) | bitput(1, 23)) >> (1 + max - bitget(*p3, 23, 31));
         }
         if (t == VECTOR32)
-            m[0] = 0 | bitput(bitget(i1, 14, 23), 0, 9) | bitput(bitget(i2, 14, 23), 9, 18) | bitput(bitget(i3, 14, 23), 18, 27) | bitput(bitget(max, 0, 5), 27, 32);
+            m[0] = 0 | bitput(bitget(i1, 14, 23), 0) | bitput(bitget(i2, 14, 23), 9) | bitput(bitget(i3, 14, 23), 18) | bitput(bitget(max, 0, 5), 27);
         else
-            m[0] = bitclr(m[0], 0, 24) | bitput(bitget(i1, 17, 23), 0, 6) | bitput(bitget(i2, 17, 23), 6, 12) | bitput(bitget(i3, 17, 23), 12, 18) | bitput(bitget(max, 0, 5), 18, 23);
+            m[0] = bitclr(m[0], 0, 24) | bitput(bitget(i1, 17, 23), 0) | bitput(bitget(i2, 17, 23), 6) | bitput(bitget(i3, 17, 23), 12) | bitput(bitget(max, 0, 5), 18);
         break;
     default:;
     }
@@ -197,32 +197,32 @@ inline void vector_decompress(vector_type t, const void *s, float *f1, float *f2
         if (bitget(m[0], 0, 16) == 0)
             *p1 = 0;
         else
-            *p1 = bitput(1, 11, 12) | bitput(bitget(m[0], 0, 16), 12, 28) | bitput(3, 28, 32);
+            *p1 = bitput(1, 11) | bitput(bitget(m[0], 0, 16), 12) | bitput(3, 28);
         if (bitget(m[0], 16, 32) == 0)
             *p2 = 0;
         else
-            *p2 = bitput(1, 11, 12) | bitput(bitget(m[0], 16, 32), 12, 28) | bitput(3, 28, 32);
+            *p2 = bitput(1, 11) | bitput(bitget(m[0], 16, 32), 12) | bitput(3, 28);
         if (bitget(m[1], 0, 16) == 0)
             *p3 = 0;
         else
-            *p3 = bitput(1, 11, 12) | bitput(bitget(m[1], 0, 16), 12, 28) | bitput(3, 28, 32);
+            *p3 = bitput(1, 11) | bitput(bitget(m[1], 0, 16), 12) | bitput(3, 28);
         break;
     case VECTOR32:
     case VECTOR24:
         float f;
         if (t == VECTOR32)
         {
-            *p1 = bitput(1, 13, 14) | bitput(bitget(m[0], 0, 9), 14, 23) | bitput(bitget(m[0], 27, 32), 23, 28) | bitput(3, 28, 32);
-            *p2 = bitput(1, 13, 14) | bitput(bitget(m[0], 9, 18), 14, 23) | bitput(bitget(m[0], 27, 32), 23, 28) | bitput(3, 28, 32);
-            *p3 = bitput(1, 13, 14) | bitput(bitget(m[0], 18, 27), 14, 23) | bitput(bitget(m[0], 27, 32), 23, 28) | bitput(3, 28, 32);
-            *((unsigned int *)&f) = bitput(bitget(m[0], 27, 32), 23, 28) | bitput(3, 28, 32);
+            *p1 = bitput(1, 13) | bitput(bitget(m[0], 0, 9), 14) | bitput(bitget(m[0], 27, 32), 23) | bitput(3, 28);
+            *p2 = bitput(1, 13) | bitput(bitget(m[0], 9, 18), 14) | bitput(bitget(m[0], 27, 32), 23) | bitput(3, 28);
+            *p3 = bitput(1, 13) | bitput(bitget(m[0], 18, 27), 14) | bitput(bitget(m[0], 27, 32), 23) | bitput(3, 28);
+            *((unsigned int *)&f) = bitput(bitget(m[0], 27, 32), 23) | bitput(3, 28);
         }
         else
         {
-            *p1 = bitput(1, 16, 17) | bitput(bitget(m[0], 0, 6), 17, 23) | bitput(bitget(m[0], 18, 23), 23, 28) | bitput(3, 28, 32);
-            *p2 = bitput(1, 16, 17) | bitput(bitget(m[0], 6, 12), 17, 23) | bitput(bitget(m[0], 18, 23), 23, 28) | bitput(3, 28, 32);
-            *p3 = bitput(1, 16, 17) | bitput(bitget(m[0], 12, 18), 17, 23) | bitput(bitget(m[0], 18, 23), 23, 28) | bitput(3, 28, 32);
-            *((unsigned int *)&f) = bitput(bitget(m[0], 18, 23), 23, 28) | bitput(3, 28, 32);
+            *p1 = bitput(1, 16) | bitput(bitget(m[0], 0, 6), 17) | bitput(bitget(m[0], 18, 23), 23) | bitput(3, 28);
+            *p2 = bitput(1, 16) | bitput(bitget(m[0], 6, 12), 17) | bitput(bitget(m[0], 18, 23), 23) | bitput(3, 28);
+            *p3 = bitput(1, 16) | bitput(bitget(m[0], 12, 18), 17) | bitput(bitget(m[0], 18, 23), 23) | bitput(3, 28);
+            *((unsigned int *)&f) = bitput(bitget(m[0], 18, 23), 23) | bitput(3, 28);
         }
         *f1 = (*f1 - f) * 2.f;
         *f2 = (*f2 - f) * 2.f;

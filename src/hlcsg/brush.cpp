@@ -857,7 +857,7 @@ static bool MakeBrushPlanes(brush_t *b)
         f->plane = &g_csg_mapplanes[planenum];
         f->next = b->hulls[0].faces;
         b->hulls[0].faces = f;
-        f->texinfo = g_onlyents ? 0 : TexinfoForBrushTexture(f->plane, &s->td, origin);
+        f->texinfo = g_onlyents ? 0 : TexinfoForBrushTexture(&s->td, origin);
         f->bevel = b->bevel || s->bevel;
     }
 

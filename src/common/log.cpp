@@ -20,9 +20,6 @@ char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
 
 bool g_log = DEFAULT_LOG;
 
-unsigned long g_clientid = 0;
-unsigned long g_nextclientid = 0;
-
 static std::FILE *CompileLog = nullptr;
 static bool fatal = false;
 
@@ -161,7 +158,7 @@ void LogError(const char *const message)
     }
 }
 
-void CDECL OpenLog(const int clientid)
+void CDECL OpenLog()
 {
     if (g_log)
     {

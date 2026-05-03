@@ -52,7 +52,6 @@ static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
 static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
-static std::FILE *out_view[NUM_HULLS];
 static std::FILE *out_detailbrush[NUM_HULLS];
 static int c_outfaces;
 static int c_csgfaces;
@@ -427,48 +426,6 @@ static bface_t *CopyFace(const bface_t *const f)
     n->w = f->w->Copy();
     n->bounds = f->bounds;
     return n;
-}
-
-// =====================================================================================
-//  CopyFaceList
-// =====================================================================================
-static bface_t *CopyFaceList(bface_t *f)
-{
-    if (f)
-    {
-        bface_t *head = CopyFace(f);
-        bface_t *n = head;
-        f = f->next;
-
-        while (f)
-        {
-            n->next = CopyFace(f);
-
-            n = n->next;
-            f = f->next;
-        }
-
-        return head;
-    }
-    else
-    {
-        return nullptr;
-    }
-}
-
-// =====================================================================================
-//  FreeFaceList
-// =====================================================================================
-static void FreeFaceList(bface_t *f)
-{
-    if (f)
-    {
-        if (f->next)
-        {
-            FreeFaceList(f->next);
-        }
-        FreeFace(f);
-    }
 }
 
 // =====================================================================================
@@ -881,8 +838,6 @@ static void SetLightStyles()
     char value[10];
     char lighttargets[MAX_SWITCHED_LIGHTS][MAX_LIGHTTARGETS_NAME];
 
-    bool newtexlight = false;
-
     // any light that is controlled (has a targetname)
     // must have a unique style number generated for it
 
@@ -913,7 +868,6 @@ static void SetLightStyles()
                 continue;
             case -3:                          // (HACK) a piggyback texlight: switched on and off by triggering a real light that has the same name
                 SetKeyValue(e, "style", "0"); // just in case the level designer didn't give it a name
-                newtexlight = true;
                 // don't 'continue', fall out
             }
             //LRC (ends)
@@ -1318,8 +1272,6 @@ static void DumpWadinclude()
 // =====================================================================================
 static void Settings()
 {
-    char *tmp;
-
     Log("\nCurrent %s Settings\n", g_Program);
     Log("Name                 |  Setting  |  Default\n"
         "---------------------|-----------|-------------------------\n");
@@ -1559,7 +1511,7 @@ int main(const int argc, char **argv)
             ResetErrorLog();
             if (!g_onlyents)
                 ResetLog();
-            OpenLog(g_clientid);
+            OpenLog();
             std::atexit(CloseLog);
             LogStart(argcold, argvold);
             {

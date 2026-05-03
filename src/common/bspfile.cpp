@@ -664,7 +664,7 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
     lightmapblock_t *block;
     // code from Quake
     int j;
-    int x, y;
+    int x;
     if (w < 1 || h < 1)
     {
         Error("DoAllocBlock: internal error.");
@@ -685,7 +685,7 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
             if (j == w)
             {
                 x = i;
-                y = best = best2;
+                best = best2;
             }
         }
         if (best + h <= lightmapblock_t::BLOCK_HEIGHT)

@@ -58,9 +58,6 @@ static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonspli
     // axial planes are fast
     if (split->type <= last_axial)
     {
-        vec_t splitGtEp = split->dist + ON_EPSILON; // Invariant moved out of loop
-        vec_t splitLtEp = split->dist - ON_EPSILON; // Invariant moved out of loop
-
         for (i = 0, p = in->pts[0] + split->type; i < in->numpoints; i++, p += 3)
         {
             vec_t dot = *p - split->dist;
@@ -482,10 +479,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
 //  ChoosePlaneFromList
 //      Choose the plane that splits the least faces
 // =====================================================================================
-static surface_t *ChoosePlaneFromList(surface_t *surfaces, const vec3_t mins, const vec3_t maxs
-                                      // mins and maxs are invalid when detaillevel > 0
-                                      ,
-                                      int detaillevel)
+static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
 {
     double (*tmpvalue)[2];
 
@@ -630,7 +624,7 @@ static int CalcSplitDetaillevel(const node_t *node)
     return bestdetaillevel;
 }
 
-static surface_t *SelectPartition(surface_t *surfaces, const node_t *const node, const bool usemidsplit, int splitdetaillevel, vec3_t validmins, vec3_t validmaxs)
+static surface_t *SelectPartition(surface_t *surfaces, const bool usemidsplit, int splitdetaillevel, vec3_t validmins, vec3_t validmaxs)
 {
     if (splitdetaillevel == -1)
     {
@@ -645,7 +639,7 @@ static surface_t *SelectPartition(surface_t *surfaces, const node_t *const node,
         if (s != nullptr)
             return s;
     }
-    return ChoosePlaneFromList(surfaces, node->mins, node->maxs, splitdetaillevel);
+    return ChoosePlaneFromList(surfaces, splitdetaillevel);
 }
 
 // =====================================================================================
@@ -1486,7 +1480,7 @@ static void BuildBspTree_r(node_t *node)
 
     int splitdetaillevel = CalcSplitDetaillevel(node);
     FixDetaillevelForDiscardable(node, splitdetaillevel);
-    surface_t *split = SelectPartition(node->surfaces, node, midsplit, splitdetaillevel, validmins, validmaxs);
+    surface_t *split = SelectPartition(node->surfaces, midsplit, splitdetaillevel, validmins, validmaxs);
     if (!node->isdetail && (!split || split->detaillevel > 0))
     {
         node->isportalleaf = true;

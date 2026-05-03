@@ -342,8 +342,6 @@ void PairEdges()
                         e->smooth = false;
                         e->coplanar = false;
                         VectorClear(e->interface_normal);
-
-                        dvertex_t *dv = &g_dvertexes[g_dedges[std::abs(k)].v[0]];
                     }
                 }
             }
@@ -1249,11 +1247,6 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
     return info;
 }
 
-static bool IsFragEmpty(samplefraginfo_t *fraginfo)
-{
-    return (fraginfo->size == 0);
-}
-
 static void DeleteSampleFrag(samplefraginfo_t *fraginfo)
 {
     while (fraginfo->head)
@@ -1273,8 +1266,8 @@ static light_flag_t SetSampleFromST(vec_t *const point,
                                     int *const surface,    // the face used for phong normal and patch interpolation
                                     bool *nudged,
                                     const lightinfo_t *const l, const vec_t original_s, const vec_t original_t,
-                                    const vec_t square[2][2], // {smin, tmin}, {smax, tmax}
-                                    eModelLightmodes lightmode)
+                                    const vec_t square[2][2] /* {smin, tmin}, {smax, tmax}*/
+)
 {
     light_flag_t LuxelFlag;
 
@@ -1300,7 +1293,7 @@ static light_flag_t SetSampleFromST(vec_t *const point,
         vec_t dist;
 
         bool nudged_one;
-        if (!FindNearestPosition(f->facenum, f->mywinding, f->mywindingplane, f->myorigin[0], f->myorigin[1], pos, &s, &t, &dist, &nudged_one))
+        if (!FindNearestPosition(f->facenum, f->mywinding, f->myorigin[0], f->myorigin[1], pos, &s, &t, &dist, &nudged_one))
         {
             continue;
         }
@@ -1397,11 +1390,6 @@ static light_flag_t SetSampleFromST(vec_t *const point,
 
 static void CalcPoints(lightinfo_t *l)
 {
-    const int facenum = l->surfnum;
-    const dface_t *f = g_dfaces + facenum;
-    const dplane_t *p = getPlaneFromFace(f);
-    const vec_t *face_delta = g_face_offset[facenum];
-    const eModelLightmodes lightmode = g_face_lightmode[facenum];
     const int h = l->texsize[1] + 1;
     const int w = l->texsize[0] + 1;
     const vec_t starts = l->texmins[0] * TEXTURE_STEP;
@@ -1428,8 +1416,7 @@ static void CalcPoints(lightinfo_t *l)
                                            l->surfpt_position[s + w * t], &l->surfpt_surface[s + w * t],
                                            &nudged,
                                            l, us, ut,
-                                           square,
-                                           lightmode);
+                                           square);
         }
     }
     {
@@ -2538,7 +2525,6 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                         if (!(l->intensity[0] || l->intensity[1] || l->intensity[2]))
                             continue;
                         VectorCopy(l->origin, testline_origin);
-                        float denominator;
 
                         VectorSubtract(l->origin, pos, delta);
                         if (l->type == emit_surface)
@@ -2555,8 +2541,6 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                         {
                             dist = 1.0;
                         }
-
-                        denominator = dist * dist * l->fade;
 
                         vec3_t add;
                         switch (l->type)
@@ -3077,7 +3061,6 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
     byte pvs2[(MAX_MAP_LEAFS + 7) / 8];
     int lastoffset2;
 
-    int facenum = l->surfnum;
     std::memset(l->lmcache, 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
 
     // for each sample whose light we need to calculate
@@ -3159,8 +3142,7 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
                         surfpt, spot, &surface,
                         &nudged,
                         l, s_vec, t_vec,
-                        square,
-                        g_face_lightmode[facenum]) == LightOutside)
+                        square) == LightOutside)
                 {
                     int j = nearest_s + (l->texsize[0] + 1) * nearest_t;
                     if (l->surfpt_lightoutside[j])
@@ -3304,7 +3286,6 @@ void BuildFacelights(const int facenum)
     int thisoffset = -1;
     int lastoffset = -1;
     vec3_t spot2, normal2;
-    vec3_t delta;
     byte pvs2[(MAX_MAP_LEAFS + 7) / 8];
     int thisoffset2 = -1, lastoffset2 = -1;
 
@@ -4529,15 +4510,10 @@ void AddPatchLights(int facenum)
 // =====================================================================================
 void FinalLightFace(const int facenum)
 {
-    vec3_t lb, v;
+    vec3_t lb;
     int lightstyles;
     int (*final_basiclight)[3];
     int lbi[3];
-
-    // ------------------------------------------------------------------------
-    // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-    float temp_rand;
-    // ------------------------------------------------------------------------
 
     dface_t *f = &g_dfaces[facenum];
     facelight_t *fl = &facelight[facenum];

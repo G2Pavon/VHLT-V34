@@ -1036,6 +1036,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-// do nothing - we don't have params to fetch
-void GetParamsFromEnt(entity_t *mapent) {}

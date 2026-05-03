@@ -181,7 +181,7 @@ static bool CheckVisBitSparse(unsigned x, unsigned y, vec3_t &transparency_out, 
  * Sets vis bits for all patches in the face
  * ==============
  */
-static void TestPatchToFace(const unsigned patchnum, const int facenum, const int head, byte *pvs, bool uncompressedcolumn[MAX_SPARSE_VISMATRIX_PATCHES])
+static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pvs, bool uncompressedcolumn[MAX_SPARSE_VISMATRIX_PATCHES])
 {
     patch_t *patch = &g_patches[patchnum];
     patch_t *patch2 = g_face_patches[facenum];
@@ -279,7 +279,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const in
  */
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
-static void BuildVisLeafs(int threadnum)
+static void BuildVisLeafs(int /*threadnum*/)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
     bool *uncompressedcolumn = (bool *)std::malloc(MAX_SPARSE_VISMATRIX_PATCHES * sizeof(bool));
@@ -310,7 +310,6 @@ static void BuildVisLeafs(int threadnum)
             }
             DecompressVis(&g_dvisdata[srcleaf->visofs], pvs, sizeof(pvs));
         }
-        int head = 0;
 
         //
         // go through all the faces inside the
@@ -329,7 +328,7 @@ static void BuildVisLeafs(int threadnum)
                     uncompressedcolumn[m] = false;
                 }
                 for (int facenum2 = facenum + 1; facenum2 < g_numfaces; facenum2++)
-                    TestPatchToFace(patchnum, facenum2, head, pvs, uncompressedcolumn);
+                    TestPatchToFace(patchnum, facenum2, pvs, uncompressedcolumn);
                 SetVisColumn(patchnum, uncompressedcolumn);
             }
         }

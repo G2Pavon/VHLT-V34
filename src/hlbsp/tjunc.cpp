@@ -47,7 +47,7 @@ static vec3_t hash_scale;
 static int hash_numslots[3];
 constexpr int MAX_HASH_NEIGHBORS = 4;
 
-static void InitHash(const vec3_t mins, const vec3_t maxs)
+static void InitHash()
 {
     vec3_t size;
 
@@ -509,7 +509,7 @@ static void tjunc_fix_r(node_t *node)
  */
 void tjunc(node_t *headnode)
 {
-    vec3_t maxs, mins;
+    vec3_t maxs;
     //
     // identify all points on common edges
     //
@@ -526,9 +526,8 @@ void tjunc(node_t *headnode)
             maxs[i] = std::abs(headnode->mins[i]);
         }
     }
-    VectorSubtract(vec3_origin, maxs, mins);
 
-    InitHash(mins, maxs);
+    InitHash();
 
     numwedges = numwverts = 0;
 

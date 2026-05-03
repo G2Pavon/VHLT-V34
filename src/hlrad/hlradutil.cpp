@@ -696,12 +696,10 @@ void FreePositionMaps()
     }
 }
 
-bool FindNearestPosition(int facenum, const Winding *texwinding, const dplane_t &texplane, vec_t s, vec_t t, vec3_t &pos, vec_t *best_s, vec_t *best_t, vec_t *dist, bool *nudged)
+bool FindNearestPosition(int facenum, const Winding *texwinding, vec_t s, vec_t t, vec3_t &pos, vec_t *best_s, vec_t *best_t, vec_t *dist, bool *nudged)
 {
     vec3_t original_st;
     int itmin, itmax, ismin, ismax;
-    const vec3_t v_s = {1, 0, 0};
-    const vec3_t v_t = {0, 1, 0};
     int is;
     int it;
     vec3_t v;

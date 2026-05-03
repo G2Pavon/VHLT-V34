@@ -158,7 +158,7 @@ typedef std::deque<std::string>::iterator WadInclude_i;
 extern std::deque<std::string> g_WadInclude; // List of substrings to wadinclude
 
 void WriteMiptex();
-int TexinfoForBrushTexture(const faceplane_t *const plane, brush_texture_t *bt, const vec3_t origin);
+int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin);
 const char *GetTextureByNumber_CSG(int texturenumber);
 
 //=============================================================================
