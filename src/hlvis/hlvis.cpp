@@ -460,11 +460,6 @@ static INLINE void FASTCALL CheckNullToken(const char *const token)
 // =====================================================================================
 static void LoadPortals(char *portal_image)
 {
-    int i;
-    portal_t *p;
-    int numpoints;
-    int leafnums[2];
-    portalplane_t plane;
     const char *const seperators = " ()\r\n\t";
 
     char *token = strtok(portal_image, seperators);
@@ -504,7 +499,7 @@ static void LoadPortals(char *portal_image)
         Error("Too many portalleafs (g_portalleafs(%d) > MAX_MAP_LEAFS(%d)).", g_portalleafs, MAX_MAP_LEAFS);
     }
     leafcount_all = 0;
-    for (i = 0; i < g_portalleafs; i++)
+    for (int i = 0; i < g_portalleafs; i++)
     {
         unsigned rval = 0;
         token = strtok(NULL, seperators);
@@ -521,7 +516,7 @@ static void LoadPortals(char *portal_image)
     { // internal error (this should never happen)
         Error("Corrupted leaf mapping (leafcount_all(%d) != g_dmodels[0].visleafs(%d)).", leafcount_all, g_dmodels[0].visleafs);
     }
-    for (i = 0; i < g_portalleafs; i++)
+    for (int i = 0; i < g_portalleafs; i++)
     {
         for (int j = 0; j < overview_count; j++)
         {
@@ -539,6 +534,11 @@ static void LoadPortals(char *portal_image)
             }
         }
     }
+
+    int i;
+    portal_t *p;
+    int numpoints;
+    int leafnums[2];
     for (i = 0, p = g_portals; i < g_numportals; i++)
     {
         unsigned rval = 0;
@@ -597,6 +597,8 @@ static void LoadPortals(char *portal_image)
         }
 
         // calc plane
+
+        portalplane_t plane;
         PlaneFromWinding(w, &plane);
 
         // create forward portal
@@ -853,9 +855,8 @@ int main(const int argc, char **argv)
             ThreadSetDefault();
             LogStart(argcold, argvold);
             {
-                int i;
                 Log("Arguments: ");
-                for (i = 1; i < argc; i++)
+                for (int i = 1; i < argc; i++)
                 {
                     if (strchr(argv[i], ' '))
                     {
@@ -888,8 +889,7 @@ int main(const int argc, char **argv)
             LoadBSPFile(source);
             ParseEntities();
             {
-                int i;
-                for (i = 0; i < g_numentities; i++)
+                for (int i = 0; i < g_numentities; i++)
                 {
                     if (!std::strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
                     {

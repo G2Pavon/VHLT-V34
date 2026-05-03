@@ -55,7 +55,6 @@ static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack,
     int sides[128];
     int counts[3] = {0, 0, 0};
     int i;
-    vec3_t mid;
 
     if (in->numpoints > (sizeof(sides) / sizeof(*sides)))
     {
@@ -100,6 +99,7 @@ static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack,
     winding_t *neww = AllocStackWinding(stack);
 
     neww->numpoints = 0;
+    vec3_t mid;
 
     for (i = 0; i < in->numpoints; i++)
     {

@@ -83,11 +83,6 @@ static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t positio
 // Param position: must include g_face_offset
 {
     int i;
-    vec3_t surfacespot;
-    vec3_t phongnormal;
-    vec_t frac;
-    vec3_t middle;
-    vec3_t v;
 
     for (i = 0; i < (int)lt->neighborfaces.size(); i++)
     {
@@ -102,13 +97,16 @@ static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t positio
         return false;
     }
 
+    vec3_t surfacespot;
     VectorSubtract(position, lt->center, surfacespot);
     vec_t dot = DotProduct(surfacespot, lt->normal);
     VectorMA(surfacespot, -dot, lt->normal, spot);
 
     // use phong normal instead of face normal, because phong normal is a continuous function
+    vec3_t phongnormal;
     GetPhongNormal(surface, position, phongnormal);
     dot = DotProduct(spot, phongnormal);
+    vec_t frac;
     if (std::abs(dot) > ON_EPSILON)
     {
         frac = DotProduct(surfacespot, phongnormal) / dot;
@@ -118,9 +116,11 @@ static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t positio
     {
         frac = 0;
     }
+    vec3_t middle;
     VectorScale(spot, frac, middle);
 
     vec_t dist = VectorLength(spot);
+    vec3_t v;
     VectorSubtract(surfacespot, middle, v);
     vec_t dist2 = VectorLength(middle) + VectorLength(v);
 

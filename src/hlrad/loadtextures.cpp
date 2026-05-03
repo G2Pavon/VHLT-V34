@@ -234,7 +234,6 @@ static void DefaultTexture(radtexture_t *tex, const char *name)
 
 static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
 {
-    int i;
     const miptex_t *header = mt;
     const byte *data = (const byte *)mt;
     tex->width = header->width;
@@ -247,6 +246,7 @@ static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
         Error("Texture '%s': dimension (%dx%d) is not multiple of %d.", tex->name, tex->width, tex->height, 2 * (1 << (MIPLEVELS - 1)));
     }
     int mipsize;
+    int i;
     for (mipsize = 0, i = 0; i < MIPLEVELS; i++)
     {
         if ((int)mt->offsets[i] != (int)sizeof(miptex_t) + mipsize)

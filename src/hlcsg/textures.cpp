@@ -511,23 +511,19 @@ void WriteMiptex()
         AddAnimatingTextures();
     }
 
+    for (int i = 0; i < nummiptex; i++)
     {
-        int i;
+        lumpinfo_t *found;
 
-        for (i = 0; i < nummiptex; i++)
+        found = FindTexture(miptex + i);
+        if (found)
         {
-            lumpinfo_t *found;
-
-            found = FindTexture(miptex + i);
-            if (found)
-            {
-                miptex[i] = *found;
-                texwadpathes[found->iTexFile]->usedtextures++;
-            }
-            else
-            {
-                miptex[i].iTexFile = miptex[i].filepos = miptex[i].disksize = 0;
-            }
+            miptex[i] = *found;
+            texwadpathes[found->iTexFile]->usedtextures++;
+        }
+        else
+        {
+            miptex[i].iTexFile = miptex[i].filepos = miptex[i].disksize = 0;
         }
     }
 

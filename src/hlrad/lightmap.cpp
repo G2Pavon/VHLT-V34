@@ -1514,10 +1514,7 @@ static int numdlights;
 // =====================================================================================
 void CreateDirectLights()
 {
-    unsigned i;
-    patch_t *p;
     directlight_t *dl;
-    vec3_t dest;
 
     numdlights = 0;
     int styleused[ALLSTYLES];
@@ -1531,6 +1528,8 @@ void CreateDirectLights()
     //
     // surfaces
     //
+    unsigned i;
+    patch_t *p;
     for (i = 0, p = g_patches; i < g_num_patches; i++, p++)
     {
         if (p->emitstyle >= 0 && p->emitstyle < ALLSTYLES)
@@ -1631,7 +1630,7 @@ void CreateDirectLights()
     //
     // entities
     //
-    for (i = 0; i < (unsigned)g_numentities; i++)
+    for (int i = 0; i < (unsigned)g_numentities; i++)
     {
 
         entity_t *e = &g_entities[i];
@@ -1793,6 +1792,7 @@ void CreateDirectLights()
                 }
                 else
                 {
+                    vec3_t dest;
                     GetVectorForKey(e2, "origin", dest);
                     VectorSubtract(dest, dl->origin, dl->normal);
                     VectorNormalize(dl->normal);
@@ -1977,7 +1977,7 @@ void CreateDirectLights()
                     }
                     if (dl->sunspreadangle < SUNSPREAD_THRESHOLD)
                     {
-                        for (i = 0; i < dl->numsunnormals; i++)
+                        for (int i = 0; i < dl->numsunnormals; i++)
                         {
                             vec3_t tmp;
                             VectorScale(dl->sunnormals[i], 1 / DotProduct(dl->sunnormals[i], dl->normal), tmp);
@@ -3903,7 +3903,6 @@ void PrecompLightmapOffsets()
         }
 
         {
-            int i;
             vec_t maxlights[ALLSTYLES];
             {
                 vec3_t maxlights1[ALLSTYLES];
@@ -3915,7 +3914,7 @@ void PrecompLightmapOffsets()
                 }
                 for (int k = 0; k < MAXLIGHTMAPS && f->styles[k] != 255; k++)
                 {
-                    for (i = 0; i < fl->numsamples; i++)
+                    for (int i = 0; i < fl->numsamples; i++)
                     {
                         VectorCompareMaximum(maxlights1[f->styles[k]], fl->samples[k][i].light, maxlights1[f->styles[k]]);
                     }
@@ -3924,7 +3923,7 @@ void PrecompLightmapOffsets()
                 const int *patches;
                 GetTriangulationPatches(facenum, &numpatches, &patches); // collect patches and their neighbors
 
-                for (i = 0; i < numpatches; i++)
+                for (int i = 0; i < numpatches; i++)
                 {
                     patch = &g_patches[patches[i]];
                     for (int k = 0; k < MAXLIGHTMAPS && patch->totalstyle[k] != 255; k++)
@@ -3980,6 +3979,7 @@ void PrecompLightmapOffsets()
                     f->styles[k] = beststyle;
                     fl->samples[k] = (sample_t *)std::malloc(fl->numsamples * sizeof(sample_t));
                     hlassume(fl->samples[k] != nullptr, assume_NoMemory);
+                    int i;
                     for (i = 0; i < MAXLIGHTMAPS && oldstyles[i] != 255; i++)
                     {
                         if (oldstyles[i] == f->styles[k])

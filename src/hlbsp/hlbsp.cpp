@@ -1373,7 +1373,6 @@ static void ProcessFile(const char *const filename)
 // =====================================================================================
 int main(const int argc, char **argv)
 {
-    int i;
     const char *mapname_from_arg = NULL;
 
     g_Program = "hlbsp";
@@ -1389,7 +1388,7 @@ int main(const int argc, char **argv)
                 Usage();
 
             // check command line args
-            for (i = 1; i < argc; i++)
+            for (int i = 1; i < argc; i++)
             {
                 if (!strcasecmp(argv[i], "-threads"))
                 {
@@ -1534,9 +1533,8 @@ int main(const int argc, char **argv)
             ThreadSetDefault();
             LogStart(argcold, argvold);
             {
-                int i;
                 Log("Arguments: ");
-                for (i = 1; i < argc; i++)
+                for (int i = 1; i < argc; i++)
                 {
                     if (strchr(argv[i], ' '))
                     {

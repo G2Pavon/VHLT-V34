@@ -1282,7 +1282,6 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     }
     VectorCopy((*b->nodes)[0].plane->normal, c->basenormal);
 
-    int i;
     for (int side = 0; side < 2; side++)
     {
         vec3_t facing;
@@ -1300,6 +1299,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
         c->surfaces[side][0].nodeside = !side;
         while (1)
         {
+            int i;
             for (i = 0; i < c->numwedges[side]; i++)
             {
                 int nodenum = c->wedges[side][i].nodenum;
@@ -1332,7 +1332,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     // fill in other information
     for (int side = 0; side < 2; side++)
     {
-        for (i = 0; i < c->numwedges[side]; i++)
+        for (int i = 0; i < c->numwedges[side]; i++)
         {
             bwedge_t *w = &c->wedges[side][i];
             bbrinknode_t *node = &(*b->nodes)[w->nodenum];
@@ -1347,7 +1347,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
             w->prev->next = w;
             w->next->prev = w;
         }
-        for (i = 0; i < c->numwedges[side]; i++)
+        for (int i = 0; i < c->numwedges[side]; i++)
         {
             bsurface_t *s = &c->surfaces[side][i];
             bbrinknode_t *node = &(*b->nodes)[s->nodenum];
@@ -1358,7 +1358,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     // check the normals
     for (int side = 0; side < 2; side++)
     {
-        for (i = 0; i < c->numwedges[side]; i++)
+        for (int i = 0; i < c->numwedges[side]; i++)
         {
             bwedge_t *w = &c->wedges[side][i];
             if (i == 0 && i == c->numwedges[side] - 1) // 180 degrees

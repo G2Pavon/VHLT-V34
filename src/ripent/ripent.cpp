@@ -838,7 +838,6 @@ static void Settings()
  */
 int main(int argc, char **argv)
 {
-    int i;
     double start, end;
 
     g_Program = "ripent";
@@ -856,7 +855,7 @@ int main(int argc, char **argv)
                 Usage();
             }
 
-            for (i = 1; i < argc; i++)
+            for (int i = 1; i < argc; i++)
             {
                 if (!strcasecmp(argv[i], "-import"))
                 {
@@ -959,9 +958,8 @@ int main(int argc, char **argv)
 
             LogStart(argcold, argvold);
             {
-                int i;
                 Log("Arguments: ");
-                for (i = 1; i < argc; i++)
+                for (int i = 1; i < argc; i++)
                 {
                     if (strchr(argv[i], ' '))
                     {

@@ -22,12 +22,6 @@
 // =====================================================================================
 static face_t *TryMerge(face_t *f1, face_t *f2)
 {
-    int i;
-    int k;
-    vec3_t normal;
-    vec3_t delta;
-    vec3_t planenormal;
-
     if (f1->numpoints == -1 || f2->numpoints == -1)
     {
         return nullptr;
@@ -56,9 +50,11 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     //
     // find a common edge
     //
+
+    int i;
+    int j = 0;
     vec_t *p1 = nullptr; // shut up the compiler
     vec_t *p2 = nullptr;
-    int j = 0;
 
     for (i = 0; i < f1->numpoints; i++)
     {
@@ -68,6 +64,7 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
         {
             vec_t *p3 = f2->pts[j];
             vec_t *p4 = f2->pts[(j + 1) % f2->numpoints];
+            int k;
             for (k = 0; k < 3; k++)
             {
                 if (std::abs(p1[k] - p4[k]) > ON_EPSILON)
@@ -99,6 +96,11 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     // check slope of connected lines
     // if the slopes are colinear, the point can be removed
     //
+
+    vec3_t normal;
+    vec3_t delta;
+    vec3_t planenormal;
+
     dplane_t *plane = &g_dplanes[f1->planenum];
     VectorCopy(plane->normal, planenormal);
 
@@ -142,7 +144,7 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     face_t *newf = NewFaceFromFace(f1);
 
     // copy first polygon
-    for (k = (i + 1) % f1->numpoints; k != i; k = (k + 1) % f1->numpoints)
+    for (int k = (i + 1) % f1->numpoints; k != i; k = (k + 1) % f1->numpoints)
     {
         if (k == (i + 1) % f1->numpoints && !keep2)
         {
