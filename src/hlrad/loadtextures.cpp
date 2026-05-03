@@ -563,7 +563,7 @@ static void CQ_SelectPartition(cq_node_t *node)
             priority += CQ_DotProduct(remain, remain) / (count - counts[j]);
             if (node->needsplit == false ||
                 priority > node->splitpriority + 0.1 ||
-                priority >= node->splitpriority - 0.1 && std::abs(counts[j] - count / 2) < std::abs(node->bestsplitter.numpoints[0] - count / 2))
+                (priority >= node->splitpriority - 0.1 && std::abs(counts[j] - count / 2) < std::abs(node->bestsplitter.numpoints[0] - count / 2)))
             {
                 node->needsplit = true;
                 node->splitpriority = priority;

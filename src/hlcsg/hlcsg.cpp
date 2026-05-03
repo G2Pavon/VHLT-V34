@@ -708,7 +708,8 @@ static void CSGBrush(int brushnum)
                         }
                         continue;
                     }
-                    if (b1->contents > b2->contents || b1->contents == b2->contents && !strncasecmp(GetTextureByNumber_CSG(f->texinfo), "SOLIDHINT", 9))
+                    if ((b1->contents > b2->contents) ||
+                        (b1->contents == b2->contents && !strncasecmp(GetTextureByNumber_CSG(f->texinfo), "SOLIDHINT", 9)))
                     { // inside a water brush
                         f->contents = b2->contents;
                         f->next = outside;
@@ -1046,10 +1047,25 @@ static void CheckForNoClip()
         int skin = IntForKey(ent, "skin"); //vluzacn
 
         if ((skin != -16) &&
-            (!std::strcmp(entclassname, "env_bubbles") || !std::strcmp(entclassname, "func_illusionary") || (spawnflags & 8) && (/* NOTE: func_doors as far as i can tell may need clipnodes for their
+            (!std::strcmp(entclassname, "env_bubbles") ||
+             !std::strcmp(entclassname, "func_illusionary") ||
+             //spawnflags 8
+             ((spawnflags & 8) && (/* NOTE: func_doors as far as i can tell may need clipnodes for their
 							player collision detection, so for now, they stay out of it. */
-                                                                                                                                 !std::strcmp(entclassname, "func_train") || !std::strcmp(entclassname, "func_door") || !std::strcmp(entclassname, "func_water") || !std::strcmp(entclassname, "func_door_rotating") || !std::strcmp(entclassname, "func_pendulum") || !std::strcmp(entclassname, "func_train") || !std::strcmp(entclassname, "func_tracktrain") || !std::strcmp(entclassname, "func_vehicle")) ||
-             (skin != 0) && (!std::strcmp(entclassname, "func_door") || !std::strcmp(entclassname, "func_water")) || (spawnflags & 2) && (!std::strcmp(entclassname, "func_conveyor")) || (spawnflags & 1) && (!std::strcmp(entclassname, "func_rot_button")) || (spawnflags & 64) && (!std::strcmp(entclassname, "func_rotating"))))
+                                   !std::strcmp(entclassname, "func_train") ||
+                                   !std::strcmp(entclassname, "func_door") ||
+                                   !std::strcmp(entclassname, "func_water") ||
+                                   !std::strcmp(entclassname, "func_door_rotating") ||
+                                   !std::strcmp(entclassname, "func_pendulum") ||
+                                   !std::strcmp(entclassname, "func_train") ||
+                                   !std::strcmp(entclassname, "func_tracktrain") ||
+                                   !std::strcmp(entclassname, "func_vehicle"))) ||
+             // skin != 0
+             ((skin != 0) && (!std::strcmp(entclassname, "func_door") || !std::strcmp(entclassname, "func_water"))) ||
+             // other spawnflags
+             ((spawnflags & 2) && !std::strcmp(entclassname, "func_conveyor")) ||
+             ((spawnflags & 1) && !std::strcmp(entclassname, "func_rot_button")) ||
+             ((spawnflags & 64) && !std::strcmp(entclassname, "func_rotating"))))
         {
             MarkEntForNoclip(ent);
             count++;

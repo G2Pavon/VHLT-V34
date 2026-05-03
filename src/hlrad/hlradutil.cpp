@@ -750,9 +750,9 @@ bool FindNearestPosition(int facenum, const Winding *texwinding, vec_t s, vec_t 
                 vec_t d = VectorLength(v);
 
                 if (!found ||
-                    !p->nudged && best_nudged ||
-                    p->nudged == best_nudged &&
-                        d < best_dist - 2 * ON_EPSILON)
+                    (!p->nudged && best_nudged) ||
+                    (p->nudged == best_nudged &&
+                     d < best_dist - 2 * ON_EPSILON))
                 {
                     found = true;
                     best_is = is;

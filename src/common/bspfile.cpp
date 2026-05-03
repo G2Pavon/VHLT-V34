@@ -1353,7 +1353,8 @@ void UnparseEntities()
             const char *classname = ValueForKey(ent, "classname");
             const char *targetname = ValueForKey(ent, "targetname");
             int style = IntForKey(ent, "style");
-            if (!targetname[0] || std::strcmp(classname, "light") && std::strcmp(classname, "light_spot") && std::strcmp(classname, "light_environment"))
+            if (!targetname[0] ||
+                (std::strcmp(classname, "light") && std::strcmp(classname, "light_spot") && std::strcmp(classname, "light_environment")))
                 continue;
             for (j = i + 1; j < g_numentities; j++)
             {

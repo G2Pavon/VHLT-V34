@@ -132,8 +132,8 @@ static void parsecommand(execute_t &e, char *cmdline, char *words, unsigned int 
         e.stack++;
         if (!e.skip)
         {
-            if (t == IFDEF && findparams(cmdline, pnext(words)) ||
-                t == IFNDEF && !findparams(cmdline, pnext(words)))
+            if ((t == IFDEF && findparams(cmdline, pnext(words))) ||
+                (t == IFNDEF && !findparams(cmdline, pnext(words))))
                 e.skip = false;
             else
             {

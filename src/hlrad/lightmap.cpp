@@ -2454,10 +2454,10 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                                 continue;
                             // check intensity
                             if (g_indirect_sun <= 0.0 ||
-                                VectorCompare(
-                                    l->diffuse_intensity,
-                                    vec3_origin) &&
-                                    VectorCompare(l->diffuse_intensity2, vec3_origin))
+                                (VectorCompare(
+                                     l->diffuse_intensity,
+                                     vec3_origin) &&
+                                 VectorCompare(l->diffuse_intensity2, vec3_origin)))
                                 continue;
 
                             vec3_t sky_intensity;
@@ -4125,7 +4125,7 @@ typedef struct
         {
             int num;
             vec3_t pos;
-            unsigned char *(style[ALLSTYLES]);
+            unsigned char *style[ALLSTYLES];
         } sample[MLH_MAXSAMPLECOUNT];
         int samplecount;
     } face[MLH_MAXFACECOUNT];

@@ -1069,7 +1069,7 @@ contents_t CheckBrushContents(const brush_t *const b)
     // check to make sure we dont have an origin brush as part of worldspawn
     if ((b->entitynum == 0) || (std::strcmp("func_group", ValueForKey(&g_entities[b->entitynum], "classname")) == 0))
     {
-        if (contents == CONTENTS_ORIGIN && b->entitynum == 0 || contents == CONTENTS_BOUNDINGBOX)
+        if ((contents == CONTENTS_ORIGIN && b->entitynum == 0) || contents == CONTENTS_BOUNDINGBOX)
         {
             Fatal(assume_BRUSH_NOT_ALLOWED_IN_WORLD, "Entity %i, Brush %i: %s brushes not allowed in world\n(did you forget to tie this origin brush to a rotating entity?)",
                   b->originalentitynum, b->originalbrushnum,

@@ -7,7 +7,7 @@
 
 const std::size_t unused_size = 3u; // located at the end of a block
 
-const char *(float_type_string[float_type_count]) =
+const char *float_type_string[float_type_count] =
     {
         "32bit",
         "16bit",
@@ -19,7 +19,7 @@ const std::size_t float_size[float_type_count] =
         2u,
         1u};
 
-const char *(vector_type_string[vector_type_count]) =
+const char *vector_type_string[vector_type_count] =
     {
         "96bit",
         "48bit",

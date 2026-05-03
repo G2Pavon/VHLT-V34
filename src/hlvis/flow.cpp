@@ -866,7 +866,7 @@ static vec_t WindingDist(const winding_t *w[2])
             vec_t dist2 = DotProduct(p2, planenormal) - planedist;
             vec3_t delta;
             vec3_t v;
-            if (dist1 > ON_EPSILON && dist2 < -ON_EPSILON || dist1 < -ON_EPSILON && dist2 > ON_EPSILON)
+            if ((dist1 > ON_EPSILON && dist2 < -ON_EPSILON) || (dist1 < -ON_EPSILON && dist2 > ON_EPSILON))
             {
                 vec_t frac = dist1 / (dist1 - dist2);
                 VectorSubtract(p2, p1, delta);
