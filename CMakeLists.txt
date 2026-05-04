@@ -27,10 +27,8 @@ endif()
 # ================================
 # Directories
 # ================================
-
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(COMMON_DIR ${SRC_DIR}/common)
-
 include_directories(
     ${SRC_DIR}
     ${COMMON_DIR}
@@ -39,7 +37,6 @@ include_directories(
 # ================================
 # Common sources
 # ================================
-
 set(COMMON_SOURCES
     ${COMMON_DIR}/blockmem.cpp
     ${COMMON_DIR}/bspfile.cpp
@@ -55,10 +52,31 @@ set(COMMON_SOURCES
     ${COMMON_DIR}/winding.cpp
 )
 
+
+# ================================
+# hlcsg
+# ================================
+add_executable(hlcsg
+    ${COMMON_SOURCES}
+    ${SRC_DIR}/hlcsg/ansitoutf8.cpp
+    ${SRC_DIR}/hlcsg/brush.cpp
+    ${SRC_DIR}/hlcsg/hullfile.cpp
+    ${SRC_DIR}/hlcsg/map.cpp
+    ${SRC_DIR}/hlcsg/hlcsg.cpp
+    ${SRC_DIR}/hlcsg/textures.cpp
+    ${SRC_DIR}/hlcsg/wadpath.cpp
+)
+target_include_directories(hlcsg PRIVATE
+    ${SRC_DIR}/hlcsg
+)
+target_compile_definitions(hlcsg PRIVATE
+    HLCSG
+    DOUBLEVEC_T
+)
+
 # ================================
 # hlbsp
 # ================================
-
 add_executable(hlbsp
     ${COMMON_SOURCES}
     ${SRC_DIR}/hlbsp/brink.cpp
@@ -71,44 +89,30 @@ add_executable(hlbsp
     ${SRC_DIR}/hlbsp/tjunc.cpp
     ${SRC_DIR}/hlbsp/writebsp.cpp
 )
-
 target_include_directories(hlbsp PRIVATE
     ${SRC_DIR}/hlbsp
 )
-
 target_compile_definitions(hlbsp PRIVATE
     HLBSP
     DOUBLEVEC_T
 )
 
 # ================================
-# hlcsg
+# hlvis
 # ================================
-
-add_executable(hlcsg
+add_executable(hlvis
     ${COMMON_SOURCES}
-    ${SRC_DIR}/hlcsg/ansitoutf8.cpp
-    ${SRC_DIR}/hlcsg/brush.cpp
-    ${SRC_DIR}/hlcsg/hullfile.cpp
-    ${SRC_DIR}/hlcsg/map.cpp
-    ${SRC_DIR}/hlcsg/hlcsg.cpp
-    ${SRC_DIR}/hlcsg/textures.cpp
-    ${SRC_DIR}/hlcsg/wadpath.cpp
+    ${SRC_DIR}/hlvis/flow.cpp
+    ${SRC_DIR}/hlvis/hlvis.cpp
 )
-
-target_include_directories(hlcsg PRIVATE
-    ${SRC_DIR}/hlcsg
+target_include_directories(hlvis PRIVATE
+    ${SRC_DIR}/hlvis
 )
-
-target_compile_definitions(hlcsg PRIVATE
-    HLCSG
-    DOUBLEVEC_T
-)
+target_compile_definitions(hlvis PRIVATE HLVIS)
 
 # ================================
 # hlrad
 # ================================
-
 add_executable(hlrad
     ${COMMON_SOURCES}
     ${SRC_DIR}/hlrad/compress.cpp
@@ -125,25 +129,7 @@ add_executable(hlrad
     ${SRC_DIR}/hlrad/vismatrix.cpp
     ${SRC_DIR}/hlrad/vismatrixutil.cpp
 )
-
 target_include_directories(hlrad PRIVATE
     ${SRC_DIR}/hlrad
 )
-
 target_compile_definitions(hlrad PRIVATE HLRAD)
-
-# ================================
-# hlvis
-# ================================
-
-add_executable(hlvis
-    ${COMMON_SOURCES}
-    ${SRC_DIR}/hlvis/flow.cpp
-    ${SRC_DIR}/hlvis/hlvis.cpp
-)
-
-target_include_directories(hlvis PRIVATE
-    ${SRC_DIR}/hlvis
-)
-
-target_compile_definitions(hlvis PRIVATE HLVIS)
