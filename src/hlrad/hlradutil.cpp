@@ -2,9 +2,9 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "hlrad.h"
-#include "common/log.h"
 #include "common/bspfile.h"
+#include "hlrad/hlrad.h"
+#include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 

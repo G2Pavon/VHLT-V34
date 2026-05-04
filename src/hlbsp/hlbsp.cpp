@@ -7,22 +7,23 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
 
 */
+#include "hlbsp/hlbsp.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#include "hlbsp.h"
 #include "common/cmdlib.h"
 #include "common/cmdlinecfg.h"
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/threads.h"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 /*
 

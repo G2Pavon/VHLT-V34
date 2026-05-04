@@ -1,17 +1,18 @@
+#include "common/cmdlinecfg.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
 
+#include "common/scriplib.h"
+#include "common/log.h"
+#include "common/cmdlib.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include "cmdlinecfg.h"
-#include "scriplib.h"
-#include "log.h"
-#include "cmdlib.h"
 
 constexpr char PARAMFILENAME[_MAX_PATH] = "settings.txt";
 constexpr char SEPCHR = '\n';

@@ -1,18 +1,19 @@
+#include "common/bspfile.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 #include <cerrno>
 
-#include "bspfile.h"
-#include "filelib.h"
-#include "messages.h"
-#include "hlassert.h"
-#include "log.h"
-#include "mathlib.h"
-#include "scriplib.h"
-#include "blockmem.h"
-#include "cmdlib.h"
+#include "common/filelib.h"
+#include "common/messages.h"
+#include "common/hlassert.h"
+#include "common/log.h"
+#include "common/mathlib.h"
+#include "common/scriplib.h"
+#include "common/blockmem.h"
+#include "common/cmdlib.h"
 
 //=============================================================================
 

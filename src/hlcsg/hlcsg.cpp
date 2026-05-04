@@ -9,20 +9,15 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
+#include "hlcsg/hlcsg.h"
 
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h> //--vluzacn
-#endif
-
-#include "hlcsg.h"
-#include "ansitoutf8.h"
-#include "wadpath.h"
+#include "hlcsg/ansitoutf8.h"
+#include "hlcsg/wadpath.h"
 #include "common/cmdlib.h"
 #include "common/cmdlinecfg.h"
 #include "common/filelib.h"
@@ -30,6 +25,11 @@
 #include "common/threads.h"
 #include "common/scriplib.h"
 #include "common/bspfile.h"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h> //--vluzacn
+#endif
 
 /*
 

@@ -7,6 +7,8 @@
     Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
     
 */
+#include "hlrad/hlrad.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -14,19 +16,17 @@
 #include <string>
 #include <cmath>
 
+#include "common/blockmem.h"
+#include "common/cmdlib.h"
+#include "common/cmdlinecfg.h"
+#include "common/filelib.h"
+#include "common/scriplib.h"
+#include "common/threads.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include "hlrad.h"
-#include "common/cmdlinecfg.h"
-#include "common/filelib.h"
-#include "common/blockmem.h"
-#include "common/threads.h"
-#include "common/scriplib.h"
-#include "common/cmdlib.h"
-
 /*
  * NOTES
  * -----

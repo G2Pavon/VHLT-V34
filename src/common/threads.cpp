@@ -1,3 +1,5 @@
+#include "common/threads.h"
+
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -6,13 +8,12 @@
 #include <cstdio>
 #include <cstring>
 
-#include "threads.h"
-#include "win32fix.h"
-#include "cmdlib.h"
-#include "messages.h"
-#include "log.h"
-#include "blockmem.h"
-#include "hlassert.h"
+#include "common/win32fix.h"
+#include "common/cmdlib.h"
+#include "common/messages.h"
+#include "common/log.h"
+#include "common/blockmem.h"
+#include "common/hlassert.h"
 
 static std::mutex g_thread_mutex;
 static std::atomic<int> g_enter_count{0};

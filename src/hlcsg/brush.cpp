@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "hlcsg.h"
+#include "hlcsg/hlcsg.h"
 #include "common/blockmem.h"
 #include "common/threads.h"
 #include "common/bspfile.h"

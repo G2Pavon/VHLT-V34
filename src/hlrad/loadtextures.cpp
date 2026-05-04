@@ -3,11 +3,11 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "hlrad.h"
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
+#include "hlrad/hlrad.h"
 #include "common/filelib.h"
 #include "common/log.h"
-#include "common/cmdlib.h"
-#include "common/bspfile.h"
 
 int g_numtextures;
 radtexture_t *g_textures;

@@ -1,4 +1,4 @@
-#include "hlcsg.h"
+#include "hlcsg/hlcsg.h"
 #include "common/mathtypes.h"
 
 vec3_t g_hull_size[NUM_HULLS][2] =

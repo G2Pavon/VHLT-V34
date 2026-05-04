@@ -1,10 +1,10 @@
 #pragma once
 
-#include "compress.h"
+#include "common/bspfile.h"
+#include "hlrad/compress.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 #include "common/winding.h"
-#include "common/bspfile.h"
 
 #pragma warning(disable : 4142 4028)
 #pragma warning(default : 4142 4028)

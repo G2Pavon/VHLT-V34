@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common/winding.h"
-#include "common/mathtypes.h"
 #include "common/bspfile.h"
+#include "common/mathtypes.h"
+#include "common/winding.h"
 
 #define BOGUS_RANGE 144000
 
@@ -16,7 +16,7 @@ constexpr int DEFAULT_MAXNODE_SIZE = 1024;
 
 constexpr int MAXEDGES = 48;  // 32
 constexpr int MAXPOINTS = 28; // don't let a base face get past this \
-                         // because it can be split more later
+                              // because it can be split more later
 
 typedef enum
 {

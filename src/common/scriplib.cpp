@@ -1,10 +1,11 @@
+#include "common/scriplib.h"
+
 #include <cstring>
 
-#include "scriplib.h"
-#include "cmdlib.h"
-#include "filelib.h"
-#include "messages.h"
-#include "log.h"
+#include "common/cmdlib.h"
+#include "common/filelib.h"
+#include "common/messages.h"
+#include "common/log.h"
 
 char g_token[MAXTOKEN];
 

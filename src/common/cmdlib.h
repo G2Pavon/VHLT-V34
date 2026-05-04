@@ -11,7 +11,7 @@
 
 #include <cstddef>
 
-#include "win32fix.h"
+#include "common/win32fix.h"
 
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (zoner@gearboxsoftware.com)\n"
 //#define MODIFICATIONS_STRING "Submit detailed bug reports to (merlinis@bigpond.net.au)\n"

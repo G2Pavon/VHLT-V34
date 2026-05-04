@@ -8,11 +8,11 @@
 #include <cstddef>
 #include <climits>
 
-#include "hlrad.h"
-#include "common/threads.h"
+#include "hlrad/hlrad.h"
+#include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
-#include "common/log.h"
+#include "common/threads.h"
 #include "common/win32fix.h"
 
 typedef struct

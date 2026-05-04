@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "bspfile.h"
-#include "boundingbox.h"
+#include "common/boundingbox.h"
+#include "common/bspfile.h"
+#include "common/mathlib.h"
+#include "common/mathtypes.h"
 
 constexpr int MAX_POINTS_ON_WINDING = 128;
 // TODO: FIX THIS STUPID SHIT (MAX_POINTS_ON_WINDING)

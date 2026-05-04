@@ -8,27 +8,27 @@
     Contains code by Skyler "Zipster" York (zipster89134@hotmail.com) - Included with permission.
     
 */
+#include "hlvis/hlvis.h"
 
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <cmath>
 
+#include "common/bspfile.h"
+#include "common/cmdlib.h"
+#include "common/cmdlinecfg.h"
+#include "common/filelib.h"
+#include "common/log.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/threads.h"
+#include "common/winding.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include "hlvis.h"
-#include "cmdlinecfg.h"
-#include "common/filelib.h"
-#include "common/threads.h"
-#include "common/log.h"
-#include "common/cmdlib.h"
-#include "common/mathtypes.h"
-#include "common/mathlib.h"
-#include "common/bspfile.h"
-#include "common/winding.h"
 
 static constexpr const char *PORTALFILE = "PRT1"; // .prt file header
 static constexpr bool DEFAULT_FASTVIS = false;

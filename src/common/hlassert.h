@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "common/log.h"
 
 #define assume(exp, message)                                                                      \
     {                                                                                             \

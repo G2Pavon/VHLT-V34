@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "common/log.h"
 
 static constexpr int DEFAULT_NUMTHREADS = -1;
 

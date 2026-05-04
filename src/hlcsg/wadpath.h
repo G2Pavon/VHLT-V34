@@ -2,6 +2,8 @@
 // AJM: added file in
 #include <cstdlib>
 
+#include "common/win32fix.h"
+
 constexpr int MAX_WADPATHS = 128; // arbitrary
 
 typedef struct

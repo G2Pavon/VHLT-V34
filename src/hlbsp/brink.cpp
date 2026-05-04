@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "hlbsp.h"
+#include "hlbsp/hlbsp.h"
 #include "common/log.h"
 
 // TODO: we should consider corners in addition to brinks.

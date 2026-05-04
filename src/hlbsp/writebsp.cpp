@@ -1,19 +1,10 @@
-//  WriteClipNodes_r
-//  WriteClipNodes
-//  WriteDrawLeaf
-//  WriteFace
-//  WriteDrawNodes_r
-//  FreeDrawNodes_r
-//  WriteDrawNodes
-//  BeginBSPFile
-//  FinishBSPFile
 #include <cstdlib>
 #include <cstring>
 #include <map>
 #include <utility>
 #include <cstring>
 
-#include "hlbsp.h"
+#include "hlbsp/hlbsp.h"
 #include "common/cmdlib.h"
 #include "common/log.h"
 #include "common/bspfile.h"

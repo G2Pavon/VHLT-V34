@@ -1,8 +1,9 @@
+#include "common/blockmem.h"
+
 #include <cstdlib>
 
-#include "blockmem.h"
-#include "messages.h"
-#include "log.h"
+#include "common/messages.h"
+#include "common/log.h"
 
 // =====================================================================================
 //  AllocBlock

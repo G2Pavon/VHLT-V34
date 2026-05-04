@@ -1,13 +1,13 @@
 #include <cstring>
 
-#include "hlrad.h"
+#include "hlrad/hlrad.h"
 #include "common/blockmem.h"
-#include "common/log.h"
-#include "common/threads.h"
+#include "common/bspfile.h"
 #include "common/cmdlib.h"
+#include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
-#include "common/bspfile.h"
+#include "common/threads.h"
 
 ////////////////////////////
 // begin old vismat.c

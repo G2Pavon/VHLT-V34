@@ -2,10 +2,10 @@
 
 #include <cstdio>
 
-#include "entity.h"
-#include "mathtypes.h"
-#include "mathlib.h"
-#include "win32fix.h"
+#include "common/entity.h"
+#include "common/mathtypes.h"
+#include "common/mathlib.h"
+#include "common/win32fix.h"
 
 // upper design bounds
 

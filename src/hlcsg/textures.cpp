@@ -5,8 +5,8 @@
 #include <deque>
 #include <cmath>
 
-#include "hlcsg.h"
-#include "wadpath.h"
+#include "hlcsg/hlcsg.h"
+#include "hlcsg/wadpath.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
 #include "common/threads.h"

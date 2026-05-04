@@ -2,12 +2,12 @@
 #include <cstring>
 #include <cmath>
 
-#include "hlrad.h"
+#include "common/bspfile.h"
 #include "common/cmdlib.h"
+#include "hlrad/hlrad.h"
+#include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
-#include "common/bspfile.h"
-#include "common/log.h" //--vluzacn
 #include "common/winding.h"
 
 // #define      ON_EPSILON      0.001

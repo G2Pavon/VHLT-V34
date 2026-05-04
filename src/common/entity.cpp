@@ -1,4 +1,4 @@
-#include "entity.h"
+#include "common/entity.h"
 
 #include <cstring>
 #include <cstdlib>

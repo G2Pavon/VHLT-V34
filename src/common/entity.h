@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mathtypes.h"
+#include "common/mathtypes.h"
 
 struct epair_t
 {

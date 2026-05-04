@@ -1,19 +1,20 @@
+#include "common/log.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cstdarg>
 
+#include "common/messages.h"
+#include "common/hlassert.h"
+#include "common/filelib.h"
+#include "common/scriplib.h"
+#include "common/cmdlib.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include "log.h"
-#include "messages.h"
-#include "hlassert.h"
-#include "filelib.h"
-#include "scriplib.h"
-#include "cmdlib.h"
 
 char *g_Program = "Uninitialized variable ::g_Program";
 char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";

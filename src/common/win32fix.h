@@ -24,10 +24,10 @@
 #define FORMAT_PRINTF(A, B)
 
 #elif defined(__GNUC__) || defined(__clang__)
-#include <strings.h>
 #include <limits.h>
-#include <unistd.h>
 #include <stdarg.h>
+#include <strings.h>
+#include <unistd.h>
 #include <sys/time.h>
 
 #define _MAX_PATH PATH_MAX

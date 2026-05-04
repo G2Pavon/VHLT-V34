@@ -1,20 +1,21 @@
+#include "common/cmdlib.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
 #include <cstdlib>
 #include <cstdint>
 
+#include "common/messages.h"
+#include "common/hlassert.h"
+#include "common/blockmem.h"
+#include "common/log.h"
+#include "common/mathlib.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include "cmdlib.h"
-#include "messages.h"
-#include "hlassert.h"
-#include "blockmem.h"
-#include "log.h"
-#include "mathlib.h"
 
 #define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
 

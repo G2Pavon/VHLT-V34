@@ -1,11 +1,11 @@
 #include <cstddef>
 #include <cmath>
 
-#include "hlrad.h"
+#include "hlrad/hlrad.h"
 #include "common/blockmem.h"
-#include "common/threads.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
+#include "common/threads.h"
 
 #define MAX_COMPRESSED_TRANSFER_INDEX_SIZE ((1 << 12) - 1)
 

@@ -1,13 +1,14 @@
 // AJM: added this file in
+#include "hlcsg/wadpath.h"
+
 #include <cstdlib>
 #include <cstring>
 
-#include "win32fix.h"
-#include "wadpath.h"
-#include "common/log.h"
-#include "common/mathlib.h"
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
+#include "common/log.h"
+#include "common/mathlib.h"
+#include "common/win32fix.h"
 
 wadpath_t *g_pWadPaths[MAX_WADPATHS];
 int g_iNumWadPaths = 0;

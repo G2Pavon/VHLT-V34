@@ -5,131 +5,100 @@ project(VHLT
     LANGUAGES CXX
 )
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
     add_compile_options(/W4)
 else()
-    add_compile_options(-Wall -Wextra)
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
-
-message("Configuring ${PROJECT_NAME}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if (MSVC)
-    add_compile_definitions(
-        WIN32
-        _CONSOLE
-        SYSTEM_WIN32
-    )
+    add_compile_definitions(WIN32 _CONSOLE SYSTEM_WIN32)
 endif()
 
-# ================================
-# Directories
-# ================================
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
-set(COMMON_DIR ${SRC_DIR}/common)
-include_directories(
-    ${SRC_DIR}
-    ${COMMON_DIR}
-)
-
-# ================================
-# Common sources
-# ================================
 set(COMMON_SOURCES
-    ${COMMON_DIR}/blockmem.cpp
-    ${COMMON_DIR}/bspfile.cpp
-    ${COMMON_DIR}/cmdlib.cpp
-    ${COMMON_DIR}/cmdlinecfg.cpp
-    ${COMMON_DIR}/entity.cpp
-    ${COMMON_DIR}/filelib.cpp
-    ${COMMON_DIR}/log.cpp
-    ${COMMON_DIR}/messages.cpp
-    ${COMMON_DIR}/scriplib.cpp
-    ${COMMON_DIR}/stringlib.cpp
-    ${COMMON_DIR}/threads.cpp
-    ${COMMON_DIR}/winding.cpp
+    src/common/blockmem.cpp
+    src/common/bspfile.cpp
+    src/common/cmdlib.cpp
+    src/common/cmdlinecfg.cpp
+    src/common/entity.cpp
+    src/common/filelib.cpp
+    src/common/log.cpp
+    src/common/messages.cpp
+    src/common/scriplib.cpp
+    src/common/stringlib.cpp
+    src/common/threads.cpp
+    src/common/winding.cpp
 )
 
-
-# ================================
+# =====================================================================================
 # hlcsg
-# ================================
+# =====================================================================================
 add_executable(hlcsg
     ${COMMON_SOURCES}
-    ${SRC_DIR}/hlcsg/ansitoutf8.cpp
-    ${SRC_DIR}/hlcsg/brush.cpp
-    ${SRC_DIR}/hlcsg/hullfile.cpp
-    ${SRC_DIR}/hlcsg/map.cpp
-    ${SRC_DIR}/hlcsg/hlcsg.cpp
-    ${SRC_DIR}/hlcsg/textures.cpp
-    ${SRC_DIR}/hlcsg/wadpath.cpp
+    src/hlcsg/ansitoutf8.cpp
+    src/hlcsg/brush.cpp
+    src/hlcsg/hullfile.cpp
+    src/hlcsg/map.cpp
+    src/hlcsg/hlcsg.cpp
+    src/hlcsg/textures.cpp
+    src/hlcsg/wadpath.cpp
 )
-target_include_directories(hlcsg PRIVATE
-    ${SRC_DIR}/hlcsg
-)
-target_compile_definitions(hlcsg PRIVATE
-    HLCSG
-    DOUBLEVEC_T
-)
+target_include_directories(hlcsg PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(hlcsg PRIVATE HLCSG DOUBLEVEC_T)
 
-# ================================
+# =====================================================================================
 # hlbsp
-# ================================
+# =====================================================================================
 add_executable(hlbsp
     ${COMMON_SOURCES}
-    ${SRC_DIR}/hlbsp/brink.cpp
-    ${SRC_DIR}/hlbsp/merge.cpp
-    ${SRC_DIR}/hlbsp/outside.cpp
-    ${SRC_DIR}/hlbsp/portals.cpp
-    ${SRC_DIR}/hlbsp/hlbsp.cpp
-    ${SRC_DIR}/hlbsp/solidbsp.cpp
-    ${SRC_DIR}/hlbsp/surfaces.cpp
-    ${SRC_DIR}/hlbsp/tjunc.cpp
-    ${SRC_DIR}/hlbsp/writebsp.cpp
+    src/hlbsp/brink.cpp
+    src/hlbsp/merge.cpp
+    src/hlbsp/outside.cpp
+    src/hlbsp/portals.cpp
+    src/hlbsp/hlbsp.cpp
+    src/hlbsp/solidbsp.cpp
+    src/hlbsp/surfaces.cpp
+    src/hlbsp/tjunc.cpp
+    src/hlbsp/writebsp.cpp
 )
-target_include_directories(hlbsp PRIVATE
-    ${SRC_DIR}/hlbsp
-)
-target_compile_definitions(hlbsp PRIVATE
-    HLBSP
-    DOUBLEVEC_T
-)
+target_include_directories(hlbsp PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(hlbsp PRIVATE HLBSP DOUBLEVEC_T)
 
-# ================================
+# =====================================================================================
 # hlvis
-# ================================
+# =====================================================================================
 add_executable(hlvis
     ${COMMON_SOURCES}
-    ${SRC_DIR}/hlvis/flow.cpp
-    ${SRC_DIR}/hlvis/hlvis.cpp
+    src/hlvis/flow.cpp
+    src/hlvis/hlvis.cpp
 )
-target_include_directories(hlvis PRIVATE
-    ${SRC_DIR}/hlvis
-)
+target_include_directories(hlvis PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_definitions(hlvis PRIVATE HLVIS)
 
-# ================================
+# =====================================================================================
 # hlrad
-# ================================
+# =====================================================================================
 add_executable(hlrad
     ${COMMON_SOURCES}
-    ${SRC_DIR}/hlrad/compress.cpp
-    ${SRC_DIR}/hlrad/lerp.cpp
-    ${SRC_DIR}/hlrad/lightmap.cpp
-    ${SRC_DIR}/hlrad/loadtextures.cpp
-    ${SRC_DIR}/hlrad/mathutil.cpp
-    ${SRC_DIR}/hlrad/nomatrix.cpp
-    ${SRC_DIR}/hlrad/hlrad.cpp
-    ${SRC_DIR}/hlrad/hlradutil.cpp
-    ${SRC_DIR}/hlrad/sparse.cpp
-    ${SRC_DIR}/hlrad/trace.cpp
-    ${SRC_DIR}/hlrad/transparency.cpp
-    ${SRC_DIR}/hlrad/vismatrix.cpp
-    ${SRC_DIR}/hlrad/vismatrixutil.cpp
+    src/hlrad/compress.cpp
+    src/hlrad/lerp.cpp
+    src/hlrad/lightmap.cpp
+    src/hlrad/loadtextures.cpp
+    src/hlrad/mathutil.cpp
+    src/hlrad/nomatrix.cpp
+    src/hlrad/hlrad.cpp
+    src/hlrad/hlradutil.cpp
+    src/hlrad/sparse.cpp
+    src/hlrad/trace.cpp
+    src/hlrad/transparency.cpp
+    src/hlrad/vismatrix.cpp
+    src/hlrad/vismatrixutil.cpp
 )
-target_include_directories(hlrad PRIVATE
-    ${SRC_DIR}/hlrad
-)
+target_include_directories(hlrad PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_definitions(hlrad PRIVATE HLRAD)

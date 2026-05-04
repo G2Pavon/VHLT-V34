@@ -1,7 +1,6 @@
-
-#include "hlrad.h"
-#include "common/threads.h"
 #include "common/cmdlib.h"
+#include "hlrad/hlrad.h"
+#include "common/threads.h"
 
 // =====================================================================================
 //  CheckVisBit

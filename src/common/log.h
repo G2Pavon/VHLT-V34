@@ -1,7 +1,7 @@
 #pragma once
 
-#include "win32fix.h"
-#include "messages.h"
+#include "common/win32fix.h"
+#include "common/messages.h"
 
 //
 // log.c globals

@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "hlbsp.h"
+#include "hlbsp/hlbsp.h"
 #include "common/cmdlib.h"
 #include "common/log.h"
 

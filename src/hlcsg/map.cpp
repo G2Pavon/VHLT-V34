@@ -1,11 +1,12 @@
 //#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
+#include "hlcsg/hlcsg.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <cmath>
 #include <string>
 
-#include "hlcsg.h"
 #include "common/cmdlib.h"
 #include "common/blockmem.h"
 #include "common/scriplib.h"

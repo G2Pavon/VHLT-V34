@@ -1,9 +1,9 @@
 #pragma once
 
+#include "common/mathtypes.h"
+
 #include <cmath>
 #include <cfloat>
-
-#include "mathtypes.h"
 
 #if !defined(qmax)
 #define qmax(a, b) (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn

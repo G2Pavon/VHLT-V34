@@ -2,11 +2,11 @@
 #include <cstring>
 #include <cmath>
 
-#include "hlvis.h"
-#include "common/threads.h"
+#include "hlvis/hlvis.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
+#include "common/threads.h"
 #include "common/winding.h"
 
 constexpr int MAX_PORTALS = 32768;
