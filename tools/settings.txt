@@ -72,18 +72,6 @@
 //   -textureimport
 //   -textureparse
 
-
-
-#ifndef <ripent>              // CSG\BSP\VIS\RAD
-  #ifndef -high
-    #ifndef -low
-      #define -low
-    #endif
-  #endif
-  //#define -estimate
-  #endif
-#endif
-
 #ifdef <hlcsg>                // CSG
   #ifndef -wadautodetect
     #define -wadautodetect
@@ -112,7 +100,3 @@
     #define -vismatrix off
   #endif
 #endif
-
-#ifdef <ripent>               // RIPENT
-#endif
-

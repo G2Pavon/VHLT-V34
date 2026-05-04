@@ -21,8 +21,8 @@
 #define ZHLT_VERSIONSTRING "v3.4"
 #define HACK_VERSIONSTRING "VL34" //--vluzacn
 
-#if !defined(HLCSG) && !defined(HLBSP) && !defined(HLVIS) && !defined(HLRAD) && !defined(RIPENT) //--vluzacn
-#error "You must define one of these in the settings of each project: HLCSG, HLBSP, HLVIS, HLRAD, RIPENT. The most likely cause is that you didn't load the project from the sln file."
+#if !defined(HLCSG) && !defined(HLBSP) && !defined(HLVIS) && !defined(HLRAD) //--vluzacn
+#error "You must define one of these in the settings of each project: HLCSG, HLBSP, HLVIS, HLRAD. The most likely cause is that you didn't load the project from the sln file."
 #endif
 
 #define PLATFORM_VERSIONSTRING "64-bit"

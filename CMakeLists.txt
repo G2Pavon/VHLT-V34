@@ -147,18 +147,3 @@ target_include_directories(hlvis PRIVATE
 )
 
 target_compile_definitions(hlvis PRIVATE HLVIS)
-
-# ================================
-# ripent
-# ================================
-
-add_executable(ripent
-    ${COMMON_SOURCES}
-    ${SRC_DIR}/ripent/ripent.cpp
-)
-
-target_include_directories(ripent PRIVATE
-    ${SRC_DIR}/ripent
-)
-
-target_compile_definitions(ripent PRIVATE RIPENT)
