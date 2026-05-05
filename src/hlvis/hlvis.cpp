@@ -17,7 +17,6 @@
 
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
-#include "common/cmdlinecfg.h"
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
@@ -732,202 +731,193 @@ int main(const int argc, char **argv)
 
     g_Program = "hlvis";
 
-    int argcold = argc;
-    char **argvold = argv;
+    if (argc == 1)
     {
-        int argc;
-        char **argv;
-        ParseParamFile(argcold, argvold, argc, argv);
+        Usage();
+    }
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (!strcasecmp(argv[i], "-threads"))
         {
-            if (argc == 1)
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                Usage();
-            }
-
-            for (int i = 1; i < argc; i++)
-            {
-                if (!strcasecmp(argv[i], "-threads"))
+                g_numthreads = std::atoi(argv[++i]);
+                if (g_numthreads < 1)
                 {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_numthreads = std::atoi(argv[++i]);
-                        if (g_numthreads < 1)
-                        {
-                            Log("Expected value of at least 1 for '-threads'\n");
-                            Usage();
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                else if (!strcasecmp(argv[i], "-estimate"))
-                {
-                    g_estimate = true;
-                }
-                else if (!strcasecmp(argv[i], "-fast"))
-                {
-                    Log("fastvis = true\n");
-                    fastvis = true;
-                }
-                else if (!strcasecmp(argv[i], "-full"))
-                {
-                    g_fullvis = true;
-                }
-                else if (!strcasecmp(argv[i], "-chart"))
-                {
-                    g_chart = true;
-                }
-                else if (!strcasecmp(argv[i], "-texdata"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_miptex) //--vluzacn
-                        {
-                            g_max_map_miptex = x;
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
-                {
-                    if (i + 1 < argc) //--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_lightdata) //--vluzacn
-                        {
-                            g_max_map_lightdata = x; //--vluzacn
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                // AJM: MVD
-                else if (!strcasecmp(argv[i], "-maxdistance"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_maxdistance = std::abs(std::atoi(argv[++i]));
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (argv[i][0] == '-')
-                {
-                    Log("Unknown option \"%s\"", argv[i]);
-                    Usage();
-                }
-                else if (!mapname_from_arg)
-                {
-                    mapname_from_arg = argv[i];
-                }
-                else
-                {
-                    Log("Unknown option \"%s\"\n", argv[i]);
+                    Log("Expected value of at least 1 for '-threads'\n");
                     Usage();
                 }
             }
-
-            if (!mapname_from_arg)
+            else
             {
-                Log("No mapfile specified\n");
                 Usage();
             }
+        }
 
-            safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-            FlipSlashes(g_Mapname);
-            StripExtension(g_Mapname);
-            OpenLog();
-            std::atexit(CloseLog);
-            ThreadSetDefault();
-            LogStart(argcold, argvold);
+        else if (!strcasecmp(argv[i], "-estimate"))
+        {
+            g_estimate = true;
+        }
+        else if (!strcasecmp(argv[i], "-fast"))
+        {
+            Log("fastvis = true\n");
+            fastvis = true;
+        }
+        else if (!strcasecmp(argv[i], "-full"))
+        {
+            g_fullvis = true;
+        }
+        else if (!strcasecmp(argv[i], "-chart"))
+        {
+            g_chart = true;
+        }
+        else if (!strcasecmp(argv[i], "-texdata"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                Log("Arguments: ");
-                for (int i = 1; i < argc; i++)
+                int x = std::atoi(argv[++i]) * 1024;
+
+                //if (x > g_max_map_miptex) //--vluzacn
                 {
-                    if (strchr(argv[i], ' '))
-                    {
-                        Log("\"%s\" ", argv[i]);
-                    }
-                    else
-                    {
-                        Log("%s ", argv[i]);
-                    }
-                }
-                Log("\n");
-            }
-
-            CheckForErrorLog();
-
-            hlassume(CalcFaceExtents_test(), assume_first);
-
-            dtexdata_init();
-            std::atexit(dtexdata_free);
-            // END INIT
-
-            // BEGIN VIS
-            double start = I_FloatTime();
-
-            safe_strncpy(source, g_Mapname, _MAX_PATH);
-            safe_strncat(source, ".bsp", _MAX_PATH);
-            safe_strncpy(portalfile, g_Mapname, _MAX_PATH);
-            safe_strncat(portalfile, ".prt", _MAX_PATH);
-
-            LoadBSPFile(source);
-            ParseEntities();
-            {
-                for (int i = 0; i < g_numentities; i++)
-                {
-                    if (!std::strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
-                    {
-                        if (overview_count < overview_max)
-                        {
-                            vec3_t p;
-                            GetVectorForKey(&g_entities[i], "origin", p);
-                            VectorCopy(p, overview[overview_count].origin);
-                            overview[overview_count].visleafnum = VisLeafnumForPoint(p);
-                            overview[overview_count].reverse = IntForKey(&g_entities[i], "reverse");
-                            overview_count++;
-                        }
-                    }
+                    g_max_map_miptex = x;
                 }
             }
-            LoadPortalsByFilename(portalfile);
-
-            Settings();
-            uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
-
-            CalcVis();
-            g_visdatasize = vismap_p - g_dvisdata;
-            Log("g_visdatasize:%i  compressed from %i\n", g_visdatasize, originalvismapsize);
-
-            if (g_chart)
+            else
             {
-                PrintBSPFileSizes();
+                Usage();
             }
+        }
+        else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
+        {
+            if (i + 1 < argc) //--vluzacn
+            {
+                int x = std::atoi(argv[++i]) * 1024;
 
-            WriteBSPFile(source);
+                //if (x > g_max_map_lightdata) //--vluzacn
+                {
+                    g_max_map_lightdata = x; //--vluzacn
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
 
-            double end = I_FloatTime();
-            LogTimeElapsed(end - start);
-
-            std::free(uncompressed);
-            // END VIS
+        // AJM: MVD
+        else if (!strcasecmp(argv[i], "-maxdistance"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_maxdistance = std::abs(std::atoi(argv[++i]));
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (argv[i][0] == '-')
+        {
+            Log("Unknown option \"%s\"", argv[i]);
+            Usage();
+        }
+        else if (!mapname_from_arg)
+        {
+            mapname_from_arg = argv[i];
+        }
+        else
+        {
+            Log("Unknown option \"%s\"\n", argv[i]);
+            Usage();
         }
     }
+
+    if (!mapname_from_arg)
+    {
+        Log("No mapfile specified\n");
+        Usage();
+    }
+
+    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
+    FlipSlashes(g_Mapname);
+    StripExtension(g_Mapname);
+    OpenLog();
+    std::atexit(CloseLog);
+    ThreadSetDefault();
+    LogStart(argc, argv);
+    {
+        Log("Arguments: ");
+        for (int i = 1; i < argc; i++)
+        {
+            if (strchr(argv[i], ' '))
+            {
+                Log("\"%s\" ", argv[i]);
+            }
+            else
+            {
+                Log("%s ", argv[i]);
+            }
+        }
+        Log("\n");
+    }
+
+    CheckForErrorLog();
+
+    hlassume(CalcFaceExtents_test(), assume_first);
+
+    dtexdata_init();
+    std::atexit(dtexdata_free);
+    // END INIT
+
+    // BEGIN VIS
+    double start = I_FloatTime();
+
+    safe_strncpy(source, g_Mapname, _MAX_PATH);
+    safe_strncat(source, ".bsp", _MAX_PATH);
+    safe_strncpy(portalfile, g_Mapname, _MAX_PATH);
+    safe_strncat(portalfile, ".prt", _MAX_PATH);
+
+    LoadBSPFile(source);
+    ParseEntities();
+    {
+        for (int i = 0; i < g_numentities; i++)
+        {
+            if (!std::strcmp(ValueForKey(&g_entities[i], "classname"), "info_overview_point"))
+            {
+                if (overview_count < overview_max)
+                {
+                    vec3_t p;
+                    GetVectorForKey(&g_entities[i], "origin", p);
+                    VectorCopy(p, overview[overview_count].origin);
+                    overview[overview_count].visleafnum = VisLeafnumForPoint(p);
+                    overview[overview_count].reverse = IntForKey(&g_entities[i], "reverse");
+                    overview_count++;
+                }
+            }
+        }
+    }
+    LoadPortalsByFilename(portalfile);
+
+    Settings();
+    uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
+
+    CalcVis();
+    g_visdatasize = vismap_p - g_dvisdata;
+    Log("g_visdatasize:%i  compressed from %i\n", g_visdatasize, originalvismapsize);
+
+    if (g_chart)
+    {
+        PrintBSPFileSizes();
+    }
+
+    WriteBSPFile(source);
+
+    double end = I_FloatTime();
+    LogTimeElapsed(end - start);
+
+    std::free(uncompressed);
+    // END VIS
 
     return 0;
 }

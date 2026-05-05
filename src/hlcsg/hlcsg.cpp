@@ -19,7 +19,6 @@
 #include "hlcsg/ansitoutf8.h"
 #include "hlcsg/wadpath.h"
 #include "common/cmdlib.h"
-#include "common/cmdlinecfg.h"
 #include "common/filelib.h"
 #include "common/blockmem.h"
 #include "common/threads.h"
@@ -1339,333 +1338,325 @@ int main(const int argc, char **argv)
 
     g_Program = "hlcsg";
 
-    int argcold = argc;
-    char **argvold = argv;
+    if (argc == 1)
+        Usage();
+
+    // Hard coded list of -wadinclude files, used for HINT texture brushes so lazy
+    // mapmakers wont cause beta testers (or possibly end users) to get a wad
+    // error on zhlt.wad etc
+    g_WadInclude.push_back("zhlt.wad");
+
+    InitDefaultHulls();
+
+    // detect argv
+    for (int i = 1; i < argc; i++)
     {
-        int argc;
-        char **argv;
-        ParseParamFile(argcold, argvold, argc, argv);
+        if (!strcasecmp(argv[i], "-threads"))
         {
-            if (argc == 1)
-                Usage();
-
-            // Hard coded list of -wadinclude files, used for HINT texture brushes so lazy
-            // mapmakers wont cause beta testers (or possibly end users) to get a wad
-            // error on zhlt.wad etc
-            g_WadInclude.push_back("zhlt.wad");
-
-            InitDefaultHulls();
-
-            // detect argv
-            for (int i = 1; i < argc; i++)
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                if (!strcasecmp(argv[i], "-threads"))
+                g_numthreads = std::atoi(argv[++i]);
+                if (g_numthreads < 1)
                 {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_numthreads = std::atoi(argv[++i]);
-                        if (g_numthreads < 1)
-                        {
-                            Log("Expected value of at least 1 for '-threads'\n");
-                            Usage();
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-estimate"))
-                {
-                    g_estimate = true;
-                }
-                else if (!strcasecmp(argv[i], "-chart"))
-                {
-                    g_chart = true;
-                }
-                else if (!strcasecmp(argv[i], "-noskyclip"))
-                {
-                    g_skyclip = false;
-                }
-                else if (!strcasecmp(argv[i], "-onlyents"))
-                {
-                    g_onlyents = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-clipeconomy"))
-                {
-                    g_bClipNazi = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-cliptype"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        ++i;
-                        if (!strcasecmp(argv[i], "smallest"))
-                        {
-                            g_cliptype = clip_smallest;
-                        }
-                        else if (!strcasecmp(argv[i], "normalized"))
-                        {
-                            g_cliptype = clip_normalized;
-                        }
-                        else if (!strcasecmp(argv[i], "simple"))
-                        {
-                            g_cliptype = clip_simple;
-                        }
-                        else if (!strcasecmp(argv[i], "precise"))
-                        {
-                            g_cliptype = clip_precise;
-                        }
-                        else if (!strcasecmp(argv[i], "legacy"))
-                        {
-                            g_cliptype = clip_legacy;
-                        }
-                    }
-                    else
-                    {
-                        Log("Error: -cliptype: incorrect usage of parameter\n");
-                        Usage();
-                    }
-                }
-
-                else if (!strcasecmp(argv[i], "-wadautodetect"))
-                {
-                    g_bWadAutoDetect = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-nowadtextures"))
-                {
-                    g_wadtextures = false;
-                }
-                else if (!strcasecmp(argv[i], "-wadinclude"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_WadInclude.push_back(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-texdata"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_miptex) //--vluzacn
-                        {
-                            g_max_map_miptex = x;
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lightdata"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_lightdata) //--vluzacn
-                        {
-                            g_max_map_lightdata = x;
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-nolightopt"))
-                {
-                    g_nolightopt = true;
-                }
-                else if (!strcasecmp(argv[i], "-notextconvert"))
-                {
-                    g_noutf8 = true;
-                }
-                else if (argv[i][0] == '-')
-                {
-                    Log("Unknown option \"%s\"\n", argv[i]);
-                    Usage();
-                }
-                else if (!mapname_from_arg)
-                {
-                    mapname_from_arg = argv[i];
-                }
-                else
-                {
-                    Log("Unknown option \"%s\"\n", argv[i]);
+                    Log("Expected value of at least 1 for '-threads'\n");
                     Usage();
                 }
             }
-
-            // no mapfile?
-            if (!mapname_from_arg)
+            else
             {
-                // what a shame.
-                Log("No mapfile specified\n");
                 Usage();
             }
+        }
+        else if (!strcasecmp(argv[i], "-estimate"))
+        {
+            g_estimate = true;
+        }
+        else if (!strcasecmp(argv[i], "-chart"))
+        {
+            g_chart = true;
+        }
+        else if (!strcasecmp(argv[i], "-noskyclip"))
+        {
+            g_skyclip = false;
+        }
+        else if (!strcasecmp(argv[i], "-onlyents"))
+        {
+            g_onlyents = true;
+        }
 
-            // handle mapname
-            safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-            FlipSlashes(g_Mapname);
-            StripExtension(g_Mapname);
+        else if (!strcasecmp(argv[i], "-clipeconomy"))
+        {
+            g_bClipNazi = true;
+        }
 
-            // onlyents
-            if (!g_onlyents)
-                ResetTmpFiles();
-
-            // other stuff
-            ResetErrorLog();
-            if (!g_onlyents)
-                ResetLog();
-            OpenLog();
-            std::atexit(CloseLog);
-            LogStart(argcold, argvold);
+        else if (!strcasecmp(argv[i], "-cliptype"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                Log("Arguments: ");
-                for (int i = 1; i < argc; i++)
+                ++i;
+                if (!strcasecmp(argv[i], "smallest"))
                 {
-                    if (strchr(argv[i], ' '))
-                    {
-                        Log("\"%s\" ", argv[i]);
-                    }
-                    else
-                    {
-                        Log("%s ", argv[i]);
-                    }
+                    g_cliptype = clip_smallest;
                 }
-                Log("\n");
-            }
-
-            hlassume(CalcFaceExtents_test(), assume_first);
-
-            std::atexit(CSGCleanup); // AJM
-            dtexdata_init();
-            std::atexit(dtexdata_free);
-
-            // START CSG
-            // AJM: re-arranged some stuff up here so that the mapfile is loaded
-            //  before settings are finalised and printed out, so that the info_compile_parameters
-            //  entity can be dealt with effectively
-            double start = I_FloatTime();
-
-            safe_strncpy(name, mapname_from_arg, _MAX_PATH); // make a copy of the nap name
-            FlipSlashes(name);
-            DefaultExtension(name, ".map"); // might be .reg
-
-            LoadMapFile(name);
-            ThreadSetDefault();
-            Settings();
-
-            if (!g_noutf8)
-            {
-                ConvertGameTextToUTF8();
-            }
-
-            if (!g_onlyents)
-            {
-                Log("Using mapfile wad configuration\n");
-                GetUsedWads();
-
-                if (g_bWadAutoDetect)
+                else if (!strcasecmp(argv[i], "normalized"))
                 {
-                    Log("Wadfiles not in use by the map will be excluded\n");
+                    g_cliptype = clip_normalized;
                 }
-
-                DumpWadinclude();
-                Log("\n");
-            }
-
-            // if onlyents, just grab the entites and resave
-            if (g_onlyents)
-            {
-                char out[_MAX_PATH];
-
-                safe_snprintf(out, _MAX_PATH, "%s.bsp", g_Mapname);
-                LoadBSPFile(out);
-
-                // Write it all back out again.
-                WriteBSP(g_Mapname);
-
-                double end = I_FloatTime();
-                LogTimeElapsed(end - start);
-                return 0;
-            }
-
-            CheckForNoClip();
-
-            // createbrush
-            NamedRunThreadsOnIndividual(g_nummapbrushes, g_estimate, CreateBrush);
-            CheckFatal();
-
-            // boundworld
-            BoundWorld();
-
-            // Set model centers
-            for (int i = 0; i < g_numentities; i++)
-                SetModelCenters(i); //NamedRunThreadsOnIndividual(g_numentities, g_estimate, SetModelCenters); //--vluzacn
-
-            // open hull files
-            for (int i = 0; i < NUM_HULLS; i++)
-            {
-                char name[_MAX_PATH];
-
-                safe_snprintf(name, _MAX_PATH, "%s.p%i", g_Mapname, i);
-
-                out[i] = std::fopen(name, "w");
-
-                if (!out[i])
-                    Error("Couldn't open %s", name);
-                safe_snprintf(name, _MAX_PATH, "%s.b%i", g_Mapname, i);
-                out_detailbrush[i] = std::fopen(name, "w");
-                if (!out_detailbrush[i])
-                    Error("Couldn't open %s", name);
-            }
-            {
-                char name[_MAX_PATH];
-                safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
-                std::FILE *f = std::fopen(name, "w");
-                if (!f)
-                    Error("Couldn't open %s", name);
-                for (int i = 0; i < NUM_HULLS; i++)
+                else if (!strcasecmp(argv[i], "simple"))
                 {
-                    float x1 = g_hull_size[i][0][0];
-                    float y1 = g_hull_size[i][0][1];
-                    float z1 = g_hull_size[i][0][2];
-                    float x2 = g_hull_size[i][1][0];
-                    float y2 = g_hull_size[i][1][1];
-                    float z2 = g_hull_size[i][1][2];
-                    std::fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
+                    g_cliptype = clip_simple;
                 }
-                std::fclose(f);
+                else if (!strcasecmp(argv[i], "precise"))
+                {
+                    g_cliptype = clip_precise;
+                }
+                else if (!strcasecmp(argv[i], "legacy"))
+                {
+                    g_cliptype = clip_legacy;
+                }
             }
-
-            ProcessModels();
-
-            // close hull files
-            for (int i = 0; i < NUM_HULLS; i++)
+            else
             {
-                std::fclose(out[i]);
-                std::fclose(out_detailbrush[i]);
+                Log("Error: -cliptype: incorrect usage of parameter\n");
+                Usage();
             }
+        }
 
-            EmitPlanes();
+        else if (!strcasecmp(argv[i], "-wadautodetect"))
+        {
+            g_bWadAutoDetect = true;
+        }
 
-            WriteBSP(g_Mapname);
+        else if (!strcasecmp(argv[i], "-nowadtextures"))
+        {
+            g_wadtextures = false;
+        }
+        else if (!strcasecmp(argv[i], "-wadinclude"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_WadInclude.push_back(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-texdata"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                int x = std::atoi(argv[++i]) * 1024;
 
-            // elapsed time
-            double end = I_FloatTime();
-            LogTimeElapsed(end - start);
+                //if (x > g_max_map_miptex) //--vluzacn
+                {
+                    g_max_map_miptex = x;
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-lightdata"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                int x = std::atoi(argv[++i]) * 1024;
+
+                //if (x > g_max_map_lightdata) //--vluzacn
+                {
+                    g_max_map_lightdata = x;
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-nolightopt"))
+        {
+            g_nolightopt = true;
+        }
+        else if (!strcasecmp(argv[i], "-notextconvert"))
+        {
+            g_noutf8 = true;
+        }
+        else if (argv[i][0] == '-')
+        {
+            Log("Unknown option \"%s\"\n", argv[i]);
+            Usage();
+        }
+        else if (!mapname_from_arg)
+        {
+            mapname_from_arg = argv[i];
+        }
+        else
+        {
+            Log("Unknown option \"%s\"\n", argv[i]);
+            Usage();
         }
     }
+
+    // no mapfile?
+    if (!mapname_from_arg)
+    {
+        // what a shame.
+        Log("No mapfile specified\n");
+        Usage();
+    }
+
+    // handle mapname
+    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
+    FlipSlashes(g_Mapname);
+    StripExtension(g_Mapname);
+
+    // onlyents
+    if (!g_onlyents)
+        ResetTmpFiles();
+
+    // other stuff
+    ResetErrorLog();
+    if (!g_onlyents)
+        ResetLog();
+    OpenLog();
+    std::atexit(CloseLog);
+    LogStart(argc, argv);
+    {
+        Log("Arguments: ");
+        for (int i = 1; i < argc; i++)
+        {
+            if (strchr(argv[i], ' '))
+            {
+                Log("\"%s\" ", argv[i]);
+            }
+            else
+            {
+                Log("%s ", argv[i]);
+            }
+        }
+        Log("\n");
+    }
+
+    hlassume(CalcFaceExtents_test(), assume_first);
+
+    std::atexit(CSGCleanup); // AJM
+    dtexdata_init();
+    std::atexit(dtexdata_free);
+
+    // START CSG
+    // AJM: re-arranged some stuff up here so that the mapfile is loaded
+    //  before settings are finalised and printed out, so that the info_compile_parameters
+    //  entity can be dealt with effectively
+    double start = I_FloatTime();
+
+    safe_strncpy(name, mapname_from_arg, _MAX_PATH); // make a copy of the nap name
+    FlipSlashes(name);
+    DefaultExtension(name, ".map"); // might be .reg
+
+    LoadMapFile(name);
+    ThreadSetDefault();
+    Settings();
+
+    if (!g_noutf8)
+    {
+        ConvertGameTextToUTF8();
+    }
+
+    if (!g_onlyents)
+    {
+        Log("Using mapfile wad configuration\n");
+        GetUsedWads();
+
+        if (g_bWadAutoDetect)
+        {
+            Log("Wadfiles not in use by the map will be excluded\n");
+        }
+
+        DumpWadinclude();
+        Log("\n");
+    }
+
+    // if onlyents, just grab the entites and resave
+    if (g_onlyents)
+    {
+        char out[_MAX_PATH];
+
+        safe_snprintf(out, _MAX_PATH, "%s.bsp", g_Mapname);
+        LoadBSPFile(out);
+
+        // Write it all back out again.
+        WriteBSP(g_Mapname);
+
+        double end = I_FloatTime();
+        LogTimeElapsed(end - start);
+        return 0;
+    }
+
+    CheckForNoClip();
+
+    // createbrush
+    NamedRunThreadsOnIndividual(g_nummapbrushes, g_estimate, CreateBrush);
+    CheckFatal();
+
+    // boundworld
+    BoundWorld();
+
+    // Set model centers
+    for (int i = 0; i < g_numentities; i++)
+        SetModelCenters(i); //NamedRunThreadsOnIndividual(g_numentities, g_estimate, SetModelCenters); //--vluzacn
+
+    // open hull files
+    for (int i = 0; i < NUM_HULLS; i++)
+    {
+        char name[_MAX_PATH];
+
+        safe_snprintf(name, _MAX_PATH, "%s.p%i", g_Mapname, i);
+
+        out[i] = std::fopen(name, "w");
+
+        if (!out[i])
+            Error("Couldn't open %s", name);
+        safe_snprintf(name, _MAX_PATH, "%s.b%i", g_Mapname, i);
+        out_detailbrush[i] = std::fopen(name, "w");
+        if (!out_detailbrush[i])
+            Error("Couldn't open %s", name);
+    }
+    {
+        char name[_MAX_PATH];
+        safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
+        std::FILE *f = std::fopen(name, "w");
+        if (!f)
+            Error("Couldn't open %s", name);
+        for (int i = 0; i < NUM_HULLS; i++)
+        {
+            float x1 = g_hull_size[i][0][0];
+            float y1 = g_hull_size[i][0][1];
+            float z1 = g_hull_size[i][0][2];
+            float x2 = g_hull_size[i][1][0];
+            float y2 = g_hull_size[i][1][1];
+            float z2 = g_hull_size[i][1][2];
+            std::fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
+        }
+        std::fclose(f);
+    }
+
+    ProcessModels();
+
+    // close hull files
+    for (int i = 0; i < NUM_HULLS; i++)
+    {
+        std::fclose(out[i]);
+        std::fclose(out_detailbrush[i]);
+    }
+
+    EmitPlanes();
+
+    WriteBSP(g_Mapname);
+
+    // elapsed time
+    double end = I_FloatTime();
+    LogTimeElapsed(end - start);
+
     return 0;
 }

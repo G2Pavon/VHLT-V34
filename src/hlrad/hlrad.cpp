@@ -18,7 +18,6 @@
 
 #include "common/blockmem.h"
 #include "common/cmdlib.h"
-#include "common/cmdlinecfg.h"
 #include "common/filelib.h"
 #include "common/scriplib.h"
 #include "common/threads.h"
@@ -2728,644 +2727,636 @@ int main(const int argc, char **argv)
 
     g_Program = "hlrad";
 
-    int argcold = argc;
-    char **argvold = argv;
+    if (argc == 1)
+        Usage();
+
+    for (int i = 1; i < argc; i++)
     {
-        int argc;
-        char **argv;
-        ParseParamFile(argcold, argvold, argc, argv);
+        if (!strcasecmp(argv[i], "-bounce"))
         {
-            if (argc == 1)
-                Usage();
-
-            for (int i = 1; i < argc; i++)
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                if (!strcasecmp(argv[i], "-bounce"))
+                g_numbounce = std::atoi(argv[++i]);
+                if (g_numbounce > 1000)
                 {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_numbounce = std::atoi(argv[++i]);
-                        if (g_numbounce > 1000)
-                        {
-                            Log("Unexpectedly large value (>1000) for '-bounce'\n");
-                            Usage();
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-threads"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_numthreads = std::atoi(argv[++i]);
-                        if (g_numthreads < 1)
-                        {
-                            Log("Expected value of at least 1 for '-threads'\n");
-                            Usage();
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-estimate"))
-                {
-                    g_estimate = true;
-                }
-                else if (!strcasecmp(argv[i], "-fast"))
-                {
-                    g_fastmode = true;
-                }
-                else if (!strcasecmp(argv[i], "-chop"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_chop = std::atof(argv[++i]);
-                        if (g_chop < 1)
-                        {
-                            Log("expected value greater than 1 for '-chop'\n");
-                            Usage();
-                        }
-                        if (g_chop < 32)
-                        {
-                            Log("Warning: Chop values below 32 are not recommended.");
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-texchop"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_texchop = std::atof(argv[++i]);
-                        if (g_texchop < 1)
-                        {
-                            Log("expected value greater than 1 for '-texchop'\n");
-                            Usage();
-                        }
-                        if (g_texchop < 32)
-                        {
-                            Log("Warning: texchop values below 16 are not recommended.");
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-notexscale"))
-                {
-                    g_texscale = false;
-                }
-                else if (!strcasecmp(argv[i], "-nosubdivide"))
-                {
-                    if (i < argc)
-                    {
-                        g_subdivide = false;
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-scale"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        // ------------------------------------------------------------------------
-                        // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-                        // Munge monochrome lightscale into colour one
-                        i++;
-                        g_colour_lightscale[0] = (float)std::atof(argv[i]);
-                        g_colour_lightscale[1] = (float)std::atof(argv[i]);
-                        g_colour_lightscale[2] = (float)std::atof(argv[i]);
-                        // ------------------------------------------------------------------------
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-fade"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_fade = (float)std::atof(argv[++i]);
-                        if (g_fade < 0.0)
-                        {
-                            Log("-fade must be a positive number\n");
-                            Usage();
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-ambient"))
-                {
-                    if (i + 3 < argc)
-                    {
-                        g_ambient[0] = (float)std::atof(argv[++i]) * 128;
-                        g_ambient[1] = (float)std::atof(argv[++i]) * 128;
-                        g_ambient[2] = (float)std::atof(argv[++i]) * 128;
-                    }
-                    else
-                    {
-                        Error("expected three color values after '-ambient'\n");
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-limiter"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_limitthreshold = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lights"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        rad_file_path = argv[++i];
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-circus"))
-                {
-                    g_circus = true;
-                }
-                else if (!strcasecmp(argv[i], "-noskyfix"))
-                {
-                    g_sky_lighting_fix = false;
-                }
-                else if (!strcasecmp(argv[i], "-chart"))
-                {
-                    g_chart = true;
-                }
-                else if (!strcasecmp(argv[i], "-gamma"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        // ------------------------------------------------------------------------
-                        // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-                        // Munge values from original, monochrome gamma into colour gamma
-                        i++;
-                        g_colour_qgamma[0] = (float)std::atof(argv[i]);
-                        g_colour_qgamma[1] = (float)std::atof(argv[i]);
-                        g_colour_qgamma[2] = (float)std::atof(argv[i]);
-                        // ------------------------------------------------------------------------
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-dlight"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_dlight_threshold = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-extra"))
-                {
-                    g_extra = true;
-                }
-                else if (!strcasecmp(argv[i], "-sky"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_indirect_sun = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-smooth"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_smoothing_value = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-smooth2"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_smoothing_value_2 = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-coring"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_coring = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-texdata"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_miptex) //--vluzacn
-                        {
-                            g_max_map_miptex = x;
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
-                {
-                    if (i + 1 < argc) //--vluzacn
-                    {
-                        int x = std::atoi(argv[++i]) * 1024;
-
-                        //if (x > g_max_map_lightdata) //--vluzacn
-                        {
-                            g_max_map_lightdata = x;
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-vismatrix"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        const char *value = argv[++i];
-                        if (!strcasecmp(value, "normal"))
-                        {
-                            g_method = eMethodVismatrix;
-                        }
-                        else if (!strcasecmp(value, "sparse"))
-                        {
-                            g_method = eMethodSparseVismatrix;
-                        }
-                        else if (!strcasecmp(value, "off"))
-                        {
-                            g_method = eMethodNoVismatrix;
-                        }
-                        else
-                        {
-                            Error("Unknown vismatrix type: '%s'", value);
-                        }
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-nospread"))
-                {
-                    g_allow_spread = false;
-                }
-                else if (!strcasecmp(argv[i], "-dscale"))
-                {
-                    if (i + 1 < argc) //added "1" .--vluzacn
-                    {
-                        g_direct_scale = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                // ------------------------------------------------------------------------
-                // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-                else if (!strcasecmp(argv[i], "-colourgamma"))
-                {
-                    if (i + 3 < argc)
-                    {
-                        g_colour_qgamma[0] = (float)std::atof(argv[++i]);
-                        g_colour_qgamma[1] = (float)std::atof(argv[++i]);
-                        g_colour_qgamma[2] = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Error("expected three color values after '-colourgamma'\n");
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-colourscale"))
-                {
-                    if (i + 3 < argc)
-                    {
-                        g_colour_lightscale[0] = (float)std::atof(argv[++i]);
-                        g_colour_lightscale[1] = (float)std::atof(argv[++i]);
-                        g_colour_lightscale[2] = (float)std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Error("expected three color values after '-colourscale'\n");
-                    }
-                }
-
-                // ------------------------------------------------------------------------
-
-                else if (!strcasecmp(argv[i], "-customshadowwithbounce"))
-                {
-                    g_customshadow_with_bouncelight = true;
-                }
-                else if (!strcasecmp(argv[i], "-rgbtransfers"))
-                {
-                    g_rgb_transfers = true;
-                }
-
-                else if (!strcasecmp(argv[i], "-minlight"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        int v = std::atoi(argv[++i]);
-                        v = qmax(0, qmin(v, 255));
-                        g_minlight = (unsigned char)v;
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                else if (!strcasecmp(argv[i], "-softsky"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_softsky = (bool)std::atoi(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                else if (!strcasecmp(argv[i], "-compress"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_transfer_compress_type = (float_type)std::atoi(argv[++i]);
-                        if (g_transfer_compress_type < 0 || g_transfer_compress_type >= float_type_count)
-                            Usage();
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-rgbcompress"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_rgbtransfer_compress_type = (vector_type)std::atoi(argv[++i]);
-                        if (g_rgbtransfer_compress_type < 0 || g_rgbtransfer_compress_type >= vector_type_count)
-                            Usage();
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-depth"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_translucentdepth = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-blockopaque"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_blockopaque = std::atoi(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-waddir"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        AddWadFolder(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-notextures"))
-                {
-                    g_notextures = true;
-                }
-                else if (!strcasecmp(argv[i], "-texreflectgamma"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_texreflectgamma = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-texreflectscale"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_texreflectscale = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-blur"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_blur = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-                else if (!strcasecmp(argv[i], "-texlightgap"))
-                {
-                    if (i + 1 < argc)
-                    {
-                        g_texlightgap = std::atof(argv[++i]);
-                    }
-                    else
-                    {
-                        Usage();
-                    }
-                }
-
-                else if (argv[i][0] == '-')
-                {
-                    Log("Unknown option \"%s\"\n", argv[i]);
+                    Log("Unexpectedly large value (>1000) for '-bounce'\n");
                     Usage();
                 }
-                else if (!mapname_from_arg)
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-threads"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_numthreads = std::atoi(argv[++i]);
+                if (g_numthreads < 1)
                 {
-                    mapname_from_arg = argv[i];
+                    Log("Expected value of at least 1 for '-threads'\n");
+                    Usage();
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-estimate"))
+        {
+            g_estimate = true;
+        }
+        else if (!strcasecmp(argv[i], "-fast"))
+        {
+            g_fastmode = true;
+        }
+        else if (!strcasecmp(argv[i], "-chop"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_chop = std::atof(argv[++i]);
+                if (g_chop < 1)
+                {
+                    Log("expected value greater than 1 for '-chop'\n");
+                    Usage();
+                }
+                if (g_chop < 32)
+                {
+                    Log("Warning: Chop values below 32 are not recommended.");
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-texchop"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_texchop = std::atof(argv[++i]);
+                if (g_texchop < 1)
+                {
+                    Log("expected value greater than 1 for '-texchop'\n");
+                    Usage();
+                }
+                if (g_texchop < 32)
+                {
+                    Log("Warning: texchop values below 16 are not recommended.");
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-notexscale"))
+        {
+            g_texscale = false;
+        }
+        else if (!strcasecmp(argv[i], "-nosubdivide"))
+        {
+            if (i < argc)
+            {
+                g_subdivide = false;
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-scale"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                // ------------------------------------------------------------------------
+                // Changes by Adam Foster - afoster@compsoc.man.ac.uk
+                // Munge monochrome lightscale into colour one
+                i++;
+                g_colour_lightscale[0] = (float)std::atof(argv[i]);
+                g_colour_lightscale[1] = (float)std::atof(argv[i]);
+                g_colour_lightscale[2] = (float)std::atof(argv[i]);
+                // ------------------------------------------------------------------------
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-fade"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_fade = (float)std::atof(argv[++i]);
+                if (g_fade < 0.0)
+                {
+                    Log("-fade must be a positive number\n");
+                    Usage();
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-ambient"))
+        {
+            if (i + 3 < argc)
+            {
+                g_ambient[0] = (float)std::atof(argv[++i]) * 128;
+                g_ambient[1] = (float)std::atof(argv[++i]) * 128;
+                g_ambient[2] = (float)std::atof(argv[++i]) * 128;
+            }
+            else
+            {
+                Error("expected three color values after '-ambient'\n");
+            }
+        }
+        else if (!strcasecmp(argv[i], "-limiter"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_limitthreshold = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-lights"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                rad_file_path = argv[++i];
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-circus"))
+        {
+            g_circus = true;
+        }
+        else if (!strcasecmp(argv[i], "-noskyfix"))
+        {
+            g_sky_lighting_fix = false;
+        }
+        else if (!strcasecmp(argv[i], "-chart"))
+        {
+            g_chart = true;
+        }
+        else if (!strcasecmp(argv[i], "-gamma"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                // ------------------------------------------------------------------------
+                // Changes by Adam Foster - afoster@compsoc.man.ac.uk
+                // Munge values from original, monochrome gamma into colour gamma
+                i++;
+                g_colour_qgamma[0] = (float)std::atof(argv[i]);
+                g_colour_qgamma[1] = (float)std::atof(argv[i]);
+                g_colour_qgamma[2] = (float)std::atof(argv[i]);
+                // ------------------------------------------------------------------------
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-dlight"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_dlight_threshold = (float)std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-extra"))
+        {
+            g_extra = true;
+        }
+        else if (!strcasecmp(argv[i], "-sky"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_indirect_sun = (float)std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-smooth"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_smoothing_value = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-smooth2"))
+        {
+            if (i + 1 < argc)
+            {
+                g_smoothing_value_2 = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-coring"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                g_coring = (float)std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-texdata"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
+            {
+                int x = std::atoi(argv[++i]) * 1024;
+
+                //if (x > g_max_map_miptex) //--vluzacn
+                {
+                    g_max_map_miptex = x;
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
+        {
+            if (i + 1 < argc) //--vluzacn
+            {
+                int x = std::atoi(argv[++i]) * 1024;
+
+                //if (x > g_max_map_lightdata) //--vluzacn
+                {
+                    g_max_map_lightdata = x;
+                }
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-vismatrix"))
+        {
+            if (i + 1 < argc)
+            {
+                const char *value = argv[++i];
+                if (!strcasecmp(value, "normal"))
+                {
+                    g_method = eMethodVismatrix;
+                }
+                else if (!strcasecmp(value, "sparse"))
+                {
+                    g_method = eMethodSparseVismatrix;
+                }
+                else if (!strcasecmp(value, "off"))
+                {
+                    g_method = eMethodNoVismatrix;
                 }
                 else
                 {
-                    Log("Unknown option \"%s\"\n", argv[i]);
-                    Usage();
+                    Error("Unknown vismatrix type: '%s'", value);
                 }
             }
-
-            if (!mapname_from_arg)
+            else
             {
-                Log("No mapname specified\n");
                 Usage();
             }
-
-            g_smoothing_threshold = (float)std::cos(g_smoothing_value * (Q_PI / 180.0));
-
-            safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-            FlipSlashes(g_Mapname);
-            StripExtension(g_Mapname);
-            OpenLog();
-            std::atexit(CloseLog);
-            ThreadSetDefault();
-            LogStart(argcold, argvold);
+        }
+        else if (!strcasecmp(argv[i], "-nospread"))
+        {
+            g_allow_spread = false;
+        }
+        else if (!strcasecmp(argv[i], "-dscale"))
+        {
+            if (i + 1 < argc) //added "1" .--vluzacn
             {
-                Log("Arguments: ");
-                for (int i = 1; i < argc; i++)
-                {
-                    if (strchr(argv[i], ' '))
-                    {
-                        Log("\"%s\" ", argv[i]);
-                    }
-                    else
-                    {
-                        Log("%s ", argv[i]);
-                    }
-                }
-                Log("\n");
+                g_direct_scale = (float)std::atof(argv[++i]);
             }
-
-            CheckForErrorLog();
-
-            hlassume(CalcFaceExtents_test(), assume_first);
-
-            dtexdata_init();
-            std::atexit(dtexdata_free);
-            // END INIT
-
-            // BEGIN RAD
-            double start = I_FloatTime();
-
-            // normalise maxlight
-
-            safe_snprintf(g_source, _MAX_PATH, "%s.bsp", g_Mapname);
-            LoadBSPFile(g_source);
-            ParseEntities();
-            if (g_fastmode)
+            else
             {
-                g_numbounce = 0;
-                g_softsky = false;
+                Usage();
             }
-            Settings();
-            DeleteEmbeddedLightmaps();
-            LoadTextures();
+        }
 
-            if (rad_file_path)
+        // ------------------------------------------------------------------------
+        // Changes by Adam Foster - afoster@compsoc.man.ac.uk
+        else if (!strcasecmp(argv[i], "-colourgamma"))
+        {
+            if (i + 3 < argc)
             {
-                LoadRadFiles(rad_file_path);
+                g_colour_qgamma[0] = (float)std::atof(argv[++i]);
+                g_colour_qgamma[1] = (float)std::atof(argv[++i]);
+                g_colour_qgamma[2] = (float)std::atof(argv[++i]);
             }
-
-            ReadInfoTexlights();
-
-            ReadCustomChopValue();
-            ReadCustomSmoothValue();
-            ReadTranslucentTextures();
-            ReadLightingCone();
-            g_smoothing_threshold_2 = g_smoothing_value_2 < 0 ? g_smoothing_threshold : (float)std::cos(g_smoothing_value_2 * (Q_PI / 180.0));
+            else
             {
-                for (int style = 0; style < ALLSTYLES; ++style)
-                {
-                    g_corings[style] = style ? g_coring : 0;
-                }
+                Error("expected three color values after '-colourgamma'\n");
             }
-            if (g_direct_scale != 1.0)
+        }
+        else if (!strcasecmp(argv[i], "-colourscale"))
+        {
+            if (i + 3 < argc)
             {
-                Warning("dscale value should be 1.0 for final compile.\nIf you need to adjust the bounced light, use the '-texreflectscale' and '-texreflectgamma' options instead.");
+                g_colour_lightscale[0] = (float)std::atof(argv[++i]);
+                g_colour_lightscale[1] = (float)std::atof(argv[++i]);
+                g_colour_lightscale[2] = (float)std::atof(argv[++i]);
             }
-            if (g_colour_lightscale[0] != 2.0 || g_colour_lightscale[1] != 2.0 || g_colour_lightscale[2] != 2.0)
+            else
             {
-                Warning("light scale value should be 2.0 for final compile.\nValues other than 2.0 will result in incorrect interpretation of light_environment's brightness when the engine loads the map.");
+                Error("expected three color values after '-colourscale'\n");
             }
+        }
 
-            if (!g_visdatasize)
+        // ------------------------------------------------------------------------
+
+        else if (!strcasecmp(argv[i], "-customshadowwithbounce"))
+        {
+            g_customshadow_with_bouncelight = true;
+        }
+        else if (!strcasecmp(argv[i], "-rgbtransfers"))
+        {
+            g_rgb_transfers = true;
+        }
+
+        else if (!strcasecmp(argv[i], "-minlight"))
+        {
+            if (i + 1 < argc)
             {
-                Warning("No vis information.");
+                int v = std::atoi(argv[++i]);
+                v = qmax(0, qmin(v, 255));
+                g_minlight = (unsigned char)v;
             }
-            if (g_blur < 1.0)
+            else
             {
-                g_blur = 1.0;
+                Usage();
             }
+        }
 
-            RadWorld();
+        else if (!strcasecmp(argv[i], "-softsky"))
+        {
+            if (i + 1 < argc)
+            {
+                g_softsky = (bool)std::atoi(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
 
-            FreeOpaqueFaceList();
-            FreePatches();
-            DeleteOpaqueNodes();
+        else if (!strcasecmp(argv[i], "-compress"))
+        {
+            if (i + 1 < argc)
+            {
+                g_transfer_compress_type = (float_type)std::atoi(argv[++i]);
+                if (g_transfer_compress_type < 0 || g_transfer_compress_type >= float_type_count)
+                    Usage();
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-rgbcompress"))
+        {
+            if (i + 1 < argc)
+            {
+                g_rgbtransfer_compress_type = (vector_type)std::atoi(argv[++i]);
+                if (g_rgbtransfer_compress_type < 0 || g_rgbtransfer_compress_type >= vector_type_count)
+                    Usage();
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-depth"))
+        {
+            if (i + 1 < argc)
+            {
+                g_translucentdepth = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-blockopaque"))
+        {
+            if (i + 1 < argc)
+            {
+                g_blockopaque = std::atoi(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-waddir"))
+        {
+            if (i + 1 < argc)
+            {
+                AddWadFolder(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-notextures"))
+        {
+            g_notextures = true;
+        }
+        else if (!strcasecmp(argv[i], "-texreflectgamma"))
+        {
+            if (i + 1 < argc)
+            {
+                g_texreflectgamma = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-texreflectscale"))
+        {
+            if (i + 1 < argc)
+            {
+                g_texreflectscale = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-blur"))
+        {
+            if (i + 1 < argc)
+            {
+                g_blur = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
+        else if (!strcasecmp(argv[i], "-texlightgap"))
+        {
+            if (i + 1 < argc)
+            {
+                g_texlightgap = std::atof(argv[++i]);
+            }
+            else
+            {
+                Usage();
+            }
+        }
 
-            EmbedLightmapInTextures();
-            if (g_chart)
-                PrintBSPFileSizes();
-
-            WriteBSPFile(g_source);
-
-            double end = I_FloatTime();
-            LogTimeElapsed(end - start);
-            // END RAD
+        else if (argv[i][0] == '-')
+        {
+            Log("Unknown option \"%s\"\n", argv[i]);
+            Usage();
+        }
+        else if (!mapname_from_arg)
+        {
+            mapname_from_arg = argv[i];
+        }
+        else
+        {
+            Log("Unknown option \"%s\"\n", argv[i]);
+            Usage();
         }
     }
+
+    if (!mapname_from_arg)
+    {
+        Log("No mapname specified\n");
+        Usage();
+    }
+
+    g_smoothing_threshold = (float)std::cos(g_smoothing_value * (Q_PI / 180.0));
+
+    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
+    FlipSlashes(g_Mapname);
+    StripExtension(g_Mapname);
+    OpenLog();
+    std::atexit(CloseLog);
+    ThreadSetDefault();
+    LogStart(argc, argv);
+    {
+        Log("Arguments: ");
+        for (int i = 1; i < argc; i++)
+        {
+            if (strchr(argv[i], ' '))
+            {
+                Log("\"%s\" ", argv[i]);
+            }
+            else
+            {
+                Log("%s ", argv[i]);
+            }
+        }
+        Log("\n");
+    }
+
+    CheckForErrorLog();
+
+    hlassume(CalcFaceExtents_test(), assume_first);
+
+    dtexdata_init();
+    std::atexit(dtexdata_free);
+    // END INIT
+
+    // BEGIN RAD
+    double start = I_FloatTime();
+
+    // normalise maxlight
+
+    safe_snprintf(g_source, _MAX_PATH, "%s.bsp", g_Mapname);
+    LoadBSPFile(g_source);
+    ParseEntities();
+    if (g_fastmode)
+    {
+        g_numbounce = 0;
+        g_softsky = false;
+    }
+    Settings();
+    DeleteEmbeddedLightmaps();
+    LoadTextures();
+
+    if (rad_file_path)
+    {
+        LoadRadFiles(rad_file_path);
+    }
+
+    ReadInfoTexlights();
+
+    ReadCustomChopValue();
+    ReadCustomSmoothValue();
+    ReadTranslucentTextures();
+    ReadLightingCone();
+    g_smoothing_threshold_2 = g_smoothing_value_2 < 0 ? g_smoothing_threshold : (float)std::cos(g_smoothing_value_2 * (Q_PI / 180.0));
+    {
+        for (int style = 0; style < ALLSTYLES; ++style)
+        {
+            g_corings[style] = style ? g_coring : 0;
+        }
+    }
+    if (g_direct_scale != 1.0)
+    {
+        Warning("dscale value should be 1.0 for final compile.\nIf you need to adjust the bounced light, use the '-texreflectscale' and '-texreflectgamma' options instead.");
+    }
+    if (g_colour_lightscale[0] != 2.0 || g_colour_lightscale[1] != 2.0 || g_colour_lightscale[2] != 2.0)
+    {
+        Warning("light scale value should be 2.0 for final compile.\nValues other than 2.0 will result in incorrect interpretation of light_environment's brightness when the engine loads the map.");
+    }
+
+    if (!g_visdatasize)
+    {
+        Warning("No vis information.");
+    }
+    if (g_blur < 1.0)
+    {
+        g_blur = 1.0;
+    }
+
+    RadWorld();
+
+    FreeOpaqueFaceList();
+    FreePatches();
+    DeleteOpaqueNodes();
+
+    EmbedLightmapInTextures();
+    if (g_chart)
+        PrintBSPFileSizes();
+
+    WriteBSPFile(g_source);
+
+    double end = I_FloatTime();
+    LogTimeElapsed(end - start);
+    // END RAD
+
     return 0;
 }
