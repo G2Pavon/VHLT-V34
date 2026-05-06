@@ -485,11 +485,6 @@ void LogTimeElapsed(float elapsed_time)
     }
 }
 
-static void wait()
-{
-    Sleep(1000);
-}
-
 void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];

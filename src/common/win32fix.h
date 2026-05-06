@@ -91,6 +91,7 @@ static inline int sprintf_s(char *d, size_t s, const char *f, ...)
     va_end(a);
     return r;
 }
+
 template <size_t size>
 static inline int sprintf_s(char (&d)[size], const char *f, ...)
 {
@@ -100,10 +101,6 @@ static inline int sprintf_s(char (&d)[size], const char *f, ...)
     va_end(a);
     return r;
 }
-
-static inline void Sleep(uint32_t ms) { usleep(ms * 1000); }
-static inline int AllocConsole() { return 1; }
-static inline int FreeConsole() { return 1; }
 
 static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s)
 {
