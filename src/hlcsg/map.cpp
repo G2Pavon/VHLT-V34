@@ -23,6 +23,9 @@ bside_t g_brushsides[MAX_MAP_SIDES];
 
 static int g_nMapFileVersion; // map file version 220
 
+static int g_numparsedentities;
+static int g_numparsedbrushes;
+
 static const vec3_t s_baseaxis[18] = {
     {0, 0, 1},
     {1, 0, 0},
@@ -43,9 +46,6 @@ static const vec3_t s_baseaxis[18] = {
     {1, 0, 0},
     {0, 0, -1}, // north wall
 };
-
-int g_numparsedentities;
-int g_numparsedbrushes;
 
 static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
 {
@@ -115,8 +115,6 @@ static void DeleteCurrentEntity(entity_t *entity)
     std::memset(entity, 0, sizeof(entity_t));
     g_numentities--;
 }
-
-constexpr double ScaleCorrection(1.0 / 128.0);
 
 // =====================================================================================
 //  CheckForInvisible
