@@ -9,11 +9,11 @@
 
 #include "common/cmdlib.h"
 #include "common/blockmem.h"
-#include "common/scriplib.h"
+#include "common/bspfile.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
-#include "common/bspfile.h"
+#include "common/tokenizer.h"
 
 int g_nummapbrushes;
 brush_t g_mapbrushes[MAX_MAP_BRUSHES];
@@ -902,12 +902,12 @@ static unsigned int CountEngineEntities()
 
 // =====================================================================================
 //  LoadMapFile
-//      wrapper for LoadScriptFile
+//      wrapper for OpenTokenStream
 //      parse in script entities
 // =====================================================================================
 void LoadMapFile(const char *const filename)
 {
-    LoadScriptFile(filename);
+    OpenTokenStream(filename);
 
     g_numentities = 0;
 

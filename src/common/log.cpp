@@ -8,7 +8,6 @@
 #include "common/messages.h"
 #include "common/hlassert.h"
 #include "common/filelib.h"
-#include "common/scriplib.h"
 #include "common/cmdlib.h"
 
 #ifdef _WIN32

@@ -19,7 +19,7 @@
 #include "common/blockmem.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
-#include "common/scriplib.h"
+#include "common/tokenizer.h"
 #include "common/threads.h"
 
 #ifdef _WIN32

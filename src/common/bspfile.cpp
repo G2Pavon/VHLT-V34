@@ -6,14 +6,14 @@
 #include <cmath>
 #include <cerrno>
 
-#include "common/filelib.h"
-#include "common/messages.h"
-#include "common/hlassert.h"
-#include "common/log.h"
-#include "common/mathlib.h"
-#include "common/scriplib.h"
 #include "common/blockmem.h"
 #include "common/cmdlib.h"
+#include "common/filelib.h"
+#include "common/hlassert.h"
+#include "common/log.h"
+#include "common/messages.h"
+#include "common/mathlib.h"
+#include "common/tokenizer.h"
 
 //=============================================================================
 

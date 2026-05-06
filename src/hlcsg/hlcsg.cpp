@@ -17,13 +17,13 @@
 #include <cmath>
 
 #include "hlcsg/ansitoutf8.h"
-#include "hlcsg/wadpath.h"
+#include "common/blockmem.h"
+#include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
-#include "common/blockmem.h"
 #include "common/threads.h"
-#include "common/scriplib.h"
-#include "common/bspfile.h"
+#include "common/tokenizer.h"
+#include "hlcsg/wadpath.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN

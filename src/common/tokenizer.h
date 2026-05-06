@@ -1,21 +1,20 @@
 #pragma once
 
-#include <cstdlib>
-
 #include "common/win32fix.h"
 
 constexpr int MAXTOKEN = 4096;
 extern char g_token[MAXTOKEN];
 
-struct script_t
+struct TokenStream
 {
     char filename[_MAX_PATH];
     char *buffer;
-    char *script_p;
-    char *end_p;
+    char *cursor;
+    char *end;
     int line;
 };
 
-void LoadScriptFile(const char *const filename);
+void OpenTokenStream(const char *const filename);
 void ParseFromMemory(char *buffer, int size);
+void CloseTokenStream();
 bool GetToken(bool crossline);
