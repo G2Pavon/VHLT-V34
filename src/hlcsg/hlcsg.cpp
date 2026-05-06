@@ -1001,10 +1001,6 @@ static void WriteBSP(const char *const name)
     WriteBSPFile(path);
 }
 
-// AJM: added in
-unsigned int BrushClipHullsDiscarded = 0;
-unsigned int ClipNodesDiscarded = 0;
-
 //AJM: added in function
 static void MarkEntForNoclip(entity_t *ent)
 {
@@ -1012,9 +1008,6 @@ static void MarkEntForNoclip(entity_t *ent)
     {
         brush_t *b = &g_mapbrushes[i];
         b->noclip = 1;
-
-        BrushClipHullsDiscarded++;
-        ClipNodesDiscarded += b->numsides;
     }
 }
 

@@ -509,24 +509,11 @@ static void tjunc_fix_r(node_t *node)
  */
 void tjunc(node_t *headnode)
 {
-    vec3_t maxs;
     //
     // identify all points on common edges
     //
 
     // origin points won't allways be inside the map, so extend the hash area
-    for (int i = 0; i < 3; i++)
-    {
-        if (std::abs(headnode->maxs[i]) > std::abs(headnode->mins[i]))
-        {
-            maxs[i] = std::abs(headnode->maxs[i]);
-        }
-        else
-        {
-            maxs[i] = std::abs(headnode->mins[i]);
-        }
-    }
-
     InitHash();
 
     numwedges = numwverts = 0;
