@@ -400,97 +400,6 @@ static std::vector<texlight_t> s_texlights;
 typedef std::vector<texlight_t>::iterator texlight_i;
 
 // =====================================================================================
-//  ReadLightFile
-// =====================================================================================
-static void ReadLightFile(const char *const filename)
-{
-    char scan[MAXTOKEN];
-    unsigned int file_texlights = 0;
-
-    std::FILE *f = std::fopen(filename, "r");
-    if (!f)
-    {
-        Warning("Could not open texlight file %s", filename);
-        return;
-    }
-    else
-    {
-        Log("Reading texlights from '%s'\n", filename);
-    }
-
-    while (std::fgets(scan, sizeof(scan), f))
-    {
-        char szTexlight[_MAX_PATH];
-        vec_t r;
-        vec_t g;
-        vec_t b;
-        vec_t i = 1;
-
-        char *comment = std::strstr(scan, "//");
-        if (comment)
-        {
-            // Newline and Null terminate the string early if there is a c++ style single line comment
-            comment[0] = '\n';
-            comment[1] = 0;
-        }
-
-        short argCnt = std::sscanf(scan, "%s %f %f %f %f", szTexlight, &r, &g, &b, &i);
-
-        if (argCnt == 2)
-        {
-            // With 1+1 args, the R,G,B values are all equal to the first value
-            g = b = r;
-        }
-        else if (argCnt == 5)
-        {
-            // With 1+4 args, the R,G,B values are "scaled" by the fourth numeric value i;
-            r *= i / 255.0;
-            g *= i / 255.0;
-            b *= i / 255.0;
-        }
-        else if (argCnt != 4)
-        {
-            if (std::strlen(scan) > 4)
-            {
-                Warning("ignoring bad texlight '%s' in %s", scan, filename);
-            }
-            continue;
-        }
-
-        for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
-        {
-            if (std::strcmp(it->name.c_str(), szTexlight) == 0)
-            {
-                if (std::strcmp(it->filename, filename) == 0)
-                {
-                    Warning("Duplication of texlight '%s' in file '%s'!", it->name.c_str(), it->filename);
-                }
-                else if (it->value[0] != r || it->value[1] != g || it->value[2] != b)
-                {
-                    Warning("Overriding '%s' from '%s' with '%s'!", it->name.c_str(), it->filename, filename);
-                }
-                else
-                {
-                    Warning("Redundant '%s' def in '%s' AND '%s'!", it->name.c_str(), it->filename, filename);
-                }
-                s_texlights.erase(it);
-                break;
-            }
-        }
-
-        texlight_t texlight;
-        texlight.name = szTexlight;
-        texlight.value[0] = r;
-        texlight.value[1] = g;
-        texlight.value[2] = b;
-        texlight.filename = filename;
-        file_texlights++;
-        s_texlights.push_back(texlight);
-    }
-    std::fclose(f); //--vluzacn
-}
-
-// =====================================================================================
 //  LightForTexture
 // =====================================================================================
 static void LightForTexture(const char *const name, vec3_t result)
@@ -2454,7 +2363,6 @@ static void Usage()
     Log("    -scale #        : Set global light scaling value\n");
     Log("    -gamma #        : Set global gamma value\n\n");
     Log("    -sky #          : Set ambient sunlight contribution in the shade outside\n");
-    Log("    -lights file    : Manually specify a lights.rad file to use\n");
     Log("    -noskyfix       : Disable light_environment being global\n");
     Log("    -texdata #      : Alter maximum texture memory limit (in kb)\n");
     Log("    -lightdata #    : Alter maximum lighting memory limit (in kb)\n"); //lightdata
@@ -2696,34 +2604,11 @@ static void ReadInfoTexlights()
 }
 
 // =====================================================================================
-//  LoadRadFiles
-// =====================================================================================
-static void LoadRadFiles(const char *const user_rad)
-{
-    char user_lights[_MAX_PATH];
-    char userfile[_MAX_PATH];
-
-    ExtractFile(user_rad, userfile);
-
-    // Look for user.rad from command line (raw)
-    safe_strncpy(user_lights, user_rad, _MAX_PATH);
-    if (q_exists(user_lights))
-    {
-        ReadLightFile(user_lights);
-    }
-    else
-    {
-        Log("Could not find specified .rad file '%s'\n", user_lights);
-    }
-}
-
-// =====================================================================================
 //  main
 // =====================================================================================
 int main(const int argc, char **argv)
 {
     const char *mapname_from_arg = nullptr;
-    const char *rad_file_path = nullptr;
 
     g_Program = "hlrad";
 
@@ -2879,17 +2764,6 @@ int main(const int argc, char **argv)
             if (i + 1 < argc) //added "1" .--vluzacn
             {
                 g_limitthreshold = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-lights"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                rad_file_path = argv[++i];
             }
             else
             {
@@ -3305,11 +3179,6 @@ int main(const int argc, char **argv)
     Settings();
     DeleteEmbeddedLightmaps();
     LoadTextures();
-
-    if (rad_file_path)
-    {
-        LoadRadFiles(rad_file_path);
-    }
 
     ReadInfoTexlights();
 

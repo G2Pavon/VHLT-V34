@@ -142,7 +142,7 @@
 
 // light_surface
 // It defines texture lights.
-// It is recommended to replace lights.rad and info_texlights with this entity.
+// It is recommended to replace info_texlights with this entity.
 @PointClass color(255 255 0) = light_surface : "Advanced texture light"
 [
 	_tex(string) : "Texture name" : "" // texture name (not case sensitive)
