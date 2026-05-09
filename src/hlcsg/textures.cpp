@@ -13,8 +13,6 @@
 #include "common/log.h"
 #include "common/bspfile.h"
 
-constexpr int MAX_TEXFILES = 128;
-
 typedef struct
 {
     char identification[4]; // should be WAD3
@@ -38,6 +36,8 @@ typedef struct
 
 std::deque<std::string> g_WadInclude;
 
+static constexpr int MAX_TEXFILES = 128;
+
 static int nummiptex = 0;
 static lumpinfo_t miptex[MAX_MAP_TEXTURES];
 static int nTexLumps = 0;
@@ -45,11 +45,8 @@ static lumpinfo_t *lumpinfo = nullptr;
 static int nTexFiles = 0;
 static std::FILE *texfiles[MAX_TEXFILES];
 static wadpath_t *texwadpathes[MAX_TEXFILES]; // maps index of the wad to its path
-
 // The old buggy code in effect limit the number of brush sides to MAX_MAP_BRUSHES
-
 static char *texmap[MAX_INTERNAL_MAP_TEXINFO];
-
 static int numtexmap = 0;
 
 static int texmap_store(char *texname, bool shouldlock = true)
@@ -164,7 +161,7 @@ static bool TEX_InitFromWad()
 {
     wadinfo_t wadinfo;
 
-    Log("\n"); // looks cleaner
+    Log("\n");
     // update wad inclusion
     for (int i = 0; i < g_iNumWadPaths; i++)
     {
@@ -187,8 +184,6 @@ static bool TEX_InitFromWad()
     // for eachwadpath
     for (int i = 0; i < g_iNumWadPaths; i++)
     {
-        std::FILE *texfile; // temporary used in this loop
-
         wadpath_t *currentwad = g_pWadPaths[i];
         char *pszWadFile = currentwad->path;
 
@@ -246,7 +241,7 @@ static bool TEX_InitFromWad()
         pszWadFile = currentwad->path; // correct it back
 
         // temp assignment to make things cleaner:
-        texfile = texfiles[nTexFiles];
+        std::FILE *texfile = texfiles[nTexFiles];
 
         // read in this wadfiles information
         SafeRead(texfile, &wadinfo, sizeof(wadinfo));
@@ -302,8 +297,6 @@ static bool TEX_InitFromWad()
         hlassume(nTexFiles < MAX_TEXFILES, assume_MAX_TEXFILES);
     }
 
-    //Log("num of used textures: %i\n", g_numUsedTextures);
-
     // sort texlumps in memory by name
     qsort((void *)lumpinfo, (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
 
@@ -313,8 +306,6 @@ static bool TEX_InitFromWad()
 
 static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 {
-    //Log("** PnFNFUNC: FindTexture\n");
-
     lumpinfo_t *found = nullptr;
 
     found = (lumpinfo_t *)bsearch(source, (void *)lumpinfo, (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
@@ -381,7 +372,6 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
 {
     writewad_data = nullptr;
     writewad_datasize = -1;
-    //Log("** PnFNFUNC: LoadLump\n");
 
     *texsize = 0;
     if (source->filepos)
@@ -647,15 +637,11 @@ int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
     FindMiptex(bt->name);
 
     // set the special flag
-    if (bt->name[0] == '*' || !strncasecmp(bt->name, "sky", 3)
-
-        // =====================================================================================
-        //Cpt_Andrew - Env_Sky Check
-        // =====================================================================================
-        || !strncasecmp(bt->name, "env_sky", 5)
-        // =====================================================================================
-
-        || !strncasecmp(bt->name, "origin", 6) || !strncasecmp(bt->name, "null", 4) || !strncasecmp(bt->name, "aaatrigger", 10))
+    if (bt->name[0] == '*' || !strncasecmp(bt->name, "sky", 3) ||
+        !strncasecmp(bt->name, "env_sky", 5) ||
+        !strncasecmp(bt->name, "origin", 6) ||
+        !strncasecmp(bt->name, "null", 4) ||
+        !strncasecmp(bt->name, "aaatrigger", 10))
     {
         // actually only 'sky' and 'aaatrigger' needs this. --vluzacn
         tx.flags |= TEX_SPECIAL;

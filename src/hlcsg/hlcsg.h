@@ -189,8 +189,6 @@ typedef enum
 } cliptype;
 extern cliptype g_cliptype;
 
-const char *GetClipTypeString(cliptype);
-
 extern bool g_nolightopt;
 
 extern faceplane_t g_csg_mapplanes[MAX_INTERNAL_MAP_PLANES];

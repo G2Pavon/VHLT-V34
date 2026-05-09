@@ -14,6 +14,7 @@
 
 faceplane_t g_csg_mapplanes[MAX_INTERNAL_MAP_PLANES];
 int g_nummapplanes;
+
 static hullshape_t g_defaulthulls[NUM_HULLS];
 static int g_numhullshapes;
 static hullshape_t g_hullshapes[MAX_HULLSHAPES];
@@ -22,7 +23,6 @@ static constexpr vec_t FLOOR_Z = 0.7; // Quake default
 static constexpr vec_t DIST_EPSILON = 0.04;
 
 // =====================================================================================
-//  fast version (replacement by KGP)
 //	This process could be optimized by placing the planes in a (non hash-) set and using
 //	half of the inner loop check below as the comparator; I'd expect the speed gain to be
 //	very large given the change from O(N^2) to O(NlogN) to build the set of planes.
@@ -114,13 +114,6 @@ static int PlaneFromPoints(const vec_t *const p0, const vec_t *const p1, const v
         return FindIntPlane(normal, p0);
     }
     return -1;
-}
-
-const char ClipTypeStrings[5][11] = {{"smallest"}, {"normalized"}, {"simple"}, {"precise"}, {"legacy"}};
-
-const char *GetClipTypeString(cliptype ct)
-{
-    return ClipTypeStrings[ct];
 }
 
 // =====================================================================================
@@ -678,9 +671,6 @@ static void ExpandBrush(brush_t *brush, const int hullnum)
     AddHullPlane(hull, normal, (axialbevel[plane_z][1] ? brush->hulls[0].bounds.m_Maxs : origin), false);
 }
 
-// =====================================================================================
-//  MakeHullFaces
-// =====================================================================================
 static void SortSides(brushhull_t *h)
 {
     int numsides;
@@ -870,12 +860,8 @@ static contents_t TextureContents(const char *const name)
     if (!strncasecmp(name, "sky", 3))
         return CONTENTS_SKY;
 
-    // =====================================================================================
-    //Cpt_Andrew - Env_Sky Check
-    // =====================================================================================
     if (!strncasecmp(name, "env_sky", 7))
         return CONTENTS_SKY;
-    // =====================================================================================
 
     if (!strncasecmp(name + 1, "!lava", 5))
         return CONTENTS_LAVA;
@@ -1088,9 +1074,6 @@ contents_t CheckBrushContents(const brush_t *const b)
     return contents;
 }
 
-// =====================================================================================
-//      makes a brush!
-// =====================================================================================
 void CreateBrush(const int brushnum) //--vluzacn
 {
     brush_t *b = &g_mapbrushes[brushnum];

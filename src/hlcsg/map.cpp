@@ -21,7 +21,6 @@ static int g_numbrushsides;
 bside_t g_brushsides[MAX_MAP_SIDES];
 
 static int g_nMapFileVersion; // map file version 220
-
 static int g_numparsedentities;
 static int g_numparsedbrushes;
 
@@ -115,9 +114,6 @@ static void DeleteCurrentEntity(entity_t *entity)
     g_numentities--;
 }
 
-// =====================================================================================
-//      see if a brush is part of an invisible entity (KGP)
-// =====================================================================================
 static bool CheckForInvisible(entity_t *mapent)
 {
     std::string keyval(ValueForKey(mapent, "classname"));

@@ -30,6 +30,7 @@ static constexpr bool DEFAULT_NOUTF8 = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
+static const char ClipTypeStrings[5][11] = {{"smallest"}, {"normalized"}, {"simple"}, {"precise"}, {"legacy"}};
 static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
 static std::FILE *out_detailbrush[NUM_HULLS];
 static int c_outfaces;
@@ -47,6 +48,11 @@ bool g_skyclip = DEFAULT_SKYCLIP;              // no sky clipping "-noskyclip"
 cliptype g_cliptype = DEFAULT_CLIPTYPE;        // "-cliptype <value>"
 bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
+
+static const char *GetClipTypeString(cliptype ct)
+{
+    return ClipTypeStrings[ct];
+}
 
 // =====================================================================================
 //      parses entity keyvalues for setting information
