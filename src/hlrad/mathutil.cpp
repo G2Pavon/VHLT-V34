@@ -5,7 +5,6 @@
 #include "common/log.h"
 
 // =====================================================================================
-//  point_in_winding
 //      returns whether the point is in the winding (including its edges)
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
 // =====================================================================================
@@ -32,7 +31,6 @@ bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *cons
 }
 
 // =====================================================================================
-//  point_in_winding_noedge
 //      assume a ball is created from the point, this function checks whether the ball is entirely inside the winding
 //      parameter 'width' : the radius of the ball
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
@@ -59,7 +57,6 @@ bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_
 }
 
 // =====================================================================================
-//  snap_to_winding
 //      moves the point to the nearest point inside the winding
 //      if the point is not on the plane, the distance between the point and the plane is preserved
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
@@ -125,7 +122,6 @@ void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point
 }
 
 // =====================================================================================
-//  snap_to_winding_noedge
 //      first snaps the point into the winding
 //      then moves the point towards the inside for at most certain distance until:
 //        either 1) the point is not close to any of the edges
@@ -210,7 +206,6 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
 }
 
 // =====================================================================================
-//  TestSegmentAgainstOpaqueList
 //      Returns true if the segment intersects an item in the opaque list
 // =====================================================================================
 bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scaleout, int &opaquestyleout // light must convert to this style. -1 = no convert
@@ -241,18 +236,13 @@ bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scal
     return false;
 }
 
-// =====================================================================================
-//  SnapToPlane
-// =====================================================================================
 void SnapToPlane(const dplane_t *const plane, vec_t *const point, vec_t offset)
 {
     vec_t dist = DotProduct(point, plane->normal) - plane->dist;
     dist -= offset;
     VectorMA(point, -dist, plane->normal, point);
 }
-// =====================================================================================
-//  CalcSightArea
-// =====================================================================================
+
 vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, const Winding *emitter_winding, int skylevel, vec_t lighting_power, vec_t lighting_scale)
 {
     // maybe there are faster ways in calculating the weighted area, but at least this way is not bad.
@@ -379,9 +369,6 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
     return area;
 }
 
-// =====================================================================================
-//  GetAlternateOrigin
-// =====================================================================================
 void GetAlternateOrigin(const vec3_t pos, const vec3_t normal, const patch_t *patch, vec3_t &origin)
 {
     dplane_t clipplane;

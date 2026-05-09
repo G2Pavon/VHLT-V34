@@ -86,14 +86,10 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
     return CompressedArray;
 }
 
-/*
- * =============
- * MakeScales
- * 
- * This is the primary time sink.
- * It can be run multi threaded.
- * =============
- */
+// =============
+//This is the primary time sink.
+//It can be run multi threaded.
+// =============
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
@@ -299,7 +295,6 @@ void MakeScales(int /*threadnum*/)
     g_total_transfer += count;
     ThreadUnlock();
 }
-
 #pragma warning(pop)
 
 /*
@@ -310,15 +305,6 @@ void MakeScales(int /*threadnum*/)
  * In an ideal world, they would be exactly symetrical, but
  * because the form factors are only aproximated, then normalized,
  * they will actually be rather different.
- * =============
- */
-
-/*
- * =============
- * MakeScales
- * 
- * This is the primary time sink.
- * It can be run multi threaded.
  * =============
  */
 
@@ -538,17 +524,6 @@ void MakeRGBScales(int /*threadnum*/)
 }
 
 #pragma warning(pop)
-
-/*
- * =============
- * SwapTransfersTask
- * 
- * Change transfers from light sent out to light collected in.
- * In an ideal world, they would be exactly symetrical, but
- * because the form factors are only aproximated, then normalized,
- * they will actually be rather different.
- * =============
- */
 
 //More human readable numbers
 void DumpTransfersMemoryUsage()

@@ -2,9 +2,6 @@
 #include "hlrad/hlrad.h"
 #include "common/threads.h"
 
-// =====================================================================================
-//  CheckVisBit
-// =====================================================================================
 static bool CheckVisBitNoVismatrix(unsigned patchnum1, unsigned patchnum2, vec3_t &transparency_out, unsigned int &)
 // patchnum1=receiver, patchnum2=emitter. //HLRAD_CheckVisBitNoVismatrix_NOSWAP
 {
@@ -96,6 +93,7 @@ static bool CheckVisBitNoVismatrix(unsigned patchnum1, unsigned patchnum2, vec3_
 
     return false;
 }
+
 bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &backorigin, const vec3_t &backnormal, vec3_t &transparency_out)
 {
     patch_t *emitpatch = &g_patches[emitter];
@@ -155,10 +153,6 @@ bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &bac
 
     return false;
 }
-
-//
-// end old vismat.c
-////////////////////////////
 
 void MakeScalesNoVismatrix()
 {

@@ -9,22 +9,14 @@
 #include "common/mathlib.h"
 #include "common/threads.h"
 
-////////////////////////////
-// begin old vismat.c
-//
-
 // =====================================================================================
-//
-//      VISIBILITY MATRIX
-//      Determine which patches can see each other
+//      VISIBILITY MATRIX: Determine which patches can see each other
 //      Use the PVS to accelerate if available
-//
 // =====================================================================================
 
 static byte *s_vismatrix;
 
 // =====================================================================================
-//  TestPatchToFace
 //      Sets vis bits for all patches in the face
 // =====================================================================================
 static void TestPatchToFace(const unsigned patchnum, const int facenum, const unsigned int bitpos, byte *pvs)
@@ -125,10 +117,8 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const un
 }
 
 // =====================================================================================
-// BuildVisLeafs
 //      This is run by multiple threads
 // =====================================================================================
-
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
@@ -179,11 +169,8 @@ static void BuildVisLeafs(int /*threadnum*/)
         }
     }
 }
-
 #pragma warning(pop)
-// =====================================================================================
-// BuildVisMatrix
-// =====================================================================================
+
 static void BuildVisMatrix()
 {
     int c = ((g_num_patches + 1) * (g_num_patches + 1)) / 16;
@@ -217,9 +204,6 @@ static void FreeVisMatrix()
     }
 }
 
-// =====================================================================================
-// CheckVisBit
-// =====================================================================================
 static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_out, unsigned int &next_index)
 {
     const unsigned a = p1;
@@ -256,13 +240,6 @@ static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_
     return false;
 }
 
-//
-// end old vismat.c
-////////////////////////////
-
-// =====================================================================================
-// MakeScalesVismatrix
-// =====================================================================================
 void MakeScalesVismatrix()
 {
     hlassume(g_num_patches < MAX_VISMATRIX_PATCHES, assume_MAX_PATCHES);

@@ -5,6 +5,9 @@
 #include "hlrad/hlrad.h"
 #include "common/log.h"
 
+constexpr double TRIANGLE_SHAPE_THRESHOLD = (115.0 * Q_PI / 180);
+// If one of the angles in a triangle exceeds this threshold, the most distant point will be removed or the triangle will break into a convex-type wedge.
+
 struct interpolation_t
 {
     struct Point
@@ -717,9 +720,6 @@ static void ApplyInterpolation(const interpolation_t *interp, int numstyles, con
     }
 }
 
-// =====================================================================================
-//  InterpolateSampleLight
-// =====================================================================================
 void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, const int *styles, vec3_t *outs)
 {
     try
@@ -955,9 +955,6 @@ static bool TestFarPatch(const localtriangulation_t *lt, const vec3_t p2, const 
 
     return dist > 1.4 * (size1 + size2);
 }
-
-constexpr double TRIANGLE_SHAPE_THRESHOLD = (115.0 * Q_PI / 180);
-// If one of the angles in a triangle exceeds this threshold, the most distant point will be removed or the triangle will break into a convex-type wedge.
 
 static void GatherPatches(localtriangulation_t *lt, const facetriangulation_t *facetrian)
 {
@@ -1560,9 +1557,6 @@ static void CollectUsedPatches(facetriangulation_t *facetrian)
     }
 }
 
-// =====================================================================================
-//  CreateTriangulations
-// =====================================================================================
 void CreateTriangulations(int facenum)
 {
     try
@@ -1596,9 +1590,6 @@ void CreateTriangulations(int facenum)
     }
 }
 
-// =====================================================================================
-//  GetTriangulationPatches
-// =====================================================================================
 void GetTriangulationPatches(int facenum, int *numpatches, const int **patches)
 {
     const facetriangulation_t *facetrian = g_facetriangulations[facenum];
@@ -1606,9 +1597,6 @@ void GetTriangulationPatches(int facenum, int *numpatches, const int **patches)
     *patches = facetrian->usedpatches.data();
 }
 
-// =====================================================================================
-//  FreeTriangulations
-// =====================================================================================
 void FreeTriangulations()
 {
     try

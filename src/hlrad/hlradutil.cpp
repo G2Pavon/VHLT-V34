@@ -73,12 +73,9 @@ dleaf_t *PointInLeaf(const vec3_t point)
     return &g_dleafs[-nodenum - 1];
 }
 
-/*
- * ==============
- * PatchPlaneDist
- * Fixes up patch planes for brush models with an origin brush
- * ==============
- */
+// ==============
+// Fixes up patch planes for brush models with an origin brush
+// ==============
 vec_t PatchPlaneDist(const patch_t *const patch)
 {
     const dplane_t *plane = getPlaneFromFaceNumber(patch->faceNumber);

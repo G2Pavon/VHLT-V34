@@ -519,9 +519,6 @@ typedef struct
     int lmcacheheight;
 } lightinfo_t;
 
-// =====================================================================================
-//  TextureNameFromFace
-// =====================================================================================
 static const char *TextureNameFromFace(const dface_t *const f)
 {
     //
@@ -536,7 +533,6 @@ static const char *TextureNameFromFace(const dface_t *const f)
 }
 
 // =====================================================================================
-//  CalcFaceExtents
 //      Fills in s->texmins[] and s->texsize[]
 //      also sets exactmins[] and exactmaxs[]
 // =====================================================================================
@@ -650,7 +646,6 @@ static void CalcFaceExtents(lightinfo_t *l)
 }
 
 // =====================================================================================
-//  CalcFaceVectors
 //      Fills in texorg, worldtotex. and textoworld
 // =====================================================================================
 static void CalcFaceVectors(lightinfo_t *l)
@@ -726,9 +721,6 @@ static void CalcFaceVectors(lightinfo_t *l)
     VectorCopy(texnormal, l->texnormal);
 }
 
-// =====================================================================================
-//  SetSurfFromST
-// =====================================================================================
 static void SetSurfFromST(const lightinfo_t *const l, vec_t *surf, const vec_t s, const vec_t t)
 {
     const int facenum = l->surfnum;
@@ -1509,9 +1501,6 @@ static directlight_t *directlights[MAX_MAP_LEAFS];
 static facelight_t facelight[MAX_MAP_FACES];
 static int numdlights;
 
-// =====================================================================================
-//  CreateDirectLights
-// =====================================================================================
 void CreateDirectLights()
 {
     directlight_t *dl;
@@ -2140,9 +2129,6 @@ void CreateDirectLights()
     }
 }
 
-// =====================================================================================
-//  DeleteDirectLights
-// =====================================================================================
 void DeleteDirectLights()
 {
     for (int l = 0; l < 1 + g_dmodels[0].visleafs; l++)
@@ -2780,7 +2766,6 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
 }
 
 // =====================================================================================
-//  AddSampleToPatch
 //      Take the sample's collected light and add it back into the apropriate patch for the radiosity pass.
 // =====================================================================================
 static void AddSamplesToPatches(const sample_t **samples, const unsigned char *styles, int facenum, const lightinfo_t *l)
@@ -2889,9 +2874,6 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
     std::free(texwindings);
 }
 
-// =====================================================================================
-//  GetPhongNormal
-// =====================================================================================
 void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal)
 {
 
@@ -3041,7 +3023,7 @@ void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal)
     }
 }
 
-const vec3_t s_circuscolors[] = {
+static const vec3_t s_circuscolors[] = {
     {100000.0, 100000.0, 100000.0}, // white
     {100000.0, 0.0, 0.0},           // red
     {0.0, 100000.0, 0.0},           // green
@@ -3051,9 +3033,6 @@ const vec3_t s_circuscolors[] = {
     {100000.0, 100000.0, 0.0}       // yellow
 };
 
-// =====================================================================================
-//  BuildFacelights
-// =====================================================================================
 static void CalcLightmap(lightinfo_t *l, byte *styles)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
@@ -3881,9 +3860,6 @@ void BuildFacelights(const int facenum)
     std::free(l.surfpt_surface);
 }
 
-// =====================================================================================
-//  PrecompLightmapOffsets
-// =====================================================================================
 void PrecompLightmapOffsets()
 {
     int lightstyles;
@@ -4351,9 +4327,6 @@ typedef struct facelightlist_s
 
 static facelightlist_t *g_dependentfacelights[MAX_MAP_FACES];
 
-// =====================================================================================
-//  CreateFacelightDependencyList
-// =====================================================================================
 void CreateFacelightDependencyList()
 {
     facelightlist_t *item;
@@ -4402,9 +4375,6 @@ void CreateFacelightDependencyList()
     }
 }
 
-// =====================================================================================
-//  FreeFacelightDependencyList
-// =====================================================================================
 void FreeFacelightDependencyList()
 {
 
@@ -4419,9 +4389,6 @@ void FreeFacelightDependencyList()
     }
 }
 
-// =====================================================================================
-//  ScaleDirectLights
-// =====================================================================================
 void ScaleDirectLights()
 {
 
@@ -4448,7 +4415,6 @@ void ScaleDirectLights()
 }
 
 // =====================================================================================
-//  AddPatchLights
 //    This function is run multithreaded
 // =====================================================================================
 void AddPatchLights(int facenum)
@@ -4505,7 +4471,6 @@ void AddPatchLights(int facenum)
 }
 
 // =====================================================================================
-//  FinalLightFace
 //      Add the indirect lighting on top of the direct lighting and save into final map format
 // =====================================================================================
 void FinalLightFace(const int facenum)
@@ -4584,12 +4549,6 @@ void FinalLightFace(const int facenum)
                 }
             }
 
-            // ------------------------------------------------------------------------
-            // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-
-            // AJM: your code is formatted really wierd, and i cant understand a damn thing.
-            //      so i reformatted it into a somewhat readable "normal" fashion. :P
-
             if (g_colour_qgamma[0] != 1.0)
                 lb[0] = (float)std::pow(lb[0] / 256.0f, g_colour_qgamma[0]) * 256.0f;
 
@@ -4619,7 +4578,7 @@ void FinalLightFace(const int facenum)
             for (int i = 0; i < 3; ++i)
                 if (lb[i] < g_minlight)
                     lb[i] = g_minlight;
-            // ------------------------------------------------------------------------
+
             for (int i = 0; i < 3; ++i)
             {
                 lbi[i] = (int)std::floor(lb[i] + 0.5);

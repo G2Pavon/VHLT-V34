@@ -1,12 +1,3 @@
-/*
- 
-    R A D I O S I T Y    -aka-    R A D 
-
-    Code based on original code from Valve Software, 
-    Modified by Sean "Zoner" Cavanaugh (seanc@gearboxsoftware.com) with permission.
-    Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
-    
-*/
 #include "hlrad/hlrad.h"
 
 #include <cstdlib>
@@ -26,11 +17,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-/*
- * NOTES
- * -----
- * every surface must be divided into at least two g_patches each axis
- */
 
 #define DEFAULT_METHOD eMethodSparseVismatrix
 static constexpr bool DEFAULT_FASTMODE = false;
@@ -63,8 +49,7 @@ static constexpr float DEFAULT_COLOUR_GAMMA_BLUE = 0.55;
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_RED = 2.0;   //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_GREEN = 2.0; //1.0 //vluzacn
 static constexpr float DEFAULT_COLOUR_LIGHTSCALE_BLUE = 2.0;  //1.0 //vluzacn
-// O_o ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Changes by Jussi Kivilinna <hullu@unitedadmins.com> [http://hullu.xtragaming.com/]
+
 // Transparency light support for bounced light(transfers) is extreamly slow
 // for 'vismatrix' and 'sparse' atm.
 // Only recommended to be used with 'nomatrix' mode
@@ -162,8 +147,10 @@ int stylewarningnext = 1;
 vec_t g_maxdiscardedlight = 0;
 vec3_t g_maxdiscardedpos = {0, 0, 0};
 
+static float totalarea = 0;
+static constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
+
 // =====================================================================================
-//  GetParamsFromEnt
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
@@ -173,8 +160,8 @@ void GetParamsFromEnt(entity_t *mapent)
     char szTmp[256]; //lightdata
 
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
+    Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
-    // lightdata(string) : "Lighting Data Memory" : "8192"
     int iTmp = IntForKey(mapent, "lightdata") * 1024; //lightdata
     if (iTmp > g_max_map_lightdata)                   //--vluzacn
     {
@@ -183,9 +170,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Lighting Data Memory", szTmp);
     }
 
-    Log("%30s [ %-9s ]\n", "Compile Option", "setting");
-
-    // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
     {
         g_estimate = true;
@@ -196,7 +180,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    // bounce(integer) : "Number of radiosity bounces" : 0
     iTmp = IntForKey(mapent, "bounce");
     if (iTmp)
     {
@@ -217,8 +200,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "RGB Transfers", ValueForKey(mapent, "rgbtransfers"));
     }
 
-    // ambient(string) : "Ambient world light (0.0 to 1.0, R G B)" : "0 0 0"
-    //vec3_t          g_ambient = { DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE };
     const char *pszTmp = ValueForKey(mapent, "ambient");
     if (pszTmp)
     {
@@ -255,7 +236,6 @@ void GetParamsFromEnt(entity_t *mapent)
         }
     }
 
-    // smooth(integer) : "Smoothing threshold (in degrees)" : 0
     float flTmp = FloatForKey(mapent, "smooth");
     if (flTmp)
     {
@@ -263,7 +243,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Smoothing threshold", ValueForKey(mapent, "smooth"));
     }
 
-    // dscale(integer) : "Direct Lighting Scale" : 1
     flTmp = FloatForKey(mapent, "dscale");
     if (flTmp)
     {
@@ -271,7 +250,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Direct Lighting Scale", ValueForKey(mapent, "dscale"));
     }
 
-    // chop(integer) : "Chop Size" : 64
     iTmp = IntForKey(mapent, "chop");
     if (iTmp)
     {
@@ -279,7 +257,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Chop Size", ValueForKey(mapent, "chop"));
     }
 
-    // texchop(integer) : "Texture Light Chop Size" : 32
     flTmp = FloatForKey(mapent, "texchop");
     if (flTmp)
     {
@@ -287,14 +264,6 @@ void GetParamsFromEnt(entity_t *mapent)
         Log("%30s [ %-9s ]\n", "Texture Light Chop Size", ValueForKey(mapent, "texchop"));
     }
 
-    /* 
-    hlrad(choices) : "HLRAD" : 0 =
-    [
-        0 : "Off"
-        1 : "Normal"
-        2 : "Extra"
-    ]
-    */
     iTmp = IntForKey(mapent, "hlrad");
     if (iTmp == 0)
     {
@@ -312,14 +281,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Extra RAD", g_extra ? "on" : "off");
 
-    /*
-    sparse(choices) : "Vismatrix Method" : 2 =
-    [
-        0 : "No Vismatrix"
-        1 : "Sparse Vismatrix"
-        2 : "Normal"
-    ]
-    */
     iTmp = IntForKey(mapent, "sparse");
     if (iTmp == 1)
     {
@@ -336,13 +297,6 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Sparse Vismatrix", g_method == eMethodSparseVismatrix ? "on" : "off");
     Log("%30s [ %-9s ]\n", "NoVismatrix", g_method == eMethodNoVismatrix ? "on" : "off");
 
-    /*
-    circus(choices) : "Circus RAD lighting" : 0 =
-    [
-        0 : "Off"
-        1 : "On"
-    ]
-    */
     iTmp = IntForKey(mapent, "circus");
     if (iTmp == 0)
     {
@@ -352,17 +306,11 @@ void GetParamsFromEnt(entity_t *mapent)
     {
         g_circus = true;
     }
-
     Log("%30s [ %-9s ]\n", "Circus Lighting Mode", g_circus ? "on" : "off");
 
-    ////////////////////
     Log("\n");
 }
 
-// =====================================================================================
-//  MakeParents
-//      blah
-// =====================================================================================
 static void MakeParents(const int nodenum, const int parent)
 {
     nodeparents[nodenum] = parent;
@@ -383,11 +331,8 @@ static void MakeParents(const int nodenum, const int parent)
 }
 
 // =====================================================================================
-//
 //    TEXTURE LIGHT VALUES
-//
 // =====================================================================================
-
 // misc
 typedef struct
 {
@@ -399,9 +344,6 @@ typedef struct
 static std::vector<texlight_t> s_texlights;
 typedef std::vector<texlight_t>::iterator texlight_i;
 
-// =====================================================================================
-//  LightForTexture
-// =====================================================================================
 static void LightForTexture(const char *const name, vec3_t result)
 {
     for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
@@ -416,14 +358,9 @@ static void LightForTexture(const char *const name, vec3_t result)
 }
 
 // =====================================================================================
-//
 //    MAKE FACES
-//
 // =====================================================================================
 
-// =====================================================================================
-//  BaseLightForFace
-// =====================================================================================
 static void BaseLightForFace(const dface_t *const f, vec3_t light)
 {
     int fn = f - g_dfaces;
@@ -471,17 +408,11 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
     LightForTexture(mt->name, light);
 }
 
-// =====================================================================================
-//  IsSpecial
-// =====================================================================================
 static bool IsSpecial(const dface_t *const f)
 {
     return g_texinfo[f->texinfo].flags & TEX_SPECIAL;
 }
 
-// =====================================================================================
-//  PlacePatchInside
-// =====================================================================================
 static bool PlacePatchInside(patch_t *patch)
 {
     const vec_t *face_offset = g_face_offset[patch->faceNumber];
@@ -554,6 +485,7 @@ static bool PlacePatchInside(patch_t *patch)
         return false;
     }
 }
+
 static void UpdateEmitterInfo(patch_t *patch)
 {
 #if ACCURATEBOUNCE_DEFAULT_SKYLEVEL + 3 > SKYLEVELMAX
@@ -596,10 +528,9 @@ static void UpdateEmitterInfo(patch_t *patch)
 }
 
 // =====================================================================================
-//
 //    SUBDIVIDE PATCHES
-//
 // =====================================================================================
+// NOTE:  every surface must be divided into at least two g_patches each axis
 
 // misc
 constexpr int MAX_SUBDIVIDE = 16384;
@@ -607,7 +538,6 @@ static Winding *windingArray[MAX_SUBDIVIDE];
 static unsigned g_numwindings = 0;
 
 // =====================================================================================
-//  cutWindingWithGrid
 //      Caller must free this returned value at some point
 // =====================================================================================
 static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane_t *plB)
@@ -791,7 +721,6 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
 }
 
 // =====================================================================================
-//  getGridPlanes
 //      From patch, determine perpindicular grid planes to subdivide with (returned in planeA and planeB)
 //      assume S and T is perpindicular (they SHOULD be in worldcraft 3.3 but aren't always . . .)
 // =====================================================================================
@@ -814,9 +743,6 @@ static void getGridPlanes(const patch_t *const p, dplane_t *const pl)
     }
 }
 
-// =====================================================================================
-//  SubdividePatch
-// =====================================================================================
 static void SubdividePatch(patch_t *patch)
 {
     dplane_t planes[2];
@@ -866,11 +792,6 @@ static void SubdividePatch(patch_t *patch)
 
     // ATTENTION: We let SortPatches relink all the ->next correctly! instead of doing it here too which is somewhat complicated
 }
-
-// =====================================================================================
-//  MakePatchForFace
-static float totalarea = 0;
-// =====================================================================================
 
 vec_t *chopscales; //[nummiptex]
 static void ReadCustomChopValue()
@@ -1072,9 +993,6 @@ static vec_t getScale(const patch_t *const patch)
     }
 }
 
-// =====================================================================================
-//  getChop
-// =====================================================================================
 static bool getEmitMode(const patch_t *patch)
 {
     bool emitmode = false;
@@ -1140,9 +1058,6 @@ static vec_t getChop(const patch_t *const patch)
     return rval;
 }
 
-// =====================================================================================
-//  MakePatchForFace
-// =====================================================================================
 static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyle) //LRC
 {
     const dface_t *f = g_dfaces + fn;
@@ -1330,10 +1245,6 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
     }
 }
 
-// =====================================================================================
-//  AddFaceToOpaqueList
-// =====================================================================================
-constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 static void AddFaceToOpaqueList(
     int entitynum, int modelnum, const vec3_t origin, const vec3_t &transparency_scale, const bool transparency, int style, bool block)
 {
@@ -1365,9 +1276,6 @@ static void AddFaceToOpaqueList(
     }
 }
 
-// =====================================================================================
-//  FreeOpaqueFaceList
-// =====================================================================================
 static void FreeOpaqueFaceList()
 {
     opaqueList_t *opaque = g_opaque_face_list;
@@ -1381,6 +1289,7 @@ static void FreeOpaqueFaceList()
     g_opaque_face_count = 0;
     g_max_opaque_face_count = 0;
 }
+
 static void LoadOpaqueEntities()
 {
     for (int modelnum = 0; modelnum < g_nummodels; modelnum++)
@@ -1496,9 +1405,6 @@ static void LoadOpaqueEntities()
     }
 }
 
-// =====================================================================================
-//  MakePatches
-// =====================================================================================
 static entity_t *FindTexlightEntity(int facenum)
 {
     dface_t *face = &g_dfaces[facenum];
@@ -1696,9 +1602,6 @@ static void MakePatches()
     Log("%i square feet [%.2f square inches]\n", (int)(totalarea / 144), totalarea);
 }
 
-// =====================================================================================
-//  patch_sorter
-// =====================================================================================
 static int CDECL patch_sorter(const void *p1, const void *p2)
 {
     patch_t *patch1 = (patch_t *)p1;
@@ -1719,7 +1622,6 @@ static int CDECL patch_sorter(const void *p1, const void *p2)
 }
 
 // =====================================================================================
-//  patch_sorter
 //      This sorts the patches by facenumber, which makes their runs compress even better
 // =====================================================================================
 static void SortPatches()
@@ -1760,15 +1662,9 @@ static void SortPatches()
     }
 }
 
-// =====================================================================================
-//  FreePatches
-// =====================================================================================
 static void FreePatches()
 {
     patch_t *patch = g_patches;
-
-    // AJM EX
-    //Log("patches: %i of %i (%2.2lf percent)\n", g_num_patches, MAX_PATCHES, (double)((double)g_num_patches / (double)MAX_PATCHES));
 
     for (unsigned x = 0; x < g_num_patches; x++, patch++)
     {
@@ -1779,9 +1675,6 @@ static void FreePatches()
     g_patches = nullptr;
 }
 
-// =====================================================================================
-//  CollectLight
-// =====================================================================================
 static void CollectLight()
 {
     unsigned i;
@@ -1819,7 +1712,6 @@ static void CollectLight()
 }
 
 // =====================================================================================
-//  GatherLight
 //      Get light from other g_patches
 //      Run multi-threaded
 // =====================================================================================
@@ -2114,12 +2006,8 @@ static void GatherRGBLight(int /*threadnum*/)
         }
     }
 }
-
 #pragma warning(pop)
 
-// =====================================================================================
-//  BounceLight
-// =====================================================================================
 static void BounceLight()
 {
     for (unsigned i = 0; i < g_num_patches; i++)
@@ -2154,9 +2042,6 @@ static void BounceLight()
     }
 }
 
-// =====================================================================================
-//  CheckMaxPatches
-// =====================================================================================
 static void CheckMaxPatches()
 {
     switch (g_method)
@@ -2173,9 +2058,6 @@ static void CheckMaxPatches()
     }
 }
 
-// =====================================================================================
-//  MakeScalesStub
-// =====================================================================================
 static void MakeScalesStub()
 {
     switch (g_method)
@@ -2192,9 +2074,6 @@ static void MakeScalesStub()
     }
 }
 
-// =====================================================================================
-//  FreeTransfers
-// =====================================================================================
 static void FreeTransfers()
 {
     patch_t *patch = g_patches;
@@ -2246,9 +2125,6 @@ static void ExtendLightmapBuffer()
     }
 }
 
-// =====================================================================================
-//  RadWorld
-// =====================================================================================
 static void RadWorld()
 {
     MakeBackplanes();
@@ -2334,9 +2210,6 @@ static void RadWorld()
     ExtendLightmapBuffer(); // expand the size of lightdata array (for a few KB) to ensure that game engine reads within its valid range
 }
 
-// =====================================================================================
-//  Usage
-// =====================================================================================
 static void Usage()
 {
     Banner();
@@ -2370,21 +2243,10 @@ static void Usage()
     Log("    -low | -high    : run program an altered priority level\n");
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
-
-    // ------------------------------------------------------------------------
-    // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-
-    // AJM: we dont need this extra crap
-    //Log("-= Unofficial features added by Adam Foster (afoster@compsoc.man.ac.uk) =-\n\n");
     Log("   -colourgamma r g b  : Sets different gamma values for r, g, b\n");
     Log("   -colourscale r g b  : Sets different lightscale values for r, g ,b\n");
-    //Log("-= End of unofficial features! =-\n\n" );
-
-    // ------------------------------------------------------------------------
-
     Log("   -customshadowwithbounce : Enables custom shadows with bounce light\n");
     Log("   -rgbtransfers           : Enables RGB Transfers (for custom shadows)\n\n");
-
     Log("   -minlight #    : Minimum final light (integer from 0 to 255)\n");
     {
         Log("   -compress #    : compress tranfer (");
@@ -2403,15 +2265,11 @@ static void Usage()
     Log("   -texreflectgamma # : Gamma that relates reflectivity to texture color bits.\n");
     Log("   -texreflectscale # : Reflectivity for 255-white texture.\n");
     Log("   -blur #        : Enlarge lightmap sample to blur the lightmap.\n");
-
     Log("    mapfile       : The mapfile to compile\n\n");
 
     std::exit(1);
 }
 
-// =====================================================================================
-//  Settings
-// =====================================================================================
 static void Settings()
 {
     char buf1[1024];
@@ -2491,9 +2349,6 @@ static void Settings()
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TEXLIGHTGAP);
     Log("global texlight gap  [ %17s ] [ %17s ]\n", buf1, buf2);
 
-    // ------------------------------------------------------------------------
-    // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-    // replaces the old stuff for displaying current values for gamma and lightscale
     safe_snprintf(buf1, sizeof(buf1), "%1.3f %1.3f %1.3f", g_colour_lightscale[0], g_colour_lightscale[1], g_colour_lightscale[2]);
     safe_snprintf(buf2, sizeof(buf2), "%1.3f %1.3f %1.3f", DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE);
     Log("global light scale   [ %17s ] [ %17s ]\n", buf1, buf2);
@@ -2501,7 +2356,6 @@ static void Settings()
     safe_snprintf(buf1, sizeof(buf1), "%1.3f %1.3f %1.3f", g_colour_qgamma[0], g_colour_qgamma[1], g_colour_qgamma[2]);
     safe_snprintf(buf2, sizeof(buf2), "%1.3f %1.3f %1.3f", DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE);
     Log("global gamma         [ %17s ] [ %17s ]\n", buf1, buf2);
-    // ------------------------------------------------------------------------
 
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_lightscale);
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_LIGHTSCALE);
@@ -2514,8 +2368,6 @@ static void Settings()
     Log("\n");
     Log("spread angles        [ %17s ] [ %17s ]\n", g_allow_spread ? "on" : "off", DEFAULT_ALLOW_SPREAD ? "on" : "off");
     Log("sky lighting fix     [ %17s ] [ %17s ]\n", g_sky_lighting_fix ? "on" : "off", DEFAULT_SKY_LIGHTING_FIX ? "on" : "off");
-
-    // ------------------------------------------------------------------------
 
     Log("\n");
     Log("custom shadows with bounce light\n"
@@ -2549,9 +2401,7 @@ static void Settings()
     Log("\n\n");
 }
 
-// AJM: added in
 // =====================================================================================
-//  ReadInfoTexlights
 //      try and parse texlight info from the info_texlights entity
 // =====================================================================================
 static void ReadInfoTexlights()
@@ -2603,9 +2453,6 @@ static void ReadInfoTexlights()
     }
 }
 
-// =====================================================================================
-//  main
-// =====================================================================================
 int main(const int argc, char **argv)
 {
     const char *mapname_from_arg = nullptr;

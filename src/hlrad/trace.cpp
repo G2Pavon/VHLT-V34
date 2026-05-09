@@ -10,8 +10,6 @@
 #include "common/mathlib.h"
 #include "common/winding.h"
 
-// #define      ON_EPSILON      0.001
-
 typedef struct tnode_s
 {
     planetypes type;
@@ -24,13 +22,9 @@ typedef struct tnode_s
 static tnode_t *tnodes;
 static tnode_t *tnode_p;
 
-/*
- * ==============
- * MakeTnode
- * 
- * Converts the disk node structure into the efficient tracing structure
- * ==============
- */
+// ==============
+// Converts the disk node structure into the efficient tracing structure
+// ==============
 static void MakeTnode(const int nodenum)
 {
     tnode_t *t = tnode_p++;
@@ -59,13 +53,9 @@ static void MakeTnode(const int nodenum)
     }
 }
 
-/*
- * =============
- * MakeTnodes
- * 
- * Loads the node structure out of a .bsp file to be used for light occlusion
- * =============
- */
+// ==============
+// Loads the node structure out of a .bsp file to be used for light occlusion
+// ==============
 void MakeTnodes(dmodel_t * /*bm*/)
 {
     // 32 byte align the structs

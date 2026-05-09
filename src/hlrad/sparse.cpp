@@ -174,13 +174,9 @@ static bool CheckVisBitSparse(unsigned x, unsigned y, vec3_t &transparency_out, 
     return false;
 }
 
-/*
- * ==============
- * TestPatchToFace
- * 
- * Sets vis bits for all patches in the face
- * ==============
- */
+// ==============
+// Sets vis bits for all patches in the face
+// ==============
 static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pvs, bool uncompressedcolumn[MAX_SPARSE_VISMATRIX_PATCHES])
 {
     patch_t *patch = &g_patches[patchnum];
@@ -270,13 +266,9 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pv
     }
 }
 
-/*
- * ===========
- * BuildVisLeafs
- * 
- * This is run by multiple threads
- * ===========
- */
+// ==============
+// This is run by multiple threads
+// ==============
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 static void BuildVisLeafs(int /*threadnum*/)
@@ -338,11 +330,6 @@ static void BuildVisLeafs(int /*threadnum*/)
 
 #pragma warning(pop)
 
-/*
- * ==============
- * BuildVisMatrix
- * ==============
- */
 static void BuildVisMatrix()
 {
     s_vismatrix = (sparse_column_t *)AllocBlock(g_num_patches * sizeof(sparse_column_t));
@@ -399,10 +386,6 @@ static void DumpVismatrixInfo()
 
     Log("%-20s: %5.1f megs\n", "visibility matrix", total_vismatrix_memory / (1024 * 1024.0));
 }
-
-//
-// end old vismat.c
-////////////////////////////
 
 void MakeScalesSparseVismatrix()
 {

@@ -33,9 +33,6 @@ static unsigned int s_max_raw_count = 0; // Current array maximum (used for real
 static transList_t *s_sorted_list = nullptr; // Sorted first by p1 then p2
 static unsigned int s_sorted_count = 0;
 
-//===============================================
-// AddTransparencyToRawArray
-//===============================================
 static unsigned AddTransparencyToDataList(const vec3_t trans)
 {
     //Check if this value is in list already
@@ -75,9 +72,6 @@ static unsigned AddTransparencyToDataList(const vec3_t trans)
     return (s_trans_count++);
 }
 
-//===============================================
-// AddTransparencyToRawArray
-//===============================================
 void AddTransparencyToRawArray(const unsigned p1, const unsigned p2, const vec3_t trans)
 {
     //make thread safe
@@ -112,9 +106,6 @@ void AddTransparencyToRawArray(const unsigned p1, const unsigned p2, const vec3_
     ThreadUnlock();
 }
 
-//===============================================
-// SortList
-//===============================================
 static int CDECL SortList(const void *a, const void *b)
 {
     const transList_t *item1 = (transList_t *)a;
@@ -130,9 +121,6 @@ static int CDECL SortList(const void *a, const void *b)
     }
 }
 
-//===============================================
-// CreateFinalTransparencyArrays
-//===============================================
 void CreateFinalTransparencyArrays(const char *print_name)
 {
     if (s_raw_count == 0)
@@ -175,9 +163,6 @@ void CreateFinalTransparencyArrays(const char *print_name)
         Log("%-20s: %5.1f bytes\n", print_name, (double)size); //--vluzacn
 }
 
-//===============================================
-// FreeTransparencyArrays
-//===============================================
 void FreeTransparencyArrays()
 {
     if (s_sorted_list)
@@ -192,7 +177,7 @@ void FreeTransparencyArrays()
 }
 
 //===============================================
-// GetTransparency -- find transparency from list. remembers last location
+// find transparency from list. remembers last location
 //===============================================
 void GetTransparency(const unsigned p1, const unsigned p2, vec3_t &trans, unsigned int &next_index)
 {
@@ -244,6 +229,7 @@ typedef struct
 static styleList_t *s_style_list = nullptr;
 static unsigned int s_style_count = 0;
 static unsigned int s_max_style_count = 0;
+
 void AddStyleToStyleArray(const unsigned p1, const unsigned p2, const int style)
 {
     if (style == -1)
@@ -277,6 +263,7 @@ void AddStyleToStyleArray(const unsigned p1, const unsigned p2, const int style)
     //unlock list
     ThreadUnlock();
 }
+
 static int CDECL SortStyleList(const void *a, const void *b)
 {
     const styleList_t *item1 = (styleList_t *)a;
@@ -291,6 +278,7 @@ static int CDECL SortStyleList(const void *a, const void *b)
         return item1->p1 - item2->p1;
     }
 }
+
 void CreateFinalStyleArrays(const char *print_name)
 {
     if (s_style_count == 0)
@@ -308,6 +296,7 @@ void CreateFinalStyleArrays(const char *print_name)
     else
         Log("%-20s: %5.1f bytes\n", print_name, (double)size); //--vluzacn
 }
+
 void FreeStyleArrays()
 {
     if (s_style_count)
@@ -317,6 +306,7 @@ void FreeStyleArrays()
 
     s_max_style_count = s_style_count = 0;
 }
+
 void GetStyle(const unsigned p1, const unsigned p2, int &style, unsigned int &next_index)
 {
     style = -1;
