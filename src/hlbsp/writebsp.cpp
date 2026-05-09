@@ -27,7 +27,6 @@ inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c)
 }
 
 // =====================================================================================
-//  WritePlane
 //  hook for plane optimization
 // =====================================================================================
 static int WritePlane(int planenum)
@@ -47,9 +46,6 @@ static int WritePlane(int planenum)
     return gNumMappedPlanes++;
 }
 
-// =====================================================================================
-//  WriteTexinfo
-// =====================================================================================
 static int WriteTexinfo(int texinfo)
 {
     if (texinfo < 0 || texinfo >= g_numtexinfo)
@@ -71,9 +67,6 @@ static int WriteTexinfo(int texinfo)
     return c;
 }
 
-// =====================================================================================
-//  WriteClipNodes_r
-// =====================================================================================
 static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_t *outputmap)
 {
     if (node->isportalleaf)
@@ -141,7 +134,6 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
 }
 
 // =====================================================================================
-//  WriteClipNodes
 //      Called after the clipping hull is completed.  Generates a disk format
 //      representation and frees the original memory.
 // =====================================================================================
@@ -152,9 +144,6 @@ void WriteClipNodes(node_t *nodes)
     WriteClipNodes_r(nodes, nullptr, &outputmap);
 }
 
-// =====================================================================================
-//  WriteDrawLeaf
-// =====================================================================================
 static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
 {
     int leafnum = g_numleafs;
@@ -234,19 +223,11 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
     return leafnum;
 }
 
-// =====================================================================================
-//  WriteFace
-// =====================================================================================
 static void WriteFace(face_t *f)
 {
     if (CheckFaceForHint(f) || CheckFaceForSkip(f) || CheckFaceForNull(f)          // AJM
         || CheckFaceForDiscardable(f) || f->texturenum == -1 || f->referenced == 0 // this face is not referenced by any nonsolid leaf because it is completely covered by func_details
-
-        // =====================================================================================
-        //Cpt_Andrew - Env_Sky Check
-        // =====================================================================================
         || CheckFaceForEnv_Sky(f)
-        // =====================================================================================
 
     )
     {
@@ -278,9 +259,6 @@ static void WriteFace(face_t *f)
     f->outputedges = nullptr;
 }
 
-// =====================================================================================
-//  WriteDrawNodes_r
-// =====================================================================================
 static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
 {
     if (node->isportalleaf)
@@ -358,9 +336,6 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     return nodenum;
 }
 
-// =====================================================================================
-//  FreeDrawNodes_r
-// =====================================================================================
 static void FreeDrawNodes_r(node_t *node)
 {
     for (int i = 0; i < 2; i++)
@@ -386,7 +361,6 @@ static void FreeDrawNodes_r(node_t *node)
 }
 
 // =====================================================================================
-//  WriteDrawNodes
 //      Called after a drawing hull is completed
 //      Frees all nodes and faces
 // =====================================================================================
@@ -491,9 +465,6 @@ void WriteDrawNodes(node_t *headnode)
     WriteDrawNodes_r(headnode, nullptr);
 }
 
-// =====================================================================================
-//  BeginBSPFile
-// =====================================================================================
 void BeginBSPFile()
 {
     // these values may actually be initialized
@@ -521,9 +492,6 @@ void BeginBSPFile()
     g_dleafs[0].contents = CONTENTS_SOLID;
 }
 
-// =====================================================================================
-//  FinishBSPFile
-// =====================================================================================
 void FinishBSPFile()
 {
 

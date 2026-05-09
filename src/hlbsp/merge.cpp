@@ -5,16 +5,9 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 
-//  TryMerge
-//  MergeFaceToList
-//  FreeMergeListScraps
-//  MergePlaneFaces
-//  MergeAll
-
 #define CONTINUOUS_EPSILON ON_EPSILON
 
 // =====================================================================================
-//  TryMerge
 //      If two polygons share a common edge and the edges that meet at the
 //      common points are both inside the other polygons, merge them
 //      Returns NULL if the faces couldn't be merged, or the new face.
@@ -169,9 +162,6 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     return newf;
 }
 
-// =====================================================================================
-//  MergeFaceToList
-// =====================================================================================
 static face_t *MergeFaceToList(face_t *face, face_t *list)
 {
 
@@ -193,9 +183,6 @@ static face_t *MergeFaceToList(face_t *face, face_t *list)
     return face;
 }
 
-// =====================================================================================
-//  FreeMergeListScraps
-// =====================================================================================
 static face_t *FreeMergeListScraps(face_t *merged)
 {
     face_t *next;
@@ -218,9 +205,6 @@ static face_t *FreeMergeListScraps(face_t *merged)
     return head;
 }
 
-// =====================================================================================
-//  MergePlaneFaces
-// =====================================================================================
 void MergePlaneFaces(surface_t *plane)
 {
     face_t *next;
@@ -236,9 +220,6 @@ void MergePlaneFaces(surface_t *plane)
     plane->faces = FreeMergeListScraps(merged);
 }
 
-// =====================================================================================
-//  MergeAll
-// =====================================================================================
 void MergeAll(surface_t *surfhead)
 {
     int mergefaces = 0;

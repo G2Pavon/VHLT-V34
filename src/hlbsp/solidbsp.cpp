@@ -1,5 +1,3 @@
-//#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
-
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
 #include <cstdlib>
@@ -17,6 +15,7 @@
 #include "common/winding.h"
 
 static constexpr vec_t BOUNDS_EXPANSION = 1.0; // expand the bounds of detail leafs when clipping its boundsbrush, to prevent some strange brushes in the func_detail from clipping away the entire boundsbrush making the func_detail invisible.
+constexpr int MAX_LEAF_FACES = 16384;
 int g_maxnode_size = DEFAULT_MAXNODE_SIZE;
 
 static bool g_reportProgress = false;
@@ -43,7 +42,6 @@ static void UpdateStatus(void)
 }
 
 // =====================================================================================
-//  FaceSide
 //      For BSP hueristic
 // =====================================================================================
 static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonsplit = nullptr)
@@ -108,7 +106,6 @@ static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonspli
 
 // organize all surfaces into a tree structure to accelerate intersection test
 // can reduce more than 90% compile time for very complicated maps
-
 typedef struct surfacetreenode_s
 {
     int size; // can be zero, which invalidates mins and maxs
@@ -367,7 +364,6 @@ static void DeleteSurfaceTree(surfacetree_t *tree)
 }
 
 // =====================================================================================
-//  ChooseMidPlaneFromList
 //      When there are a huge number of planes, just choose one closest
 //      to the middle.
 // =====================================================================================
@@ -476,7 +472,6 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
 }
 
 // =====================================================================================
-//  ChoosePlaneFromList
 //      Choose the plane that splits the least faces
 // =====================================================================================
 static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
@@ -595,11 +590,6 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
     return bestsurface;
 }
 
-// =====================================================================================
-//  SelectPartition
-//      Selects a surface from a linked list of surfaces to split the group on
-//      returns NULL if the surface list can not be divided any more (a leaf)
-// =====================================================================================
 static int CalcSplitDetaillevel(const node_t *node)
 {
     int bestdetaillevel = -1;
@@ -624,6 +614,10 @@ static int CalcSplitDetaillevel(const node_t *node)
     return bestdetaillevel;
 }
 
+// =====================================================================================
+//      Selects a surface from a linked list of surfaces to split the group on
+//      returns NULL if the surface list can not be divided any more (a leaf)
+// =====================================================================================
 static surface_t *SelectPartition(surface_t *surfaces, const bool usemidsplit, int splitdetaillevel, vec3_t validmins, vec3_t validmaxs)
 {
     if (splitdetaillevel == -1)
@@ -643,7 +637,6 @@ static surface_t *SelectPartition(surface_t *surfaces, const bool usemidsplit, i
 }
 
 // =====================================================================================
-//  CalcSurfaceInfo
 //      Calculates the bounding box
 // =====================================================================================
 static void CalcSurfaceInfo(surface_t *surf)
@@ -726,9 +719,6 @@ static void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
     }
 }
 
-// =====================================================================================
-//  DivideSurface
-// =====================================================================================
 static void DivideSurface(surface_t *in, const dplane_t *const split, surface_t **front, surface_t **back)
 {
     face_t *next;
@@ -835,9 +825,6 @@ makesurfs:
     CalcSurfaceInfo(in);
 }
 
-// =====================================================================================
-//  SplitNodeSurfaces
-// =====================================================================================
 static void SplitNodeSurfaces(surface_t *surfaces, const node_t *const node)
 {
     surface_t *next;
@@ -905,9 +892,6 @@ static void SplitNodeBrushes(brush_t *brushes, const node_t *node)
     node->children[1]->detailbrushes = backlist;
 }
 
-// =====================================================================================
-//  RankForContents
-// =====================================================================================
 static int RankForContents(const int contents)
 {
     //Log("SolidBSP::RankForContents - contents type is %i ",contents);
@@ -961,9 +945,6 @@ static int RankForContents(const int contents)
     return -1;
 }
 
-// =====================================================================================
-//  ContentsForRank
-// =====================================================================================
 static int ContentsForRank(const int rank)
 {
     switch (rank)
@@ -1005,9 +986,6 @@ static int ContentsForRank(const int rank)
     return -1;
 }
 
-// =====================================================================================
-//  FreeLeafSurfs
-// =====================================================================================
 static void FreeLeafSurfs(node_t *leaf)
 {
     surface_t *snext;
@@ -1037,13 +1015,6 @@ static void FreeLeafBrushes(node_t *leaf)
     }
     leaf->detailbrushes = nullptr;
 }
-
-// =====================================================================================
-//  LinkLeafFaces
-//      Determines the contents of the leaf and creates the final list of original faces
-//      that have some fragment inside this leaf
-// =====================================================================================
-constexpr int MAX_LEAF_FACES = 16384;
 
 static const char *ContentsToString(int contents)
 {
@@ -1080,6 +1051,10 @@ static const char *ContentsToString(int contents)
     }
 }
 
+// =====================================================================================
+//      Determines the contents of the leaf and creates the final list of original faces
+//      that have some fragment inside this leaf
+// =====================================================================================
 static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 {
     face_t *f;
@@ -1203,7 +1178,6 @@ static void MakeLeaf(node_t *leafnode)
 }
 
 // =====================================================================================
-//  MakeNodePortal
 //      Create the new portal by taking the full plane winding for the cutting plane and
 //      clipping it by all of the planes from the other portals.
 //      Each portal tracks the node that created it, so unused nodes can be removed later.
@@ -1250,7 +1224,6 @@ static void MakeNodePortal(node_t *node)
 }
 
 // =====================================================================================
-//  SplitNodePortals
 //      Move or split the portals that bound node so that the node's children have portals instead of node.
 // =====================================================================================
 static void SplitNodePortals(node_t *node)
@@ -1339,7 +1312,6 @@ static void SplitNodePortals(node_t *node)
 }
 
 // =====================================================================================
-//  CalcNodeBounds
 //      Determines the boundaries of a node by minmaxing all the portal points, whcih
 //      completely enclose the node.
 //      Returns true if the node should be midsplit.(very large)
@@ -1416,7 +1388,6 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
 }
 
 // =====================================================================================
-//  CopyFacesToNode
 //      Do a final merge attempt, then subdivide the faces to surface cache size if needed.
 //      These are final faces that will be drawable in the game.
 //      Copies of these faces are further chopped up into the leafs, but they will reference these originals.
@@ -1460,9 +1431,6 @@ static void CopyFacesToNode(node_t *node, surface_t *surf)
     }
 }
 
-// =====================================================================================
-//  BuildBspTree_r
-// =====================================================================================
 static void BuildBspTree_r(node_t *node)
 {
     vec3_t validmins, validmaxs;
@@ -1560,7 +1528,6 @@ static void BuildBspTree_r(node_t *node)
 }
 
 // =====================================================================================
-//  SolidBSP
 //      Takes a chain of surfaces plus a split type, and returns a bsp tree with faces
 //      off the nodes.
 //      The original surface chain will be completely freed.

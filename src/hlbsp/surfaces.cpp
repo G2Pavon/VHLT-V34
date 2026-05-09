@@ -8,22 +8,10 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 
-//  SubdivideFace
-
-//  InitHash
-//  HashVec
-
-//  GetVertex
-//  GetEdge
-//  MakeFaceEdges
-
-static int subdivides;
-
 /* a surface has all of the faces that could be drawn on a given plane
    the outside filling stage can remove some of them so a better bsp can be generated */
 
 // =====================================================================================
-//  SubdivideFace
 //      If the face is >256 in either texture direction, carve a valid sized
 //      piece off and insert the remainder in the next link
 // =====================================================================================
@@ -88,7 +76,6 @@ void SubdivideFace(face_t *f, face_t **prevptr)
             }
 
             // split it
-            subdivides++;
 
             VectorCopy(tex->vecs[axis], temp);
             v = VectorNormalize(temp);
@@ -148,9 +135,6 @@ static vec3_t hash_scale;
 static int hash_numslots[3];
 constexpr int MAX_HASH_NEIGHBORS = 4;
 
-// =====================================================================================
-//  InitHash
-// =====================================================================================
 static void InitHash()
 {
     vec3_t size;
@@ -181,9 +165,6 @@ static void InitHash()
     hvert_p = hvertex;
 }
 
-// =====================================================================================
-//  HashVec
-// =====================================================================================
 static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
 // returned value: the one bucket that a new vertex may "write" into
 // returned hashneighbors: the buckets that we should "read" to check for an existing vertex
@@ -233,9 +214,6 @@ static int HashVec(const vec3_t vec, int *num_hashneighbors, int *hashneighbors)
     return h;
 }
 
-// =====================================================================================
-//  GetVertex
-// =====================================================================================
 static int GetVertex(const vec3_t in, const int planenum)
 {
     hashvert_t *hv;
@@ -305,10 +283,7 @@ static int GetVertex(const vec3_t in, const int planenum)
     return hv->num;
 }
 
-//===========================================================================
-
 // =====================================================================================
-//  GetEdge
 //      Don't allow four way edges
 // =====================================================================================
 int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f)

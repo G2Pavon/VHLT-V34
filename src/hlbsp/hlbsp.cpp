@@ -1,12 +1,3 @@
-/*
-
-    BINARY SPACE PARTITION    -aka-    B S P
-
-    Code based on original code from Valve Software,
-    Modified by Sean "Zoner" Cavanaugh (seanc@gearboxsoftware.com) with permission.
-    Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
-
-*/
 #include "hlbsp/hlbsp.h"
 
 #include <cstdlib>
@@ -23,13 +14,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-/*
-
- NOTES
-
-
-*/
 
 static constexpr const char *ENTITIES_VOID = "entities.void";
 #define ENTITIES_VOID_EXT ".void"
@@ -60,7 +44,6 @@ vec3_t g_hull_size[NUM_HULLS][2] =
 
 static std::FILE *polyfiles[NUM_HULLS];
 static std::FILE *brushfiles[NUM_HULLS];
-
 static face_t *validfaces[MAX_INTERNAL_MAP_PLANES];
 
 char g_bspfilename[_MAX_PATH];
@@ -82,7 +65,6 @@ int g_hullnum = 0;
 dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 
 // =====================================================================================
-//  GetParamsFromEnt
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
@@ -90,10 +72,8 @@ dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
-
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
-    // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
     {
         g_estimate = true;
@@ -106,18 +86,6 @@ void GetParamsFromEnt(entity_t *mapent)
 }
 
 // =====================================================================================
-//  Extract File stuff (ExtractFile | ExtractFilePath | ExtractFileBase)
-//
-// With VS 2005 - and the 64 bit build, i had to pull 3 classes over from
-// cmdlib.cpp even with the proper includes to get rid of the lnk2001 error
-//
-// amckern - amckern@yahoo.com
-// =====================================================================================
-
-// Code Deleted. --vluzacn
-
-// =====================================================================================
-//  NewFaceFromFace
 //      Duplicates the non point information of a face, used by SplitFace and MergeFace.
 // =====================================================================================
 face_t *NewFaceFromFace(const face_t *const in)
@@ -134,10 +102,6 @@ face_t *NewFaceFromFace(const face_t *const in)
     return newf;
 }
 
-// =====================================================================================
-//  SplitFaceTmp
-//      blah
-// =====================================================================================
 static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front, face_t **back)
 {
     vec_t dists[MAXEDGES + 1];
@@ -336,10 +300,6 @@ static void SplitFaceTmp(face_t *in, const dplane_t *const split, face_t **front
     }
 }
 
-// =====================================================================================
-//  SplitFace
-//      blah
-// =====================================================================================
 void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t **back)
 {
     SplitFaceTmp(in, split, front, back);
@@ -351,9 +311,6 @@ void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t *
     }
 }
 
-// =====================================================================================
-//  AllocFace
-// =====================================================================================
 face_t *AllocFace()
 {
     face_t *f = (face_t *)std::malloc(sizeof(face_t));
@@ -364,17 +321,11 @@ face_t *AllocFace()
     return f;
 }
 
-// =====================================================================================
-//  FreeFace
-// =====================================================================================
 void FreeFace(face_t *f)
 {
     std::free(f);
 }
 
-// =====================================================================================
-//  AllocSurface
-// =====================================================================================
 surface_t *AllocSurface()
 {
     surface_t *s = (surface_t *)std::malloc(sizeof(surface_t));
@@ -383,17 +334,11 @@ surface_t *AllocSurface()
     return s;
 }
 
-// =====================================================================================
-//  FreeSurface
-// =====================================================================================
 void FreeSurface(surface_t *s)
 {
     std::free(s);
 }
 
-// =====================================================================================
-//  AllocPortal
-// =====================================================================================
 portal_t *AllocPortal()
 {
     portal_t *p = (portal_t *)std::malloc(sizeof(portal_t));
@@ -402,9 +347,6 @@ portal_t *AllocPortal()
     return p;
 }
 
-// =====================================================================================
-//  FreePortal
-// =====================================================================================
 void FreePortal(portal_t *p) // consider: inline
 {
     std::free(p);
@@ -609,10 +551,6 @@ void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs)
     }
 }
 
-// =====================================================================================
-//  AllocNode
-//      blah
-// =====================================================================================
 node_t *AllocNode()
 {
     node_t *n = (node_t *)std::malloc(sizeof(node_t));
@@ -621,9 +559,6 @@ node_t *AllocNode()
     return n;
 }
 
-// =====================================================================================
-//  AddPointToBounds
-// =====================================================================================
 static void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
 {
     for (int i = 0; i < 3; i++)
@@ -640,9 +575,6 @@ static void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
     }
 }
 
-// =====================================================================================
-//  AddFaceToBounds
-// =====================================================================================
 static void AddFaceToBounds(const face_t *const f, vec3_t mins, vec3_t maxs)
 {
     for (int i = 0; i < f->numpoints; i++)
@@ -651,19 +583,12 @@ static void AddFaceToBounds(const face_t *const f, vec3_t mins, vec3_t maxs)
     }
 }
 
-// =====================================================================================
-//  ClearBounds
-// =====================================================================================
 static void ClearBounds(vec3_t mins, vec3_t maxs)
 {
     mins[0] = mins[1] = mins[2] = 99999;
     maxs[0] = maxs[1] = maxs[2] = -99999;
 }
 
-// =====================================================================================
-//  SurflistFromValidFaces
-//      blah
-// =====================================================================================
 static surfchain_t *SurflistFromValidFaces()
 {
     face_t *next;
@@ -724,10 +649,6 @@ static surfchain_t *SurflistFromValidFaces()
     return sc;
 }
 
-// =====================================================================================
-//  CheckFaceForNull
-//      Returns true if the passed face is facetype null
-// =====================================================================================
 bool CheckFaceForNull(const face_t *const f)
 {
     if (f->contents == CONTENTS_SKY)
@@ -742,9 +663,7 @@ bool CheckFaceForNull(const face_t *const f)
         return true;
     return false;
 }
-// =====================================================================================
-//Cpt_Andrew - UTSky Check
-// =====================================================================================
+
 bool CheckFaceForEnv_Sky(const face_t *const f)
 {
     const char *name = GetTextureByNumber(f->texturenum);
@@ -752,12 +671,7 @@ bool CheckFaceForEnv_Sky(const face_t *const f)
         return true;
     return false;
 }
-// =====================================================================================
 
-// =====================================================================================
-//  CheckFaceForHint
-//      Returns true if the passed face is facetype hint
-// =====================================================================================
 bool CheckFaceForHint(const face_t *const f)
 {
     const char *name = GetTextureByNumber(f->texturenum);
@@ -766,10 +680,6 @@ bool CheckFaceForHint(const face_t *const f)
     return false;
 }
 
-// =====================================================================================
-//  CheckFaceForSkipt
-//      Returns true if the passed face is facetype skip
-// =====================================================================================
 bool CheckFaceForSkip(const face_t *const f)
 {
     const char *name = GetTextureByNumber(f->texturenum);
@@ -786,9 +696,6 @@ bool CheckFaceForDiscardable(const face_t *f)
     return false;
 }
 
-// =====================================================================================
-//  SetFaceType
-// =====================================================================================
 static facestyle_e SetFaceType(face_t *f)
 {
     if (CheckFaceForHint(f))
@@ -807,17 +714,10 @@ static facestyle_e SetFaceType(face_t *f)
     {
         f->facestyle = face_discardable;
     }
-
-    // =====================================================================================
-    //Cpt_Andrew - Env_Sky Check
-    // =====================================================================================
-    //else if (CheckFaceForUTSky(f))
     else if (CheckFaceForEnv_Sky(f))
     {
         f->facestyle = face_null;
     }
-    // =====================================================================================
-
     else
     {
         f->facestyle = face_normal;
@@ -825,9 +725,6 @@ static facestyle_e SetFaceType(face_t *f)
     return f->facestyle;
 }
 
-// =====================================================================================
-//  ReadSurfs
-// =====================================================================================
 static surfchain_t *ReadSurfs(std::FILE *file)
 {
     int detaillevel;
@@ -975,9 +872,6 @@ static brush_t *ReadBrushes(std::FILE *file)
     return brushes;
 }
 
-// =====================================================================================
-//  ProcessModel
-// =====================================================================================
 static bool ProcessModel()
 {
     surfchain_t *surfs = ReadSurfs(polyfiles[0]);
@@ -1186,9 +1080,6 @@ static bool ProcessModel()
     return true;
 }
 
-// =====================================================================================
-//  Usage
-// =====================================================================================
 static void Usage()
 {
     Banner();
@@ -1209,9 +1100,6 @@ static void Usage()
     std::exit(1);
 }
 
-// =====================================================================================
-//  Settings
-// =====================================================================================
 static void Settings()
 {
     Log("\nCurrent %s Settings\n", g_Program);
@@ -1240,9 +1128,6 @@ static void Settings()
     Log("\n\n");
 }
 
-// =====================================================================================
-//  ProcessFile
-// =====================================================================================
 static void ProcessFile(const char *const filename)
 {
     char name[_MAX_PATH];
@@ -1368,9 +1253,6 @@ static void ProcessFile(const char *const filename)
     unlink(name);
 }
 
-// =====================================================================================
-//  main
-// =====================================================================================
 int main(const int argc, char **argv)
 {
     const char *mapname_from_arg = NULL;

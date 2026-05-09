@@ -1,4 +1,3 @@
-//#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 #include <cstdio>
 #include <cstring>
 
@@ -8,13 +7,13 @@
 
 node_t g_outside_node; // portals outside the world face this
 
-//=============================================================================
+// PORTAL FILE GENERATION
+static std::FILE *pf;
+static std::FILE *pf_view;
+extern bool g_viewportal;
+static int num_visleafs; // leafs the player can be in
+static int num_visportals;
 
-/*
- * =============
- * AddPortalToNodes
- * =============
- */
 void AddPortalToNodes(portal_t *p, node_t *front, node_t *back)
 {
     if (p->nodes[0] || p->nodes[1])
@@ -31,11 +30,6 @@ void AddPortalToNodes(portal_t *p, node_t *front, node_t *back)
     back->portals = p;
 }
 
-/*
- * =============
- * RemovePortalFromNode
- * =============
- */
 void RemovePortalFromNode(portal_t *portal, node_t *l)
 {
 
@@ -80,15 +74,9 @@ void RemovePortalFromNode(portal_t *portal, node_t *l)
     }
 }
 
-//============================================================================
-
-/*
- * ================
- * MakeHeadnodePortals
- * 
- * The created portals will face the global g_outside_node
- * ================
- */
+//========================================================
+// The created portals will face the global g_outside_node
+//========================================================
 void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
 {
     vec3_t bounds[2];
@@ -145,20 +133,6 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
         }
     }
 }
-
-/*
- * ==============================================================================
- * 
- * PORTAL FILE GENERATION
- * 
- * ==============================================================================
- */
-
-static std::FILE *pf;
-static std::FILE *pf_view;
-extern bool g_viewportal;
-static int num_visleafs; // leafs the player can be in
-static int num_visportals;
 
 static void WritePortalFile_r(const node_t *const node)
 {
@@ -247,11 +221,6 @@ static void WritePortalFile_r(const node_t *const node)
     }
 }
 
-/*
- * ================
- * NumberLeafs_r
- * ================
- */
 static void NumberLeafs_r(node_t *node)
 {
     if (!node->isportalleaf)
@@ -308,6 +277,7 @@ static int CountChildLeafs_r(node_t *node)
         return count;
     }
 }
+
 static void WriteLeafCount_r(node_t *node)
 {
     if (!node->isportalleaf)
@@ -325,11 +295,7 @@ static void WriteLeafCount_r(node_t *node)
         std::fprintf(pf, "%i\n", count);
     }
 }
-/*
- * ================
- * WritePortalfile
- * ================
- */
+
 void WritePortalfile(node_t *headnode)
 {
     // set the visleafnum field in every leaf and count the total number of portals
@@ -367,8 +333,6 @@ void WritePortalfile(node_t *headnode)
     }
     Log("BSP generation successful, writing portal file '%s'\n", g_portfilename);
 }
-
-//===================================================
 
 void FreePortals(node_t *node)
 {

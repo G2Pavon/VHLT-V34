@@ -12,30 +12,26 @@
 #include "common/log.h"
 #include "common/mathtypes.h"
 
-//  PointInLeaf
-//  PlaceOccupant
-//  MarkLeakTrail
-//  RecursiveFillOutside
-//  ClearOutFaces_r
-//  isClassnameAllowableOutside
-//  FreeAllowableOutsideList
-//  LoadAllowableOutsideList
-//  FillOutside
-
 static int outleafs;
 static int valid;
 static int c_falsenodes;
 static int c_free_faces;
 static int c_keep_faces;
+static portal_t *prevleaknode;
+static std::FILE *pointfile;
+static std::FILE *linefile;
+static int hit_occupied;
+static int backdraw;
 
-// =====================================================================================
-//  PointInLeaf
-// =====================================================================================
+constexpr int MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE = 64;
+unsigned g_nAllowableOutside = 0;
+unsigned g_maxAllowableOutside = 0;
+char **g_strAllowableOutsideList;
+
 static node_t *PointInLeaf(node_t *node, const vec3_t point)
 {
     if (node->isportalleaf)
     {
-        //Log("PointInLeaf::node->contents == %i\n", node->contents);
         return node;
     }
 
@@ -47,9 +43,6 @@ static node_t *PointInLeaf(node_t *node, const vec3_t point)
     return PointInLeaf(node->children[1], point);
 }
 
-// =====================================================================================
-//  PlaceOccupant
-// =====================================================================================
 static bool PlaceOccupant(const int num, const vec3_t point, node_t *headnode)
 {
     node_t *n = PointInLeaf(headnode, point);
@@ -57,18 +50,10 @@ static bool PlaceOccupant(const int num, const vec3_t point, node_t *headnode)
     {
         return false;
     }
-    //Log("PlaceOccupant::n->contents == %i\n", n->contents);
 
     n->occupied = num;
     return true;
 }
-
-// =====================================================================================
-//  MarkLeakTrail
-// =====================================================================================
-static portal_t *prevleaknode;
-static std::FILE *pointfile;
-static std::FILE *linefile;
 
 static void MarkLeakTrail(portal_t *n2)
 {
@@ -104,11 +89,6 @@ static void MarkLeakTrail(portal_t *n2)
     }
 }
 
-// =====================================================================================
-//  RecursiveFillOutside
-//      Returns true if an occupied leaf is reached
-//      If fill is false, just check, don't fill
-// =====================================================================================
 static void FreeDetailNode_r(node_t *n)
 {
     if (n->planenum == -1)
@@ -152,8 +132,10 @@ static void FillLeaf(node_t *l)
     l->planenum = -1;
 }
 
-static int hit_occupied;
-static int backdraw;
+// =====================================================================================
+//      Returns true if an occupied leaf is reached
+//      If fill is false, just check, don't fill
+// =====================================================================================
 static bool RecursiveFillOutside(node_t *l, const bool fill)
 {
 
@@ -202,7 +184,6 @@ static bool RecursiveFillOutside(node_t *l, const bool fill)
 }
 
 // =====================================================================================
-//  ClearOutFaces_r
 //      Removes unused nodes
 // =====================================================================================
 static void MarkFacesInside_r(node_t *node)
@@ -324,15 +305,6 @@ static node_t *ClearOutFaces_r(node_t *node)
     return node;
 }
 
-// =====================================================================================
-//  isClassnameAllowableOutside
-// =====================================================================================
-constexpr int MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE = 64;
-
-unsigned g_nAllowableOutside = 0;
-unsigned g_maxAllowableOutside = 0;
-char **g_strAllowableOutsideList;
-
 static bool isClassnameAllowableOutside(const char *const classname)
 {
     if (g_strAllowableOutsideList)
@@ -354,9 +326,6 @@ static bool isClassnameAllowableOutside(const char *const classname)
     return false;
 }
 
-// =====================================================================================
-//  FreeAllowableOutsideList
-// =====================================================================================
 void FreeAllowableOutsideList()
 {
     if (g_strAllowableOutsideList)
@@ -366,9 +335,6 @@ void FreeAllowableOutsideList()
     }
 }
 
-// =====================================================================================
-//  LoadAllowableOutsideList
-// =====================================================================================
 void LoadAllowableOutsideList(const char *const filename)
 {
     char *fname;
@@ -419,9 +385,6 @@ void LoadAllowableOutsideList(const char *const filename)
     }
 }
 
-// =====================================================================================
-//  FillOutside
-// =====================================================================================
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 {
     vec3_t origin;

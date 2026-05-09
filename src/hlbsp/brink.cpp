@@ -29,6 +29,10 @@
 //
 
 #define BRINK_FLOOR_THRESHOLD 0.7
+static constexpr int MAXCLIPNODES = (MAX_MAP_CLIPNODES * 8);
+static constexpr int MAXBRINKWEDGES = 64;
+
+extern int count_mergedclipnodes;
 
 typedef struct bpartition_s
 {
@@ -1084,8 +1088,6 @@ typedef struct bbrinkinfo_s
     bbrink_t **brinks;
 } bbrinkinfo_t;
 
-constexpr int MAXCLIPNODES = (MAX_MAP_CLIPNODES * 8);
-
 static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnodes, const dclipnode_t *clipnodes, int headnode)
 {
     if (numbclipnodes >= MAXCLIPNODES)
@@ -1261,8 +1263,6 @@ typedef struct bsurface_s
     bwedge_s *prev;
     bwedge_s *next;
 } bsurface_t;
-
-constexpr int MAXBRINKWEDGES = 64;
 
 typedef struct
 {
@@ -1718,9 +1718,8 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     return info;
 }
 
-extern int count_mergedclipnodes;
 typedef std::map<std::pair<int, std::pair<int, int>>, int> clipnodemap_t;
-inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c)
+inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c) // duplicated in writebsp.cpp
 {
     return std::make_pair(c.planenum, std::make_pair(c.children[0], c.children[1]));
 }

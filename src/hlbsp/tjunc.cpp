@@ -233,14 +233,7 @@ static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
     return w;
 }
 
-/*
- * ===============
- * AddVert
- * 
- * ===============
- */
 #define T_EPSILON ON_EPSILON
-
 static void AddVert(const wedge_t *const w, const vec_t t)
 {
     wvert_t *v = w->head.next;
@@ -270,11 +263,6 @@ static void AddVert(const wedge_t *const w, const vec_t t)
     v->prev = newv;
 }
 
-/*
- * ===============
- * AddEdge
- * ===============
- */
 static void AddEdge(const vec3_t p1, const vec3_t p2)
 {
     vec_t t1;
@@ -285,12 +273,6 @@ static void AddEdge(const vec3_t p1, const vec3_t p2)
     AddVert(w, t2);
 }
 
-/*
- * ===============
- * AddFaceEdges
- * 
- * ===============
- */
 static void AddFaceEdges(const face_t *const f)
 {
     for (int i = 0; i < f->numpoints; i++)
@@ -407,12 +389,6 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
     } while (1);
 }
 
-/*
- * ===============
- * FixFaceEdges
- * 
- * ===============
- */
 static void FixFaceEdges(face_t *f)
 {
     wvert_t *v;
@@ -501,12 +477,6 @@ static void tjunc_fix_r(node_t *node)
     tjunc_fix_r(node->children[1]);
 }
 
-/*
- * ===========
- * tjunc
- * 
- * ===========
- */
 void tjunc(node_t *headnode)
 {
     //
