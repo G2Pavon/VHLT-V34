@@ -12,9 +12,6 @@
 constexpr int MAX_PORTALS = 32768;
 constexpr int PORTALSEE_SIZE = (MAX_PORTALS * 2);
 
-// =====================================================================================
-//  AllocStackWinding
-// =====================================================================================
 static inline winding_t *AllocStackWinding(pstack_t *const stack)
 {
     for (int i = 0; i < 3; i++)
@@ -31,9 +28,6 @@ static inline winding_t *AllocStackWinding(pstack_t *const stack)
     return nullptr;
 }
 
-// =====================================================================================
-//  FreeStackWinding
-// =====================================================================================
 static inline void FreeStackWinding(const winding_t *const w, pstack_t *const stack)
 {
     int i = w - stack->windings;
@@ -46,9 +40,6 @@ static inline void FreeStackWinding(const winding_t *const w, pstack_t *const st
     stack->freewindings[i] = 1;
 }
 
-// =====================================================================================
-//  ChopWinding
-// =====================================================================================
 static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const portalplane_t *const split)
 {
     vec_t dists[128];
@@ -180,9 +171,6 @@ static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack,
     return neww;
 }
 
-// =====================================================================================
-//  AddPlane
-// =====================================================================================
 static inline void AddPlane(pstack_t *const stack, const portalplane_t *const split)
 {
     if (stack->clipPlaneCount)
@@ -201,7 +189,6 @@ static inline void AddPlane(pstack_t *const stack, const portalplane_t *const sp
 }
 
 // =====================================================================================
-//  ClipToSeperators
 //      Source, pass, and target are an ordering of portals.
 //      Generates seperating planes canidates by taking two points from source and one
 //      point from pass, and clips target by them.
@@ -346,7 +333,6 @@ static inline winding_t *ClipToSeperators(
 }
 
 // =====================================================================================
-//  RecursiveLeafFlow
 //      Flood fill through the leafs
 //      If src_portal is NULL, this is the originating leaf
 // =====================================================================================
@@ -521,9 +507,6 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
     }
 }
 
-// =====================================================================================
-//  PortalFlow
-// =====================================================================================
 void PortalFlow(portal_t *p)
 {
     threaddata_t data;
@@ -551,7 +534,6 @@ void PortalFlow(portal_t *p)
 }
 
 // =====================================================================================
-//  SimpleFlood
 //      This is a rough first-order aproximation that is used to trivially reject some
 //      of the final calculations.
 // =====================================================================================
@@ -588,9 +570,6 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const 
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-// =====================================================================================
-//  BasePortalVis
-// =====================================================================================
 void BasePortalVis(int /*threadnum*/)
 {
     int j, k;
@@ -890,10 +869,7 @@ static vec_t WindingDist(const winding_t *w[2])
     }
     return (std::sqrt(minsqrdist));
 }
-// AJM: MVD
-// =====================================================================================
-//  MaxDistVis
-// =====================================================================================
+
 void MaxDistVis(int /*threadnum*/)
 {
     int j;
@@ -1040,5 +1016,4 @@ void MaxDistVis(int /*threadnum*/)
     if (boundary)
         delete[] boundary;
 }
-
 #pragma warning(pop)

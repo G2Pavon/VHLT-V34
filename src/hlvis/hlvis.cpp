@@ -1,13 +1,3 @@
-/*
- 
-    VISIBLE INFORMATION SET    -aka-    V I S
-
-    Code based on original code from Valve Software, 
-    Modified by Sean "Zoner" Cavanaugh (seanc@gearboxsoftware.com) with permission.
-    Modified by Tony "Merl" Moore (merlinis@bigpond.net.au)
-    Contains code by Skyler "Zipster" York (zipster89134@hotmail.com) - Included with permission.
-    
-*/
 #include "hlvis/hlvis.h"
 
 #include <cstdlib>
@@ -64,9 +54,7 @@ bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
 
-// AJM: addded in
 // =====================================================================================
-//  GetParamsFromEnt
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
@@ -74,10 +62,8 @@ unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
 void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
-
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
-    // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
     {
         g_estimate = true;
@@ -88,15 +74,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    /*
-    hlvis(choices) : "HLVIS" : 2 = 
-    [ 
-        0 : "Off"
-        1 : "Fast"
-        2 : "Normal" 
-        3 : "Full"
-    ]
-    */
     int iTmp = IntForKey(mapent, "hlvis");
     if (iTmp == 0)
     {
@@ -121,14 +98,9 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Fast VIS", fastvis ? "on" : "off");
     Log("%30s [ %-9s ]\n", "Full VIS", g_fullvis ? "on" : "off");
-
-    ///////////////////
     Log("\n");
 }
 
-// =====================================================================================
-//  PlaneFromWinding
-// =====================================================================================
 static void PlaneFromWinding(winding_t *w, portalplane_t *plane)
 {
     vec3_t v1;
@@ -142,9 +114,6 @@ static void PlaneFromWinding(winding_t *w, portalplane_t *plane)
     plane->dist = DotProduct(w->points[0], plane->normal);
 }
 
-// =====================================================================================
-//  NewWinding
-// =====================================================================================
 static winding_t *NewWinding(const int points)
 {
     if (points > MAX_POINTS_ON_WINDING)
@@ -159,7 +128,6 @@ static winding_t *NewWinding(const int points)
 }
 
 // =====================================================================================
-//  GetNextPortal
 //      Returns the next portal for a thread to work on
 //      Returns the portals from the least complex, so the later ones can reuse the earlier information.
 // =====================================================================================
@@ -199,12 +167,8 @@ static portal_t *GetNextPortal()
     }
 }
 
-// =====================================================================================
-//  LeafThread
-// =====================================================================================
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
-
 static void LeafThread(int /*threadnum*/)
 {
     portal_t *p;
@@ -219,11 +183,9 @@ static void LeafThread(int /*threadnum*/)
         PortalFlow(p);
     }
 }
-
 #pragma warning(pop)
 
 // =====================================================================================
-//  LeafFlow
 //      Builds the entire visibility list for a leaf
 // =====================================================================================
 static void LeafFlow(const int leafnum)
@@ -336,9 +298,6 @@ static void LeafFlow(const int leafnum)
     std::memcpy(dest, compressed, i);
 }
 
-// =====================================================================================
-//  CalcPortalVis
-// =====================================================================================
 static void CalcPortalVis()
 {
     // fastvis just uses mightsee for a very loose bound
@@ -354,10 +313,6 @@ static void CalcPortalVis()
     NamedRunThreadsOn(g_numportals * 2, g_estimate, LeafThread);
 }
 
-// AJM: MVD
-// =====================================================================================
-//  SaveVisData
-// =====================================================================================
 static void SaveVisData(const char *filename)
 {
     std::FILE *fp = std::fopen(filename, "wb");
@@ -377,12 +332,6 @@ static void SaveVisData(const char *filename)
     std::fclose(fp);
 }
 
-// AJM UNDONE HLVIS_MAXDIST THIS!!!!!!!!!!!!!
-
-// AJM: MVD modified
-// =====================================================================================
-//  CalcVis
-// =====================================================================================
 static void CalcVis()
 {
     char visdatafile[_MAX_PATH];
@@ -443,9 +392,6 @@ static void CalcVis()
     //	}
 }
 
-// =====================================================================================
-//  CheckNullToken
-// =====================================================================================
 static INLINE void FASTCALL CheckNullToken(const char *const token)
 {
     if (token == nullptr)
@@ -454,9 +400,6 @@ static INLINE void FASTCALL CheckNullToken(const char *const token)
     }
 }
 
-// =====================================================================================
-//  LoadPortals
-// =====================================================================================
 static void LoadPortals(char *portal_image)
 {
     const char *const seperators = " ()\r\n\t";
@@ -631,9 +574,6 @@ static void LoadPortals(char *portal_image)
     }
 }
 
-// =====================================================================================
-//  LoadPortalsByFilename
-// =====================================================================================
 static void LoadPortalsByFilename(const char *const filename)
 {
     char *file_image;
@@ -647,9 +587,6 @@ static void LoadPortalsByFilename(const char *const filename)
     std::free(file_image);
 }
 
-// =====================================================================================
-//  Usage
-// =====================================================================================
 static void Usage()
 {
     Banner();
@@ -668,9 +605,6 @@ static void Usage()
     std::exit(1);
 }
 
-// =====================================================================================
-//  Settings
-// =====================================================================================
 static void Settings()
 {
     Log("\n-= Current %s Settings =-\n", g_Program);
@@ -686,15 +620,12 @@ static void Settings()
     {
         Log("threads             [ %7d ] [ %7d ]\n", g_numthreads, DEFAULT_NUMTHREADS);
     }
-
     Log("chart               [ %7s ] [ %7s ]\n", g_chart ? "on" : "off", DEFAULT_CHART ? "on" : "off");
     Log("estimate            [ %7s ] [ %7s ]\n", g_estimate ? "on" : "off", DEFAULT_ESTIMATE ? "on" : "off");
     Log("max texture memory  [ %7d ] [ %7d ]\n", g_max_map_miptex, DEFAULT_MAX_MAP_MIPTEX);
 
-    Log("max vis distance    [ %7d ] [ %7d ]\n", g_maxdistance, DEFAULT_MAXDISTANCE_RANGE);
-    //Log("max dist only       [ %7s ] [ %7s ]\n", g_postcompile ? "on" : "off", DEFAULT_POST_COMPILE ? "on" : "off");
-
     // HLVIS Specific Settings
+    Log("max vis distance    [ %7d ] [ %7d ]\n", g_maxdistance, DEFAULT_MAXDISTANCE_RANGE);
     Log("fast vis            [ %7s ] [ %7s ]\n", fastvis ? "on" : "off", DEFAULT_FASTVIS ? "on" : "off");
     Log("full vis            [ %7s ] [ %7s ]\n", g_fullvis ? "on" : "off", DEFAULT_FULLVIS ? "on" : "off");
     Log("\n\n");
@@ -720,9 +651,7 @@ static int VisLeafnumForPoint(const vec3_t point)
 
     return -nodenum - 2;
 }
-// =====================================================================================
-//  main
-// =====================================================================================
+
 int main(const int argc, char **argv)
 {
     char portalfile[_MAX_PATH];
