@@ -1,14 +1,3 @@
-//#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
-
-/*
- 
-    CONSTRUCTIVE SOLID GEOMETRY    -aka-    C S G 
-
-    Code based on original code from Valve Software, 
-    Modified by Sean "Zoner" Cavanaugh (seanc@gearboxsoftware.com) with permission.
-    Modified by Tony "Merl" Moore (merlinis@bigpond.net.au) [AJM]
-    
-*/
 #include "hlcsg/hlcsg.h"
 
 #include <cstdlib>
@@ -29,15 +18,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> //--vluzacn
 #endif
-
-/*
-
- NOTES
-
- - check map size for +/- 4k limit at load time
- - allow for multiple wad.cfg configurations per compile
-
-*/
 
 static constexpr bool DEFAULT_ONLYENTS = false;
 static constexpr bool DEFAULT_WADTEXTURES = true;
@@ -69,7 +49,6 @@ bool g_bWadAutoDetect = DEFAULT_WADAUTODETECT; // "-wadautodetect"
 bool g_nolightopt = DEFAULT_NOLIGHTOPT;
 
 // =====================================================================================
-//  GetParamsFromEnt
 //      parses entity keyvalues for setting information
 // =====================================================================================
 void GetParamsFromEnt(entity_t *mapent)
@@ -77,10 +56,8 @@ void GetParamsFromEnt(entity_t *mapent)
     char szTmp[256];
 
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
-
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
-    // estimate(choices) :"Estimate Compile Times?" : 0 = [ 0: "Yes" 1: "No" ]
     if (IntForKey(mapent, "estimate"))
     {
         g_estimate = true;
@@ -91,7 +68,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    // texdata(string) : "Texture Data Memory" : "4096"
     int iTmp = IntForKey(mapent, "texdata") * 1024;
     if (iTmp > g_max_map_miptex)
     {
@@ -100,7 +76,6 @@ void GetParamsFromEnt(entity_t *mapent)
     sprintf_s(szTmp, "%i", g_max_map_miptex);
     Log("%30s [ %-9s ]\n", "Texture Data Memory", szTmp);
 
-    // wadautodetect(choices) : "Wad Auto Detect" : 0 =	[ 0 : "Off" 1 : "On" ]
     if (!std::strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
     {
         g_bWadAutoDetect = true;
@@ -111,7 +86,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Wad Auto Detect", g_bWadAutoDetect ? "on" : "off");
 
-    // noclipeconomy(choices) : "Strip Uneeded Clipnodes?" : 1 = [ 1 : "Yes" 0 : "No" ]
     iTmp = IntForKey(mapent, "noclipeconomy");
     if (iTmp == 1)
     {
@@ -123,14 +97,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Clipnode Economy Mode", g_bClipNazi ? "on" : "off");
 
-    /*
-    hlcsg(choices) : "HLCSG" : 1 =
-    [
-        1 : "Normal"
-        2 : "Onlyents"
-        0 : "Off"
-    ]
-    */
     iTmp = IntForKey(mapent, "hlcsg");
     g_onlyents = false;
     if (iTmp == 2)
@@ -145,14 +111,6 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Onlyents", g_onlyents ? "on" : "off");
 
-    /*
-    nocliphull(choices) : "Generate clipping hulls" : 0 =
-    [
-        0 : "Yes"
-        1 : "No"
-    ]
-    */
-    // cliptype(choices) : "Clip Hull Type" : 4 = [ 0 : "Smallest" 1 : "Normalized" 2: "Simple" 3 : "Precise" 4 : "Legacy" ]
     iTmp = IntForKey(mapent, "cliptype");
     switch (iTmp)
     {
@@ -173,13 +131,7 @@ void GetParamsFromEnt(entity_t *mapent)
         break;
     }
     Log("%30s [ %-9s ]\n", "Clip Hull Type", GetClipTypeString(g_cliptype));
-    /*
-    noskyclip(choices) : "No Sky Clip" : 0 =
-    [
-        1 : "On"
-        0 : "Off"
-    ]
-    */
+
     iTmp = IntForKey(mapent, "noskyclip");
     if (iTmp == 1)
     {
@@ -191,12 +143,10 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Sky brush clip generation", g_skyclip ? "on" : "off");
 
-    ///////////////
     Log("\n");
 }
 
 // =====================================================================================
-//  NewFaceFromFace
 //      Duplicates the non point information of a face, used by SplitFace
 // =====================================================================================
 static bface_t *NewFaceFromFace(const bface_t *const in)
@@ -212,18 +162,12 @@ static bface_t *NewFaceFromFace(const bface_t *const in)
     return newf;
 }
 
-// =====================================================================================
-//  FreeFace
-// =====================================================================================
 static void FreeFace(bface_t *f)
 {
     delete f->w;
     std::free(f);
 }
 
-// =====================================================================================
-//  WriteFace
-// =====================================================================================
 static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 {
 
@@ -249,6 +193,7 @@ static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 
     ThreadUnlock();
 }
+
 void WriteDetailBrush(int hull, const bface_t *faces)
 {
     ThreadLock();
@@ -267,7 +212,6 @@ void WriteDetailBrush(int hull, const bface_t *faces)
 }
 
 // =====================================================================================
-//  SaveOutside
 //      The faces remaining on the outside list are final polygons.  Write them to the
 //      output file.
 //      Passable contents (water, lava, etc) will generate a mirrored copy of the face
@@ -416,9 +360,6 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
     }
 }
 
-// =====================================================================================
-//  CopyFace
-// =====================================================================================
 static bface_t *CopyFace(const bface_t *const f)
 {
     bface_t *n = NewFaceFromFace(f);
@@ -428,7 +369,6 @@ static bface_t *CopyFace(const bface_t *const f)
 }
 
 // =====================================================================================
-//  CopyFacesToOutside
 //      Make a copy of all the faces of the brush, so they can be chewed up by other
 //      brushes.
 //      All of the faces start on the outside list.
@@ -451,10 +391,6 @@ static bface_t *CopyFacesToOutside(brushhull_t *bh)
     return outside;
 }
 
-// =====================================================================================
-//  CSGBrush
-// =====================================================================================
-extern const char *ContentsToString(const contents_t type);
 static void CSGBrush(int brushnum)
 {
     bface_t *next;
@@ -727,13 +663,6 @@ static void CSGBrush(int brushnum)
     }
 }
 
-//
-// =====================================================================================
-//
-
-// =====================================================================================
-//  EmitPlanes
-// =====================================================================================
 static void EmitPlanes()
 {
     g_numplanes = g_nummapplanes;
@@ -750,24 +679,12 @@ static void EmitPlanes()
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)
     {
-        //if (!(mp->redundant))
-        //{
-        //    Log("EmitPlanes: plane %i non redundant\n", i);
         VectorCopy(mp->normal, dp->normal);
         dp->dist = mp->dist;
         dp->type = mp->type;
-        // }
-        //else
-        // {
-        //     Log("EmitPlanes: plane %i redundant\n", i);
-        // }
     }
 }
 
-// =====================================================================================
-//  SetModelNumbers
-//      blah
-// =====================================================================================
 static void SetModelNumbers()
 {
     char value[10];
@@ -905,9 +822,6 @@ static void SetLightStyles()
     }
 }
 
-// =====================================================================================
-//  ConvertHintToEmtpy
-// =====================================================================================
 static void ConvertHintToEmpty()
 {
     // Convert HINT brushes to EMPTY after they have been carved by csg
@@ -920,9 +834,6 @@ static void ConvertHintToEmpty()
     }
 }
 
-// =====================================================================================
-//  WriteBSP
-// =====================================================================================
 static void LoadWadValue()
 {
     char *wadvalue;
@@ -1011,9 +922,7 @@ static void MarkEntForNoclip(entity_t *ent)
     }
 }
 
-// AJM
 // =====================================================================================
-//  CheckForNoClip
 //      marks the noclip flag on any brushes that dont need clipnode generation, eg. func_illusionaries
 // =====================================================================================
 static void CheckForNoClip()
@@ -1066,10 +975,6 @@ static void CheckForNoClip()
 
     Log("%i entities discarded from clipping hulls\n", count);
 }
-
-// =====================================================================================
-//  ProcessModels
-// =====================================================================================
 
 static void ProcessModels()
 {
@@ -1140,9 +1045,6 @@ static void ProcessModels()
     }
 }
 
-// =====================================================================================
-//  SetModelCenters
-// =====================================================================================
 static void SetModelCenters(int entitynum)
 {
     char string[MAXTOKEN];
@@ -1171,9 +1073,6 @@ static void SetModelCenters(int entitynum)
     SetKeyValue(e, "model_center", string);
 }
 
-//
-// =====================================================================================
-//
 static void ConvertGameTextToUTF8()
 {
 
@@ -1214,9 +1113,6 @@ static void ConvertGameTextToUTF8()
     }
 }
 
-// =====================================================================================
-//  BoundWorld
-// =====================================================================================
 static void BoundWorld()
 {
     world_bounds.reset();
@@ -1232,10 +1128,6 @@ static void BoundWorld()
     }
 }
 
-// =====================================================================================
-//  Usage
-//      prints out usage sheet
-// =====================================================================================
 static void Usage()
 {
     Banner(); // TODO: Call banner from main CSG process?
@@ -1261,10 +1153,6 @@ static void Usage()
     std::exit(1);
 }
 
-// =====================================================================================
-//  DumpWadinclude
-//      prints out the wadinclude list
-// =====================================================================================
 static void DumpWadinclude()
 {
     Log("Wadinclude list :\n");
@@ -1274,10 +1162,6 @@ static void DumpWadinclude()
     }
 }
 
-// =====================================================================================
-//  Settings
-//      prints out settings sheet
-// =====================================================================================
 static void Settings()
 {
     Log("\nCurrent %s Settings\n", g_Program);
@@ -1310,20 +1194,11 @@ static void Settings()
     Log("\n");
 }
 
-// AJM: added in
-// =====================================================================================
-//  CSGCleanup
-// =====================================================================================
 static void CSGCleanup()
 {
-    //Log("CSGCleanup\n");
     FreeWadPaths();
 }
 
-// =====================================================================================
-//  Main
-//      Oh, come on.
-// =====================================================================================
 int main(const int argc, char **argv)
 {
     char name[_MAX_PATH];                   // mapanme

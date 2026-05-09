@@ -199,7 +199,7 @@ extern int g_nummapplanes;
 void GetParamsFromEnt(entity_t *mapent);
 
 // brush.cpp
-const char *ContentsToString(const contents_t type);
+extern const char *ContentsToString(const contents_t type);
 
 //============================================================================
 // hullfile.cpp
