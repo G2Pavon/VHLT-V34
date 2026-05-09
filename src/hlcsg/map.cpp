@@ -1,4 +1,3 @@
-//#pragma warning(disable: 4018) // '<' : signed/unsigned mismatch
 #include "hlcsg/hlcsg.h"
 
 #include <cstdlib>
@@ -117,7 +116,6 @@ static void DeleteCurrentEntity(entity_t *entity)
 }
 
 // =====================================================================================
-//  CheckForInvisible
 //      see if a brush is part of an invisible entity (KGP)
 // =====================================================================================
 static bool CheckForInvisible(entity_t *mapent)
@@ -132,10 +130,7 @@ static bool CheckForInvisible(entity_t *mapent)
 
     return false;
 }
-// =====================================================================================
-//  ParseBrush
-//      parse a brush from script
-// =====================================================================================
+
 static void ParseBrush(entity_t *mapent)
 {
     bool nullify = CheckForInvisible(mapent);
@@ -530,10 +525,6 @@ static void ParseBrush(entity_t *mapent)
     }
 }
 
-// =====================================================================================
-//  ParseMapEntity
-//      parse an entity from script
-// =====================================================================================
 static bool ParseMapEntity()
 {
     g_numparsedbrushes = 0;
@@ -863,9 +854,6 @@ static bool ParseMapEntity()
     return true;
 }
 
-// =====================================================================================
-//  CountEngineEntities
-// =====================================================================================
 static unsigned int CountEngineEntities()
 {
     unsigned num_engine_entities = 0;
@@ -898,11 +886,6 @@ static unsigned int CountEngineEntities()
     return num_engine_entities;
 }
 
-// =====================================================================================
-//  LoadMapFile
-//      wrapper for OpenTokenStream
-//      parse in script entities
-// =====================================================================================
 void LoadMapFile(const char *const filename)
 {
     OpenTokenStream(filename);
@@ -920,6 +903,4 @@ void LoadMapFile(const char *const filename)
     hlassume(num_engine_entities < MAX_ENGINE_ENTITIES, assume_MAX_ENGINE_ENTITIES);
 
     CheckFatal();
-
-    // AJM: added in
 }

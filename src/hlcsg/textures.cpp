@@ -15,12 +15,6 @@
 
 constexpr int MAX_TEXFILES = 128;
 
-//  FindMiptex
-//  TEX_InitFromWad
-//  FindTexture
-//  LoadLump
-//  AddAnimatingTextures
-
 typedef struct
 {
     char identification[4]; // should be WAD3
@@ -95,9 +89,6 @@ static void texmap_clear()
     ThreadUnlock();
 }
 
-// =====================================================================================
-//  CleanupName
-// =====================================================================================
 static void CleanupName(const char *const in, char *out)
 {
     int i;
@@ -117,10 +108,6 @@ static void CleanupName(const char *const in, char *out)
         out[i] = 0;
     }
 }
-
-// =====================================================================================
-//  lump_sorters
-// =====================================================================================
 
 static int CDECL lump_sorter_by_wad_and_name(const void *lump1, const void *lump2)
 {
@@ -146,7 +133,6 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
 }
 
 // =====================================================================================
-//  FindMiptex
 //      Find and allocate a texture into the lump data
 // =====================================================================================
 static int FindMiptex(const char *const name)
@@ -174,9 +160,6 @@ static int FindMiptex(const char *const name)
     return i;
 }
 
-// =====================================================================================
-//  TEX_InitFromWad
-// =====================================================================================
 static bool TEX_InitFromWad()
 {
     wadinfo_t wadinfo;
@@ -328,9 +311,6 @@ static bool TEX_InitFromWad()
     return true;
 }
 
-// =====================================================================================
-//  FindTexture
-// =====================================================================================
 static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 {
     //Log("** PnFNFUNC: FindTexture\n");
@@ -397,9 +377,6 @@ static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
     return found;
 }
 
-// =====================================================================================
-//  LoadLump
-// =====================================================================================
 static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, int dest_maxsize, byte *&writewad_data, int &writewad_datasize)
 {
     writewad_data = nullptr;
@@ -447,9 +424,6 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
     return 0;
 }
 
-// =====================================================================================
-//  AddAnimatingTextures
-// =====================================================================================
 static void AddAnimatingTextures()
 {
     char name[MAX_TEXTURE_NAME_LENGTH];
@@ -494,9 +468,6 @@ static void AddAnimatingTextures()
     }
 }
 
-// =====================================================================================
-//  WriteMiptex
-// =====================================================================================
 void WriteMiptex()
 {
     int texsize;
@@ -663,11 +634,6 @@ void WriteMiptex()
         (float)g_max_map_miptex / (1024 * 1024));
 }
 
-//==========================================================================
-
-// =====================================================================================
-//  TexinfoForBrushTexture
-// =====================================================================================
 int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
 {
     texinfo_t tx;

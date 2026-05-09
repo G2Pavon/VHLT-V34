@@ -1,4 +1,3 @@
-// AJM: added this file in
 #include "hlcsg/wadpath.h"
 
 #include <cstdlib>
@@ -14,7 +13,6 @@ wadpath_t *g_pWadPaths[MAX_WADPATHS];
 int g_iNumWadPaths = 0;
 
 // =====================================================================================
-//  PushWadPath
 //      adds a wadpath into the wadpaths list, without duplicates
 // =====================================================================================
 void PushWadPath(const char *const path, bool inuse)
@@ -31,9 +29,6 @@ void PushWadPath(const char *const path, bool inuse)
     g_pWadPaths[g_iNumWadPaths++] = current;
 }
 
-// =====================================================================================
-//  FreeWadPaths
-// =====================================================================================
 void FreeWadPaths()
 {
     for (int i = 0; i < g_iNumWadPaths; i++)
@@ -44,7 +39,6 @@ void FreeWadPaths()
 }
 
 // =====================================================================================
-//  GetUsedWads
 //      parse the "wad" keyvalue into wadpath_t structs
 // =====================================================================================
 void GetUsedWads()

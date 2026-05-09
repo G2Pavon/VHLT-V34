@@ -22,12 +22,11 @@ static constexpr vec_t FLOOR_Z = 0.7; // Quake default
 static constexpr vec_t DIST_EPSILON = 0.04;
 
 // =====================================================================================
-//  FindIntPlane, fast version (replacement by KGP)
+//  fast version (replacement by KGP)
 //	This process could be optimized by placing the planes in a (non hash-) set and using
 //	half of the inner loop check below as the comparator; I'd expect the speed gain to be
 //	very large given the change from O(N^2) to O(NlogN) to build the set of planes.
 // =====================================================================================
-
 static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
 {
     vec_t t;
@@ -125,10 +124,9 @@ const char *GetClipTypeString(cliptype ct)
 }
 
 // =====================================================================================
-//  AddHullPlane (subroutine for replacement of ExpandBrush, KGP)
+// (subroutine for replacement of ExpandBrush, KGP)
 //  Called to add any and all clip hull planes by the new ExpandBrush.
 // =====================================================================================
-
 static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *const origin, const bool check_planenum)
 {
     int planenum = FindIntPlane(normal, origin);
@@ -156,7 +154,6 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
 }
 
 // =====================================================================================
-//  ExpandBrush (replacement by KGP)
 //  Since the six bounding box planes were always added anyway, they've been moved to
 //  an explicit separate step eliminating the need to check for duplicate planes (which
 //  should be using plane numbers instead of the full definition anyway).
@@ -188,7 +185,6 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
 //   Data from a sample map:
 //     cliptype          simple    precise     legacy normalized   smallest
 //     clipnodecount        971       1089       1202       1232       1000
-
 static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hull0, const hullbrush_t *hb, brushhull_t *hull)
 {
     const hullbrushface_t *hbf;
@@ -807,9 +803,6 @@ restart:
     }
 }
 
-// =====================================================================================
-//  MakeBrushPlanes
-// =====================================================================================
 static bool MakeBrushPlanes(brush_t *b)
 {
     bface_t *f;
@@ -864,9 +857,6 @@ static bool MakeBrushPlanes(brush_t *b)
     return true;
 }
 
-// =====================================================================================
-//  TextureContents
-// =====================================================================================
 static contents_t TextureContents(const char *const name)
 {
     if (!strncasecmp(name, "contentsolid", 12))
@@ -943,9 +933,6 @@ static contents_t TextureContents(const char *const name)
     return CONTENTS_SOLID;
 }
 
-// =====================================================================================
-//  ContentsToString
-// =====================================================================================
 const char *ContentsToString(const contents_t type)
 {
     switch (type)
@@ -995,7 +982,6 @@ const char *ContentsToString(const contents_t type)
 }
 
 // =====================================================================================
-//  CheckBrushContents
 //      Perfoms abitrary checking on brush surfaces and states to try and catch errors
 // =====================================================================================
 contents_t CheckBrushContents(const brush_t *const b)
@@ -1103,7 +1089,6 @@ contents_t CheckBrushContents(const brush_t *const b)
 }
 
 // =====================================================================================
-//  CreateBrush
 //      makes a brush!
 // =====================================================================================
 void CreateBrush(const int brushnum) //--vluzacn
