@@ -150,11 +150,10 @@ vec3_t g_maxdiscardedpos = {0, 0, 0};
 static float totalarea = 0;
 static constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 
-// =====================================================================================
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
-// =====================================================================================
+
 void GetParamsFromEnt(entity_t *mapent)
 {
     char szTmp[256]; //lightdata
@@ -330,9 +329,7 @@ static void MakeParents(const int nodenum, const int parent)
     }
 }
 
-// =====================================================================================
-//    TEXTURE LIGHT VALUES
-// =====================================================================================
+// TEXTURE LIGHT VALUES
 // misc
 typedef struct
 {
@@ -357,10 +354,7 @@ static void LightForTexture(const char *const name, vec3_t result)
     VectorClear(result);
 }
 
-// =====================================================================================
-//    MAKE FACES
-// =====================================================================================
-
+// MAKE FACES
 static void BaseLightForFace(const dface_t *const f, vec3_t light)
 {
     int fn = f - g_dfaces;
@@ -397,9 +391,7 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
         light[2] = b > 0 ? b : 0;
         return;
     }
-    //
     // check for light emited by texture
-    //
     texinfo_t *tx = &g_texinfo[f->texinfo];
 
     int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
@@ -527,9 +519,7 @@ static void UpdateEmitterInfo(patch_t *patch)
     patch->emitter_skylevel = skylevel;
 }
 
-// =====================================================================================
-//    SUBDIVIDE PATCHES
-// =====================================================================================
+// SUBDIVIDE PATCHES
 // NOTE:  every surface must be divided into at least two g_patches each axis
 
 // misc
@@ -537,9 +527,7 @@ constexpr int MAX_SUBDIVIDE = 16384;
 static Winding *windingArray[MAX_SUBDIVIDE];
 static unsigned g_numwindings = 0;
 
-// =====================================================================================
-//      Caller must free this returned value at some point
-// =====================================================================================
+// Caller must free this returned value at some point
 static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane_t *plB)
 // This function has been rewritten because the original one is not totally correct and may fail to do what it claims.
 {
@@ -720,10 +708,9 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
     patch->winding = nullptr;
 }
 
-// =====================================================================================
 //      From patch, determine perpindicular grid planes to subdivide with (returned in planeA and planeB)
 //      assume S and T is perpindicular (they SHOULD be in worldcraft 3.3 but aren't always . . .)
-// =====================================================================================
+
 static void getGridPlanes(const patch_t *const p, dplane_t *const pl)
 {
     const patch_t *patch = p;
@@ -1621,9 +1608,7 @@ static int CDECL patch_sorter(const void *p1, const void *p2)
     }
 }
 
-// =====================================================================================
-//      This sorts the patches by facenumber, which makes their runs compress even better
-// =====================================================================================
+// This sorts the patches by facenumber, which makes their runs compress even better
 static void SortPatches()
 {
     // SortPatches is the ideal place to do this, because the address of the patches are going to be invalidated.
@@ -1711,10 +1696,9 @@ static void CollectLight()
     }
 }
 
-// =====================================================================================
 //      Get light from other g_patches
 //      Run multi-threaded
-// =====================================================================================
+
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
@@ -2401,9 +2385,7 @@ static void Settings()
     Log("\n\n");
 }
 
-// =====================================================================================
-//      try and parse texlight info from the info_texlights entity
-// =====================================================================================
+// try and parse texlight info from the info_texlights entity
 static void ReadInfoTexlights()
 {
     int numtexlights = 0;

@@ -42,11 +42,7 @@ struct matrix_t
 //  | Y | -> | v[0][1] v[1][1] v[2][1] v[3][1] | | Y |
 //  | Z |    | v[0][2] v[1][2] v[2][2] v[3][2] | | Z |
 //  \ 1 /    \    0       0       0       1    / \ 1 /
-
-//
 // LIGHTMAP.C STUFF
-//
-
 typedef enum
 {
     emit_surface,
@@ -175,11 +171,7 @@ struct edgeshare_t
 };
 
 extern edgeshare_t g_edgeshare[MAX_MAP_EDGES];
-
-//
 // lerp.c stuff
-//
-
 // These are bitflags for lighting adjustments for special cases
 typedef enum
 {
@@ -214,11 +206,7 @@ extern radtexture_t *g_textures;
 void AddWadFolder(const char *path);
 void LoadTextures();
 void EmbedLightmapInTextures();
-
-//
 // hlrad globals
-//
-
 extern patch_t *g_face_patches[MAX_MAP_FACES];
 extern entity_t *g_face_entity[MAX_MAP_FACES];
 extern vec3_t g_face_offset[MAX_MAP_FACES]; // for models with origins

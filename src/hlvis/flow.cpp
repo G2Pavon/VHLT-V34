@@ -188,7 +188,6 @@ static inline void AddPlane(pstack_t *const stack, const portalplane_t *const sp
     stack->clipPlaneCount++;
 }
 
-// =====================================================================================
 //      Source, pass, and target are an ordering of portals.
 //      Generates seperating planes canidates by taking two points from source and one
 //      point from pass, and clips target by them.
@@ -198,7 +197,7 @@ static inline void AddPlane(pstack_t *const stack, const portalplane_t *const sp
 //      Normal clip keeps target on the same side as pass, which is correct if the
 //      order goes source, pass, target.  If the order goes pass, source, target then
 //      flipclip should be set.
-// =====================================================================================
+
 static inline winding_t *ClipToSeperators(
     const winding_t *const source,
     const winding_t *const pass,
@@ -332,10 +331,9 @@ static inline winding_t *ClipToSeperators(
     return target;
 }
 
-// =====================================================================================
 //      Flood fill through the leafs
 //      If src_portal is NULL, this is the originating leaf
-// =====================================================================================
+
 static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *const thread, const pstack_t *const prevstack)
 {
     pstack_t stack;
@@ -533,10 +531,9 @@ void PortalFlow(portal_t *p)
     p->status = stat_done;
 }
 
-// =====================================================================================
 //      This is a rough first-order aproximation that is used to trivially reject some
 //      of the final calculations.
-// =====================================================================================
+
 static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const portalsee, unsigned int *const c_leafsee)
 {
     {

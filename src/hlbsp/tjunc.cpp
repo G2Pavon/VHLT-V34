@@ -479,20 +479,14 @@ static void tjunc_fix_r(node_t *node)
 
 void tjunc(node_t *headnode)
 {
-    //
     // identify all points on common edges
-    //
-
     // origin points won't allways be inside the map, so extend the hash area
     InitHash();
 
     numwedges = numwverts = 0;
 
     tjunc_find_r(headnode);
-
-    //
     // add extra vertexes on edges where needed
-    //
     tjuncs = tjuncfaces = 0;
 
     tjunc_fix_r(headnode);

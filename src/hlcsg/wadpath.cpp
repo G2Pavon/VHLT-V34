@@ -12,9 +12,7 @@
 wadpath_t *g_pWadPaths[MAX_WADPATHS];
 int g_iNumWadPaths = 0;
 
-// =====================================================================================
-//      adds a wadpath into the wadpaths list, without duplicates
-// =====================================================================================
+// adds a wadpath into the wadpaths list, without duplicates
 void PushWadPath(const char *const path, bool inuse)
 {
     hlassume(g_iNumWadPaths < MAX_WADPATHS, assume_MAX_TEXFILES);
@@ -38,9 +36,7 @@ void FreeWadPaths()
     }
 }
 
-// =====================================================================================
-//      parse the "wad" keyvalue into wadpath_t structs
-// =====================================================================================
+// parse the "wad" keyvalue into wadpath_t structs
 void GetUsedWads()
 {
     char szTmp[_MAX_PATH];

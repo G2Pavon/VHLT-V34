@@ -174,9 +174,7 @@ static bool CheckVisBitSparse(unsigned x, unsigned y, vec3_t &transparency_out, 
     return false;
 }
 
-// ==============
 // Sets vis bits for all patches in the face
-// ==============
 static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pvs, bool uncompressedcolumn[MAX_SPARSE_VISMATRIX_PATCHES])
 {
     patch_t *patch = &g_patches[patchnum];
@@ -266,9 +264,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pv
     }
 }
 
-// ==============
 // This is run by multiple threads
-// ==============
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 static void BuildVisLeafs(int /*threadnum*/)

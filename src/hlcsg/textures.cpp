@@ -129,9 +129,7 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
     return std::strcmp(plump1->name, plump2->name);
 }
 
-// =====================================================================================
-//      Find and allocate a texture into the lump data
-// =====================================================================================
+// Find and allocate a texture into the lump data
 static int FindMiptex(const char *const name)
 {
     int i;
@@ -664,10 +662,7 @@ int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
 
     tx.vecs[0][3] = bt->vects.shift[0] + DotProduct(origin, tx.vecs[0]);
     tx.vecs[1][3] = bt->vects.shift[1] + DotProduct(origin, tx.vecs[1]);
-
-    //
     // find the g_texinfo
-    //
     ThreadLock();
     texinfo_t *tc = g_texinfo;
     for (i = 0; i < g_numtexinfo; i++, tc++)

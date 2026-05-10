@@ -76,11 +76,7 @@ struct brush_t
     brush_t *next;
     side_t *sides;
 };
-
-//
 // there is a node_t structure for every node and leaf in the bsp tree
-//
-
 struct portal_t;
 struct node_t
 {
@@ -206,9 +202,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode);
 bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out);
 void DeleteBrinkinfo(void *brinkinfo);
 
-// =====================================================================================
-//Cpt_Andrew - UTSky Check
-// =====================================================================================
+// Cpt_Andrew - UTSky Check
 bool CheckFaceForEnv_Sky(const face_t *const f);
 // =====================================================================================
 

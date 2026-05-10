@@ -26,9 +26,7 @@ inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c)
     return std::make_pair(c.planenum, std::make_pair(c.children[0], c.children[1]));
 }
 
-// =====================================================================================
-//  hook for plane optimization
-// =====================================================================================
+// hook for plane optimization
 static int WritePlane(int planenum)
 {
     planenum = planenum & (~1);
@@ -133,10 +131,9 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     return c;
 }
 
-// =====================================================================================
 //      Called after the clipping hull is completed.  Generates a disk format
 //      representation and frees the original memory.
-// =====================================================================================
+
 void WriteClipNodes(node_t *nodes)
 {
     // we only merge among the clipnodes of the same hull of the same model
@@ -154,10 +151,7 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
     g_numleafs++;
 
     leaf_p->contents = portalleaf->contents;
-
-    //
     // write bounding box info
-    //
     vec3_t mins, maxs;
 
     if (node->isdetail)
@@ -178,10 +172,7 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
     }
 
     leaf_p->visofs = -1; // no vis info yet
-
-    //
-    // write the marksurfaces
-    //
+                         // write the marksurfaces
     leaf_p->firstmarksurface = g_nummarksurfaces;
 
     hlassume(node->markfaces != nullptr, assume_EmptySolid);
@@ -325,10 +316,7 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     }
 
     n->numfaces = g_numfaces - n->firstface;
-
-    //
     // recursively output the other nodes
-    //
     for (int i = 0; i < 2; i++)
     {
         n->children[i] = WriteDrawNodes_r(node->children[i], portalleaf);
@@ -345,11 +333,7 @@ static void FreeDrawNodes_r(node_t *node)
             FreeDrawNodes_r(node->children[i]);
         }
     }
-
-    //
     // free the faces on the node
-    //
-
     face_t *next;
     for (face_t *f = node->faces; f; f = next)
     {
@@ -360,10 +344,9 @@ static void FreeDrawNodes_r(node_t *node)
     std::free(node);
 }
 
-// =====================================================================================
 //      Called after a drawing hull is completed
 //      Frees all nodes and faces
-// =====================================================================================
+
 static void OutputEdges_face(face_t *f)
 {
     if (CheckFaceForHint(f) || CheckFaceForSkip(f) || CheckFaceForNull(f)                                    // AJM

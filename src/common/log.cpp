@@ -187,11 +187,7 @@ void CDECL CloseLog()
         CompileLog = nullptr;
     }
 }
-
-//
-//  Every function up to this point should check g_log, the functions below should not
-//
-
+// Every function up to this point should check g_log, the functions below should not
 // AJM: fprintf/flush wasnt printing newline chars correctly (prefixed with \r) under win32
 //      due to the fact that those streams are in byte mode, so this function prefixes
 //      all \n with \r automatically.

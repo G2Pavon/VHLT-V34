@@ -7,12 +7,11 @@
 
 #define CONTINUOUS_EPSILON ON_EPSILON
 
-// =====================================================================================
 //      If two polygons share a common edge and the edges that meet at the
 //      common points are both inside the other polygons, merge them
 //      Returns NULL if the faces couldn't be merged, or the new face.
 //      The originals will NOT be freed.
-// =====================================================================================
+
 static face_t *TryMerge(face_t *f1, face_t *f2)
 {
     if (f1->numpoints == -1 || f2->numpoints == -1)
@@ -39,11 +38,7 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     {
         return nullptr;
     }
-
-    //
     // find a common edge
-    //
-
     int i;
     int j = 0;
     vec_t *p1 = nullptr; // shut up the compiler
@@ -124,10 +119,7 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
         return nullptr; // not a convex polygon
     }
     bool keep2 = dot < -CONTINUOUS_EPSILON;
-
-    //
     // build the new polygon
-    //
     if (f1->numpoints + f2->numpoints > MAXEDGES)
     {
         //              Error ("TryMerge: too many edges!");

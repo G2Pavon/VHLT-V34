@@ -1,8 +1,5 @@
 #pragma warning(disable : 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
-
-//
-//	Transparency Arrays for sparse and vismatrix methods
-//
+// Transparency Arrays for sparse and vismatrix methods
 #include <cstdlib>
 #include <cstring>
 #include <cstddef>
@@ -176,9 +173,7 @@ void FreeTransparencyArrays()
     s_max_trans_count = s_trans_count = s_sorted_count = 0;
 }
 
-//===============================================
 // find transparency from list. remembers last location
-//===============================================
 void GetTransparency(const unsigned p1, const unsigned p2, vec3_t &trans, unsigned int &next_index)
 {
     VectorFill(trans, 1.0);

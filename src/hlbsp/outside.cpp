@@ -132,10 +132,9 @@ static void FillLeaf(node_t *l)
     l->planenum = -1;
 }
 
-// =====================================================================================
 //      Returns true if an occupied leaf is reached
 //      If fill is false, just check, don't fill
-// =====================================================================================
+
 static bool RecursiveFillOutside(node_t *l, const bool fill)
 {
 
@@ -183,9 +182,7 @@ static bool RecursiveFillOutside(node_t *l, const bool fill)
     return false;
 }
 
-// =====================================================================================
-//      Removes unused nodes
-// =====================================================================================
+// Removes unused nodes
 static void MarkFacesInside_r(node_t *node)
 {
     if (node->planenum == -1)
@@ -218,9 +215,7 @@ static node_t *ClearOutFaces_r(node_t *node)
     // go down the children
     if (!node->isportalleaf)
     {
-        //
         // decision node
-        //
         node->children[0] = ClearOutFaces_r(node->children[0]);
         node->children[1] = ClearOutFaces_r(node->children[1]);
 
@@ -272,10 +267,7 @@ static node_t *ClearOutFaces_r(node_t *node)
         }
         return node;
     }
-
-    //
     // leaf node
-    //
     if (node->contents != CONTENTS_SOLID)
     {
         // this node is still inside

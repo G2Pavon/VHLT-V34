@@ -86,10 +86,9 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
     return CompressedArray;
 }
 
-// =============
 //This is the primary time sink.
 //It can be run multi threaded.
-// =============
+
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 

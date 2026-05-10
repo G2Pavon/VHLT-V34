@@ -54,11 +54,10 @@ bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
 
-// =====================================================================================
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
-// =====================================================================================
+
 void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
@@ -127,10 +126,9 @@ static winding_t *NewWinding(const int points)
     return w;
 }
 
-// =====================================================================================
 //      Returns the next portal for a thread to work on
 //      Returns the portals from the least complex, so the later ones can reuse the earlier information.
-// =====================================================================================
+
 static portal_t *GetNextPortal()
 {
     int j;
@@ -185,16 +183,11 @@ static void LeafThread(int /*threadnum*/)
 }
 #pragma warning(pop)
 
-// =====================================================================================
-//      Builds the entire visibility list for a leaf
-// =====================================================================================
+// Builds the entire visibility list for a leaf
 static void LeafFlow(const int leafnum)
 {
     byte compressed[MAX_MAP_LEAFS / 8];
-
-    //
     // flow through all portals, collecting visible bits
-    //
     std::memset(compressed, 0, sizeof(compressed));
     byte *outbuffer = uncompressed + leafnum * g_bitbytes;
     leaf_t *leaf = &g_leafs[leafnum];
@@ -257,10 +250,7 @@ static void LeafFlow(const int leafnum)
             numvis++;
         }
     }
-
-    //
     // compress the bit string
-    //
     totalvis += numvis;
 
     byte buffer2[MAX_MAP_LEAFS / 8];
@@ -352,10 +342,7 @@ static void CalcVis()
     // First do a normal VIS, save to file, then redo MaxDistVis
 
     CalcPortalVis();
-
-    //
     // assemble the leaf vis lists by oring and compressing the portal lists
-    //
     for (unsigned i = 0; i < g_portalleafs; i++)
     {
         LeafFlow(i);

@@ -54,9 +54,7 @@ static const char *GetClipTypeString(cliptype ct)
     return ClipTypeStrings[ct];
 }
 
-// =====================================================================================
-//      parses entity keyvalues for setting information
-// =====================================================================================
+// parses entity keyvalues for setting information
 void GetParamsFromEnt(entity_t *mapent)
 {
     char szTmp[256];
@@ -152,9 +150,7 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("\n");
 }
 
-// =====================================================================================
-//      Duplicates the non point information of a face, used by SplitFace
-// =====================================================================================
+// Duplicates the non point information of a face, used by SplitFace
 static bface_t *NewFaceFromFace(const bface_t *const in)
 {
     bface_t *newf = (bface_t *)std::calloc(1, sizeof(bface_t));
@@ -217,12 +213,11 @@ void WriteDetailBrush(int hull, const bface_t *faces)
     ThreadUnlock();
 }
 
-// =====================================================================================
 //      The faces remaining on the outside list are final polygons.  Write them to the
 //      output file.
 //      Passable contents (water, lava, etc) will generate a mirrored copy of the face
 //      to be seen from the inside.
-// =====================================================================================
+
 static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside, const int mirrorcontents)
 {
     bface_t *next;
@@ -374,14 +369,13 @@ static bface_t *CopyFace(const bface_t *const f)
     return n;
 }
 
-// =====================================================================================
 //      Make a copy of all the faces of the brush, so they can be chewed up by other
 //      brushes.
 //      All of the faces start on the outside list.
 //      As other brushes take bites out of the faces, the fragments are moved to the
 //      inside list, so they can be freed when they are determined to be completely
 //      enclosed in solid.
-// =====================================================================================
+
 static bface_t *CopyFacesToOutside(brushhull_t *bh)
 {
     bface_t *outside = nullptr;
@@ -749,9 +743,7 @@ static void ReuseModel()
     }
 }
 
-// =====================================================================================
-//  SetLightStyles
-// =====================================================================================
+// SetLightStyles
 constexpr int MAX_SWITCHED_LIGHTS = 32;
 constexpr int MAX_LIGHTTARGETS_NAME = 64;
 
@@ -928,9 +920,7 @@ static void MarkEntForNoclip(entity_t *ent)
     }
 }
 
-// =====================================================================================
-//      marks the noclip flag on any brushes that dont need clipnode generation, eg. func_illusionaries
-// =====================================================================================
+// marks the noclip flag on any brushes that dont need clipnode generation, eg. func_illusionaries
 static void CheckForNoClip()
 {
     char entclassname[MAX_KEY];

@@ -14,11 +14,7 @@
 
 #define BOGUS_RANGE 80000.0
 #define ON_EPSILON epsilon
-
-//
 // Winding Public Methods
-//
-
 void Winding::Print() const
 {
     for (std::uint32_t x = 0; x < m_NumPoints; x++)
@@ -219,11 +215,7 @@ bool Winding::Valid() const
     }
     return true;
 }
-
-//
 // Construction
-//
-
 Winding::Winding()
 {
     m_Points = nullptr;
@@ -391,11 +383,7 @@ Winding::Winding(const dplane_t &plane)
     vec_t dist = plane.dist;
     initFromPlane(normal, dist);
 }
-
-//
 // Specialized Functions
-//
-
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON
 void Winding::RemoveColinearPoints(
     vec_t epsilon)

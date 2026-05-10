@@ -22,9 +22,7 @@ constexpr float EQUAL_EPSILON = 0.004;
 
 constexpr vec3_t vec3_origin = {0, 0, 0};
 constexpr vec3_t vec3_one = {1.0, 1.0, 1.0};
-//
 // Vector Math
-//
 #define VectorAdd(a, b, c)        \
     {                             \
         (c)[0] = (a)[0] + (b)[0]; \
@@ -157,11 +155,7 @@ inline bool VectorCompare(const vec3_t v1, const vec3_t v2)
     }
     return true;
 }
-
-//
 // Misc
-//
-
 inline bool isPointFinite(const vec_t *p)
 {
     if (std::isfinite(p[0]) && std::isfinite(p[1]) && std::isfinite(p[2]))
@@ -170,11 +164,7 @@ inline bool isPointFinite(const vec_t *p)
     }
     return false;
 }
-
-//
 // Planetype Math
-//
-
 typedef enum
 {
     plane_x = 0,

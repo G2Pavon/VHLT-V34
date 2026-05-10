@@ -64,11 +64,10 @@ int g_hullnum = 0;
 
 dplane_t g_dplanes[MAX_INTERNAL_MAP_PLANES];
 
-// =====================================================================================
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
 //      to handle its own specific settings.
-// =====================================================================================
+
 void GetParamsFromEnt(entity_t *mapent)
 {
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
@@ -85,9 +84,7 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 }
 
-// =====================================================================================
-//      Duplicates the non point information of a face, used by SplitFace and MergeFace.
-// =====================================================================================
+// Duplicates the non point information of a face, used by SplitFace and MergeFace.
 face_t *NewFaceFromFace(const face_t *const in)
 {
     face_t *newf = AllocFace();

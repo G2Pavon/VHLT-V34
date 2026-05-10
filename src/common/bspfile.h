@@ -91,11 +91,7 @@ constexpr int ENGINE_ENTITY_RANGE = 4096.0;
 //=============================================================================
 
 constexpr int BSPVERSION = 30;
-
-//
 // BSP File Structures
-//
-
 struct lump_t
 {
     int fileofs;
@@ -258,11 +254,7 @@ struct dleaf_t
 
     byte ambient_level[NUM_AMBIENTS];
 };
-
-//
 // BSP File Data
-//
-
 extern int g_nummodels;
 extern dmodel_t g_dmodels[MAX_MAP_MODELS];
 
@@ -329,11 +321,7 @@ struct lightmapblock_t
 
 void PrintBSPFileSizes();
 void DeleteEmbeddedLightmaps();
-
-//
 // Entity Related Stuff
-//
-
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
@@ -344,9 +332,7 @@ void ParseEntities();
 void UnparseEntities();
 
 entity_t *FindTargetEntity(const char *const target);
-//
 // Texture Related Stuff
-//
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
 void dtexdata_init();

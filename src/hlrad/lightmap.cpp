@@ -17,9 +17,7 @@ edgeshare_t g_edgeshare[MAX_MAP_EDGES];
 vec3_t g_face_centroids[MAX_MAP_EDGES]; // BUG: should this be [MAX_MAP_FACES]?
 bool g_sky_lighting_fix = DEFAULT_SKY_LIGHTING_FIX;
 
-// =====================================================================================
-//  PairEdges
-// =====================================================================================
+// PairEdges
 typedef struct
 {
     int numclipplanes;
@@ -521,9 +519,7 @@ typedef struct
 
 static const char *TextureNameFromFace(const dface_t *const f)
 {
-    //
     // check for light emited by texture
-    //
     texinfo_t *tx = &g_texinfo[f->texinfo];
 
     int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
@@ -532,10 +528,9 @@ static const char *TextureNameFromFace(const dface_t *const f)
     return mt->name;
 }
 
-// =====================================================================================
 //      Fills in s->texmins[] and s->texsize[]
 //      also sets exactmins[] and exactmaxs[]
-// =====================================================================================
+
 static void CalcFaceExtents(lightinfo_t *l)
 {
     const int facenum = l->surfnum;
@@ -645,9 +640,7 @@ static void CalcFaceExtents(lightinfo_t *l)
     }
 }
 
-// =====================================================================================
-//      Fills in texorg, worldtotex. and textoworld
-// =====================================================================================
+// Fills in texorg, worldtotex. and textoworld
 static void CalcFaceVectors(lightinfo_t *l)
 {
     vec3_t texnormal;
@@ -744,11 +737,10 @@ typedef enum
     LightSimpleNudge,   // A simple nudge 1/3 or 2/3 towards center along S or T axist
 } light_flag_t;
 
-// =====================================================================================
 //  CalcPoints
 //      For each texture aligned grid point, back project onto the plane
 //      to get the world xyz value of the sample point
-// =====================================================================================
+
 static void SetSTFromSurf(const lightinfo_t *const l, const vec_t *surf, vec_t &s, vec_t &t)
 {
     const int facenum = l->surfnum;
@@ -1513,10 +1505,7 @@ void CreateDirectLights()
 
     static constexpr float ANGLE_UP = -1.0f;
     static constexpr float ANGLE_DOWN = -2.0f;
-
-    //
     // surfaces
-    //
     unsigned i;
     patch_t *p;
     for (i = 0, p = g_patches; i < g_num_patches; i++, p++)
@@ -1615,10 +1604,7 @@ void CreateDirectLights()
 
         //LRC        VectorClear(p->totallight[0]);
     }
-
-    //
     // entities
-    //
     for (int i = 0; i < (unsigned)g_numentities; i++)
     {
 
@@ -2149,9 +2135,7 @@ void DeleteDirectLights()
     //  3) hlcsg -> hlbsp -> hlvis -> hlrad -> hlcsg -onlyents -> hlrad
 }
 
-// =====================================================================================
-//  GatherSampleLight
-// =====================================================================================
+// GatherSampleLight
 int g_numskynormals[SKYLEVELMAX + 1];
 vec3_t *g_skynormals[SKYLEVELMAX + 1];
 vec_t *g_skynormalsizes[SKYLEVELMAX + 1];
@@ -2765,9 +2749,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
     }
 }
 
-// =====================================================================================
-//      Take the sample's collected light and add it back into the apropriate patch for the radiosity pass.
-// =====================================================================================
+// Take the sample's collected light and add it back into the apropriate patch for the radiosity pass.
 static void AddSamplesToPatches(const sample_t **samples, const unsigned char *styles, int facenum, const lightinfo_t *l)
 {
     patch_t *patch;
@@ -3078,7 +3060,6 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
             //              o : indicates that this lightmap pixel is affected by the sample point 'X'. The higher g_blur, the more 'o'.
             //       |/ / / | : indicates that the brightness of this area is affected by the lightmap pixels 'o' and hence by the sample point 'X'. This is because the engine uses bilinear interpolation to display the lightmap.
             //
-            //    ==============================================================================================================================================
             //    || +     +     +     +     +     + || +     +     +     +     +     + || +     +     +     +     +     + || +     +     +     +     +     + ||
             //    ||                                 ||                                 ||                                 ||                                 ||
             //    ||                                 ||                                 ||                                 ||                                 ||
@@ -3106,7 +3087,7 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
             //    ||       | / / / / / |             ||       | / / / / / / / / |       ||       | / / / / / / / / |       ||             | / / / / / |       ||
             //    ||       |/ / / / / /|             ||       |/ / / / / / / / /|       ||       |/ / / / / / / / /|       ||             |/ / / / / /|       ||
             //    || +     +-----+-----+     +     + || +     +-----+-----+-----+     + || +     +-----+-----+-----+     + || +     +     +-----+-----+     + ||
-            //    ==============================================================================================================================================
+
             //
             square[0][0] = l->texmins[0] * TEXTURE_STEP + std::ceil(s - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
             square[0][1] = l->texmins[1] * TEXTURE_STEP + std::ceil(t - (l->lmcache_side + 0.5) / (vec_t)l->lmcache_density) * TEXTURE_STEP - TEXTURE_STEP;
@@ -3271,10 +3252,7 @@ void BuildFacelights(const int facenum)
     int *sample_wallflags;
 
     dface_t *f = &g_dfaces[facenum];
-
-    //
     // some surfaces don't need lightmaps
-    //
     f->lightofs = -1;
     for (j = 0; j < ALLSTYLES; j++)
     {
@@ -3304,10 +3282,7 @@ void BuildFacelights(const int facenum)
     VectorCopy(g_translucenttextures[g_texinfo[f->texinfo].miptex], l.translucent_v);
     l.translucent_b = !VectorCompare(l.translucent_v, vec3_origin);
     l.miptex = g_texinfo[f->texinfo].miptex;
-
-    //
     // rotate plane
-    //
     const dplane_t *plane = getPlaneFromFace(f);
     VectorCopy(plane->normal, l.facenormal);
     l.facedist = plane->dist;
@@ -4414,9 +4389,7 @@ void ScaleDirectLights()
     }
 }
 
-// =====================================================================================
-//    This function is run multithreaded
-// =====================================================================================
+// This function is run multithreaded
 void AddPatchLights(int facenum)
 {
     dface_t *f = &g_dfaces[facenum];
@@ -4470,9 +4443,7 @@ void AddPatchLights(int facenum)
     }
 }
 
-// =====================================================================================
-//      Add the indirect lighting on top of the direct lighting and save into final map format
-// =====================================================================================
+// Add the indirect lighting on top of the direct lighting and save into final map format
 void FinalLightFace(const int facenum)
 {
     vec3_t lb;
@@ -4500,13 +4471,8 @@ void FinalLightFace(const int facenum)
     {
         return;
     }
-
-    //
     // set up the triangulation
-    //
-    //
     // sample the triangulation
-    //
     float minlight = FloatForKey(g_face_entity[facenum], "_minlight") * 128;
 
     vec3_t *original_basiclight = (vec3_t *)std::calloc(fl->numsamples, sizeof(vec3_t));

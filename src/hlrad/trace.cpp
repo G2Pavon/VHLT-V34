@@ -22,9 +22,7 @@ typedef struct tnode_s
 static tnode_t *tnodes;
 static tnode_t *tnode_p;
 
-// ==============
 // Converts the disk node structure into the efficient tracing structure
-// ==============
 static void MakeTnode(const int nodenum)
 {
     tnode_t *t = tnode_p++;
@@ -53,9 +51,7 @@ static void MakeTnode(const int nodenum)
     }
 }
 
-// ==============
 // Loads the node structure out of a .bsp file to be used for light occlusion
-// ==============
 void MakeTnodes(dmodel_t * /*bm*/)
 {
     // 32 byte align the structs

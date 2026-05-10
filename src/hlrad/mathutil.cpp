@@ -4,10 +4,9 @@
 #include "hlrad/hlrad.h"
 #include "common/log.h"
 
-// =====================================================================================
 //      returns whether the point is in the winding (including its edges)
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
-// =====================================================================================
+
 bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *const point, vec_t epsilon /* = 0.0*/)
 {
     vec3_t delta;
@@ -30,11 +29,10 @@ bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *cons
     return true;
 }
 
-// =====================================================================================
 //      assume a ball is created from the point, this function checks whether the ball is entirely inside the winding
 //      parameter 'width' : the radius of the ball
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
-// =====================================================================================
+
 bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_t *const point, vec_t width)
 {
     vec3_t delta;
@@ -56,11 +54,10 @@ bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_
     return true;
 }
 
-// =====================================================================================
 //      moves the point to the nearest point inside the winding
 //      if the point is not on the plane, the distance between the point and the plane is preserved
 //      the point and all the vertexes of the winding can move freely along the plane's normal without changing the result
-// =====================================================================================
+
 void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point)
 {
     vec3_t delta;
@@ -121,14 +118,13 @@ void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *const point
     return;
 }
 
-// =====================================================================================
 //      first snaps the point into the winding
 //      then moves the point towards the inside for at most certain distance until:
 //        either 1) the point is not close to any of the edges
 //        or     2) the point can not be moved any more
 //      returns the maximal distance that the point can be kept away from all the edges
 //      in most of the cases, the maximal distance = width; in other cases, the maximal distance < width
-// =====================================================================================
+
 vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *const point, vec_t width, vec_t maxmove)
 {
     vec3_t v;
@@ -205,9 +201,7 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
     return bestwidth;
 }
 
-// =====================================================================================
-//      Returns true if the segment intersects an item in the opaque list
-// =====================================================================================
+// Returns true if the segment intersects an item in the opaque list
 bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scaleout, int &opaquestyleout // light must convert to this style. -1 = no convert
 )
 {

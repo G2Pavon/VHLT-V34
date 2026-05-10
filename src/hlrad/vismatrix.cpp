@@ -9,16 +9,12 @@
 #include "common/mathlib.h"
 #include "common/threads.h"
 
-// =====================================================================================
 //      VISIBILITY MATRIX: Determine which patches can see each other
 //      Use the PVS to accelerate if available
-// =====================================================================================
 
 static byte *s_vismatrix;
 
-// =====================================================================================
-//      Sets vis bits for all patches in the face
-// =====================================================================================
+// Sets vis bits for all patches in the face
 static void TestPatchToFace(const unsigned patchnum, const int facenum, const unsigned int bitpos, byte *pvs)
 {
     patch_t *patch = &g_patches[patchnum];
@@ -115,9 +111,7 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const un
     }
 }
 
-// =====================================================================================
-//      This is run by multiple threads
-// =====================================================================================
+// This is run by multiple threads
 #pragma warning(push)
 #pragma warning(disable : 4100) // unreferenced formal parameter
 

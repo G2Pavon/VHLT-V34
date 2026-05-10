@@ -22,11 +22,10 @@ static hullshape_t g_hullshapes[MAX_HULLSHAPES];
 static constexpr vec_t FLOOR_Z = 0.7; // Quake default
 static constexpr vec_t DIST_EPSILON = 0.04;
 
-// =====================================================================================
 //	This process could be optimized by placing the planes in a (non hash-) set and using
 //	half of the inner loop check below as the comparator; I'd expect the speed gain to be
 //	very large given the change from O(N^2) to O(NlogN) to build the set of planes.
-// =====================================================================================
+
 static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
 {
     vec_t t;
@@ -116,10 +115,9 @@ static int PlaneFromPoints(const vec_t *const p0, const vec_t *const p1, const v
     return -1;
 }
 
-// =====================================================================================
 // (subroutine for replacement of ExpandBrush, KGP)
 //  Called to add any and all clip hull planes by the new ExpandBrush.
-// =====================================================================================
+
 static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec_t *const origin, const bool check_planenum)
 {
     int planenum = FindIntPlane(normal, origin);
@@ -146,7 +144,6 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
     new_face->texinfo = -1;
 }
 
-// =====================================================================================
 //  Since the six bounding box planes were always added anyway, they've been moved to
 //  an explicit separate step eliminating the need to check for duplicate planes (which
 //  should be using plane numbers instead of the full definition anyway).
@@ -172,7 +169,7 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
 //
 //  Bevel planes might be added twice (once from each side of the edge), so a planenum
 //  based check is used to see if each has been added before.
-// =====================================================================================
+
 // Correction: //--vluzacn
 //   Clipnode size depends on complexity of the surface of expanded brushes as a whole, not number of brush sides.
 //   Data from a sample map:
@@ -797,15 +794,9 @@ static bool MakeBrushPlanes(brush_t *b)
 {
     bface_t *f;
     vec3_t origin;
-
-    //
     // if the origin key is set (by an origin brush), offset all of the values
-    //
     GetVectorForKey(&g_entities[b->entitynum], "origin", origin);
-
-    //
     // convert to mapplanes
-    //
     // for each side in this brush
     for (int i = 0; i < b->numsides; i++)
     {
@@ -820,10 +811,7 @@ static bool MakeBrushPlanes(brush_t *b)
             Fatal(assume_PLANE_WITH_NO_NORMAL, "Entity %i, Brush %i, Side %i: plane with no normal",
                   b->originalentitynum, b->originalbrushnum, i);
         }
-
-        //
         // see if the plane has been used already
-        //
         for (f = b->hulls[0].faces; f; f = f->next)
         {
             if (f->planenum == planenum || f->planenum == (planenum ^ 1))
@@ -967,9 +955,7 @@ const char *ContentsToString(const contents_t type)
     }
 }
 
-// =====================================================================================
-//      Perfoms abitrary checking on brush surfaces and states to try and catch errors
-// =====================================================================================
+// Perfoms abitrary checking on brush surfaces and states to try and catch errors
 contents_t CheckBrushContents(const brush_t *const b)
 {
     bool assigned = false;

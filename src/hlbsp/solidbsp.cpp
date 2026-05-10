@@ -41,9 +41,7 @@ static void UpdateStatus(void)
     }
 }
 
-// =====================================================================================
-//      For BSP hueristic
-// =====================================================================================
+// For BSP hueristic
 static int FaceSide(face_t *in, const dplane_t *const split, double *epsilonsplit = nullptr)
 {
     const vec_t epsilonmin = 0.002, epsilonmax = 0.2;
@@ -363,17 +361,13 @@ static void DeleteSurfaceTree(surfacetree_t *tree)
     std::free(tree);
 }
 
-// =====================================================================================
 //      When there are a huge number of planes, just choose one closest
 //      to the middle.
-// =====================================================================================
+
 static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins, const vec3_t maxs, int detaillevel)
 {
     surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
-
-    //
     // pick the plane that splits the least
-    //
     vec_t bestvalue = 9e30;
     surface_t *bestsurface = NULL;
 
@@ -396,10 +390,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         {
             continue;
         }
-
-        //
         // calculate the split metric along axis l, smaller values are better
-        //
         vec_t value = 0;
 
         vec_t dist = plane->dist * plane->normal[l];
@@ -454,10 +445,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         {
             continue;
         }
-
-        //
         // currently the best!
-        //
         bestvalue = value;
         bestsurface = p;
     }
@@ -471,9 +459,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
     return bestsurface;
 }
 
-// =====================================================================================
-//      Choose the plane that splits the least faces
-// =====================================================================================
+// Choose the plane that splits the least faces
 static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
 {
     double (*tmpvalue)[2];
@@ -482,10 +468,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
     double totalsplit = 0.0;
     tmpvalue = (double (*)[2])std::malloc(g_numplanes * sizeof(double[2]));
     surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
-
-    //
     // pick the plane that splits the least
-    //
     vec_t bestvalue = 9e30;
     surface_t *bestsurface = NULL;
 
@@ -614,10 +597,9 @@ static int CalcSplitDetaillevel(const node_t *node)
     return bestdetaillevel;
 }
 
-// =====================================================================================
 //      Selects a surface from a linked list of surfaces to split the group on
 //      returns NULL if the surface list can not be divided any more (a leaf)
-// =====================================================================================
+
 static surface_t *SelectPartition(surface_t *surfaces, const bool usemidsplit, int splitdetaillevel, vec3_t validmins, vec3_t validmaxs)
 {
     if (splitdetaillevel == -1)
@@ -636,16 +618,11 @@ static surface_t *SelectPartition(surface_t *surfaces, const bool usemidsplit, i
     return ChoosePlaneFromList(surfaces, splitdetaillevel);
 }
 
-// =====================================================================================
-//      Calculates the bounding box
-// =====================================================================================
+// Calculates the bounding box
 static void CalcSurfaceInfo(surface_t *surf)
 {
     hlassume(surf->faces != nullptr, assume_ValidPointer); // "CalcSurfaceInfo() surface without a face"
-
-    //
-    // calculate a bounding box
-    //
+                                                           // calculate a bounding box
     for (int i = 0; i < 3; i++)
     {
         surf->mins[i] = 99999;
@@ -1037,10 +1014,9 @@ static const char *ContentsToString(int contents)
     }
 }
 
-// =====================================================================================
 //      Determines the contents of the leaf and creates the final list of original faces
 //      that have some fragment inside this leaf
-// =====================================================================================
+
 static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
 {
     face_t *f;
@@ -1163,11 +1139,10 @@ static void MakeLeaf(node_t *leafnode)
     leafnode->surfaces = nullptr;
 }
 
-// =====================================================================================
 //      Create the new portal by taking the full plane winding for the cutting plane and
 //      clipping it by all of the planes from the other portals.
 //      Each portal tracks the node that created it, so unused nodes can be removed later.
-// =====================================================================================
+
 static void MakeNodePortal(node_t *node)
 {
     int side = 0;
@@ -1209,9 +1184,7 @@ static void MakeNodePortal(node_t *node)
     AddPortalToNodes(new_portal, node->children[0], node->children[1]);
 }
 
-// =====================================================================================
-//      Move or split the portals that bound node so that the node's children have portals instead of node.
-// =====================================================================================
+// Move or split the portals that bound node so that the node's children have portals instead of node.
 static void SplitNodePortals(node_t *node)
 {
     portal_t *next_portal;
@@ -1297,11 +1270,10 @@ static void SplitNodePortals(node_t *node)
     node->portals = nullptr;
 }
 
-// =====================================================================================
 //      Determines the boundaries of a node by minmaxing all the portal points, whcih
 //      completely enclose the node.
 //      Returns true if the node should be midsplit.(very large)
-// =====================================================================================
+
 static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
 {
     portal_t *next_portal;
@@ -1373,11 +1345,10 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
     return false;
 }
 
-// =====================================================================================
 //      Do a final merge attempt, then subdivide the faces to surface cache size if needed.
 //      These are final faces that will be drawable in the game.
 //      Copies of these faces are further chopped up into the leafs, but they will reference these originals.
-// =====================================================================================
+
 static void CopyFacesToNode(node_t *node, surface_t *surf)
 {
     // merge as much as possible
@@ -1513,11 +1484,10 @@ static void BuildBspTree_r(node_t *node)
     UpdateStatus();
 }
 
-// =====================================================================================
 //      Takes a chain of surfaces plus a split type, and returns a bsp tree with faces
 //      off the nodes.
 //      The original surface chain will be completely freed.
-// =====================================================================================
+
 node_t *SolidBSP(const surfchain_t *const surfhead,
                  brush_t *detailbrushes,
                  bool report_progress)

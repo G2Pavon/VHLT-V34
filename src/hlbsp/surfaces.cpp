@@ -11,10 +11,9 @@
 /* a surface has all of the faces that could be drawn on a given plane
    the outside filling stage can remove some of them so a better bsp can be generated */
 
-// =====================================================================================
 //      If the face is >256 in either texture direction, carve a valid sized
 //      piece off and insert the remainder in the next link
-// =====================================================================================
+
 void SubdivideFace(face_t *f, face_t **prevptr)
 {
     vec_t v;
@@ -283,9 +282,7 @@ static int GetVertex(const vec3_t in, const int planenum)
     return hv->num;
 }
 
-// =====================================================================================
-//      Don't allow four way edges
-// =====================================================================================
+// Don't allow four way edges
 int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f)
 {
     dedge_t *edge;
@@ -316,9 +313,7 @@ int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f)
     return i;
 }
 
-// =====================================================================================
-//  MakeFaceEdges
-// =====================================================================================
+// MakeFaceEdges
 void MakeFaceEdges()
 {
     InitHash();

@@ -830,10 +830,8 @@ static int CQ_MapPoint(const unsigned char point[CQ_DIM], const unsigned char (*
     return best;
 }
 
-// =====================================================================================
 //  EmbedLightmapInTextures
 //      check for "zhlt_embedlightmap" and update g_dfaces, g_texinfo, g_dtexdata and g_dlightdata
-// =====================================================================================
 
 constexpr int RADTEXTURES_MAX = 2048; // should be smaller than 62 * 62 and smaller than MAX_MAP_TEXTURES
 static int g_newtextures_num = 0;

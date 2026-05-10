@@ -154,9 +154,7 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
     } while (out - dest < row);
 }
 
-// =====================================================================================
-//      byte swaps all data in a bsp file
-// =====================================================================================
+// byte swaps all data in a bsp file
 static void SwapBSPFile(const bool todisk)
 {
     // models
@@ -180,10 +178,7 @@ static void SwapBSPFile(const bool todisk)
             d->origin[j] = d->origin[j];
         }
     }
-
-    //
     // vertexes
-    //
     for (int i = 0; i < g_numvertexes; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -191,10 +186,7 @@ static void SwapBSPFile(const bool todisk)
             g_dvertexes[i].point[j] = g_dvertexes[i].point[j];
         }
     }
-
-    //
     // planes
-    //
     for (int i = 0; i < g_numplanes; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -204,10 +196,7 @@ static void SwapBSPFile(const bool todisk)
         g_dplanes[i].dist = g_dplanes[i].dist;
         g_dplanes[i].type = (planetypes)g_dplanes[i].type;
     }
-
-    //
     // texinfos
-    //
     for (int i = 0; i < g_numtexinfo; i++)
     {
         for (int j = 0; j < 8; j++)
@@ -217,10 +206,7 @@ static void SwapBSPFile(const bool todisk)
         g_texinfo[i].miptex = g_texinfo[i].miptex;
         g_texinfo[i].flags = g_texinfo[i].flags;
     }
-
-    //
     // faces
-    //
     for (int i = 0; i < g_numfaces; i++)
     {
         g_dfaces[i].texinfo = g_dfaces[i].texinfo;
@@ -230,10 +216,7 @@ static void SwapBSPFile(const bool todisk)
         g_dfaces[i].firstedge = g_dfaces[i].firstedge;
         g_dfaces[i].numedges = g_dfaces[i].numedges;
     }
-
-    //
     // nodes
-    //
     for (int i = 0; i < g_numnodes; i++)
     {
         g_dnodes[i].planenum = g_dnodes[i].planenum;
@@ -247,10 +230,7 @@ static void SwapBSPFile(const bool todisk)
         g_dnodes[i].firstface = g_dnodes[i].firstface;
         g_dnodes[i].numfaces = g_dnodes[i].numfaces;
     }
-
-    //
     // leafs
-    //
     for (int i = 0; i < g_numleafs; i++)
     {
         g_dleafs[i].contents = g_dleafs[i].contents;
@@ -264,20 +244,14 @@ static void SwapBSPFile(const bool todisk)
         g_dleafs[i].nummarksurfaces = g_dleafs[i].nummarksurfaces;
         g_dleafs[i].visofs = g_dleafs[i].visofs;
     }
-
-    //
     // clipnodes
-    //
     for (int i = 0; i < g_numclipnodes; i++)
     {
         g_dclipnodes[i].planenum = g_dclipnodes[i].planenum;
         g_dclipnodes[i].children[0] = g_dclipnodes[i].children[0];
         g_dclipnodes[i].children[1] = g_dclipnodes[i].children[1];
     }
-
-    //
     // miptex
-    //
     if (g_texdatasize)
     {
         int c;
@@ -296,26 +270,17 @@ static void SwapBSPFile(const bool todisk)
             mtl->dataofs[i] = mtl->dataofs[i];
         }
     }
-
-    //
     // marksurfaces
-    //
     for (int i = 0; i < g_nummarksurfaces; i++)
     {
         g_dmarksurfaces[i] = g_dmarksurfaces[i];
     }
-
-    //
     // surfedges
-    //
     for (int i = 0; i < g_numsurfedges; i++)
     {
         g_dsurfedges[i] = g_dsurfedges[i];
     }
-
-    //
     // edges
-    //
     for (int i = 0; i < g_numedges; i++)
     {
         g_dedges[i].v[0] = g_dedges[i].v[0];
@@ -378,10 +343,7 @@ static void LoadBSPImage(dheader_t *const header)
     g_entdatasize = CopyLump(LUMP_ENTITIES, g_dentdata, 1, header);
 
     std::free(header); // everything has been copied out
-
-    //
-    // swap everything
-    //
+                       // swap everything
     SwapBSPFile(false);
 }
 
@@ -400,9 +362,7 @@ static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FI
     SafeWrite(bspfile, data, (len + 3) & ~3);
 }
 
-// =====================================================================================
-//      Swaps the bsp file in place, so it should not be referenced again
-// =====================================================================================
+// Swaps the bsp file in place, so it should not be referenced again
 void WriteBSPFile(const char *const filename)
 {
     dheader_t outheader;
@@ -481,9 +441,7 @@ bool CalcFaceExtents_test()
     return ok;
 }
 
-// =====================================================================================
-//      purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
-// =====================================================================================
+// purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
 static int ParseImplicitTexinfoFromTexture(int miptex)
 {
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
@@ -821,9 +779,7 @@ static int ArrayUsage(const char *const szItem, const int items, const int maxit
     return items * itemsize;
 }
 
-// =====================================================================================
-//      pritn out global ussage line in chart
-// =====================================================================================
+// pritn out global ussage line in chart
 static int GlobUsage(const char *const szItem, const int itemstorage, const int maxstorage)
 {
     float percentage = maxstorage ? itemstorage * 100.0 / maxstorage : 0.0;
@@ -833,9 +789,7 @@ static int GlobUsage(const char *const szItem, const int itemstorage, const int 
     return itemstorage;
 }
 
-// =====================================================================================
-//      Dumps info about current file
-// =====================================================================================
+// Dumps info about current file
 void PrintBSPFileSizes()
 {
     int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
@@ -897,10 +851,9 @@ void PrintBSPFileSizes()
     }
 }
 
-// =====================================================================================
 //      removes all "?_rad*" textures that are created by hlrad
 //      this function does nothing if the map has no textures with name "?_rad*"
-// =====================================================================================
+
 void DeleteEmbeddedLightmaps()
 {
     int countrestoredfaces = 0;
@@ -1115,9 +1068,7 @@ bool ParseEntity()
     return true;
 }
 
-// =====================================================================================
-//      Parses the dentdata string into entities
-// =====================================================================================
+// Parses the dentdata string into entities
 void ParseEntities()
 {
     g_numentities = 0;
@@ -1128,9 +1079,7 @@ void ParseEntities()
     }
 }
 
-// =====================================================================================
-//      Generates the dentdata string from all the entities
-// =====================================================================================
+// Generates the dentdata string from all the entities
 static int anglesforvector(float angles[3], const float vector[3])
 {
     float z = vector[2], r = std::sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
@@ -1373,10 +1322,9 @@ void CDECL dtexdata_free()
     g_dlightdata = nullptr;
 }
 
-// =====================================================================================
 //      Touchy function, can fail with a page fault if all the data isnt kosher
 //      (i.e. map was compiled with missing textures)
-// =====================================================================================
+
 static char emptystring[1] = {'\0'};
 char *GetTextureByNumber(int texturenumber)
 {
@@ -1390,9 +1338,7 @@ char *GetTextureByNumber(int texturenumber)
     return miptex->name;
 }
 
-// =====================================================================================
-//      returns entity addy for given modelnum
-// =====================================================================================
+// returns entity addy for given modelnum
 entity_t *EntityForModel(const int modnum)
 {
     char name[MAX_TEXTURE_NAME_LENGTH];
