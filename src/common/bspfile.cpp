@@ -15,8 +15,6 @@
 #include "common/mathlib.h"
 #include "common/tokenizer.h"
 
-//=============================================================================
-
 int g_max_map_miptex = DEFAULT_MAX_MAP_MIPTEX;
 int g_max_map_lightdata = DEFAULT_MAX_MAP_LIGHTDATA;
 
@@ -69,11 +67,6 @@ int g_dsurfedges[MAX_MAP_SURFEDGES];
 int g_numentities;
 entity_t g_entities[MAX_MAP_ENTITIES];
 
-/*
- * ===============
- * CompressVis
- * ===============
- */
 int CompressVis(const byte *const src, const unsigned int src_length, byte *dest, unsigned int dest_length)
 {
     byte *dest_p = dest;
@@ -116,10 +109,6 @@ int CompressVis(const byte *const src, const unsigned int src_length, byte *dest
     return dest_p - dest;
 }
 
-// =====================================================================================
-//  DecompressVis
-//
-// =====================================================================================
 void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_length)
 {
     unsigned int current_length = 0;
@@ -165,12 +154,7 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
     } while (out - dest < row);
 }
 
-//
 // =====================================================================================
-//
-
-// =====================================================================================
-//  SwapBSPFile
 //      byte swaps all data in a bsp file
 // =====================================================================================
 static void SwapBSPFile(const bool todisk)
@@ -339,10 +323,6 @@ static void SwapBSPFile(const bool todisk)
     }
 }
 
-// =====================================================================================
-//  CopyLump
-//      balh
-// =====================================================================================
 static int CopyLump(int lump, void *dest, int size, const dheader_t *const header)
 {
     int length = header->lumps[lump].filelen;
@@ -368,10 +348,6 @@ static int CopyLump(int lump, void *dest, int size, const dheader_t *const heade
     return length / size;
 }
 
-// =====================================================================================
-//  LoadBSPImage
-//      balh
-// =====================================================================================
 static void LoadBSPImage(dheader_t *const header)
 {
     // swap the header
@@ -409,10 +385,6 @@ static void LoadBSPImage(dheader_t *const header)
     SwapBSPFile(false);
 }
 
-// =====================================================================================
-//  LoadBSPFile
-//      balh
-// =====================================================================================
 void LoadBSPFile(const char *const filename)
 {
     dheader_t *header;
@@ -420,14 +392,6 @@ void LoadBSPFile(const char *const filename)
     LoadBSPImage(header);
 }
 
-//
-// =====================================================================================
-//
-
-// =====================================================================================
-//  AddLump
-//      balh
-// =====================================================================================
 static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile)
 {
     lump_t *lump = &header->lumps[lumpnum];
@@ -437,7 +401,6 @@ static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FI
 }
 
 // =====================================================================================
-//  WriteBSPFile
 //      Swaps the bsp file in place, so it should not be referenced again
 // =====================================================================================
 void WriteBSPFile(const char *const filename)
@@ -477,10 +440,6 @@ void WriteBSPFile(const char *const filename)
 
     std::fclose(bspfile);
 }
-
-// =====================================================================================
-//  GetFaceExtents (with PLATFORM_CAN_CALC_EXTENT on)
-// =====================================================================================
 
 static float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
 {
@@ -523,7 +482,6 @@ bool CalcFaceExtents_test()
 }
 
 // =====================================================================================
-//  ParseImplicitTexinfoFromTexture
 //      purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
 // =====================================================================================
 static int ParseImplicitTexinfoFromTexture(int miptex)
@@ -636,9 +594,6 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
     }
 }
 
-// =====================================================================================
-//  WriteExtentFile
-// =====================================================================================
 void WriteExtentFile(const char *const filename)
 {
     std::FILE *f = std::fopen(filename, "w");
@@ -657,9 +612,6 @@ void WriteExtentFile(const char *const filename)
     std::fclose(f);
 }
 
-//
-// =====================================================================================
-//
 static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
 {
     lightmapblock_t *block;
@@ -860,10 +812,6 @@ static char *FindWadValue()
 #define ENTRIES(a) (sizeof(a) / sizeof(*(a)))
 #define ENTRYSIZE(a) (sizeof(*(a)))
 
-// =====================================================================================
-//  ArrayUsage
-//      blah
-// =====================================================================================
 static int ArrayUsage(const char *const szItem, const int items, const int maxitems, const int itemsize)
 {
     float percentage = maxitems ? items * 100.0 / maxitems : 0.0;
@@ -874,7 +822,6 @@ static int ArrayUsage(const char *const szItem, const int items, const int maxit
 }
 
 // =====================================================================================
-//  GlobUsage
 //      pritn out global ussage line in chart
 // =====================================================================================
 static int GlobUsage(const char *const szItem, const int itemstorage, const int maxstorage)
@@ -887,7 +834,6 @@ static int GlobUsage(const char *const szItem, const int itemstorage, const int 
 }
 
 // =====================================================================================
-//  PrintBSPFileSizes
 //      Dumps info about current file
 // =====================================================================================
 void PrintBSPFileSizes()
@@ -952,7 +898,6 @@ void PrintBSPFileSizes()
 }
 
 // =====================================================================================
-//  DeleteEmbeddedLightmaps
 //      removes all "?_rad*" textures that are created by hlrad
 //      this function does nothing if the map has no textures with name "?_rad*"
 // =====================================================================================
@@ -1080,10 +1025,6 @@ void DeleteEmbeddedLightmaps()
     }
 }
 
-// =====================================================================================
-//  ParseEpair
-//      entity key/value pairs
-// =====================================================================================
 epair_t *ParseEpair()
 {
     epair_t *e = (epair_t *)std::calloc(1, sizeof(epair_t));
@@ -1101,14 +1042,6 @@ epair_t *ParseEpair()
 
     return e;
 }
-
-/*
- * ================
- * ParseEntity
- * ================
- */
-
-// AJM: each tool should have its own version of GetParamsFromEnt which parseentity calls
 
 bool ParseEntity()
 {
@@ -1183,7 +1116,6 @@ bool ParseEntity()
 }
 
 // =====================================================================================
-//  ParseEntities
 //      Parses the dentdata string into entities
 // =====================================================================================
 void ParseEntities()
@@ -1197,7 +1129,6 @@ void ParseEntities()
 }
 
 // =====================================================================================
-//  UnparseEntities
 //      Generates the dentdata string from all the entities
 // =====================================================================================
 static int anglesforvector(float angles[3], const float vector[3])
@@ -1412,10 +1343,6 @@ void UnparseEntities()
     g_entdatasize = end - buf + 1;
 }
 
-// =====================================================================================
-//  FindTargetEntity
-//
-// =====================================================================================
 entity_t *FindTargetEntity(const char *const target)
 {
     for (int i = 0; i < g_numentities; i++)
@@ -1447,7 +1374,6 @@ void CDECL dtexdata_free()
 }
 
 // =====================================================================================
-//  GetTextureByNumber
 //      Touchy function, can fail with a page fault if all the data isnt kosher
 //      (i.e. map was compiled with missing textures)
 // =====================================================================================
@@ -1465,7 +1391,6 @@ char *GetTextureByNumber(int texturenumber)
 }
 
 // =====================================================================================
-//  EntityForModel
 //      returns entity addy for given modelnum
 // =====================================================================================
 entity_t *EntityForModel(const int modnum)

@@ -26,8 +26,6 @@ static bool fatal = false;
 bool twice = false;
 std::FILE *conout = nullptr;
 
-////////
-
 void ResetTmpFiles()
 {
     if (g_log)
@@ -125,8 +123,6 @@ void CheckForErrorLog()
         }
     }
 }
-
-///////
 
 void LogError(const char *const message)
 {
@@ -234,9 +230,6 @@ static void WriteLog(const char *const message)
     }
 }
 
-// =====================================================================================
-//  CheckFatal
-// =====================================================================================
 void CheckFatal()
 {
     if (fatal)
@@ -250,10 +243,6 @@ void CheckFatal()
 #define MAX_WARNING 2048
 #define MAX_MESSAGE 2048
 
-// =====================================================================================
-//  Error
-//      for formatted error messages, fatals out
-// =====================================================================================
 void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
 {
     char message[MAX_ERROR];
@@ -272,12 +261,6 @@ void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
     CheckFatal();
 }
 
-// =====================================================================================
-//  Fatal
-//      For formatted 'fatal' warning messages
-//      automatically appends an extra newline to the message
-//      This function sets a flag that the compile should abort before completing
-// =====================================================================================
 void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...)
 {
     char message[MAX_WARNING];
@@ -304,10 +287,6 @@ void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warnin
     fatal = 1;
 }
 
-// =====================================================================================
-//  PrintOnce
-//      This function is only callable one time. Further calls will be ignored
-// =====================================================================================
 void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
 {
     char message[MAX_WARNING];
@@ -330,11 +309,6 @@ void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
     LogError(message2);
 }
 
-// =====================================================================================
-//  Warning
-//      For formatted warning messages
-//      automatically appends an extra newline to the message
-// =====================================================================================
 void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
 {
     char message[MAX_WARNING];
@@ -350,10 +324,6 @@ void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
     WriteLog(message2);
 }
 
-// =====================================================================================
-//  Log
-//      For formatted log output messages
-// =====================================================================================
 void CDECL FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];
@@ -367,9 +337,6 @@ void CDECL FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
     WriteLog(message);
 }
 
-// =====================================================================================
-//  LogArgs
-// =====================================================================================
 static void LogArgs(int argc, char **argv)
 {
     Log("Command line: ");
@@ -387,9 +354,6 @@ static void LogArgs(int argc, char **argv)
     Log("\n");
 }
 
-// =====================================================================================
-//  Banner
-// =====================================================================================
 void Banner()
 {
     Log("%s " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING
@@ -403,9 +367,6 @@ void Banner()
         "Based on Valve's version, modified with permission.\n" MODIFICATIONS_STRING);
 }
 
-// =====================================================================================
-//  LogStart
-// =====================================================================================
 void LogStart(int argc, char **argv)
 {
     Banner();
@@ -413,18 +374,11 @@ void LogStart(int argc, char **argv)
     LogArgs(argc, argv);
 }
 
-// =====================================================================================
-//  LogEnd
-// =====================================================================================
 void LogEnd()
 {
     Log("\n-----   END   %s -----\n\n\n\n", g_Program);
 }
 
-// =====================================================================================
-//  hlassume
-//      my assume
-// =====================================================================================
 void hlassume(bool exp, assume_msgs msgid)
 {
     if (!exp)
@@ -437,9 +391,6 @@ void hlassume(bool exp, assume_msgs msgid)
     }
 }
 
-// =====================================================================================
-//  seconds_to_hhmm
-// =====================================================================================
 static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned &hours, unsigned &minutes, unsigned &seconds)
 {
     seconds = elapsed_time % 60;
@@ -454,9 +405,6 @@ static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned 
     days = elapsed_time;
 }
 
-// =====================================================================================
-//  LogTimeElapsed
-// =====================================================================================
 void LogTimeElapsed(float elapsed_time)
 {
     unsigned days = 0;

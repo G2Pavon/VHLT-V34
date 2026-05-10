@@ -4,10 +4,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-// =====================================================================================
-//  SetKeyValue
-//      makes a keyvalue
-// =====================================================================================
 void DeleteKey(entity_t *ent, const char *const key)
 {
     for (epair_t **pep = &ent->epairs; *pep; pep = &(*pep)->next)
@@ -23,6 +19,7 @@ void DeleteKey(entity_t *ent, const char *const key)
         }
     }
 }
+
 void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
 {
     epair_t *ep;
@@ -49,10 +46,6 @@ void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
     ep->value = strdup(value);
 }
 
-// =====================================================================================
-//  ValueForKey
-//      returns the value for a passed entity and key
-// =====================================================================================
 const char *ValueForKey(const entity_t *const ent, const char *const key)
 {
     for (epair_t *ep = ent->epairs; ep; ep = ep->next)
@@ -75,10 +68,6 @@ vec_t FloatForKey(const entity_t *const ent, const char *const key)
     return std::atof(ValueForKey(ent, key));
 }
 
-// =====================================================================================
-//  GetVectorForKey
-//      returns value for key in vec[0-2]
-// =====================================================================================
 void GetVectorForKey(const entity_t *const ent, const char *const key, vec3_t vec)
 {
     const char *k = ValueForKey(ent, key);

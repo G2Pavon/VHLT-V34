@@ -19,12 +19,6 @@
 
 #define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
 
-/*
- * ================
- * I_FloatTime
- * ================
- */
-
 double I_FloatTime()
 {
     FILETIME ftime;
@@ -56,11 +50,6 @@ const char *stristr(const char *const string, const char *const substring)
     std::free(substring_copy);
     return match;
 }
-
-/*--------------------------------------------------------------------
-// New implementation of FlipSlashes, DefaultExtension, 
-// StripExtension, ExtractFilePath, ExtractFile, etc.
-----------------------------------------------------------------------*/
 
 //Since all of these functions operate around either the extension
 //or the directory path, centralize getting both numbers here so we
@@ -169,8 +158,6 @@ void ExtractFile(const char *const path, char *dest)
     std::memcpy(dest, path + directory_pos + 1, length); //exclude directory slash
     dest[length] = 0;
 }
-
-//=============================================================================
 
 bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...)
 {

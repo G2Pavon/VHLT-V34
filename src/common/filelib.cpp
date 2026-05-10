@@ -8,11 +8,6 @@
 #include "common/log.h"
 #include "common/blockmem.h"
 
-/*
- * ================
- * filelength
- * ================
- */
 int q_filelength(std::FILE *f)
 {
     int pos = std::ftell(f);
@@ -23,11 +18,6 @@ int q_filelength(std::FILE *f)
     return end;
 }
 
-/*
- * ================
- * exists
- * ================
- */
 bool q_exists(const char *const filename)
 {
     std::FILE *f = std::fopen(filename, "rb");
@@ -75,11 +65,6 @@ void SafeWrite(std::FILE *f, const void *const buffer, int count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
 }
 
-/*
- * ==============
- * LoadFile
- * ==============
- */
 int LoadFile(const char *const filename, char **bufferptr)
 {
     std::FILE *f = SafeOpenRead(filename);
