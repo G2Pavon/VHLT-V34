@@ -3,20 +3,12 @@
 #include "common/win32fix.h"
 #include "common/messages.h"
 
-//
-// log.c globals
-//
-
 extern char *g_Program;
 extern char g_Mapname[_MAX_PATH];
 
 #define DEFAULT_LOG true
 
 extern bool g_log;
-
-//
-// log.c Functions
-//
 
 void ResetTmpFiles();
 void ResetLog();

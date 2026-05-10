@@ -344,7 +344,7 @@ static void LogArgs(int argc, char **argv)
     {
         if (strchr(argv[i], ' '))
         {
-            Log("\"%s\" ", argv[i]); //Log("\"%s\"", argv[i]); //--vluzacn
+            Log("\"%s\" ", argv[i]);
         }
         else
         {
@@ -360,7 +360,6 @@ void Banner()
         " " PLATFORM_VERSIONSTRING
         " (%s)\n",
         g_Program, __DATE__);
-    //Log("BUGGY %s (built: %s)\nUse at own risk.\n", g_Program, __DATE__);
 
     Log("Zoner's Half-Life Compilation Tools -- Custom Build\n"
         "Based on code modifications by Sean 'Zoner' Cavanaugh\n"

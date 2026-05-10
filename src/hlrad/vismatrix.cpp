@@ -96,7 +96,6 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const un
                         AddStyleToStyleArray(m, patchnum, opaquestyle);
                         AddStyleToStyleArray(patchnum, m, opaquestyle);
                     }
-                    //Log("SDF::3\n");
 
                     // patchnum can see patch m
                     unsigned bitset = bitpos + m;

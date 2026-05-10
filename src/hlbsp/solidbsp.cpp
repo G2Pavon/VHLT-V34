@@ -894,48 +894,34 @@ static void SplitNodeBrushes(brush_t *brushes, const node_t *node)
 
 static int RankForContents(const int contents)
 {
-    //Log("SolidBSP::RankForContents - contents type is %i ",contents);
     switch (contents)
     {
 
     case CONTENTS_EMPTY:
-        //Log("(empty)\n");
         return 0;
     case CONTENTS_WATER:
-        //Log("(water)\n");
         return 1;
     case CONTENTS_TRANSLUCENT:
-        //Log("(traslucent)\n");
         return 2;
     case CONTENTS_CURRENT_0:
-        //Log("(current_0)\n");
         return 3;
     case CONTENTS_CURRENT_90:
-        //Log("(current_90)\n");
         return 4;
     case CONTENTS_CURRENT_180:
-        //Log("(current_180)\n");
         return 5;
     case CONTENTS_CURRENT_270:
-        //Log("(current_270)\n");
         return 6;
     case CONTENTS_CURRENT_UP:
-        //Log("(current_up)\n");
         return 7;
     case CONTENTS_CURRENT_DOWN:
-        //Log("(current_down)\n");
         return 8;
     case CONTENTS_SLIME:
-        //Log("(slime)\n");
         return 9;
     case CONTENTS_LAVA:
-        //Log("(lava)\n");
         return 10;
     case CONTENTS_SKY:
-        //Log("(sky)\n");
         return 11;
     case CONTENTS_SOLID:
-        //Log("(solid)\n");
         return 12;
 
     default:
