@@ -714,6 +714,9 @@ HEX_RE = re.compile(r"0x[0-9a-f]+")
 ASAN_FRAME_RE = re.compile(rb"#\d+ 0x[0-9a-f]+ in (\S+) (/\S+:\d+)")
 
 
+LEAK_SUMMARY_RE = re.compile(rb"SUMMARY: AddressSanitizer: (\d+) byte\(s\) leaked")
+
+
 def summarize_sanitizer(stderr: bytes) -> list[str]:
     found = []
     for m in SAN_LOC_RE.finditer(stderr):
@@ -737,7 +740,11 @@ def cmd_sanitize(args) -> int:
         cmd_build(build)
         bindir = DATA / "builds" / "sanitize" / "bin"
     maps = select_maps(args.maps)
+    if args.leaks:
+        # before the pool starts: workers take their environment from this process
+        os.environ["ASAN_OPTIONS"] = "detect_leaks=1:halt_on_error=0:abort_on_error=0"
     findings: dict[str, set[str]] = {}
+    leaks: dict[str, dict[str, int]] = {}  # tool -> map -> bytes
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
             futs = {pool.submit(run_chain, bindir, args.tier, n, Path(tmp) / n, 1, False): n for n in maps}
@@ -748,11 +755,22 @@ def cmd_sanitize(args) -> int:
                     tool = STAGE_TOOL[stage]
                     err = Path(tmp) / name / "console" / f"{stage}.stderr"
                     if err.exists():
-                        for f in summarize_sanitizer(err.read_bytes()):
+                        data = err.read_bytes()
+                        for f in summarize_sanitizer(data):
                             findings.setdefault(f"{tool}: {f}", set()).add(name)
+                        if args.leaks:
+                            m = LEAK_SUMMARY_RE.search(data)
+                            leaks.setdefault(tool, {})[name] = int(m.group(1)) if m else 0
                 log(f"  {name}")
     lines = [f"{k}  [{len(v)} maps: {', '.join(sorted(v)[:4])}{', ...' if len(v) > 4 else ''}]" for k, v in sorted(findings.items())]
     report = f"sanitizer findings: {len(findings)} unique\n" + "\n".join(lines) + "\n"
+    if args.leaks:
+        # Measured, not compared with the baseline: leak reports are not findings.
+        report += "\nleaks (LeakSanitizer, bytes still unreachable at exit):\n"
+        for tool in sorted(leaks):
+            leaking = {n: b for n, b in leaks[tool].items() if b}
+            worst = ", ".join(f"{n} {b}" for n, b in sorted(leaking.items(), key=lambda x: -x[1])[:3])
+            report += f"  {tool}: {sum(leaking.values())} bytes, {len(leaking)} of {len(leaks[tool])} maps" + (f" ({worst}, ...)" if worst else "") + "\n"
     path = DATA / "sanitize" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{args.tier}.txt"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(report)
@@ -1090,6 +1108,7 @@ def main() -> int:
     # clang++: its sanitizer runtime ships with the compiler (GCC needs the separate libasan/libubsan packages).
     p.add_argument("--cxx", default="clang++")
     p.add_argument("--baseline", help="previous findings file; fail only on new findings")
+    p.add_argument("--leaks", action="store_true", help="also run LeakSanitizer and report leaked bytes per tool")
     p.set_defaults(func=cmd_sanitize)
 
     p = sub.add_parser("probe", help="old-vs-new differential of common/ BSP I/O, plus corruption smoke test")

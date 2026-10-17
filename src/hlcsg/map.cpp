@@ -1,8 +1,10 @@
 #include "hlcsg/hlcsg.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <optional>
 #include <cmath>
 #include <string>
 
@@ -54,7 +56,7 @@ static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
     brush_t *newb = &g_mapbrushes[g_nummapbrushes];
     g_nummapbrushes++;
     hlassume(g_nummapbrushes <= MAX_MAP_BRUSHES, assume_MAX_MAP_BRUSHES);
-    std::memcpy(newb, brush, sizeof(brush_t));
+    *newb = *brush;
     newb->firstside = g_numbrushsides;
     g_numbrushsides += brush->numsides;
     hlassume(g_numbrushsides <= MAX_MAP_SIDES, assume_MAX_MAP_SIDES);
@@ -62,17 +64,6 @@ static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
     newb->entitynum = entity - g_entities;
     newb->brushnum = entity->numbrushes;
     entity->numbrushes++;
-    for (int h = 0; h < NUM_HULLS; h++)
-    {
-        if (brush->hullshapes[h] != nullptr)
-        {
-            newb->hullshapes[h] = _strdup(brush->hullshapes[h]);
-        }
-        else
-        {
-            newb->hullshapes[h] = nullptr;
-        }
-    }
     return newb;
 }
 
@@ -96,15 +87,11 @@ static void DeleteCurrentEntity(entity_t *entity)
         }
         std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(bside_t));
         g_numbrushsides -= b->numsides;
-        for (int h = 0; h < NUM_HULLS; h++)
-        {
-            if (b->hullshapes[h])
-            {
-                std::free(b->hullshapes[h]);
-            }
-        }
     }
-    std::memset(&g_mapbrushes[entity->firstbrush], 0, entity->numbrushes * sizeof(brush_t));
+    for (int i = 0; i < entity->numbrushes; i++)
+    {
+        g_mapbrushes[entity->firstbrush + i] = brush_t{};
+    }
     g_nummapbrushes -= entity->numbrushes;
     *entity = entity_t{};
     g_numentities--;
@@ -181,14 +168,7 @@ static void ParseBrush(entity_t *mapent)
         char key[16];
         std::sprintf(key, "zhlt_hull%d", h);
         const char *value = ValueForKey(mapent, key);
-        if (*value)
-        {
-            b->hullshapes[h] = _strdup(value);
-        }
-        else
-        {
-            b->hullshapes[h] = nullptr;
-        }
+        b->hullshapes[h] = value;
     }
 
     mapent->numbrushes++;
@@ -405,7 +385,7 @@ static void ParseBrush(entity_t *mapent)
 
         for (int i = 0; i < NUM_HULLS; i++)
         {
-            b->hulls[i].faces = nullptr;
+            b->hulls[i].ClearFaces();
         }
 
         if (b->entitynum != 0) // Ignore for WORLD (code elsewhere enforces no ORIGIN in world message)
@@ -421,14 +401,7 @@ static void ParseBrush(entity_t *mapent)
     {
         std::memset(&g_brushsides[b->firstside], 0, b->numsides * sizeof(bside_t));
         g_numbrushsides -= b->numsides;
-        for (int h = 0; h < NUM_HULLS; h++)
-        {
-            if (b->hullshapes[h])
-            {
-                std::free(b->hullshapes[h]);
-            }
-        }
-        std::memset(b, 0, sizeof(brush_t));
+        *b = brush_t{};
         g_nummapbrushes--;
         mapent->numbrushes--;
         return;
@@ -447,10 +420,10 @@ static void ParseBrush(entity_t *mapent)
         }
         char string[MAXTOKEN];
         vec3_t mins, maxs;
-        char *origin = nullptr;
+        std::optional<std::string> origin;
         if (*ValueForKey(mapent, "origin"))
         {
-            origin = strdup(ValueForKey(mapent, "origin"));
+            origin = ValueForKey(mapent, "origin");
             SetKeyValue(mapent, "origin", "");
         }
 
@@ -460,7 +433,7 @@ static void ParseBrush(entity_t *mapent)
 
         for (int i = 0; i < NUM_HULLS; i++)
         {
-            b->hulls[i].faces = nullptr;
+            b->hulls[i].ClearFaces();
         }
 
         if (b->entitynum != 0) // Ignore for WORLD (code elsewhere enforces no ORIGIN in world message)
@@ -474,8 +447,7 @@ static void ParseBrush(entity_t *mapent)
 
         if (origin)
         {
-            SetKeyValue(mapent, "origin", origin);
-            std::free(origin);
+            SetKeyValue(mapent, "origin", origin->c_str());
         }
     }
     if (g_skyclip && b->contents == CONTENTS_SKY && !b->noclip)
@@ -791,21 +763,18 @@ static bool ParseMapEntity()
         int newbrushes = mapent->numbrushes;
         int worldbrushes = g_entities[0].numbrushes;
 
-        brush_t *temp = (brush_t *)std::calloc(1, newbrushes * sizeof(brush_t));
-        std::memcpy(temp, g_mapbrushes + mapent->firstbrush, newbrushes * sizeof(brush_t));
-
+        // this entity's brushes are the last ones: rotate them down to the end of the world's
+        // brushes, moving the other entities' brushes up
+        if (mapent->firstbrush + newbrushes != g_nummapbrushes)
+        {
+            Error("ParseMapEntity: internal error: func_group brushes are not the last ones.");
+        }
+        std::rotate(g_mapbrushes + worldbrushes, g_mapbrushes + mapent->firstbrush, g_mapbrushes + g_nummapbrushes);
         for (int i = 0; i < newbrushes; i++)
         {
-            temp[i].entitynum = 0;
-            temp[i].brushnum += worldbrushes;
+            g_mapbrushes[worldbrushes + i].entitynum = 0;
+            g_mapbrushes[worldbrushes + i].brushnum += worldbrushes;
         }
-
-        // make space to move the brushes (overlapped copy)
-        std::memmove(g_mapbrushes + worldbrushes + newbrushes,
-                     g_mapbrushes + worldbrushes, sizeof(brush_t) * (g_nummapbrushes - worldbrushes - newbrushes));
-
-        // copy the new brushes down
-        std::memcpy(g_mapbrushes + worldbrushes, temp, sizeof(brush_t) * newbrushes);
 
         // fix up indexes
         g_numentities--;
@@ -815,7 +784,6 @@ static bool ParseMapEntity()
             g_entities[i].firstbrush += newbrushes;
         }
         *mapent = entity_t{};
-        std::free(temp);
         return true;
     }
 

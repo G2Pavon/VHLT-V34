@@ -1,8 +1,12 @@
 #pragma once
 
 #pragma warning(disable : 4786) // identifier was truncated to '255' characters in the browser information
+#include <array>
 #include <deque>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "common/boundingbox.h"
 #include "common/winding.h"
@@ -51,26 +55,66 @@ struct bside_t
     vec_t planepts[3][3];
 };
 
+// A face in a singly linked list. Lists are built and spliced by hand; whoever unlinks a face
+// deletes it (deleting a face does not delete the rest of its list).
 struct bface_t
 {
-    bface_t *next;
-    int planenum;
-    faceplane_t *plane;
-    Winding *w;
-    int texinfo;
-    int contents;
-    int backcontents;
-    bool bevel; //used for ExpandBrush
+    bface_t *next = nullptr;
+    int planenum = 0;
+    faceplane_t *plane = nullptr;
+    std::unique_ptr<Winding> w;
+    int texinfo = 0;
+    int contents = 0;
+    int backcontents = 0;
+    bool bevel = false; //used for ExpandBrush
     BoundingBox bounds;
 };
+
+// Deletes every face of a list.
+void FreeFaceList(bface_t *faces);
+// A copy of a list, in the same order.
+bface_t *CopyFaceList(const bface_t *faces);
 
 // NUM_HULLS should be no larger than MAX_MAP_HULLS
 constexpr int NUM_HULLS = 4;
 
+// Owns its face list.
 struct brushhull_t
 {
     BoundingBox bounds;
-    bface_t *faces;
+    bface_t *faces = nullptr;
+
+    brushhull_t() = default;
+    brushhull_t(const brushhull_t &other) : bounds(other.bounds), faces(CopyFaceList(other.faces)) {}
+    brushhull_t(brushhull_t &&other) noexcept : bounds(other.bounds), faces(std::exchange(other.faces, nullptr)) {}
+    brushhull_t &operator=(const brushhull_t &other)
+    {
+        if (this != &other)
+        {
+            bface_t *copy = CopyFaceList(other.faces);
+            FreeFaceList(faces);
+            faces = copy;
+            bounds = other.bounds;
+        }
+        return *this;
+    }
+    brushhull_t &operator=(brushhull_t &&other) noexcept
+    {
+        if (this != &other)
+        {
+            FreeFaceList(faces);
+            faces = std::exchange(other.faces, nullptr);
+            bounds = other.bounds;
+        }
+        return *this;
+    }
+    ~brushhull_t() { FreeFaceList(faces); }
+
+    void ClearFaces()
+    {
+        FreeFaceList(faces);
+        faces = nullptr;
+    }
 };
 
 struct brush_t
@@ -91,7 +135,7 @@ struct brush_t
     int chopup;   // allow this brush to be chopped by brushes of higher detail level
     int clipnodedetaillevel;
     int coplanarpriority;
-    char *hullshapes[NUM_HULLS]; // might be NULL
+    std::string hullshapes[NUM_HULLS]; // info_hullshape name per hull; empty: the default hull
 
     int contents;
     brushhull_t hulls[NUM_HULLS];
@@ -102,8 +146,7 @@ struct hullbrushface_t
     vec3_t normal;
     vec3_t point;
 
-    int numvertexes;
-    vec3_t *vertexes;
+    std::vector<std::array<vec_t, 3>> vertexes;
 };
 
 struct hullbrushedge_t
@@ -122,20 +165,16 @@ struct hullbrushvertex_t
 
 struct hullbrush_t
 {
-    int numfaces;
-    hullbrushface_t *faces;
-    int numedges;
-    hullbrushedge_t *edges;
-    int numvertexes;
-    hullbrushvertex_t *vertexes;
+    std::vector<hullbrushface_t> faces;
+    std::vector<hullbrushedge_t> edges;
+    std::vector<hullbrushvertex_t> vertexes;
 };
 
 struct hullshape_t
 {
-    char *id;
-    bool disabled;
-    int numbrushes; // must be 0 or 1
-    hullbrush_t **brushes;
+    std::string id;
+    bool disabled = false;
+    std::vector<hullbrush_t> brushes; // 0 or 1
 };
 
 //=============================================================================

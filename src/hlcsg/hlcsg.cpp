@@ -7,6 +7,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <type_traits>
+#include <vector>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -17,6 +19,7 @@
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
+#include "common/planefile.h"
 #include "common/threads.h"
 #include "common/tokenizer.h"
 #include "hlcsg/wadpath.h"
@@ -38,8 +41,8 @@ static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluzacn
 
 static const char ClipTypeStrings[5][11] = {{"smallest"}, {"normalized"}, {"simple"}, {"precise"}, {"legacy"}};
-static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
-static std::FILE *out_detailbrush[NUM_HULLS];
+static UniqueFile out[NUM_HULLS]; // each of the hull out files (.p0, .p1, ect.)
+static UniqueFile out_detailbrush[NUM_HULLS];
 static BoundingBox world_bounds;
 
 static bool g_chart = DEFAULT_CHART;        // show chart "-chart"
@@ -158,7 +161,7 @@ void GetParamsFromEnt(entity_t *mapent)
 // Duplicates the non point information of a face, used by SplitFace
 static bface_t *NewFaceFromFace(const bface_t *const in)
 {
-    bface_t *newf = (bface_t *)std::calloc(1, sizeof(bface_t));
+    bface_t *newf = new bface_t{};
 
     newf->contents = in->contents;
     newf->texinfo = in->texinfo;
@@ -171,8 +174,7 @@ static bface_t *NewFaceFromFace(const bface_t *const in)
 
 static void FreeFace(bface_t *f)
 {
-    delete f->w;
-    std::free(f);
+    delete f;
 }
 
 // Everything CSGBrush produces for one brush: its .p<hull> faces, .b<hull> detail brushes and log
@@ -212,7 +214,7 @@ static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
     std::string &out = t_brushoutput->faces[hull];
 
     // .p0 format
-    Winding *w = f->w;
+    const Winding *w = f->w.get();
 
     // plane summary
     Append(out, "%i %i %i %i %u\n", detaillevel, f->planenum, f->texinfo, f->contents, w->m_NumPoints);
@@ -234,7 +236,7 @@ void WriteDetailBrush(int hull, const bface_t *faces)
     out += "0\n";
     for (const bface_t *f = faces; f; f = f->next)
     {
-        Winding *w = f->w;
+        const Winding *w = f->w.get();
         Append(out, "%i %u\n", f->planenum, w->m_NumPoints);
         for (unsigned int i = 0; i < w->m_NumPoints; i++)
         {
@@ -378,7 +380,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
 static bface_t *CopyFace(const bface_t *const f)
 {
     bface_t *n = NewFaceFromFace(f);
-    n->w = f->w->Copy();
+    n->w.reset(f->w->Copy());
     n->bounds = f->bounds;
     return n;
 }
@@ -584,15 +586,14 @@ static void CSGBrush(int brushnum)
                             if (fw)
                             {
                                 bface_t *front = NewFaceFromFace(f);
-                                front->w = fw;
+                                front->w.reset(fw);
                                 fw->getBounds(front->bounds);
                                 front->next = outside;
                                 outside = front;
                             }
                             if (bw)
                             {
-                                delete f->w;
-                                f->w = bw;
+                                f->w.reset(bw);
                                 bw->getBounds(f->bounds);
                             }
                             else
@@ -701,8 +702,8 @@ static void WriteBrushOutput(const BrushOutput &output)
 {
     for (int h = 0; h < NUM_HULLS; h++)
     {
-        SafeWrite(out[h], output.faces[h].data(), static_cast<int>(output.faces[h].size()));
-        SafeWrite(out_detailbrush[h], output.detail[h].data(), static_cast<int>(output.detail[h].size()));
+        SafeWrite(out[h].get(), output.faces[h].data(), static_cast<int>(output.faces[h].size()));
+        SafeWrite(out_detailbrush[h].get(), output.detail[h].data(), static_cast<int>(output.detail[h].size()));
     }
     output.log.Replay();
 }
@@ -748,13 +749,23 @@ static void EmitPlanes()
     faceplane_t *mp = g_csg_mapplanes;
     dplane_t *dp = g_dplanes;
     {
+        static_assert(std::is_same_v<vec_t, double>, "the .pln file stores doubles");
+        std::vector<PlaneFileRecord> records(g_nummapplanes); // value-initialized: padding is zero
+        for (int i = 0; i < g_nummapplanes; i++)
+        {
+            const faceplane_t &p = g_csg_mapplanes[i];
+            PlaneFileRecord &r = records[i];
+            VectorCopy(p.normal, r.normal);
+            VectorCopy(p.origin, r.origin);
+            r.dist = p.dist;
+            r.type = p.type;
+        }
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", g_Mapname);
-        std::FILE *planeout = std::fopen(name, "wb");
+        UniqueFile planeout(std::fopen(name, "wb"));
         if (!planeout)
             Error("Couldn't open %s", name);
-        SafeWrite(planeout, g_csg_mapplanes, g_nummapplanes * sizeof(faceplane_t));
-        std::fclose(planeout);
+        SafeWrite(planeout.get(), records.data(), static_cast<int>(records.size() * sizeof(PlaneFileRecord)));
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)
     {
@@ -913,13 +924,12 @@ static void ConvertHintToEmpty()
 
 static void LoadWadValue()
 {
-    char *wadvalue;
+    std::string wadvalue;
     ParseFromMemory(g_dentdata, g_entdatasize);
     entity_t ent0;
     entity_t *mapent = &ent0;
     if (!GetToken(true))
     {
-        wadvalue = strdup("");
     }
     else
     {
@@ -940,18 +950,17 @@ static void LoadWadValue()
             EntityKeyValue e = ParseEpair();
             mapent->keys.Prepend(std::move(e.key), std::move(e.value));
         }
-        wadvalue = strdup(ValueForKey(mapent, "wad"));
+        wadvalue = ValueForKey(mapent, "wad");
     }
-    if (*wadvalue)
+    if (!wadvalue.empty())
     {
-        Log("Wad files required to run the map: \"%s\"\n", wadvalue);
+        Log("Wad files required to run the map: \"%s\"\n", wadvalue.c_str());
     }
     else
     {
         Log("Wad files required to run the map: (None)\n");
     }
-    SetKeyValue(&g_entities[0], "wad", wadvalue);
-    std::free(wadvalue);
+    SetKeyValue(&g_entities[0], "wad", wadvalue.c_str());
 }
 
 static void WriteBSP(const char *const name)
@@ -1051,12 +1060,8 @@ static void ProcessModels()
 
         // sort the contents down so stone bites water, etc
         int first = g_entities[i].firstbrush;
-        brush_t *temps = (brush_t *)std::malloc(g_entities[i].numbrushes * sizeof(brush_t));
-        hlassume(temps, assume_NoMemory);
-        for (int j = 0; j < g_entities[i].numbrushes; j++)
-        {
-            temps[j] = g_mapbrushes[first + j];
-        }
+        std::vector<brush_t> temps(std::make_move_iterator(g_mapbrushes + first),
+                                   std::make_move_iterator(g_mapbrushes + first + g_entities[i].numbrushes));
         int placedcontents;
         bool b_placedcontents = false;
         for (int placed = 0; placed < g_entities[i].numbrushes;)
@@ -1077,14 +1082,13 @@ static void ProcessModels()
                 brush_t *brush = &temps[j];
                 if (brush->contents == contents)
                 {
-                    g_mapbrushes[first + placed] = *brush;
+                    g_mapbrushes[first + placed] = std::move(*brush); // each brush is placed once
                     placed++;
                 }
             }
             b_placedcontents = true;
             placedcontents = contents;
         }
-        std::free(temps);
 
         // csg them in order
         if (i == 0) // if its worldspawn....
@@ -1113,8 +1117,8 @@ static void ProcessModels()
         // write end of model marker
         for (int j = 0; j < NUM_HULLS; j++)
         {
-            std::fprintf(out[j], "-1 -1 -1 -1 -1\n");
-            std::fprintf(out_detailbrush[j], "-1\n");
+            std::fprintf(out[j].get(), "-1 -1 -1 -1 -1\n");
+            std::fprintf(out_detailbrush[j].get(), "-1\n");
         }
     }
 }
@@ -1168,15 +1172,11 @@ static void ConvertGameTextToUTF8()
                 continue;
             }
 
-            char *newvalue = ANSItoUTF8(value);
-            if (newvalue)
+            const std::string newvalue = ANSItoUTF8(value);
+            if (newvalue != value)
             {
-                if (std::strcmp(newvalue, value) != 0)
-                {
-                    SetKeyValue(ent, "message", newvalue);
-                    count++;
-                }
-                std::free(newvalue);
+                SetKeyValue(ent, "message", newvalue.c_str());
+                count++;
             }
         }
     }
@@ -1266,11 +1266,6 @@ static void Settings()
     Log("light name optimize   [ %7s ] [ %7s ]\n", !g_nolightopt ? "on" : "off", !DEFAULT_NOLIGHTOPT ? "on" : "off");
     Log("convert game_text     [ %7s ] [ %7s ]\n", !g_noutf8 ? "on" : "off", !DEFAULT_NOUTF8 ? "on" : "off");
     Log("\n");
-}
-
-static void CSGCleanup()
-{
-    FreeWadPaths();
 }
 
 int main(const int argc, char **argv)
@@ -1482,7 +1477,6 @@ int main(const int argc, char **argv)
 
     hlassume(CalcFaceExtents_test(), assume_first);
 
-    std::atexit(CSGCleanup); // AJM
     dtexdata_init();
     std::atexit(dtexdata_free);
 
@@ -1559,20 +1553,20 @@ int main(const int argc, char **argv)
 
         safe_snprintf(name, _MAX_PATH, "%s.p%i", g_Mapname, i);
 
-        out[i] = std::fopen(name, "w");
+        out[i].reset(std::fopen(name, "w"));
 
         if (!out[i])
             Error("Couldn't open %s", name);
         safe_snprintf(name, _MAX_PATH, "%s.b%i", g_Mapname, i);
-        out_detailbrush[i] = std::fopen(name, "w");
+        out_detailbrush[i].reset(std::fopen(name, "w"));
         if (!out_detailbrush[i])
             Error("Couldn't open %s", name);
     }
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
-        std::FILE *f = std::fopen(name, "w");
-        if (!f)
+        UniqueFile hsz(std::fopen(name, "w"));
+        if (!hsz)
             Error("Couldn't open %s", name);
         for (int i = 0; i < NUM_HULLS; i++)
         {
@@ -1582,9 +1576,8 @@ int main(const int argc, char **argv)
             float x2 = g_hull_size[i][1][0];
             float y2 = g_hull_size[i][1][1];
             float z2 = g_hull_size[i][1][2];
-            std::fprintf(f, "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
+            std::fprintf(hsz.get(), "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
         }
-        std::fclose(f);
     }
 
     ProcessModels();
@@ -1592,8 +1585,8 @@ int main(const int argc, char **argv)
     // close hull files
     for (int i = 0; i < NUM_HULLS; i++)
     {
-        std::fclose(out[i]);
-        std::fclose(out_detailbrush[i]);
+        out[i].reset();
+        out_detailbrush[i].reset();
     }
 
     EmitPlanes();

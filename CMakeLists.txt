@@ -65,6 +65,7 @@ target_include_directories(common_f32 PUBLIC ${CMAKE_SOURCE_DIR}/src)
 add_executable(hlcsg
     src/hlcsg/ansitoutf8.cpp
     src/hlcsg/brush.cpp
+    src/hlcsg/faces.cpp
     src/hlcsg/hullfile.cpp
     src/hlcsg/map.cpp
     src/hlcsg/hlcsg.cpp

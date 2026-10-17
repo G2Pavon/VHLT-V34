@@ -1,12 +1,14 @@
 #include "hlbsp/hlbsp.h"
 
 #include <cstdlib>
+#include <vector>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
 
 #include "common/cmdlib.h"
 #include "common/filelib.h"
+#include "common/planefile.h"
 #include "common/log.h"
 #include "common/threads.h"
 
@@ -1195,7 +1197,7 @@ static void ProcessFile(const char *const filename)
     {
         char name[_MAX_PATH];
         safe_snprintf(name, _MAX_PATH, "%s.pln", filename);
-        std::FILE *planefile = std::fopen(name, "rb");
+        UniqueFile planefile(std::fopen(name, "rb"));
         if (!planefile)
         {
             Warning("Couldn't open %s", name);
@@ -1210,12 +1212,20 @@ static void ProcessFile(const char *const filename)
         }
         else
         {
-            if (q_filelength(planefile) != g_numplanes * sizeof(plane_t))
+            if (q_filelength(planefile.get()) != g_numplanes * static_cast<long long>(sizeof(PlaneFileRecord)))
             {
                 Error("Invalid plane data");
             }
-            SafeRead(planefile, g_mapplanes, g_numplanes * sizeof(plane_t));
-            std::fclose(planefile);
+            std::vector<PlaneFileRecord> records(g_numplanes);
+            SafeRead(planefile.get(), records.data(), static_cast<int>(records.size() * sizeof(PlaneFileRecord)));
+            for (int i = 0; i < g_numplanes; i++)
+            {
+                plane_t *mp = &g_mapplanes[i];
+                VectorCopy(records[i].normal, mp->normal);
+                VectorCopy(records[i].origin, mp->unused_origin);
+                mp->dist = records[i].dist;
+                mp->type = static_cast<planetypes>(records[i].type);
+            }
         }
     }
     // init the tables to be shared by all models

@@ -21,6 +21,8 @@ ctest --test-dir build --output-on-failure
 `common/` is built as two object libraries, `common_f64` (`DOUBLEVEC_T`, used by hlcsg and
 hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
 `common_tests_f64` and `common_tests_f32`.
+`common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
+`brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`).
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.
 
@@ -150,6 +152,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 ```sh
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-h2-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
+python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios where the oracle's behaviour is undefined (e.g. texdata-growth)
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
@@ -180,6 +183,11 @@ Since H2 the baseline is `../vhlt-parity/sanitize/baseline-h2-quick.txt` (39-map
 no findings left (H2 fixed the `g_texinfo[-1]` pointer, the CreateHullBrush stack overflow, the
 `g_csg_mapplanes[-1]` reads after "plane with no normal", and the texture-buffer heap overflow);
 only the hlbsp and hlvis findings above remain.
+
+Leaks (`sanitize --leaks`, quick tier): hlcsg leaked 2.5 MB on 34 of 39 maps before H5 (hull
+faces and their windings dropped by MakeHullFaces and by clearing the hull-0 faces of
+ORIGIN/BOUNDINGBOX/cliphull brushes, plus the `.wa_` lump table); since H5 it leaks nothing.
+Still leaking: hlbsp about 29 MB over 29 maps, hlrad about 0.5 MB over 23 maps (their phases).
 
 ### Environment
 

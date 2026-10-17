@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 
@@ -41,12 +40,12 @@ static void push_utf8(std::string &s, uint32_t cp)
     }
 }
 
-char *ANSItoUTF8(const char *string)
+std::string ANSItoUTF8(const char *string)
 {
-    if (!string || !*string)
-        return nullptr;
-
     std::string utf8_result;
+    if (!string)
+        return utf8_result;
+
     utf8_result.reserve(std::strlen(string) * 2);
 
     for (const char *p = string; *p; ++p)
@@ -67,12 +66,7 @@ char *ANSItoUTF8(const char *string)
         }
     }
 
-    char *final_ptr = static_cast<char *>(std::malloc(utf8_result.size() + 1));
-    if (final_ptr)
-    {
-        std::memcpy(final_ptr, utf8_result.c_str(), utf8_result.size() + 1);
-    }
-    return final_ptr;
+    return utf8_result;
 }
 
 bool IsValidUTF8(const char *string)

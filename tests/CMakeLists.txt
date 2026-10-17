@@ -37,4 +37,7 @@ function(vhlt_common_tests name common)
 endfunction()
 
 vhlt_common_tests(common_tests_f64 common_f64)
+# hlcsg pieces that stand alone (hlcsg uses the double build)
+target_sources(common_tests_f64 PRIVATE unit/test_hlcsg.cpp
+               ${CMAKE_SOURCE_DIR}/src/hlcsg/faces.cpp ${CMAKE_SOURCE_DIR}/src/hlcsg/ansitoutf8.cpp)
 vhlt_common_tests(common_tests_f32 common_f32)

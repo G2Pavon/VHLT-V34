@@ -1,6 +1,5 @@
 #include "hlcsg/wadpath.h"
 
-#include <cstdlib>
 #include <cstring>
 
 #include "common/bspfile.h"
@@ -9,31 +8,15 @@
 #include "common/mathlib.h"
 #include "common/win32fix.h"
 
-wadpath_t *g_pWadPaths[MAX_WADPATHS];
-int g_iNumWadPaths = 0;
+std::deque<wadpath_t> g_WadPaths;
 
-// adds a wadpath into the wadpaths list, without duplicates
+// adds a wadpath into the wadpaths list (duplicates are kept)
 void PushWadPath(const char *const path, bool inuse)
 {
-    hlassume(g_iNumWadPaths < MAX_WADPATHS, assume_MAX_TEXFILES);
+    hlassume(g_WadPaths.size() < MAX_WADPATHS, assume_MAX_TEXFILES);
 
-    wadpath_t *current = (wadpath_t *)std::malloc(sizeof(wadpath_t));
-
-    safe_strncpy(current->path, path, _MAX_PATH);
-    current->usedbymap = inuse;
-    current->usedtextures = 0; // should be updated later in autowad procedures
-    current->totaltextures = 0;
-
-    g_pWadPaths[g_iNumWadPaths++] = current;
-}
-
-void FreeWadPaths()
-{
-    for (int i = 0; i < g_iNumWadPaths; i++)
-    {
-        wadpath_t *current = g_pWadPaths[i];
-        std::free(current);
-    }
+    // compat: the path was stored in a char[_MAX_PATH], truncating longer ones
+    g_WadPaths.push_back({std::string(path, strnlen(path, _MAX_PATH - 1)), inuse});
 }
 
 // parse the "wad" keyvalue into wadpath_t structs
@@ -59,7 +42,7 @@ void GetUsedWads()
             std::memcpy(szTmp, &pszWadPaths[i], count);
             szTmp[count] = '\0';
 
-            if (g_iNumWadPaths >= MAX_WADPATHS)
+            if (g_WadPaths.size() >= MAX_WADPATHS)
             {
                 Error("Too many wad files");
             }
