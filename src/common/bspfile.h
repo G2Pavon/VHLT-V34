@@ -168,6 +168,9 @@ entity_t *FindTargetEntity(const char *const target);
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
 void dtexdata_init();
+// Enlarges g_dtexdata/g_dlightdata (keeping their contents) if g_max_map_miptex/g_max_map_lightdata
+// were raised after dtexdata_init, e.g. by an info_compile_parameters entity.
+void dtexdata_grow();
 
 // Bounds-checked access to a texture lump image: nummiptex, dataofs[nummiptex] (offsets from
 // the lump start, -1 for a missing texture), then the miptex_t records.

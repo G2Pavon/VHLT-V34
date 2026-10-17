@@ -1376,6 +1376,31 @@ void dtexdata_init()
     s_lightdata_capacity = g_max_map_lightdata;
 }
 
+namespace
+{
+void GrowBuffer(ZeroedBuffer &buffer, byte *&global, long long &capacity, int wanted)
+{
+    if (wanted <= capacity)
+    {
+        return;
+    }
+    ZeroedBuffer bigger = AllocZeroed(wanted);
+    if (buffer)
+    {
+        std::memcpy(bigger.get(), buffer.get(), capacity);
+    }
+    buffer = std::move(bigger);
+    global = buffer.get();
+    capacity = wanted;
+}
+} // namespace
+
+void dtexdata_grow()
+{
+    GrowBuffer(s_texdata, g_dtexdata, s_texdata_capacity, g_max_map_miptex);
+    GrowBuffer(s_lightdata, g_dlightdata, s_lightdata_capacity, g_max_map_lightdata);
+}
+
 void dtexdata_free()
 {
     s_texdata.reset();

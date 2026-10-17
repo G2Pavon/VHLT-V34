@@ -1,6 +1,9 @@
 #include <cstring>
 #include <cmath>
 #include <cstdlib>
+#include <mutex>
+#include <shared_mutex>
+#include <vector>
 
 #include "hlcsg/hlcsg.h"
 #include "common/blockmem.h"
@@ -19,6 +22,31 @@ static hullshape_t g_defaulthulls[NUM_HULLS];
 static int g_numhullshapes;
 static hullshape_t g_hullshapes[MAX_HULLSHAPES];
 
+// Array allocation that is only checked when something was requested: malloc(0) may return
+// nullptr, which the old `p = malloc(n * size); hlassume(p != nullptr)` pairs reported as out of
+// memory. Empty arrays are nullptr.
+template <typename T>
+static T *AllocArray(int n)
+{
+    if (n <= 0)
+    {
+        return nullptr;
+    }
+    T *p = static_cast<T *>(std::malloc(n * sizeof(T)));
+    hlassume(p != nullptr, assume_NoMemory);
+    return p;
+}
+
+// memcpy of n elements; nothing for n == 0 (memcpy with a null pointer is undefined even then).
+template <typename T>
+static void CopyArray(T *dest, const T *src, int n)
+{
+    if (n > 0)
+    {
+        std::memcpy(dest, src, n * sizeof(T));
+    }
+}
+
 static constexpr vec_t FLOOR_Z = 0.7; // Quake default
 static constexpr vec_t DIST_EPSILON = 0.04;
 
@@ -26,35 +54,53 @@ static constexpr vec_t DIST_EPSILON = 0.04;
 //	half of the inner loop check below as the comparator; I'd expect the speed gain to be
 //	very large given the change from O(N^2) to O(NlogN) to build the set of planes.
 
-static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
+// Guards g_csg_mapplanes/g_nummapplanes while CreateBrush runs on several threads: lookups share
+// the lock, adding planes takes it exclusively. (The old code scanned without any lock while
+// other threads appended planes - a data race.)
+static std::shared_mutex g_mapplanes_mutex;
+
+// First plane in [first, g_nummapplanes) matching normal/origin within the epsilons, or -1.
+static int ScanMapPlanes(const vec_t *const normal, const vec_t *const origin, int first)
 {
     vec_t t;
-
-    int returnval = 0;
-
-find_plane:
-    for (; returnval < g_nummapplanes; returnval++)
+    for (int i = first; i < g_nummapplanes; i++)
     {
-        // BUG: there might be some multithread issue --vluzacn
-        if (-DIR_EPSILON < (t = normal[0] - g_csg_mapplanes[returnval].normal[0]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[1] - g_csg_mapplanes[returnval].normal[1]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[2] - g_csg_mapplanes[returnval].normal[2]) && t < DIR_EPSILON)
+        if (-DIR_EPSILON < (t = normal[0] - g_csg_mapplanes[i].normal[0]) && t < DIR_EPSILON &&
+            -DIR_EPSILON < (t = normal[1] - g_csg_mapplanes[i].normal[1]) && t < DIR_EPSILON &&
+            -DIR_EPSILON < (t = normal[2] - g_csg_mapplanes[i].normal[2]) && t < DIR_EPSILON)
         {
-            t = DotProduct(origin, g_csg_mapplanes[returnval].normal) - g_csg_mapplanes[returnval].dist;
+            t = DotProduct(origin, g_csg_mapplanes[i].normal) - g_csg_mapplanes[i].dist;
 
             if (-DIST_EPSILON < t && t < DIST_EPSILON)
             {
-                return returnval;
+                return i;
             }
         }
     }
+    return -1;
+}
 
-    ThreadLock();
-    if (returnval != g_nummapplanes) // make sure we don't race
+static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
+{
+    int scanned;
     {
-        ThreadUnlock();
-        goto find_plane; //check to see if other thread added plane we need
+        std::shared_lock lock(g_mapplanes_mutex);
+        const int found = ScanMapPlanes(normal, origin, 0);
+        if (found != -1)
+        {
+            return found;
+        }
+        scanned = g_nummapplanes;
     }
+
+    std::unique_lock lock(g_mapplanes_mutex);
+    // check the planes other threads added since the scan above
+    const int found = ScanMapPlanes(normal, origin, scanned);
+    if (found != -1)
+    {
+        return found;
+    }
+    int returnval;
 
     // create new planes - double check that we have room for 2 planes
     hlassume(g_nummapplanes + 1 < MAX_INTERNAL_MAP_PLANES, assume_MAX_INTERNAL_MAP_PLANES);
@@ -96,8 +142,18 @@ find_plane:
     }
 
     g_nummapplanes += 2;
-    ThreadUnlock();
     return returnval;
+}
+
+// A side whose three points define no plane gets planenum -1 (reported with Fatal, which does not
+// stop the compile until CheckFatal). The brush's faces then looked up g_csg_mapplanes[-1] and,
+// through planenum ^ 1, [-2]: memory before the array. compat: those reads are replaced by an
+// all-zero plane, which is what they returned in practice, so the follow-up messages are unchanged.
+static faceplane_t s_invalid_plane{};
+
+static faceplane_t *MapPlane(int planenum)
+{
+    return planenum >= 0 && planenum < g_nummapplanes ? &g_csg_mapplanes[planenum] : &s_invalid_plane;
 }
 
 static int PlaneFromPoints(const vec_t *const p0, const vec_t *const p1, const vec_t *const p2)
@@ -181,8 +237,7 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
     vec3_t normal;
     vec3_t origin;
 
-    bool *axialbevel = (bool *)std::malloc(hb->numfaces * sizeof(bool));
-    std::memset(axialbevel, 0, hb->numfaces * sizeof(bool));
+    std::vector<char> axialbevel(hb->numfaces > 0 ? hb->numfaces : 0, false);
     bool warned = false;
 
     // check for collisions of face-vertex type. face-edge type is also permitted. face-face type is excluded.
@@ -224,7 +279,7 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
         }
 
         // find the impact point
-        vec3_t bestvertex;
+        vec3_t bestvertex = {0, 0, 0}; // always set: the first vertex is taken unconditionally
         vec_t bestdist = BOGUS_RANGE;
         hlassume(hb->numvertexes >= 1, assume_first);
         for (const hullbrushvertex_t *hbv = hb->vertexes; hbv < hb->vertexes + hb->numvertexes; hbv++)
@@ -332,7 +387,7 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
     for (hbf = hb->faces; hbf < hb->faces + hb->numfaces; hbf++)
     {
         // find the impact point
-        vec3_t bestvertex;
+        vec3_t bestvertex = {0, 0, 0}; // always set: every in-world point is below BOGUS_RANGE
         vec_t bestdist = BOGUS_RANGE;
         if (!hull0->faces)
         {
@@ -363,7 +418,6 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
         AddHullPlane(hull, normal, origin, true);
     }
 
-    std::free(axialbevel);
 }
 
 static void ExpandBrush(brush_t *brush, const int hullnum)
@@ -677,24 +731,20 @@ static void SortSides(brushhull_t *h)
     {
         numsides++;
     }
-    bface_t **sides = (bface_t **)std::malloc(numsides * sizeof(bface_t *));
-    hlassume(sides != nullptr, assume_NoMemory);
-    vec3_t *normals = (vec3_t *)std::malloc(numsides * sizeof(vec3_t));
-    hlassume(normals != nullptr, assume_NoMemory);
-    bool *isused = (bool *)std::malloc(numsides * sizeof(bool));
-    hlassume(isused != nullptr, assume_NoMemory);
-    int *sorted = (int *)std::malloc(numsides * sizeof(int));
-    hlassume(sorted != nullptr, assume_NoMemory);
+    bface_t **sides = AllocArray<bface_t *>(numsides);
+    vec3_t *normals = AllocArray<vec3_t>(numsides);
+    bool *isused = AllocArray<bool>(numsides);
+    int *sorted = AllocArray<int>(numsides);
     for (i = 0, f = h->faces; f; i++, f = f->next)
     {
         sides[i] = f;
         isused[i] = false;
-        const faceplane_t *p = &g_csg_mapplanes[f->planenum];
+        const faceplane_t *p = MapPlane(f->planenum);
         VectorCopy(p->normal, normals[i]);
     }
     for (i = 0; i < numsides; i++)
     {
-        int bestside;
+        int bestside = 0;
         int bestaxial = -1;
         for (int j = 0; j < numsides; j++)
         {
@@ -741,7 +791,7 @@ restart:
             {
                 continue;
             }
-            const faceplane_t *p = &g_csg_mapplanes[f2->planenum ^ 1];
+            const faceplane_t *p = MapPlane(f2->planenum ^ 1);
             if (!w->Chop(p->normal, p->dist, NORMAL_EPSILON // fix "invalid brush" in ExpandBrush
                          ))                                 // Nothing left to chop (getArea will return 0 for us in this case for below)
             {
@@ -825,7 +875,7 @@ static bool MakeBrushPlanes(brush_t *b)
         f = (bface_t *)std::calloc(1, sizeof(*f)); // TODO: This leaks
 
         f->planenum = planenum;
-        f->plane = &g_csg_mapplanes[planenum];
+        f->plane = MapPlane(planenum);
         f->next = b->hulls[0].faces;
         b->hulls[0].faces = f;
         f->texinfo = g_onlyents ? 0 : TexinfoForBrushTexture(&s->td, origin);
@@ -1273,7 +1323,7 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
             {
                 continue;
             }
-            if (numvertexes > MAXSIZE)
+            if (numvertexes >= MAXSIZE) // was '>': wrote vertexes[MAXSIZE] before rejecting the brush
             {
                 failed = true;
                 continue;
@@ -1303,16 +1353,14 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
         hlassume(hb != nullptr, assume_NoMemory);
 
         hb->numfaces = numplanes;
-        hb->faces = (hullbrushface_t *)std::malloc(hb->numfaces * sizeof(hullbrushface_t));
-        hlassume(hb->faces != nullptr, assume_NoMemory);
+        hb->faces = AllocArray<hullbrushface_t>(hb->numfaces);
         for (int i = 0; i < numplanes; i++)
         {
             hullbrushface_t *f = &hb->faces[i];
             VectorCopy(planes[i].normal, f->normal);
             VectorCopy(w[i]->m_Points[0], f->point);
             f->numvertexes = w[i]->m_NumPoints;
-            f->vertexes = (vec3_t *)std::malloc(f->numvertexes * sizeof(vec3_t));
-            hlassume(f->vertexes != nullptr, assume_NoMemory);
+            f->vertexes = AllocArray<vec3_t>(f->numvertexes);
             for (int k = 0; k < w[i]->m_NumPoints; k++)
             {
                 VectorCopy(w[i]->m_Points[k], f->vertexes[k]);
@@ -1320,14 +1368,12 @@ static hullbrush_t *CreateHullBrush(const brush_t *b)
         }
 
         hb->numedges = numedges;
-        hb->edges = (hullbrushedge_t *)std::malloc(hb->numedges * sizeof(hullbrushedge_t));
-        hlassume(hb->edges != nullptr, assume_NoMemory);
-        std::memcpy(hb->edges, edges, hb->numedges * sizeof(hullbrushedge_t));
+        hb->edges = AllocArray<hullbrushedge_t>(hb->numedges);
+        CopyArray(hb->edges, edges, hb->numedges);
 
         hb->numvertexes = numvertexes;
-        hb->vertexes = (hullbrushvertex_t *)std::malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
-        hlassume(hb->vertexes != nullptr, assume_NoMemory);
-        std::memcpy(hb->vertexes, vertexes, hb->numvertexes * sizeof(hullbrushvertex_t));
+        hb->vertexes = AllocArray<hullbrushvertex_t>(hb->numvertexes);
+        CopyArray(hb->vertexes, vertexes, hb->numvertexes);
     }
     else
     {
@@ -1349,22 +1395,18 @@ static hullbrush_t *CopyHullBrush(const hullbrush_t *hb)
     hullbrush_t *hb2 = (hullbrush_t *)std::malloc(sizeof(hullbrush_t));
     hlassume(hb2 != nullptr, assume_NoMemory);
     std::memcpy(hb2, hb, sizeof(hullbrush_t));
-    hb2->faces = (hullbrushface_t *)std::malloc(hb->numfaces * sizeof(hullbrushface_t));
-    hlassume(hb2->faces != nullptr, assume_NoMemory);
-    std::memcpy(hb2->faces, hb->faces, hb->numfaces * sizeof(hullbrushface_t));
-    hb2->edges = (hullbrushedge_t *)std::malloc(hb->numedges * sizeof(hullbrushedge_t));
-    hlassume(hb2->edges != nullptr, assume_NoMemory);
-    std::memcpy(hb2->edges, hb->edges, hb->numedges * sizeof(hullbrushedge_t));
-    hb2->vertexes = (hullbrushvertex_t *)std::malloc(hb->numvertexes * sizeof(hullbrushvertex_t));
-    hlassume(hb2->vertexes != nullptr, assume_NoMemory);
-    std::memcpy(hb2->vertexes, hb->vertexes, hb->numvertexes * sizeof(hullbrushvertex_t));
+    hb2->faces = AllocArray<hullbrushface_t>(hb->numfaces);
+    CopyArray(hb2->faces, hb->faces, hb->numfaces);
+    hb2->edges = AllocArray<hullbrushedge_t>(hb->numedges);
+    CopyArray(hb2->edges, hb->edges, hb->numedges);
+    hb2->vertexes = AllocArray<hullbrushvertex_t>(hb->numvertexes);
+    CopyArray(hb2->vertexes, hb->vertexes, hb->numvertexes);
     for (int i = 0; i < hb->numfaces; i++)
     {
         hullbrushface_t *f2 = &hb2->faces[i];
         const hullbrushface_t *f = &hb->faces[i];
-        f2->vertexes = (vec3_t *)std::malloc(f->numvertexes * sizeof(vec3_t));
-        hlassume(f2->vertexes != nullptr, assume_NoMemory);
-        std::memcpy(f2->vertexes, f->vertexes, f->numvertexes * sizeof(vec3_t));
+        f2->vertexes = AllocArray<vec3_t>(f->numvertexes);
+        CopyArray(f2->vertexes, f->vertexes, f->numvertexes);
     }
     return hb2;
 }
@@ -1392,8 +1434,7 @@ void InitDefaultHulls()
         hs->id = _strdup("");
         hs->disabled = true;
         hs->numbrushes = 0;
-        hs->brushes = (hullbrush_t **)std::malloc(0 * sizeof(hullbrush_t *));
-        hlassume(hs->brushes != nullptr, assume_NoMemory);
+        hs->brushes = nullptr; // no brushes (was malloc(0) + hlassume)
     }
 }
 
@@ -1414,7 +1455,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
     hs->id = _strdup(id);
     hs->disabled = disabled;
     hs->numbrushes = 0;
-    hs->brushes = (hullbrush_t **)std::malloc(entity->numbrushes * sizeof(hullbrush_t *));
+    hs->brushes = AllocArray<hullbrush_t *>(entity->numbrushes);
     for (int i = 0; i < entity->numbrushes; i++)
     {
         brush_t *b = &g_mapbrushes[entity->firstbrush + i];
@@ -1446,8 +1487,7 @@ void CreateHullShape(int entitynum, bool disabled, const char *id, int defaulthu
             target->id = _strdup(hs->id);
             target->disabled = hs->disabled;
             target->numbrushes = hs->numbrushes;
-            target->brushes = (hullbrush_t **)std::malloc(hs->numbrushes * sizeof(hullbrush_t *));
-            hlassume(target->brushes != nullptr, assume_NoMemory);
+            target->brushes = AllocArray<hullbrush_t *>(hs->numbrushes);
             for (int i = 0; i < hs->numbrushes; i++)
             {
                 target->brushes[i] = CopyHullBrush(hs->brushes[i]);

@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -33,6 +34,11 @@ typedef struct
     int iTexFile; // index of the wad this texture is located in
 
 } lumpinfo_t;
+
+// The first 32 bytes are the WAD3 directory entry, read straight from the file.
+static_assert(sizeof(wadinfo_t) == 12);
+static_assert(offsetof(lumpinfo_t, name) == 16 && offsetof(lumpinfo_t, iTexFile) == 32);
+constexpr int WAD_LUMP_ENTRY_SIZE = 32;
 
 std::deque<std::string> g_WadInclude;
 
@@ -97,7 +103,7 @@ static void CleanupName(const char *const in, char *out)
             break;
         }
 
-        out[i] = toupper(in[i]);
+        out[i] = toupper(static_cast<unsigned char>(in[i])); // was toupper(char): undefined for bytes >= 0x80
     }
 
     for (; i < MAX_TEXTURE_NAME_LENGTH; i++)
@@ -242,6 +248,11 @@ static bool TEX_InitFromWad()
         std::FILE *texfile = texfiles[nTexFiles];
 
         // read in this wadfiles information
+        const long long wadsize = q_filelength(texfile);
+        if (wadsize < static_cast<long long>(sizeof(wadinfo)))
+        {
+            Error("%s is too small to be a wad file (%lld bytes)", pszWadFile, wadsize);
+        }
         SafeRead(texfile, &wadinfo, sizeof(wadinfo));
 
         // make sure its a valid format
@@ -250,21 +261,32 @@ static bool TEX_InitFromWad()
             Log(" - ");
             Error("%s isn't a Wadfile!", pszWadFile);
         }
-
-        wadinfo.numlumps = wadinfo.numlumps;
-        wadinfo.infotableofs = wadinfo.infotableofs;
+        if (wadinfo.numlumps < 0 || wadinfo.infotableofs < 0 ||
+            wadinfo.infotableofs + static_cast<long long>(wadinfo.numlumps) * WAD_LUMP_ENTRY_SIZE > wadsize)
+        {
+            Error("%s: bad lump directory (%d lumps at offset %d, file is %lld bytes)",
+                  pszWadFile, wadinfo.numlumps, wadinfo.infotableofs, wadsize);
+        }
 
         // read in lump
         if (std::fseek(texfile, wadinfo.infotableofs, SEEK_SET))
             Warning("fseek to %d in wadfile %s failed\n", wadinfo.infotableofs, pszWadFile);
 
         // memalloc for this lump
-        lumpinfo = (lumpinfo_t *)realloc(lumpinfo, (nTexLumps + wadinfo.numlumps) * sizeof(lumpinfo_t));
+        lumpinfo_t *grown = static_cast<lumpinfo_t *>(std::realloc(lumpinfo, (nTexLumps + wadinfo.numlumps) * sizeof(lumpinfo_t)));
+        hlassume(grown != nullptr || nTexLumps + wadinfo.numlumps == 0, assume_NoMemory);
+        lumpinfo = grown;
 
         // for each texlump
         for (int j = 0; j < wadinfo.numlumps; j++, nTexLumps++)
         {
-            SafeRead(texfile, &lumpinfo[nTexLumps], (sizeof(lumpinfo_t) - sizeof(int))); // iTexFile is NOT read from file
+            SafeRead(texfile, &lumpinfo[nTexLumps], WAD_LUMP_ENTRY_SIZE); // iTexFile is NOT read from file
+            if (lumpinfo[nTexLumps].filepos < 0 || lumpinfo[nTexLumps].disksize < 0 ||
+                lumpinfo[nTexLumps].filepos + static_cast<long long>(lumpinfo[nTexLumps].disksize) > wadsize)
+            {
+                Error("%s: lump %d lies outside the file (offset %d, size %d, file is %lld bytes)",
+                      pszWadFile, j, lumpinfo[nTexLumps].filepos, lumpinfo[nTexLumps].disksize, wadsize);
+            }
 
             if (!TerminatedString(lumpinfo[nTexLumps].name, MAX_TEXTURE_NAME_LENGTH))
             {
@@ -318,17 +340,19 @@ static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 
     if (found)
     {
-        // get the first and last matching lump
-        lumpinfo_t *first = found;
-        lumpinfo_t *last = found;
-        while (first - 1 >= lumpinfo && lump_sorter_by_name(first - 1, source) == 0)
+        // get the first and last matching lump (by index: first - 1 could point before the array)
+        std::ptrdiff_t firstindex = found - lumpinfo;
+        std::ptrdiff_t lastindex = firstindex;
+        while (firstindex > 0 && lump_sorter_by_name(&lumpinfo[firstindex - 1], source) == 0)
         {
-            first = first - 1;
+            firstindex--;
         }
-        while (last + 1 < lumpinfo + nTexLumps && lump_sorter_by_name(last + 1, source) == 0)
+        while (lastindex + 1 < nTexLumps && lump_sorter_by_name(&lumpinfo[lastindex + 1], source) == 0)
         {
-            last = last + 1;
+            lastindex++;
         }
+        lumpinfo_t *first = &lumpinfo[firstindex];
+        lumpinfo_t *last = &lumpinfo[lastindex];
         // find the best matching lump
         lumpinfo_t *best = nullptr;
         for (found = first; found < last + 1; found++)
@@ -547,9 +571,12 @@ void WriteMiptex()
     }
     {
         // Now setup to get the miptex data (or just the headers if using -wadtextures) from the wadfile
-        dmiptexlump_t *l = (dmiptexlump_t *)g_dtexdata;
-        byte *data = (byte *)&l->dataofs[nummiptex];
-        l->nummiptex = nummiptex;
+        MiptexLumpView lump = TextureLump();
+        const long long headersize = MiptexLumpView::DataofsPosition(nummiptex);
+        hlassume(headersize <= lump.capacity(), assume_MAX_MAP_MIPTEX);
+        byte *data = g_dtexdata + headersize;
+        lump.set_count(nummiptex);
+        byte *const texdata_end = g_dtexdata + lump.capacity(); // was g_max_map_miptex, which could exceed the buffer
         char writewad_name[_MAX_PATH];
         typedef struct
         {
@@ -577,10 +604,10 @@ void WriteMiptex()
             Error("File write failure");
         for (int i = 0; i < nummiptex; i++)
         {
-            l->dataofs[i] = data - (byte *)l;
+            lump.set_dataofs(i, static_cast<int>(data - g_dtexdata));
             byte *writewad_data;
             int writewad_datasize;
-            int len = LoadLump(miptex + i, data, &texsize, &g_dtexdata[g_max_map_miptex] - data, writewad_data, writewad_datasize);
+            int len = LoadLump(miptex + i, data, &texsize, static_cast<int>(texdata_end - data), writewad_data, writewad_datasize);
             if (writewad_data)
             {
                 dlumpinfo_t *writewad_lumpinfo = &writewad_lumpinfos[writewad_header.numlumps];
@@ -599,7 +626,7 @@ void WriteMiptex()
 
             if (!len)
             {
-                l->dataofs[i] = -1; // didn't find the texture
+                lump.set_dataofs(i, -1); // didn't find the texture
             }
             else
             {

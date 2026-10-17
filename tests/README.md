@@ -129,7 +129,8 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
 
 ```sh
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
-python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-oracle-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
+python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-h2-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
+python3 $P regress --bin DIR                     # candidate-only scenarios where the oracle's behaviour is undefined (e.g. texdata-growth)
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
@@ -151,9 +152,14 @@ No ASan findings. UBSan reported four issues at oracle-base:
 | Finding | Tools | Planned fix |
 |---|---|---|
 | `common/bspfile.cpp:204` `vecs[0][j]` with `j < 8` in the no-op `SwapBSPFile` | all | fixed in Phase 1 (`SwapBSPFile` deleted) |
-| `hlcsg/hlcsg.cpp:298` `g_texinfo[-1]` | hlcsg | hlcsg phase |
+| `hlcsg/hlcsg.cpp:298` `g_texinfo[-1]` | hlcsg | fixed in H2 |
 | `hlbsp/brink.cpp:1131` pointer arithmetic overflow | hlbsp | hlbsp phase |
 | `hlvis/hlvis.cpp:123` member access through a null `winding_t*` | hlvis | hlvis phase |
+
+Since H2 the baseline is `../vhlt-parity/sanitize/baseline-h2-quick.txt` (39-map corpus): hlcsg has
+no findings left (H2 fixed the `g_texinfo[-1]` pointer, the CreateHullBrush stack overflow, the
+`g_csg_mapplanes[-1]` reads after "plane with no normal", and the texture-buffer heap overflow);
+only the hlbsp and hlvis findings above remain.
 
 ### Environment
 

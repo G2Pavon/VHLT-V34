@@ -34,8 +34,6 @@ static constexpr cliptype DEFAULT_CLIPTYPE = clip_simple; //clip_legacy //--vluz
 static const char ClipTypeStrings[5][11] = {{"smallest"}, {"normalized"}, {"simple"}, {"precise"}, {"legacy"}};
 static std::FILE *out[NUM_HULLS]; // pointer to each of the hull out files (.p0, .p1, ect.)
 static std::FILE *out_detailbrush[NUM_HULLS];
-static int c_outfaces;
-static int c_csgfaces;
 static BoundingBox world_bounds;
 
 static bool g_chart = DEFAULT_CHART;        // show chart "-chart"
@@ -175,8 +173,6 @@ static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 {
 
     ThreadLock();
-    if (!hull)
-        c_csgfaces++;
 
     // .p0 format
     Winding *w = f->w;
@@ -274,29 +270,12 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
         f->contents = frontcontents;
         f->texinfo = frontnull ? -1 : texinfo;
 
-        // count unique faces
-        if (!hull)
-        {
-            for (bface_t *f2 = b->hulls[hull].faces; f2; f2 = f2->next)
-            {
-                if (f2->planenum == f->planenum)
-                {
-                    if (!f2->used)
-                    {
-                        f2->used = true;
-                        c_outfaces++;
-                    }
-                    break;
-                }
-            }
-        }
-
         // check the texture alignment of this face
         if (!hull)
         {
             int texinfo = f->texinfo;
             const char *texname = GetTextureByNumber_CSG(texinfo);
-            texinfo_t *tex = &g_texinfo[texinfo];
+            const texinfo_t *tex = texinfo != -1 ? &g_texinfo[texinfo] : nullptr; // was &g_texinfo[-1] for nullified faces
 
             if (texinfo != -1                                                         // nullified textures (NULL, BEVEL, aaatrigger, etc.)
                 && !(tex->flags & TEX_SPECIAL)                                        // sky
@@ -750,7 +729,9 @@ static void SetLightStyles()
 {
     int j;
     char value[10];
-    char lighttargets[MAX_SWITCHED_LIGHTS][MAX_LIGHTTARGETS_NAME];
+    // Zero-initialized: switchable texlights take a style number without storing a name, and the
+    // search below used to strcmp those slots while they were still uninitialized.
+    char lighttargets[MAX_SWITCHED_LIGHTS][MAX_LIGHTTARGETS_NAME] = {};
 
     // any light that is controlled (has a targetname)
     // must have a unique style number generated for it
@@ -962,7 +943,7 @@ static void CheckForNoClip()
 
 static void ProcessModels()
 {
-    int contents;
+    int contents = 0;
 
     for (int i = 0; i < g_numentities; i++)
     {
@@ -1407,6 +1388,9 @@ int main(const int argc, char **argv)
     DefaultExtension(name, ".map"); // might be .reg
 
     LoadMapFile(name);
+    // info_compile_parameters may have raised the texture data limit after the buffer was
+    // allocated; WriteMiptex used to write up to the new limit into the old buffer.
+    dtexdata_grow();
     ThreadSetDefault();
     Settings();
 

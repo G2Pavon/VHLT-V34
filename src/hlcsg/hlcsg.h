@@ -58,7 +58,6 @@ struct bface_t
     faceplane_t *plane;
     Winding *w;
     int texinfo;
-    bool used; // just for face counting
     int contents;
     int backcontents;
     bool bevel; //used for ExpandBrush

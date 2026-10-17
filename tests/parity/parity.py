@@ -913,6 +913,47 @@ def cmd_probe(args) -> int:
 
 
 # ---------------------------------------------------------------------------
+# command: regress (candidate-only scenarios where the oracle's behaviour is undefined)
+
+
+def _hlcsg_bsp(bindir: Path, name: str, args: list[str], work: Path) -> tuple[int, bytes, bytes]:
+    work.mkdir(parents=True)
+    shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
+    proc = run([bindir / "hlcsg", "-threads", "1", *args, name], cwd=work, capture_output=True, env=env_for(bindir))
+    bsp = work / f"{name}.bsp"
+    return proc.returncode, bsp.read_bytes() if bsp.exists() else b"", proc.stdout + proc.stderr
+
+
+def regress_texdata_growth(bindir: Path, tmp: Path) -> list[str]:
+    """info_compile_parameters raises texdata above the buffer allocated for -texdata 16: hlcsg used to
+    write past the 16 KB buffer (heap overflow). The output must equal a run with the default buffer."""
+    small = _hlcsg_bsp(bindir, "fm_compileparams", ["-texdata", "16", "-nowadtextures"], tmp / "small")
+    plain = _hlcsg_bsp(bindir, "fm_compileparams", ["-nowadtextures"], tmp / "plain")
+    problems = []
+    if small[0] != 0:
+        problems.append(f"exit {small[0]} with -texdata 16")
+    if b"ERROR: AddressSanitizer" in small[2] or b"runtime error:" in small[2]:
+        problems.append("sanitizer error with -texdata 16")
+    if small[1] != plain[1]:
+        problems.append(".bsp differs from the run with the default texture buffer")
+    return problems
+
+
+REGRESSIONS = {"texdata-growth": regress_texdata_growth}
+
+
+def cmd_regress(args) -> int:
+    bindir = check_bin(Path(args.bin))
+    failures = 0
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+        for name, test in REGRESSIONS.items():
+            problems = test(bindir, Path(tmp) / name)
+            failures += bool(problems)
+            log(f"  {name:20} {'ok' if not problems else 'FAIL: ' + '; '.join(problems)}")
+    return 1 if failures else 0
+
+
+# ---------------------------------------------------------------------------
 # command: coverage (gcov line coverage of hlcsg over the csg tiers)
 
 
@@ -1056,6 +1097,10 @@ def main() -> int:
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--sanitize", action="store_true", help="run the mutations against an ASan/UBSan build")
     p.set_defaults(func=cmd_probe)
+
+    p = sub.add_parser("regress", help="candidate-only regression scenarios (oracle behaviour undefined there)")
+    p.add_argument("--bin", required=True)
+    p.set_defaults(func=cmd_regress)
 
     p = sub.add_parser("coverage", help="gcov line coverage of hlcsg over the quick csg stage and every csg variant tier")
     p.add_argument("--maps", nargs="+")
