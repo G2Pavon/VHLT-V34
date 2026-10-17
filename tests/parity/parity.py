@@ -40,6 +40,7 @@ GAME = Path(os.environ.get("VHLT_GAME_DIR", "~/.steam/steam/steamapps/common/Hal
 MESS = Path(os.environ.get("VHLT_MESS", REPO.parent / "mess_1.2.3_linux64" / "MESS"))
 RMF_ROOT = Path(os.environ.get("VHLT_RMF_ROOT", REPO.parent / "GoldSrc-map-sources-restored"))
 EXTRA_MAP_DIR = GAME / "cstrike" / "maps"
+FEATURE_MAP_DIR = REPO / "tests" / "parity" / "featuremaps" / "maps"  # make_feature_maps.py
 
 ORACLE_REF = "oracle-base"
 # Pinned so that no compiler default (e.g. Clang's -ffp-contract=on) can change float results.
@@ -47,10 +48,38 @@ PARITY_CXX_FLAGS = "-ffp-contract=off -fno-fast-math"
 SANITIZE_CXX_FLAGS = "-fsanitize=address,undefined -fsanitize-recover=address,undefined -fno-omit-frame-pointer -g"
 
 STAGES = [("csg", "hlcsg"), ("bsp", "hlbsp"), ("vis", "hlvis"), ("rad", "hlrad")]
+STAGE_TOOL = {"csg": "hlcsg", "ents": "hlcsg", "bsp": "hlbsp", "vis": "hlvis", "rad": "hlrad"}
+PIPELINE = ["csg", "bsp", "vis", "rad"]
 TIERS = {
-    "quick": {"csg": [], "bsp": [], "vis": ["-fast"], "rad": ["-fast"]},
-    "full": {"csg": [], "bsp": [], "vis": [], "rad": []},
+    "quick": {"stages": PIPELINE, "csg": [], "bsp": [], "vis": ["-fast"], "rad": ["-fast"]},
+    "full": {"stages": PIPELINE, "csg": [], "bsp": [], "vis": [], "rad": []},
 }
+# csg-only tiers: one per hlcsg option the default tiers never use. "ents" is a second hlcsg run.
+CSG_VARIANTS = {
+    "csg-smallest": ["-cliptype", "smallest"],
+    "csg-normalized": ["-cliptype", "normalized"],
+    "csg-precise": ["-cliptype", "precise"],
+    "csg-legacy": ["-cliptype", "legacy"],
+    "csg-clipeconomy": ["-clipeconomy"],
+    "csg-noskyclip": ["-noskyclip"],
+    "csg-nolightopt": ["-nolightopt"],
+    "csg-nowadtextures": ["-nowadtextures"],
+    "csg-wadinclude": ["-wadinclude", "halflife.wad"],
+    "csg-misc": ["-wadautodetect", "-notextconvert", "-chart", "-estimate"],
+}
+for _name, _args in CSG_VARIANTS.items():
+    TIERS[_name] = {"stages": ["csg"], "csg": _args}
+TIERS["csg-onlyents"] = {"stages": ["csg", "ents"], "csg": [], "ents": ["-onlyents"]}
+VARIANT_TIERS = [*CSG_VARIANTS, "csg-onlyents"]
+TIER_GROUPS = {"csg-variants": VARIANT_TIERS}
+
+
+def tier_stages(tier: str) -> list[str]:
+    return TIERS[tier]["stages"]
+
+
+def expand_tiers(tier: str) -> list[str]:
+    return TIER_GROUPS.get(tier, [tier])
 STAGE_TIMEOUT = 4 * 3600
 DEFAULT_JOBS = max(1, min(os.cpu_count() or 1, 8))
 
@@ -281,6 +310,7 @@ def probe_missing_textures(mapfile: Path, oracle_bin: Path) -> tuple[int, list[s
 def cmd_corpus(args) -> int:
     oracle_bin = check_bin(DATA / "builds" / "oracle" / "bin")
     root = DATA / "corpus"
+    previous = read_json(root / "manifest.json")["maps"] if (root / "manifest.json").exists() else {}
     if root.exists():
         if not args.force:
             sys.exit(f"{root} exists; pass --force to rebuild")
@@ -305,7 +335,7 @@ def cmd_corpus(args) -> int:
         sources[name] = {"source": str(rmf), "source_sha256": sha256(rmf), "converted_by": "MESS 1.2.3 (trenchbroomvalve220)"}
         log(f"  converted {name}")
 
-    for m in sorted(EXTRA_MAP_DIR.glob("*.map")):
+    for m in [*sorted(EXTRA_MAP_DIR.glob("*.map")), *sorted(FEATURE_MAP_DIR.glob("*.map"))]:
         if is_excluded(m.stem):
             continue
         if m.stem in sources:
@@ -350,8 +380,14 @@ def cmd_corpus(args) -> int:
                                   "placeholder_textures": missing,
                                   "oracle_hlcsg_exit": status}
 
+    # Existing maps must come out byte-identical, or their oracle references would be stale.
+    changed = [n for n, m in previous.items() if n in manifest["maps"] and m["map_sha256"] != manifest["maps"][n]["map_sha256"]]
+    if changed:
+        log(f"corpus maps changed content: {', '.join(changed)}; their references are stale (re-run ref for them)")
     write_json(root / "manifest.json", manifest)
-    log(f"corpus: {len(manifest['maps'])} maps in {maps_dir}")
+    added = sorted(set(manifest["maps"]) - set(previous))
+    log(f"corpus: {len(manifest['maps'])} maps in {maps_dir}" + (f"; new: {', '.join(added)}" if added else ""))
+    return 1 if changed else 0
     return 0
 
 
@@ -394,7 +430,8 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
     work.mkdir(parents=True)
     shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
     results = {}
-    for stage, tool in STAGES:
+    for stage in tier_stages(tier):
+        tool = STAGE_TOOL[stage]
         r = run_stage(bindir, tool, tool_args(tier, stage, threads), name, work, root / "console", stage)
         results[stage] = r
         if snapshots:
@@ -408,8 +445,12 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
 def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path) -> dict:
     """Run each stage after the first on the oracle's output of the previous stage."""
     results = {}
-    for i, (stage, tool) in enumerate(STAGES[1:], start=1):
-        prev = ref_root / STAGES[i - 1][0]
+    stages = tier_stages(tier)
+    for i, stage in enumerate(stages[1:], start=1):
+        if stage not in ("bsp", "vis", "rad"):
+            continue  # isolated mode exercises the downstream tools only
+        tool = STAGE_TOOL[stage]
+        prev = ref_root / stages[i - 1]
         if not prev.exists() or not (ref_root / stage).exists():
             continue
         work = root / f"{stage}.work"
@@ -499,7 +540,7 @@ def cmd_ref(args) -> int:
     maps = select_maps(args.maps)
     write_json(DATA / "refs" / args.tier / "manifest.json",
                {"bin": str(bindir), "binaries": {t: sha256(bindir / t) for _, t in STAGES},
-                "tier": args.tier, "args": {s: tool_args(args.tier, s, 1) for s, _ in STAGES},
+                "tier": args.tier, "args": {s: tool_args(args.tier, s, 1) for s in tier_stages(args.tier)},
                 "recorded": datetime.datetime.now().isoformat(timespec="seconds")})
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
         futures = [pool.submit(_ref_job, bindir, args.tier, n) for n in maps]
@@ -540,7 +581,8 @@ def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, pa
     ref_root = DATA / "refs" / tier / name
     ref_res = read_json(ref_root / "result.json")
     out = {"map": name, "chain": {}, "isolated": {}}
-    run_stages = [s for s, _ in STAGES][: [s for s, _ in STAGES].index(last_stage) + 1]
+    stages = tier_stages(tier)
+    run_stages = stages[: stages.index(last_stage) + 1] if last_stage in stages else stages
     if mode in ("chain", "both"):
         root = run_root / "chain" / name
         res = run_chain(bindir, tier, name, root, threads=threads, last_stage=last_stage)
@@ -555,13 +597,25 @@ def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, pa
     return out
 
 
+def for_each_tier(command):
+    """Run command(args) once per tier of a tier group (e.g. csg-variants); worst exit status."""
+    def run_all(args) -> int:
+        status = 0
+        for tier in expand_tiers(args.tier):
+            if len(expand_tiers(args.tier)) > 1:
+                log(f"== tier {tier}")
+            status = max(status, command(argparse.Namespace(**{**vars(args), "tier": tier})))
+        return status
+    return run_all
+
+
 def cmd_check(args) -> int:
     bindir = check_bin(Path(args.bin))
     maps = select_maps(args.maps)
     if not (DATA / "refs" / args.tier / "manifest.json").exists():
         sys.exit(f"no oracle reference for tier {args.tier}; run 'parity.py ref --tier {args.tier}'")
-    last_stage = "rad"
-    if args.stages == "csg":
+    last_stage = tier_stages(args.tier)[-1]
+    if args.stages == "csg" and last_stage == "rad":
         ok, why = downstream_guard(bindir, args.tier, args.downstream_from)
         if ok:
             last_stage = "csg"
@@ -605,7 +659,7 @@ def cmd_check(args) -> int:
     log(report if failures else summary)
     log(f"report: {run_root / 'report.txt'}")
     full_corpus = set(maps) == set(corpus_maps())
-    if not failures and last_stage == "rad" and args.threads == 1 and args.mode in ("chain", "both") and full_corpus:
+    if not failures and last_stage == "rad" and tier_stages(args.tier)[-1] == "rad" and args.threads == 1 and args.mode in ("chain", "both") and full_corpus:
         # These downstream binaries are now known to match the oracle on this tier.
         write_json(full_pass_record(args.tier), {
             "name": bindir.parent.name, "bin": str(bindir), "run": str(run_root),
@@ -629,7 +683,7 @@ def cmd_bench(args) -> int:
     out = {"bin": str(bindir), "tier": args.tier, "threads": args.threads, "repeat": args.repeat, "maps": {}}
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         for name in maps:
-            samples: dict[str, list[float]] = {s: [] for s, _ in STAGES}
+            samples: dict[str, list[float]] = {s: [] for s in tier_stages(args.tier)}
             for _ in range(args.repeat):
                 res = run_chain(bindir, args.tier, name, Path(tmp) / name, threads=args.threads, snapshots=False)
                 for s, r in res.items():
@@ -689,7 +743,8 @@ def cmd_sanitize(args) -> int:
             for fut in concurrent.futures.as_completed(futs):
                 name = futs[fut]
                 fut.result()
-                for stage, tool in STAGES:
+                for stage in tier_stages(args.tier):
+                    tool = STAGE_TOOL[stage]
                     err = Path(tmp) / name / "console" / f"{stage}.stderr"
                     if err.exists():
                         for f in summarize_sanitizer(err.read_bytes()):
@@ -858,6 +913,79 @@ def cmd_probe(args) -> int:
 
 
 # ---------------------------------------------------------------------------
+# command: coverage (gcov line coverage of hlcsg over the csg tiers)
+
+
+def _coverage_job(bindir: Path, tier: str, name: str, root: Path) -> None:
+    stages = tier_stages(tier)
+    last = "csg" if stages[-1] == "rad" else stages[-1]
+    run_chain(bindir, tier, name, root / tier / name, snapshots=False, last_stage=last)
+
+
+def cmd_coverage(args) -> int:
+    dest = DATA / "builds" / "coverage"
+    build = dest / "build"
+    if args.rebuild and dest.exists():
+        shutil.rmtree(dest)
+    generator = ["-G", "Ninja"] if shutil.which("ninja") else []
+    run(["cmake", "--no-warn-unused-cli", "-S", REPO, "-B", build, *generator, "-DCMAKE_BUILD_TYPE=Debug",
+         f"-DCMAKE_CXX_FLAGS=--coverage -O0 {PARITY_CXX_FLAGS}", "-DVHLT_BUILD_TESTS=OFF",
+         f"-DVHLT_BUILD_DATE={oracle_build_date()}"], check=True, stdout=subprocess.DEVNULL)
+    proc = run(["cmake", "--build", build, "--target", "hlcsg", "--parallel"], capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.exit(f"coverage build failed:\n{proc.stdout[-3000:]}{proc.stderr[-3000:]}")
+    for gcda in build.rglob("*.gcda"):
+        gcda.unlink()
+    bindir = dest / "bin"
+    bindir.mkdir(exist_ok=True)
+    shutil.copy2(build / "bin" / "hlcsg", bindir / "hlcsg")
+    for t in ("hlbsp", "hlvis", "hlrad"):  # never run, but check_bin-style layout keeps run_chain happy
+        (bindir / t).touch()
+
+    tiers = ["quick", *VARIANT_TIERS]
+    maps = select_maps(args.maps)
+    log(f"running hlcsg (coverage build) on {len(maps)} maps x {len(tiers)} tiers")
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+        with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:  # libgcov merges counters under a file lock
+            futs = [pool.submit(_coverage_job, bindir, t, n, Path(tmp)) for t in tiers for n in maps]
+            for fut in concurrent.futures.as_completed(futs):
+                fut.result()
+
+    rows, funcs = [], []
+    for objdir, sources in ((build / "CMakeFiles" / "hlcsg.dir" / "src" / "hlcsg", REPO / "src" / "hlcsg"),
+                            (build / "CMakeFiles" / "common_f64.dir" / "src" / "common", REPO / "src" / "common")):
+        gcdas = sorted(objdir.glob("*.gcda"))
+        if not gcdas:
+            continue
+        out = run(["gcov", "-n", "-f", "-m", *map(str, gcdas)], cwd=objdir, capture_output=True, text=True).stdout
+        for f, pct, n in re.findall(r"File '([^']+)'\nLines executed:([\d.]+)% of (\d+)", out):
+            if Path(f).parent == sources:
+                rows.append((f"{sources.name}/{Path(f).name}", float(pct), int(n)))
+        if sources.name == "hlcsg":
+            for fn, pct, n in re.findall(r"Function '([^']+)'\nLines executed:([\d.]+)% of (\d+)", out):
+                if "::" not in fn.split("(")[0] or fn.startswith(("Winding", "BoundingBox")):
+                    funcs.append((fn.split("(")[0], float(pct), int(n)))
+    lines = [f"{'file':28} {'lines':>7}  covered"]
+    for f, pct, n in sorted(rows):
+        lines.append(f"{f:28} {n:7}  {pct:6.2f}%")
+    hl = [r for r in rows if r[0].startswith("hlcsg/")]
+    total = sum(n for _, _, n in hl)
+    covered = sum(n * pct / 100 for _, pct, n in hl)
+    lines.append(f"{'hlcsg/ total':28} {total:7}  {100 * covered / max(total, 1):6.2f}%")
+    lines.append("\nhlcsg functions under 50% (by size):")
+    for fn, (pct, n) in sorted({f: (p, n) for f, p, n in funcs}.items(), key=lambda x: -x[1][1]):
+        if pct < 50 and n > 3:
+            lines.append(f"  {pct:5.1f}% of {n:4}  {fn}")
+    report = "\n".join(lines) + "\n"
+    path = DATA / "coverage" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}.txt"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(report)
+    log(report)
+    log(f"saved {path}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
 
 
 def main() -> int:
@@ -882,13 +1010,14 @@ def main() -> int:
 
     def common(p, bin_required=True):
         p.add_argument("--bin", required=bin_required, help="directory with hlcsg/hlbsp/hlvis/hlrad")
-        p.add_argument("--tier", choices=TIERS, default="quick")
+        p.add_argument("--tier", choices=[*TIERS, *TIER_GROUPS], default="quick",
+                       help="csg-variants: every csg-only option tier")
         p.add_argument("--maps", nargs="+")
         p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
 
     p = sub.add_parser("ref", help="record oracle outputs for a tier")
     common(p, bin_required=False)
-    p.set_defaults(func=cmd_ref)
+    p.set_defaults(func=for_each_tier(cmd_ref))
 
     p = sub.add_parser("check", help="run a candidate and compare every stage against the oracle")
     common(p)
@@ -904,7 +1033,7 @@ def main() -> int:
                    help="for --stages csg: compare downstream binaries with this build instead of the last full pass")
     p.add_argument("--threads", type=int, default=1,
                    help="run every tool with -threads N; compared with the single-threaded oracle references")
-    p.set_defaults(func=cmd_check)
+    p.set_defaults(func=for_each_tier(cmd_check))
 
     p = sub.add_parser("bench", help="time each stage (sequential, median of --repeat runs)")
     common(p)
@@ -927,6 +1056,12 @@ def main() -> int:
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--sanitize", action="store_true", help="run the mutations against an ASan/UBSan build")
     p.set_defaults(func=cmd_probe)
+
+    p = sub.add_parser("coverage", help="gcov line coverage of hlcsg over the quick csg stage and every csg variant tier")
+    p.add_argument("--maps", nargs="+")
+    p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
+    p.add_argument("--rebuild", action="store_true")
+    p.set_defaults(func=cmd_coverage)
 
     args = ap.parse_args()
     DATA.mkdir(parents=True, exist_ok=True)

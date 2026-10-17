@@ -59,6 +59,7 @@ CMakeFiles/
 
 *.bsp
 *.map
+!tests/parity/featuremaps/maps/*.map
 *.prt
 *.wa_
 *.ext
