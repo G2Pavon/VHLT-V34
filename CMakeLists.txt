@@ -101,3 +101,12 @@ add_executable(hlrad
 )
 target_include_directories(hlrad PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_definitions(hlrad PRIVATE HLRAD)
+
+# =====================================================================================
+# tests (doctest characterization tests for src/common; parity harness in tests/parity)
+# =====================================================================================
+option(VHLT_BUILD_TESTS "Build the unit tests" ON)
+if(VHLT_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
