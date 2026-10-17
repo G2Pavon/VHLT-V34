@@ -10,6 +10,7 @@ set(VHLT_TEST_SOURCES
     unit/test_filelib.cpp
     unit/test_loader.cpp
     unit/test_math.cpp
+    unit/test_planeindex.cpp
     unit/test_threads.cpp
     unit/test_tokenizer.cpp
     unit/test_winding.cpp

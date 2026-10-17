@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "hlcsg/hlcsg.h"
+#include "hlcsg/planeindex.h"
 #include "common/blockmem.h"
 #include "common/threads.h"
 #include "common/bspfile.h"
@@ -48,7 +49,6 @@ static void CopyArray(T *dest, const T *src, int n)
 }
 
 static constexpr vec_t FLOOR_Z = 0.7; // Quake default
-static constexpr vec_t DIST_EPSILON = 0.04;
 
 //	This process could be optimized by placing the planes in a (non hash-) set and using
 //	half of the inner loop check below as the comparator; I'd expect the speed gain to be
@@ -59,43 +59,50 @@ static constexpr vec_t DIST_EPSILON = 0.04;
 // other threads appended planes - a data race.)
 static std::shared_mutex g_mapplanes_mutex;
 
-// First plane in [first, g_nummapplanes) matching normal/origin within the epsilons, or -1.
-static int ScanMapPlanes(const vec_t *const normal, const vec_t *const origin, int first)
+static PlaneIndex g_planeindex; // guarded by g_mapplanes_mutex, like the table
+
+// First plane in [first, g_nummapplanes) accepted by PlaneMatches, or -1 (the old linear search).
+[[maybe_unused]] static int ScanMapPlanes(const vec_t *const normal, const vec_t *const origin, int first)
 {
-    vec_t t;
     for (int i = first; i < g_nummapplanes; i++)
     {
-        if (-DIR_EPSILON < (t = normal[0] - g_csg_mapplanes[i].normal[0]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[1] - g_csg_mapplanes[i].normal[1]) && t < DIR_EPSILON &&
-            -DIR_EPSILON < (t = normal[2] - g_csg_mapplanes[i].normal[2]) && t < DIR_EPSILON)
+        if (PlaneMatches(normal, origin, g_csg_mapplanes[i]))
         {
-            t = DotProduct(origin, g_csg_mapplanes[i].normal) - g_csg_mapplanes[i].dist;
-
-            if (-DIST_EPSILON < t && t < DIST_EPSILON)
-            {
-                return i;
-            }
+            return i;
         }
     }
     return -1;
 }
 
+// Same result as ScanMapPlanes(normal, origin, 0), through the index.
+static int LookupPlane(const vec_t *const normal, const vec_t *const origin)
+{
+    const int found = g_planeindex.Find(normal, origin, g_csg_mapplanes);
+#ifdef VHLT_VERIFY_INDEXES
+    const int scanned = ScanMapPlanes(normal, origin, 0);
+    if (found != scanned)
+    {
+        Error("plane index mismatch: index %d, linear scan %d (normal %.17g %.17g %.17g, origin %.17g %.17g %.17g)",
+              found, scanned, normal[0], normal[1], normal[2], origin[0], origin[1], origin[2]);
+    }
+#endif
+    return found;
+}
+
 static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
 {
-    int scanned;
     {
         std::shared_lock lock(g_mapplanes_mutex);
-        const int found = ScanMapPlanes(normal, origin, 0);
+        const int found = LookupPlane(normal, origin);
         if (found != -1)
         {
             return found;
         }
-        scanned = g_nummapplanes;
     }
 
     std::unique_lock lock(g_mapplanes_mutex);
-    // check the planes other threads added since the scan above
-    const int found = ScanMapPlanes(normal, origin, scanned);
+    // another thread may have added the plane since the lookup above
+    const int found = LookupPlane(normal, origin);
     if (found != -1)
     {
         return found;
@@ -141,6 +148,8 @@ static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)
         returnval = g_nummapplanes;
     }
 
+    g_planeindex.Insert(g_nummapplanes, p->normal, p->dist);
+    g_planeindex.Insert(g_nummapplanes + 1, (p + 1)->normal, (p + 1)->dist);
     g_nummapplanes += 2;
     return returnval;
 }

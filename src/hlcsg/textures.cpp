@@ -2,9 +2,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <deque>
+#include <array>
+#include <bit>
 #include <cmath>
+#include <unordered_map>
 
 #include "hlcsg/hlcsg.h"
 #include "hlcsg/wadpath.h"
@@ -55,6 +59,51 @@ static wadpath_t *texwadpathes[MAX_TEXFILES]; // maps index of the wad to its pa
 static char *texmap[MAX_INTERNAL_MAP_TEXINFO];
 static int numtexmap = 0;
 
+// Exact-result indexes for the two lookups that scanned every entry (most of hlcsg's time on
+// large maps). Each returns the entry the scan returned: names are unique in miptex[], and a
+// texinfo key holds everything the scan compared.
+static std::unordered_map<std::string, int> s_miptex_index; // name -> index in miptex[]
+
+struct TexinfoKey
+{
+    std::string name;
+    int flags;
+    std::array<std::uint32_t, 8> vecs; // float bits, -0 stored as +0 (the scan compared with ==)
+    bool operator==(const TexinfoKey &) const = default;
+};
+struct TexinfoKeyHash
+{
+    std::size_t operator()(const TexinfoKey &k) const
+    {
+        std::size_t h = std::hash<std::string>{}(k.name) ^ (static_cast<std::size_t>(k.flags) * 0x9E3779B97F4A7C15ull);
+        for (std::uint32_t v : k.vecs)
+        {
+            h = h * 1000003u ^ v;
+        }
+        return h;
+    }
+};
+static std::unordered_map<TexinfoKey, int, TexinfoKeyHash> s_texinfo_index; // -> first texinfo
+
+// nullopt if a component is NaN: NaN compared unequal to everything, so such a texinfo never matched.
+static std::optional<TexinfoKey> MakeTexinfoKey(const char *name, const texinfo_t &tx)
+{
+    TexinfoKey key{name, tx.flags, {}};
+    for (int j = 0; j < 2; j++)
+    {
+        for (int k = 0; k < 4; k++)
+        {
+            const float v = tx.vecs[j][k];
+            if (std::isnan(v))
+            {
+                return std::nullopt;
+            }
+            key.vecs[j * 4 + k] = std::bit_cast<std::uint32_t>(v == 0.0f ? 0.0f : v);
+        }
+    }
+    return key;
+}
+
 static int texmap_store(char *texname, bool shouldlock = true)
 // This function should never be called unless a new entry in g_texinfo is being allocated.
 {
@@ -89,6 +138,7 @@ static void texmap_clear()
         std::free(texmap[i]);
     }
     numtexmap = 0;
+    s_texinfo_index.clear(); // the index holds names, which are only valid while texmap is
     ThreadUnlock();
 }
 
@@ -145,20 +195,40 @@ static int FindMiptex(const char *const name)
     }
 
     ThreadLock();
-    for (i = 0; i < nummiptex; i++)
+    const auto found = s_miptex_index.find(name);
+    i = found != s_miptex_index.end() ? found->second : nummiptex;
+#ifdef VHLT_VERIFY_INDEXES
     {
-        if (!std::strcmp(name, miptex[i].name))
+        int scanned;
+        for (scanned = 0; scanned < nummiptex && std::strcmp(name, miptex[scanned].name); scanned++)
         {
-            ThreadUnlock();
-            return i;
         }
+        if (scanned != i)
+            Error("miptex index mismatch for %s: index %d, linear scan %d", name, i, scanned);
+    }
+#endif
+    if (i < nummiptex)
+    {
+        ThreadUnlock();
+        return i;
     }
 
     hlassume(nummiptex < MAX_MAP_TEXTURES, assume_MAX_MAP_TEXTURES);
     safe_strncpy(miptex[i].name, name, MAX_TEXTURE_NAME_LENGTH);
+    s_miptex_index.emplace(miptex[i].name, i);
     nummiptex++;
     ThreadUnlock();
     return i;
+}
+
+// After miptex[] is reordered (sorted, or entries replaced by their wad lumps).
+static void RebuildMiptexIndex()
+{
+    s_miptex_index.clear();
+    for (int i = 0; i < nummiptex; i++)
+    {
+        s_miptex_index.emplace(miptex[i].name, i); // keeps the first if a name repeats, like the scan
+    }
 }
 
 static bool TEX_InitFromWad()
@@ -509,6 +579,7 @@ void WriteMiptex()
             miptex[i].iTexFile = miptex[i].filepos = miptex[i].disksize = 0;
         }
     }
+    RebuildMiptexIndex(); // entries were replaced by their wad lumps
 
     // Now we have filled lumpinfo for each miptex and the number of used textures for each wad.
     {
@@ -559,6 +630,7 @@ void WriteMiptex()
 
         // Sort them FIRST by wadfile and THEN by name for most efficient loading in the engine.
         qsort((void *)miptex, (std::size_t)nummiptex, sizeof(miptex[0]), lump_sorter_by_wad_and_name);
+        RebuildMiptexIndex();
 
         // Sleazy Hack 104 Pt 2 - After sorting the miptex array, reset the texinfos to point to the right miptexs
         for (int i = 0; i < g_numtexinfo; i++, tx++)
@@ -691,37 +763,48 @@ int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
     tx.vecs[1][3] = bt->vects.shift[1] + DotProduct(origin, tx.vecs[1]);
     // find the g_texinfo
     ThreadLock();
-    texinfo_t *tc = g_texinfo;
-    for (i = 0; i < g_numtexinfo; i++, tc++)
+    const std::optional<TexinfoKey> key = MakeTexinfoKey(bt->name, tx);
+    i = g_numtexinfo;
+    if (key)
     {
-        // Sleazy hack 104, Pt 3 - Use strcmp on names to avoid dups
-        if (std::strcmp(texmap_retrieve(tc->miptex), bt->name) != 0)
+        const auto found = s_texinfo_index.find(*key);
+        if (found != s_texinfo_index.end())
         {
-            continue;
+            i = found->second;
         }
-        if (tc->flags != tx.flags)
+    }
+#ifdef VHLT_VERIFY_INDEXES
+    {
+        int scanned;
+        for (scanned = 0; scanned < g_numtexinfo; scanned++)
         {
-            continue;
+            const texinfo_t *tc = &g_texinfo[scanned];
+            bool same = !std::strcmp(texmap_retrieve(tc->miptex), bt->name) && tc->flags == tx.flags;
+            for (int j = 0; j < 2 && same; j++)
+                for (int k = 0; k < 4 && same; k++)
+                    same = tc->vecs[j][k] == tx.vecs[j][k];
+            if (same)
+                break;
         }
-        for (int j = 0; j < 2; j++)
-        {
-            for (int k = 0; k < 4; k++)
-            {
-                if (tc->vecs[j][k] != tx.vecs[j][k])
-                {
-                    goto skip;
-                }
-            }
-        }
+        if (scanned != i)
+            Error("texinfo index mismatch for %s: index %d, linear scan %d", bt->name, i, scanned);
+    }
+#endif
+    if (i < g_numtexinfo)
+    {
         ThreadUnlock();
         return i;
-    skip:;
     }
 
     hlassume(g_numtexinfo < MAX_INTERNAL_MAP_TEXINFO, assume_MAX_MAP_TEXINFO);
 
+    texinfo_t *tc = &g_texinfo[i];
     *tc = tx;
     tc->miptex = texmap_store(bt->name, false);
+    if (key)
+    {
+        s_texinfo_index.emplace(*key, i);
+    }
     g_numtexinfo++;
     ThreadUnlock();
     return i;

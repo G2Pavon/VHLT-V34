@@ -125,6 +125,17 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
 - `--threads N` normalizes only the thread count in logs (command line, settings table, "Running
   with N threads"). Baseline at H0: 22 of 22 compiling maps differ at the csg stage with 16 threads.
 
+### Index verification build
+
+hlcsg's plane, texinfo and miptex lookups use exact-result indexes (H3). A build with
+`-DVHLT_VERIFY_INDEXES` also runs the old linear scans on every lookup and stops with an error on
+any disagreement:
+
+```sh
+python3 $P build --tree --name verify --cxx-flags "-ffp-contract=off -fno-fast-math -DVHLT_VERIFY_INDEXES" --force
+python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 $P check --bin ../vhlt-parity/builds/verify/bin --tier csg-variants
+```
+
 ### Other commands
 
 ```sh
