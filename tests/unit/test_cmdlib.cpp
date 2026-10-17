@@ -110,22 +110,66 @@ TEST_SUITE("cmdlib")
         char buf[8];
         CHECK(safe_snprintf(buf, sizeof(buf), "%d-%s", 42, "x"));
         CHECK(std::string(buf) == "42-x");
-        safe_snprintf(buf, sizeof(buf), "%s", "abcdefghij"); // return value on truncation is a known bug (Phase 4)
+        CHECK(!safe_snprintf(buf, sizeof(buf), "%s", "abcdefghij")); // false when cut (Phase 4; used to be true)
         CHECK(std::string(buf) == "abcdefg");
-        safe_strncpy(buf, "0123456789", sizeof(buf));
+        CHECK(!safe_snprintf(buf, sizeof(buf), "%s", "abcdefgh")); // exactly one too long
+        CHECK(safe_snprintf(buf, sizeof(buf), "%s", "abcdefg"));   // exactly fits
+        CHECK(!safe_strncpy(buf, "0123456789", sizeof(buf)));
         CHECK(std::string(buf) == "0123456");
+        CHECK(!safe_snprintf(buf, 0, "%s", "x")); // nothing written
     }
 
     TEST_CASE("safe_strncat result is cut at count - 1 characters")
     {
-        // compat for the result only: strncat's limit is on src, so the current code can write
-        // past dest[count - 1] before cutting; the buffer here is large enough for that.
+        // compat: same resulting string as before; it no longer writes past dest[count - 1]
+        // on the way, and returns false when it had to cut.
         char buf[32] = "abc";
-        CHECK(safe_strncat(buf, "defgh", 6));
+        CHECK(!safe_strncat(buf, "defgh", 6));
         CHECK(std::string(buf) == "abcde");
         char buf2[32] = "ab";
-        safe_strncat(buf2, "c", 6);
+        CHECK(safe_strncat(buf2, "c", 6));
         CHECK(std::string(buf2) == "abc");
+        char exact[6] = "abc";
+        CHECK(safe_strncat(exact, "de", sizeof(exact)));
+        CHECK(std::string(exact) == "abcde");
+        char guard[8] = {'a', 'b', 'c', 0, 'X', 'X', 'X', 'X'};
+        CHECK(!safe_strncat(guard, "defghij", 6));
+        CHECK(std::string(guard) == "abcde");
+        CHECK(guard[6] == 'X'); // nothing written past count
+        CHECK(guard[7] == 'X');
+    }
+
+    TEST_CASE("string path API matches the char-buffer helpers")
+    {
+        for (const char *p : {"maps/foo", "foo.map", "dir.v2/foo", "a/b/c.map", "c.map", "a\\b/c", "a/b/", "b/", ".hidden", "/abs/x", ""})
+        {
+            CAPTURE(p);
+            CHECK(PathWithDefaultExtension(p, ".bsp") == Default(p, ".bsp"));
+            CHECK(PathWithoutExtension(p) == Strip(p));
+            CHECK(PathDirectory(p) == FilePath(p));
+            CHECK(PathFile(p) == File(p));
+        }
+    }
+
+    TEST_CASE("the fixed-size wrappers fill the whole array")
+    {
+        char exact[8] = "abc";
+        DefaultExtension(exact, ".bsp"); // 7 characters + NUL: fits exactly
+        CHECK(std::string(exact) == "abc.bsp");
+        char dir[5];
+        ExtractFilePath("abc/def", dir);
+        CHECK(std::string(dir) == "abc/");
+        char file[4];
+        ExtractFile("x/abc", file);
+        CHECK(std::string(file) == "abc");
+    }
+
+    TEST_CASE("I_FloatTime is monotonic seconds")
+    {
+        const double a = I_FloatTime();
+        const double b = I_FloatTime();
+        CHECK(b >= a);
+        CHECK(a > 1.0); // threads.cpp uses < 1.0 to mean "not recorded yet"
     }
 
     TEST_CASE("TerminatedString")

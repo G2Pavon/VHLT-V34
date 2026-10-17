@@ -12,6 +12,7 @@ set(VHLT_TEST_SOURCES
     unit/test_bspfile.cpp
     unit/test_cmdlib.cpp
     unit/test_entity.cpp
+    unit/test_filelib.cpp
     unit/test_loader.cpp
     unit/test_math.cpp
     unit/test_threads.cpp

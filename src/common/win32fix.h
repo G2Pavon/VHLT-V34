@@ -1,10 +1,14 @@
 #pragma once
 
+// Platform glue. The first part is used by common/ and the tools; the "legacy shims" part
+// only by the tools named next to each shim, and goes away as those tools are modernized.
+
+#include <cctype>
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
-#include <cstdint>
-#include <cctype>
 
 #if defined(_MSC_VER) || defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -13,60 +17,34 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
-// STDCALL/FASTCALL/CDECL/INLINE/FORCEINLINE are no longer used by common/; they stay
-// until hlcsg, hlvis and hlrad stop using them.
-#define STDCALL __stdcall
-#define FASTCALL __fastcall
-#define CDECL __cdecl
-#define INLINE __inline
-#define FORCEINLINE __forceinline
-
 #define SYSTEM_SLASH_CHAR '\\'
 #define SYSTEM_SLASH_STR "\\"
 #define FORMAT_PRINTF(A, B)
 
+// legacy shims (MSVC spellings are native here)
+#define FASTCALL __fastcall // hlvis
+#define CDECL __cdecl       // hlcsg, hlrad
+#define INLINE __inline     // hlvis
+#define FORCEINLINE __forceinline // hlrad
+
 #elif defined(__GNUC__) || defined(__clang__)
 #include <limits.h>
-#include <stdarg.h>
 #include <strings.h>
 #include <unistd.h>
-#include <sys/time.h>
 
 #define _MAX_PATH PATH_MAX
-#define MAX_PATH PATH_MAX
-#define _unlink unlink
-#define _strdup strdup
 #define SYSTEM_SLASH_CHAR '/'
 #define SYSTEM_SLASH_STR "/"
-
-#define STDCALL
-#define FASTCALL
-#define CDECL
-#define INLINE inline
-#define FORCEINLINE inline __attribute__((always_inline))
 #define FORMAT_PRINTF(A, B) __attribute__((format(printf, A, B)))
 
-typedef struct
-{
-    uint32_t dwLowDateTime;
-    uint32_t dwHighDateTime;
-} FILETIME;
-struct timeb
-{
-    time_t time;
-    unsigned short millitm;
-    short timezone;
-    short dstflag;
-};
+// legacy shims: MSVC spellings used by the tools
+#define FASTCALL                                      // hlvis
+#define CDECL                                         // hlcsg, hlrad
+#define INLINE inline                                 // hlvis
+#define FORCEINLINE inline __attribute__((always_inline)) // hlrad
+#define _strdup strdup                                // hlcsg, common/bspfile.cpp (ParseEpair, Phase 5)
 
-static inline char *_strlwr(char *s)
-{
-    if (s)
-        for (char *p = s; *p; ++p)
-            *p = tolower((unsigned char)*p);
-    return s;
-}
-static inline char *_strupr(char *s)
+static inline char *_strupr(char *s) // hlcsg
 {
     if (s)
         for (char *p = s; *p; ++p)
@@ -74,7 +52,7 @@ static inline char *_strupr(char *s)
     return s;
 }
 
-static inline int strcpy_s(char *d, size_t s, const char *src)
+static inline int strcpy_s(char *d, size_t s, const char *src) // hlcsg, common/tokenizer.cpp (Phase 5)
 {
     if (!d || !src || s == 0)
         return 22;
@@ -85,17 +63,8 @@ static inline int strcpy_s(char *d, size_t s, const char *src)
 template <size_t size>
 static inline int strcpy_s(char (&d)[size], const char *s) { return strcpy_s(d, size, s); }
 
-static inline int sprintf_s(char *d, size_t s, const char *f, ...)
-{
-    va_list a;
-    va_start(a, f);
-    int r = ::vsnprintf(d, s, f, a);
-    va_end(a);
-    return r;
-}
-
 template <size_t size>
-static inline int sprintf_s(char (&d)[size], const char *f, ...)
+static inline int sprintf_s(char (&d)[size], const char *f, ...) // hlcsg, hlrad
 {
     va_list a;
     va_start(a, f);
@@ -104,7 +73,7 @@ static inline int sprintf_s(char (&d)[size], const char *f, ...)
     return r;
 }
 
-static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s)
+static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s) // hlbsp
 {
     ssize_t len = readlink("/proc/self/exe", f, s - 1);
     if (len != -1)
@@ -115,25 +84,6 @@ static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s)
     if (s > 0)
         f[0] = '\0';
     return 0;
-}
-
-static inline void GetSystemTimeAsFileTime(FILETIME *ft)
-{
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    uint64_t t = ((uint64_t)tv.tv_sec + 11644473600ULL) * 10000000ULL + (tv.tv_usec * 10ULL);
-    ft->dwLowDateTime = (uint32_t)t;
-    ft->dwHighDateTime = (uint32_t)(t >> 32);
-}
-
-static inline void ftime(struct timeb *tb)
-{
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    tb->time = tv.tv_sec;
-    tb->millitm = tv.tv_usec / 1000;
-    tb->timezone = 0;
-    tb->dstflag = 0;
 }
 
 #endif

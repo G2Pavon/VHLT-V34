@@ -1,56 +1,45 @@
 #include "common/filelib.h"
 
-#include <cstdlib>
-#include <cstdio>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 
 #include "common/log.h"
-#include "common/blockmem.h"
+#include "common/messages.h"
+
+UniqueFile SafeOpen(const char *const filename, const char *const mode)
+{
+    UniqueFile f(std::fopen(filename, mode));
+
+    if (!f)
+        Error("Error opening %s: %s", filename, std::strerror(errno));
+
+    return f;
+}
+
+std::vector<char> ReadFile(const char *const filename)
+{
+    UniqueFile f = SafeOpen(filename, "rb");
+    const int length = q_filelength(f.get());
+    std::vector<char> data(length > 0 ? length : 0);
+    SafeRead(f.get(), data.data(), static_cast<int>(data.size()));
+    return data;
+}
 
 int q_filelength(std::FILE *f)
 {
-    int pos = std::ftell(f);
+    long pos = std::ftell(f);
     std::fseek(f, 0, SEEK_END);
-    int end = std::ftell(f);
+    long end = std::ftell(f);
     std::fseek(f, pos, SEEK_SET);
 
-    return end;
+    return static_cast<int>(end);
 }
 
 bool q_exists(const char *const filename)
 {
-    std::FILE *f = std::fopen(filename, "rb");
-
-    if (!f)
-    {
-        return false;
-    }
-    else
-    {
-        std::fclose(f);
-        return true;
-    }
-}
-
-std::FILE *SafeOpenWrite(const char *const filename)
-{
-    std::FILE *f = std::fopen(filename, "wb");
-
-    if (!f)
-        Error("Error opening %s: %s", filename, std::strerror(errno));
-
-    return f;
-}
-
-std::FILE *SafeOpenRead(const char *const filename)
-{
-    std::FILE *f = std::fopen(filename, "rb");
-
-    if (!f)
-        Error("Error opening %s: %s", filename, std::strerror(errno));
-
-    return f;
+    // compat: "can be opened for reading", which on POSIX is also true for a directory
+    return UniqueFile(std::fopen(filename, "rb")) != nullptr;
 }
 
 void SafeRead(std::FILE *f, void *buffer, int count)
@@ -65,14 +54,26 @@ void SafeWrite(std::FILE *f, const void *const buffer, int count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
 }
 
+std::FILE *SafeOpenWrite(const char *const filename)
+{
+    return SafeOpen(filename, "wb").release();
+}
+
+std::FILE *SafeOpenRead(const char *const filename)
+{
+    return SafeOpen(filename, "rb").release();
+}
+
 int LoadFile(const char *const filename, char **bufferptr)
 {
-    std::FILE *f = SafeOpenRead(filename);
-    int length = q_filelength(f);
-    char *buffer = (char *)std::calloc(1, length + 1);
-    SafeRead(f, buffer, length);
-    std::fclose(f);
+    const std::vector<char> data = ReadFile(filename);
+    char *buffer = static_cast<char *>(std::calloc(1, data.size() + 1));
+    hlassume(buffer != nullptr, assume_NoMemory);
+    if (!data.empty())
+    {
+        std::memcpy(buffer, data.data(), data.size());
+    }
 
     *bufferptr = buffer;
-    return length;
+    return static_cast<int>(data.size());
 }

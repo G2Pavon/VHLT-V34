@@ -221,15 +221,6 @@ constexpr int k_write_order[HEADER_LUMPS] = {LUMP_PLANES, LUMP_LEAFS, LUMP_VERTE
                                              LUMP_EDGES, LUMP_MODELS, LUMP_LIGHTING, LUMP_VISIBILITY,
                                              LUMP_ENTITIES, LUMP_TEXTURES};
 
-std::vector<byte> ReadWholeFile(const char *const filename)
-{
-    std::FILE *f = SafeOpenRead(filename);
-    const int length = q_filelength(f);
-    std::vector<byte> data(length > 0 ? length : 0);
-    SafeRead(f, data.data(), static_cast<int>(data.size()));
-    std::fclose(f);
-    return data;
-}
 } // namespace
 
 // Rejects files whose lumps refer to records that do not exist. Only references that the
@@ -353,7 +344,7 @@ static void ValidateReferences()
 
 void LoadBSPFile(const char *const filename)
 {
-    const std::vector<byte> file = ReadWholeFile(filename);
+    const std::vector<char> file = ReadFile(filename);
     const long long filesize = static_cast<long long>(file.size());
 
     if (file.size() < sizeof(dheader_t))
@@ -443,9 +434,8 @@ void WriteBSPFile(const char *const filename)
     }
     std::memcpy(image.data(), &header, sizeof(header));
 
-    std::FILE *bspfile = SafeOpenWrite(filename);
-    SafeWrite(bspfile, image.data(), static_cast<int>(image.size()));
-    std::fclose(bspfile);
+    UniqueFile bspfile = SafeOpen(filename, "wb");
+    SafeWrite(bspfile.get(), image.data(), static_cast<int>(image.size()));
 }
 
 static float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs)
@@ -615,11 +605,8 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 
 void WriteExtentFile(const char *const filename)
 {
-    std::FILE *f = std::fopen(filename, "w");
-    if (!f)
-    {
-        Error("Error opening %s: %s", filename, std::strerror(errno));
-    }
+    UniqueFile file = SafeOpen(filename, "w");
+    std::FILE *f = file.get();
     std::fprintf(f, "%i\n", g_numfaces);
     for (int i = 0; i < g_numfaces; i++)
     {
@@ -628,7 +615,6 @@ void WriteExtentFile(const char *const filename)
         GetFaceExtents(i, mins, maxs);
         std::fprintf(f, "%i %i %i %i\n", mins[0], mins[1], maxs[0], maxs[1]);
     }
-    std::fclose(f);
 }
 
 namespace

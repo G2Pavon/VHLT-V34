@@ -1,87 +1,44 @@
 #include "common/log.h"
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdarg>
 
-#include "common/messages.h"
-#include "common/hlassert.h"
-#include "common/filelib.h"
 #include "common/cmdlib.h"
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include "common/filelib.h"
+#include "common/hlassert.h"
+#include "common/messages.h"
 
 const char *g_Program = "Uninitialized variable ::g_Program";
 char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
 
 bool g_log = DEFAULT_LOG;
 
-static std::FILE *CompileLog = nullptr;
+static UniqueFile CompileLog;
 static bool fatal = false;
 
-bool twice = false;
-std::FILE *conout = nullptr;
+// compat: formatted messages are cut at this many bytes, as they always were.
+constexpr int MAX_ERROR = 2048;
+constexpr int MAX_WARNING = 2048;
+constexpr int MAX_MESSAGE = 2048;
+
+static void DeleteMapFile(const char *const extension)
+{
+    char filename[_MAX_PATH];
+    safe_snprintf(filename, _MAX_PATH, "%s%s", g_Mapname, extension);
+    std::remove(filename);
+}
 
 void ResetTmpFiles()
 {
     if (g_log)
     {
-        char filename[_MAX_PATH];
-
-        safe_snprintf(filename, _MAX_PATH, "%s.bsp", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.inc", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.p0", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.p1", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.p2", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.p3", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.prt", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.pts", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.lin", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.hsz", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.pln", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.b0", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.b1", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.b2", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.b3", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.wa_", g_Mapname);
-        _unlink(filename);
-
-        safe_snprintf(filename, _MAX_PATH, "%s.ext", g_Mapname);
-        _unlink(filename);
+        for (const char *extension : {".bsp", ".inc", ".p0", ".p1", ".p2", ".p3", ".prt", ".pts", ".lin", ".hsz",
+                                      ".pln", ".b0", ".b1", ".b2", ".b3", ".wa_", ".ext"})
+        {
+            DeleteMapFile(extension);
+        }
     }
 }
 
@@ -89,10 +46,7 @@ void ResetLog()
 {
     if (g_log)
     {
-        char logfilename[_MAX_PATH];
-
-        safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
-        _unlink(logfilename);
+        DeleteMapFile(".log");
     }
 }
 
@@ -100,10 +54,7 @@ void ResetErrorLog()
 {
     if (g_log)
     {
-        char logfilename[_MAX_PATH];
-
-        safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
-        _unlink(logfilename);
+        DeleteMapFile(".err");
     }
 }
 
@@ -129,27 +80,18 @@ void LogError(const char *const message)
     if (g_log && CompileLog)
     {
         char logfilename[_MAX_PATH];
-        std::FILE *ErrorLog = nullptr;
 
         safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
-        ErrorLog = std::fopen(logfilename, "a");
+        UniqueFile ErrorLog(std::fopen(logfilename, "a"));
 
         if (ErrorLog)
         {
-            std::fprintf(ErrorLog, "%s: %s\n", g_Program, message);
-            std::fflush(ErrorLog);
-            std::fclose(ErrorLog);
-            ErrorLog = nullptr;
+            std::fprintf(ErrorLog.get(), "%s: %s\n", g_Program, message);
         }
         else
         {
             std::fprintf(stderr, "ERROR: Could not open error logfile %s", logfilename);
             std::fflush(stderr);
-            if (twice)
-            {
-                std::fprintf(conout, "ERROR: Could not open error logfile %s", logfilename);
-                std::fflush(conout);
-            }
         }
     }
 }
@@ -159,20 +101,13 @@ void OpenLog()
     if (g_log)
     {
         char logfilename[_MAX_PATH];
-        {
-            safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
-        }
-        CompileLog = std::fopen(logfilename, "a");
+        safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
+        CompileLog.reset(std::fopen(logfilename, "a"));
 
         if (!CompileLog)
         {
             std::fprintf(stderr, "ERROR: Could not open logfile %s", logfilename);
             std::fflush(stderr);
-            if (twice)
-            {
-                std::fprintf(conout, "ERROR: Could not open logfile %s", logfilename);
-                std::fflush(conout);
-            }
         }
     }
 }
@@ -182,48 +117,32 @@ void CloseLog()
     if (g_log && CompileLog)
     {
         LogEnd();
-        std::fflush(CompileLog);
-        std::fclose(CompileLog);
-        CompileLog = nullptr;
+        CompileLog.reset();
     }
 }
 // Every function up to this point should check g_log, the functions below should not
 // AJM: fprintf/flush wasnt printing newline chars correctly (prefixed with \r) under win32
 //      due to the fact that those streams are in byte mode, so this function prefixes
 //      all \n with \r automatically.
-//      NOTE: system load may be more with this method, but there isnt that much logging going
-//      on compared to the time taken to compile the map, so its negligable.
 static void Safe_WriteLog(const char *const message)
 {
     if (!CompileLog)
         return;
 
-    const char *c = &message[0];
-
-    while (1)
+    for (const char *c = message; *c; c++)
     {
-        if (!*c)
-            return; // end of string
-
         if (*c == '\n')
-            std::fputc('\r', CompileLog);
+            std::fputc('\r', CompileLog.get());
 
-        std::fputc(*c, CompileLog);
-
-        c++;
+        std::fputc(*c, CompileLog.get());
     }
 }
 
 static void WriteLog(const char *const message)
 {
     Safe_WriteLog(message);
-    std::fprintf(stdout, "%s", message); //std::fprintf(stdout, message); //--vluzacn
+    std::fprintf(stdout, "%s", message);
     std::fflush(stdout);
-    if (twice)
-    {
-        std::fprintf(conout, "%s", message);
-        std::fflush(conout);
-    }
 }
 
 void CheckFatal()
@@ -234,10 +153,6 @@ void CheckFatal()
         std::exit(1);
     }
 }
-
-#define MAX_ERROR 2048
-#define MAX_WARNING 2048
-#define MAX_MESSAGE 2048
 
 void FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
 {
@@ -253,7 +168,7 @@ void FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
     WriteLog(message2);
     LogError(message2);
 
-    fatal = 1;
+    fatal = true;
     CheckFatal();
     std::exit(1); // not reached: CheckFatal() exits once fatal is set
 }
@@ -281,7 +196,7 @@ void FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...
         PrintOnce(message);
     }
 
-    fatal = 1;
+    fatal = true;
 }
 
 void FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
