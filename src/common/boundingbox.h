@@ -13,13 +13,13 @@
 class BoundingBox
 {
   public:
-    typedef enum
+    enum eBoundingState
     {
         eDisjoint, // neither boxes touch
         eUnion,    // this box intersects with the other box
         eSubset,   // this box is inside the other box
         eSuperset  // this box is completly envelops the other box
-    } eBoundingState;
+    };
 
     // Tests if other box is completely outside of this box
     bool testDisjoint(const BoundingBox &other) const
@@ -133,7 +133,6 @@ class BoundingBox
         VectorCopy(mins, m_Mins);
         VectorCopy(maxs, m_Maxs);
     }
-    ~BoundingBox() {}
 
   public:
     // Bounding box

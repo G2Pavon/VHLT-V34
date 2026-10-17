@@ -1,10 +1,10 @@
 #pragma once
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 #ifdef DOUBLEVEC_T
-typedef double vec_t;
+using vec_t = double;
 #else
-typedef float vec_t;
+using vec_t = float;
 #endif
-typedef vec_t vec3_t[3]; // x,y,z
+using vec3_t = vec_t[3]; // x,y,z

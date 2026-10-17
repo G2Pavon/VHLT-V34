@@ -79,6 +79,96 @@ TEST_SUITE("math")
         CHECK(m[1] == 1);
     }
 
+    TEST_CASE("compat: CrossProduct into one of its inputs sees the partial update")
+    {
+        // dest[0] is written before dest[1] and dest[2] read a[0] and a[1].
+        float a[3] = {1, 2, 3};
+        const float b[3] = {4, 5, 6};
+        float c[3];
+        CrossProduct(a, b, c);
+        CHECK(c[0] == -3);
+        CHECK(c[1] == 6);
+        CHECK(c[2] == -3);
+        CrossProduct(a, b, a);
+        CHECK(a[0] == -3);
+        CHECK(a[1] == 30);
+        CHECK(a[2] == -135);
+    }
+
+    TEST_CASE("compat: a scalar argument that refers into the destination is re-read per component")
+    {
+        vec3_t v = {2, 3, 4};
+        VectorScale(v, v[0], v); // v[0] becomes 4 before v[1] and v[2] are scaled
+        CHECK(v[0] == 4);
+        CHECK(v[1] == 12);
+        CHECK(v[2] == 16);
+    }
+
+    TEST_CASE("result types follow the operands")
+    {
+        const float f[3] = {1, 2, 3};
+        const double d[3] = {1, 2, 3};
+        const int n[3] = {1, 1, 2};
+        CHECK(std::is_same_v<decltype(qmax(1.5f, 2)), float>);
+        CHECK(std::is_same_v<decltype(qmax(1, 2.0)), double>);
+        CHECK(std::is_same_v<decltype(VectorAvg(f)), float>);
+        CHECK(VectorAvg(n) == 1); // integer division, as in the macro
+        CHECK(VectorAvg(f) == 2.0f);
+        // The macros yielded an lvalue (const double&) for lvalue operands; the templates
+        // return a value. No call site binds to or takes the address of the result.
+        CHECK(std::is_same_v<std::remove_cvref_t<decltype(VectorMaximum(d))>, double>);
+        CHECK(VectorMaximum(n) == 2);
+        CHECK(VectorMinimum(f) == 1.0f);
+        CHECK(std::is_same_v<decltype(VectorRound(2.5f)), double>);
+        CHECK(VectorRound(2.5f) == 3.0);
+        CHECK(VectorRound(-2.5) == -2.0);
+        const char *s = "a/b\\c";
+        CHECK(qmax(s + 1, s + 3) == s + 3); // pointers, as cmdlib uses it
+    }
+
+    TEST_CASE("compat: VectorLength squares in the element type before widening")
+    {
+        const float big[3] = {1e20f, 0, 0};
+        CHECK(std::isinf(VectorLength(big))); // 1e40 overflows float
+        const double bigd[3] = {1e20, 0, 0};
+        CHECK(VectorLength(bigd) == 1e20);
+    }
+
+    TEST_CASE("componentwise helpers")
+    {
+        vec3_t a = {1, 2, 3}, b = {4, 5, 6}, c;
+        VectorMultiply(a, b, c);
+        CHECK(c[2] == 18);
+        VectorAddVec(a, 1, c);
+        CHECK(c[0] == 2);
+        VecSubtractVector(10, a, c);
+        CHECK(c[1] == 8);
+        VectorCompareMinimum(a, b, c);
+        CHECK(c[2] == 3);
+        VectorCompareMaximum(a, b, c);
+        CHECK(c[0] == 4);
+        VectorInverse(c);
+        CHECK(c[1] == -5);
+        VectorFill(c, 7);
+        CHECK(c[2] == 7);
+        VectorClear(c);
+        CHECK(c[0] == 0);
+        CHECK(!std::signbit(c[1]));
+        VectorAdd(a, b, a); // destination aliases an input
+        CHECK(a[2] == 9);
+        VectorSubtract(a, b, a);
+        CHECK(a[2] == 3);
+    }
+
+    TEST_CASE("the helpers are usable in constant expressions")
+    {
+        constexpr float x[3] = {1, 2, 3};
+        static_assert(DotProduct(x, x) == 14);
+        static_assert(qmax(1, 2) == 2 && qmin(1.0, 2.0) == 1.0);
+        static_assert(VectorMaximum(x) == 3);
+        CHECK(true);
+    }
+
     TEST_CASE("VectorNormalize")
     {
         vec3_t v = {3, 4, 0};

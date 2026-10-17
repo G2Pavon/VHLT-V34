@@ -6,14 +6,6 @@
 #include <cfloat>
 #include <cstdint>
 
-#if !defined(qmax)
-#define qmax(a, b) (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn
-#endif
-
-#if !defined(qmin)
-#define qmin(a, b) (((a) < (b)) ? (a) : (b)) // changed 'min' to 'qmin'. --vluzacn
-#endif
-
 constexpr double Q_PI = 3.14159265358979323846;
 
 // HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
@@ -24,109 +16,178 @@ constexpr float EQUAL_EPSILON = 0.004;
 constexpr vec3_t vec3_origin = {0, 0, 0};
 constexpr vec3_t vec3_one = {1.0, 1.0, 1.0};
 // Vector Math
-#define VectorAdd(a, b, c)        \
-    {                             \
-        (c)[0] = (a)[0] + (b)[0]; \
-        (c)[1] = (a)[1] + (b)[1]; \
-        (c)[2] = (a)[2] + (b)[2]; \
-    }
+//
+// These were macros. Each template evaluates exactly the macro's expression, component by
+// component in the same order, so results are bit-identical: the operand types (float, double,
+// mixed) and the usual arithmetic conversions are those of the arguments, nothing is widened,
+// and a destination that aliases an input sees the same partial updates as before.
+// Arguments are now evaluated once; no call site relied on repeated evaluation.
+// qmax/qmin/VectorMaximum/VectorMinimum return a value where the macros yielded an lvalue;
+// no call site took the address of, or held a reference to, the result.
 
-#define VectorSubtract(a, b, c)   \
-    {                             \
-        (c)[0] = (a)[0] - (b)[0]; \
-        (c)[1] = (a)[1] - (b)[1]; \
-        (c)[2] = (a)[2] - (b)[2]; \
-    }
+// compat: ((a) > (b)) ? (a) : (b) returns b on ties and NaN, unlike std::max (sign of zero).
+template <typename A, typename B>
+constexpr auto qmax(const A &a, const B &b) // changed 'max' to 'qmax'. --vluzacn
+{
+    return (a > b) ? a : b;
+}
 
-#define DotProduct(x, y) ((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
+template <typename A, typename B>
+constexpr auto qmin(const A &a, const B &b) // changed 'min' to 'qmin'. --vluzacn
+{
+    return (a < b) ? a : b;
+}
 
-#define CrossProduct(a, b, dest)                       \
-    {                                                  \
-        (dest)[0] = (a)[1] * (b)[2] - (a)[2] * (b)[1]; \
-        (dest)[1] = (a)[2] * (b)[0] - (a)[0] * (b)[2]; \
-        (dest)[2] = (a)[0] * (b)[1] - (a)[1] * (b)[0]; \
-    }
+template <typename A, typename B, typename C>
+constexpr void VectorAdd(const A &a, const B &b, C &&c)
+{
+    c[0] = a[0] + b[0];
+    c[1] = a[1] + b[1];
+    c[2] = a[2] + b[2];
+}
 
-#define VectorFill(a, b) \
-    {                    \
-        (a)[0] = (b);    \
-        (a)[1] = (b);    \
-        (a)[2] = (b);    \
-    }
+template <typename A, typename B, typename C>
+constexpr void VectorSubtract(const A &a, const B &b, C &&c)
+{
+    c[0] = a[0] - b[0];
+    c[1] = a[1] - b[1];
+    c[2] = a[2] - b[2];
+}
 
-#define VectorAvg(a) (((a)[0] + (a)[1] + (a)[2]) / 3)
+template <typename X, typename Y>
+constexpr auto DotProduct(const X &x, const Y &y)
+{
+    return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
+}
 
-#define VectorMultiply(a, b, c)   \
-    {                             \
-        (c)[0] = (a)[0] * (b)[0]; \
-        (c)[1] = (a)[1] * (b)[1]; \
-        (c)[2] = (a)[2] * (b)[2]; \
-    }
+// dest may alias a or b: dest[0] is written before dest[1] and dest[2] are computed.
+template <typename A, typename B, typename D>
+constexpr void CrossProduct(const A &a, const B &b, D &&dest)
+{
+    dest[0] = a[1] * b[2] - a[2] * b[1];
+    dest[1] = a[2] * b[0] - a[0] * b[2];
+    dest[2] = a[0] * b[1] - a[1] * b[0];
+}
 
-#define VectorAddVec(a, b, c)  \
-    {                          \
-        (c)[0] = (a)[0] + (b); \
-        (c)[1] = (a)[1] + (b); \
-        (c)[2] = (a)[2] + (b); \
-    }
+template <typename A, typename B>
+constexpr void VectorFill(A &&a, const B &b)
+{
+    a[0] = b;
+    a[1] = b;
+    a[2] = b;
+}
 
-#define VecSubtractVector(a, b, c) \
-    {                              \
-        (c)[0] = (a) - (b)[0];     \
-        (c)[1] = (a) - (b)[1];     \
-        (c)[2] = (a) - (b)[2];     \
-    }
+template <typename A>
+constexpr auto VectorAvg(const A &a)
+{
+    return (a[0] + a[1] + a[2]) / 3;
+}
 
-#define VectorScale(a, b, c)   \
-    {                          \
-        (c)[0] = (a)[0] * (b); \
-        (c)[1] = (a)[1] * (b); \
-        (c)[2] = (a)[2] * (b); \
-    }
+template <typename A, typename B, typename C>
+constexpr void VectorMultiply(const A &a, const B &b, C &&c)
+{
+    c[0] = a[0] * b[0];
+    c[1] = a[1] * b[1];
+    c[2] = a[2] * b[2];
+}
 
-#define VectorCopy(a, b) \
-    {                    \
-        (b)[0] = (a)[0]; \
-        (b)[1] = (a)[1]; \
-        (b)[2] = (a)[2]; \
-    }
-#define VectorClear(a)                  \
-    {                                   \
-        (a)[0] = (a)[1] = (a)[2] = 0.0; \
-    }
+// c = a + scalar b
+template <typename A, typename B, typename C>
+constexpr void VectorAddVec(const A &a, const B &b, C &&c)
+{
+    c[0] = a[0] + b;
+    c[1] = a[1] + b;
+    c[2] = a[2] + b;
+}
 
-#define VectorMaximum(a) (qmax((a)[0], qmax((a)[1], (a)[2])))
+// c = scalar a - b
+template <typename A, typename B, typename C>
+constexpr void VecSubtractVector(const A &a, const B &b, C &&c)
+{
+    c[0] = a - b[0];
+    c[1] = a - b[1];
+    c[2] = a - b[2];
+}
 
-#define VectorMinimum(a) (qmin((a)[0], qmin((a)[1], (a)[2])))
+template <typename A, typename B, typename C>
+constexpr void VectorScale(const A &a, const B &b, C &&c)
+{
+    c[0] = a[0] * b;
+    c[1] = a[1] * b;
+    c[2] = a[2] * b;
+}
 
-#define VectorInverse(a)    \
-    {                       \
-        (a)[0] = -((a)[0]); \
-        (a)[1] = -((a)[1]); \
-        (a)[2] = -((a)[2]); \
-    }
-#define VectorRound(a) std::floor((a) + 0.5)
+template <typename A, typename B>
+constexpr void VectorCopy(const A &a, B &&b)
+{
+    b[0] = a[0];
+    b[1] = a[1];
+    b[2] = a[2];
+}
 
-#define VectorMA(a, scale, b, dest)            \
-    {                                          \
-        (dest)[0] = (a)[0] + (scale) * (b)[0]; \
-        (dest)[1] = (a)[1] + (scale) * (b)[1]; \
-        (dest)[2] = (a)[2] + (scale) * (b)[2]; \
-    }
-#define VectorLength(a) std::sqrt((double)((double)((a)[0] * (a)[0]) + (double)((a)[1] * (a)[1]) + (double)((a)[2] * (a)[2])))
+template <typename A>
+constexpr void VectorClear(A &&a)
+{
+    a[0] = a[1] = a[2] = 0.0;
+}
 
-#define VectorCompareMinimum(a, b, c)  \
-    {                                  \
-        (c)[0] = qmin((a)[0], (b)[0]); \
-        (c)[1] = qmin((a)[1], (b)[1]); \
-        (c)[2] = qmin((a)[2], (b)[2]); \
-    }
-#define VectorCompareMaximum(a, b, c)  \
-    {                                  \
-        (c)[0] = qmax((a)[0], (b)[0]); \
-        (c)[1] = qmax((a)[1], (b)[1]); \
-        (c)[2] = qmax((a)[2], (b)[2]); \
-    }
+template <typename A>
+constexpr auto VectorMaximum(const A &a)
+{
+    return qmax(a[0], qmax(a[1], a[2]));
+}
+
+template <typename A>
+constexpr auto VectorMinimum(const A &a)
+{
+    return qmin(a[0], qmin(a[1], a[2]));
+}
+
+template <typename A>
+constexpr void VectorInverse(A &&a)
+{
+    a[0] = -(a[0]);
+    a[1] = -(a[1]);
+    a[2] = -(a[2]);
+}
+
+// Rounds a scalar (despite the name).
+template <typename T>
+auto VectorRound(const T &a)
+{
+    return std::floor(a + 0.5);
+}
+
+template <typename A, typename S, typename B, typename D>
+constexpr void VectorMA(const A &a, const S &scale, const B &b, D &&dest)
+{
+    dest[0] = a[0] + scale * b[0];
+    dest[1] = a[1] + scale * b[1];
+    dest[2] = a[2] + scale * b[2];
+}
+
+// compat: each square is computed in the element type, then widened to double.
+template <typename A>
+double VectorLength(const A &a)
+{
+    return std::sqrt((double)((double)(a[0] * a[0]) + (double)(a[1] * a[1]) + (double)(a[2] * a[2])));
+}
+
+template <typename A, typename B, typename C>
+constexpr void VectorCompareMinimum(const A &a, const B &b, C &&c)
+{
+    c[0] = qmin(a[0], b[0]);
+    c[1] = qmin(a[1], b[1]);
+    c[2] = qmin(a[2], b[2]);
+}
+
+template <typename A, typename B, typename C>
+constexpr void VectorCompareMaximum(const A &a, const B &b, C &&c)
+{
+    c[0] = qmax(a[0], b[0]);
+    c[1] = qmax(a[1], b[1]);
+    c[2] = qmax(a[2], b[2]);
+}
 
 inline vec_t VectorNormalize(vec3_t v)
 {
