@@ -19,6 +19,7 @@ Data lives outside the repo in $VHLT_PARITY_DATA (default: <repo>/../vhlt-parity
 import argparse
 import concurrent.futures
 import datetime
+import fnmatch
 import hashlib
 import json
 import os
@@ -52,6 +53,12 @@ TIERS = {
 }
 STAGE_TIMEOUT = 4 * 3600
 DEFAULT_JOBS = max(1, min(os.cpu_count() or 1, 8))
+
+# Maps left out of the compile corpus (fnmatch patterns on the map name). dm_* (dm_stalkfire_f1)
+# cost about a third of the full tier's wall time without covering anything the other maps don't.
+# The stock dm_stalkfire_f1.bsp is still used by probe and the unit tests: it is the only BSP with
+# embedded lightmaps, and loading it takes well under a second.
+EXCLUDED_MAPS = ("dm_*",)
 
 MISSING_TEXTURE_RE = re.compile(r"::FindTexture\(\) texture (\S+) not found!")
 
@@ -95,11 +102,15 @@ def snapshot(src: Path, dst: Path) -> None:
             shutil.copy2(f, dst / f.name)
 
 
+def is_excluded(name: str) -> bool:
+    return any(fnmatch.fnmatchcase(name, pattern) for pattern in EXCLUDED_MAPS)
+
+
 def corpus_maps() -> list[str]:
     manifest = DATA / "corpus" / "manifest.json"
     if not manifest.exists():
         sys.exit(f"no corpus at {manifest.parent}; run 'parity.py corpus' first")
-    return sorted(read_json(manifest)["maps"])
+    return sorted(m for m in read_json(manifest)["maps"] if not is_excluded(m))
 
 
 def select_maps(requested: list[str] | None) -> list[str]:
@@ -264,6 +275,8 @@ def cmd_corpus(args) -> int:
 
     for rmf in sorted(RMF_ROOT.rglob("*.rmf")):
         name = rmf.stem
+        if is_excluded(name):
+            continue
         out = maps_dir / f"{name}.map"
         proc = run([MESS, "-convert", "-mapformat", "trenchbroomvalve220", "-tbgame", "Half-Life",
                     "-wad", ";".join(map(str, canon)), rmf, out], capture_output=True, text=True)
@@ -274,6 +287,8 @@ def cmd_corpus(args) -> int:
         log(f"  converted {name}")
 
     for m in sorted(EXTRA_MAP_DIR.glob("*.map")):
+        if is_excluded(m.stem):
+            continue
         if m.stem in sources:
             sys.exit(f"duplicate map name {m.stem}")
         shutil.copy2(m, maps_dir / m.name)
@@ -626,6 +641,149 @@ def cmd_sanitize(args) -> int:
 
 
 # ---------------------------------------------------------------------------
+# command: probe (old-vs-new differential of common/ BSP I/O, and corruption smoke test)
+
+PROBE_SRC = REPO / "tests" / "probe" / "bsp_probe.cpp"
+PROBE_MODES = ["roundtrip", "embedded", "sizes", "textures"]
+
+
+def build_probe(src_root: Path, out: Path, cxx: str, flags: list[str]) -> Path:
+    """Compile bsp_probe against src_root/src/common (the tool configuration of hlrad)."""
+    out.mkdir(parents=True, exist_ok=True)
+    exe = out / "bsp_probe"
+    sources = sorted((src_root / "src" / "common").glob("*.cpp"))
+    cmd = [cxx, "-std=c++20", "-O2", *PARITY_CXX_FLAGS.split(), *flags, "-w", "-DHLRAD",
+           f"-I{src_root / 'src'}", str(PROBE_SRC), *map(str, sources), "-o", str(exe)]
+    proc = run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.exit(f"probe build failed ({src_root}):\n{proc.stderr[-4000:]}")
+    return exe
+
+
+def probe_inputs() -> list[Path]:
+    bsp_dir = Path(os.environ.get("VHLT_TEST_BSP_DIR", GAME / "cstrike" / "maps"))
+    files = sorted(bsp_dir.glob("*.bsp"))
+    files += sorted((DATA / "refs" / "quick").glob("*/rad/*.bsp"))
+    return [f for f in files if f.read_bytes()[:4] == (30).to_bytes(4, "little")]
+
+
+def _probe_case(old: Path, new: Path, mode: str, bsp: Path, tmp: Path) -> list[str]:
+    problems = []
+    outs = {}
+    for label, exe in (("old", old), ("new", new)):
+        out = tmp / f"{bsp.stem}.{mode}.{label}.bsp"
+        args = [exe, mode, bsp] + ([out] if mode in ("roundtrip", "embedded") else [])
+        proc = run(args, capture_output=True)
+        outs[label] = (proc.returncode, proc.stdout, out)
+    (oc, oout, obsp), (nc, nout, nbsp) = outs["old"], outs["new"]
+    if oc != nc:
+        problems.append(f"exit old={oc} new={nc}")
+    if oout != nout:
+        a, b = oout.split(b"\n"), nout.split(b"\n")
+        i = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+        problems.append(f"stdout differs at line {i + 1}: old={a[i][:160] if i < len(a) else b'<eof>'!r} "
+                        f"new={b[i][:160] if i < len(b) else b'<eof>'!r}")
+    if obsp.exists() or nbsp.exists():
+        if not (obsp.exists() and nbsp.exists()):
+            problems.append("output written by only one build")
+        else:
+            same, report = bspdiff.compare(str(obsp), str(nbsp), "zero-or-equal")
+            if not same:
+                problems.append("output .bsp differs:\n" + "\n".join(report))
+            _, zreport = bspdiff.compare(str(nbsp), str(nbsp), "zero")
+            if zreport:
+                problems.append("new build wrote non-zero padding")
+    for f in (obsp, nbsp):
+        f.unlink(missing_ok=True)
+    return problems
+
+
+def mutations(data: bytes, rng) -> list[tuple[str, bytes]]:
+    """Deterministic corruptions of a BSP image, aimed at the loader's checks."""
+    import struct
+    size = len(data)
+    interesting = [0, 1, 3, -1, -4, size, size - 1, size + 1, 0x7FFFFFFF, -0x80000000, 0x40000000, 124, 125]
+    out = []
+    for _ in range(4):
+        lump = rng.randrange(15)
+        field = rng.randrange(2)
+        value = rng.choice(interesting + [rng.randrange(-size, 2 * size)])
+        b = bytearray(data)
+        struct.pack_into("<i", b, 4 + 8 * lump + 4 * field, value)
+        out.append((f"lump{lump}.{'ofs' if field == 0 else 'len'}={value}", bytes(b)))
+    cut = rng.randrange(0, min(size, 200))
+    out.append((f"truncated to {cut}", data[:cut]))
+    # texture lump internals: nummiptex and one dataofs entry
+    tofs, tlen = struct.unpack_from("<ii", data, 4 + 8 * 2)
+    if tlen >= 8:
+        b = bytearray(data)
+        struct.pack_into("<i", b, tofs, rng.choice([-1, 0x7FFFFFFF, tlen, 1 << 20]))
+        out.append(("nummiptex corrupted", bytes(b)))
+        b = bytearray(data)
+        struct.pack_into("<i", b, tofs + 4, rng.choice([-2, tlen, tlen - 1, 0x7FFFFFF0, 4]))
+        out.append(("dataofs[0] corrupted", bytes(b)))
+    # texinfo miptex values that index outside the texture table
+    iofs, ilen = struct.unpack_from("<ii", data, 4 + 8 * 6)
+    if ilen >= 40:
+        b = bytearray(data)
+        struct.pack_into("<i", b, iofs + 32, rng.choice([-2, -1000, 1 << 24, 0x7FFFFFFF]))
+        out.append(("texinfo[0].miptex corrupted", bytes(b)))
+    return out
+
+
+def cmd_probe(args) -> int:
+    import random
+    root = DATA / "builds" / "probe"
+    old = build_probe(DATA / "builds" / "oracle" / "src", root / "oracle", "g++", [])
+    new = build_probe(REPO, root / "tree", "g++", [])
+    inputs = probe_inputs()
+    log(f"differential: {len(inputs)} BSPs x {len(PROBE_MODES)} modes, oracle common/ vs working tree")
+
+    failures = []
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+        tmp = Path(tmp)
+        with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
+            futs = {pool.submit(_probe_case, old, new, m, f, tmp): (f, m) for f in inputs for m in PROBE_MODES}
+            for fut in concurrent.futures.as_completed(futs):
+                f, m = futs[fut]
+                for p in fut.result():
+                    failures.append(f"[{f.name}] {m}: {p}")
+        log(f"  {'PASS' if not failures else 'FAIL'}: {len(failures)} difference(s)")
+
+        if args.mutations:
+            if args.sanitize:
+                san = build_probe(REPO, root / "sanitize", "clang++",
+                                  ["-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-g"])
+            exe = san if args.sanitize else new
+            env = dict(os.environ, ASAN_OPTIONS="detect_leaks=0:exitcode=99", UBSAN_OPTIONS="halt_on_error=1:exitcode=98")
+            rng = random.Random(args.seed)
+            small = sorted((p for p in inputs if p.stat().st_size < 8 << 20), key=lambda p: p.stat().st_size)[:12]
+            cases = [(p, desc, data) for p in small for _ in range(args.mutations // max(1, len(small)) // 8 + 1)
+                     for desc, data in mutations(p.read_bytes(), rng)]
+            cases = cases[: args.mutations]
+            crashes, accepted, rejected = [], 0, 0
+            for i, (p, desc, data) in enumerate(cases):
+                f = tmp / f"mut{i}.bsp"
+                f.write_bytes(data)
+                for mode in ("load", "sizes", "textures"):
+                    proc = run([exe, mode, f], capture_output=True, env=env, timeout=120)
+                    if proc.returncode not in (0, 1):
+                        tail = (proc.stderr or proc.stdout)[-600:].decode(errors="replace")
+                        crashes.append(f"[{p.name}: {desc}] {mode}: exit {proc.returncode}\n{tail}")
+                    elif mode == "load":
+                        accepted += proc.returncode == 0
+                        rejected += proc.returncode == 1
+                f.unlink()
+            log(f"mutations ({'ASan+UBSan' if args.sanitize else 'plain'} build, seed {args.seed}): {len(cases)} files, "
+                f"{accepted} accepted, {rejected} rejected, {len(crashes)} crash(es)")
+            failures += crashes
+
+    if failures:
+        log("\n".join(failures[:40]))
+    return 1 if failures else 0
+
+
+# ---------------------------------------------------------------------------
 
 
 def main() -> int:
@@ -660,7 +818,8 @@ def main() -> int:
     p = sub.add_parser("check", help="run a candidate and compare every stage against the oracle")
     common(p)
     p.add_argument("--mode", choices=["chain", "isolated", "both"], default="both")
-    p.add_argument("--padding", choices=["zero-or-equal", "zero", "strict", "ignore"], default="zero-or-equal")
+    # Since Phase 2 the writer zero-fills lump padding; the oracle leaks stale bytes there.
+    p.add_argument("--padding", choices=["zero-or-equal", "zero", "strict", "ignore"], default="zero")
     p.add_argument("--label")
     p.add_argument("--keep", action="store_true", help="keep outputs even when everything matches")
     p.set_defaults(func=cmd_check)
@@ -679,6 +838,13 @@ def main() -> int:
     p.add_argument("--cxx", default="clang++")
     p.add_argument("--baseline", help="previous findings file; fail only on new findings")
     p.set_defaults(func=cmd_sanitize)
+
+    p = sub.add_parser("probe", help="old-vs-new differential of common/ BSP I/O, plus corruption smoke test")
+    p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
+    p.add_argument("--mutations", type=int, default=0, help="number of corrupted files to try (0: skip)")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--sanitize", action="store_true", help="run the mutations against an ASan/UBSan build")
+    p.set_defaults(func=cmd_probe)
 
     args = ap.parse_args()
     DATA.mkdir(parents=True, exist_ok=True)

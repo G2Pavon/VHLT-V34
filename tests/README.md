@@ -42,10 +42,15 @@ vhlt-parity/
 ```sh
 P=tests/parity/parity.py
 python3 $P build                 # oracle from tag oracle-base, flags -ffp-contract=off -fno-fast-math
-python3 $P corpus                # 18 RMFs via MESS + cstrike/maps/*.map, canonical WAD lists, placeholders
+python3 $P corpus                # 18 RMFs via MESS + cstrike/maps/*.map minus EXCLUDED_MAPS (23 maps), canonical WAD lists, placeholders
 python3 $P ref --tier quick      # oracle outputs (vis/rad -fast), ~1 min
 python3 $P ref --tier full       # oracle outputs (default vis/rad), slow
 ```
+
+`EXCLUDED_MAPS` in `parity.py` (currently `dm_*`) keeps maps out of the compile corpus:
+dm_stalkfire_f1 took about a third of the full tier's time without adding coverage. The stock
+`dm_stalkfire_f1.bsp` is still loaded by `probe` and the unit tests, as the only BSP with
+embedded lightmaps.
 
 ### Checking a change
 
@@ -62,9 +67,9 @@ python3 $P check --bin ../vhlt-parity/builds/cand/bin --tier full
   `.log`/`.err` after normalizing build date, argv[0] path and elapsed times.
 - Exit codes must match too. `plants_soc_final` is a Quake-3-format map that hlcsg rejects; it
   checks that the error path is unchanged.
-- `--padding`: the 0–3 bytes after each lump. The oracle leaks stale buffer bytes there; the
-  modernized writer zero-fills. Default `zero-or-equal` accepts either; switch to `zero` once the
-  new writer lands.
+- `--padding`: the 0–3 bytes after each lump. The oracle leaks stale buffer bytes there; since
+  Phase 2 the writer zero-fills, and the default `zero` requires that. `zero-or-equal` accepts either
+  (for checking builds older than Phase 2).
 
 All tools run with `-threads 1`. Multi-threaded hlcsg is not deterministic even between two runs
 of the same binary (plane numbering depends on scheduling), so it cannot be compared byte for byte.
@@ -74,6 +79,7 @@ of the same binary (plane numbering depends on scheduling), so it cannot be comp
 ```sh
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-oracle-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
+python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
 ```

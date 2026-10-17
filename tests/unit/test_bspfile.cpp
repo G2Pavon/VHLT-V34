@@ -247,6 +247,10 @@ TEST_SUITE("bspfile")
             {
                 CAPTURE(lump);
                 CHECK(lumps[lump].fileofs == ofs);
+                for (int pad = ofs + lumps[lump].filelen; pad < ((ofs + lumps[lump].filelen + 3) & ~3); pad++)
+                {
+                    CHECK(a[pad] == 0); // padding after each lump is zero-filled
+                }
                 ofs += (lumps[lump].filelen + 3) & ~3;
             }
             CHECK(static_cast<size_t>(ofs) == a.size());

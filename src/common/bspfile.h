@@ -1,16 +1,16 @@
 #pragma once
 
 #include <cstdio>
+#include <cstring>
+#include <optional>
 
+#include "common/bspformat.h"
 #include "common/entity.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 #include "common/win32fix.h"
 
 // upper design bounds
-
-constexpr int MAX_MAP_HULLS = 4;
-// hard limit
 
 constexpr int MAX_MAP_MODELS = 512; //400 //vluzacn
 // variable, but 400 brush entities is very stressful on the engine and network code as it is
@@ -90,170 +90,6 @@ constexpr int MAX_SURFACE_EXTENT = 16; // if lightmap extent exceeds 16, the map
 constexpr int ENGINE_ENTITY_RANGE = 4096.0;
 //=============================================================================
 
-constexpr int BSPVERSION = 30;
-// BSP File Structures
-struct lump_t
-{
-    int fileofs;
-    int filelen;
-};
-
-constexpr int LUMP_ENTITIES = 0;
-constexpr int LUMP_PLANES = 1;
-constexpr int LUMP_TEXTURES = 2;
-constexpr int LUMP_VERTEXES = 3;
-constexpr int LUMP_VISIBILITY = 4;
-constexpr int LUMP_NODES = 5;
-constexpr int LUMP_TEXINFO = 6;
-constexpr int LUMP_FACES = 7;
-constexpr int LUMP_LIGHTING = 8;
-constexpr int LUMP_CLIPNODES = 9;
-constexpr int LUMP_LEAFS = 10;
-constexpr int LUMP_MARKSURFACES = 11;
-constexpr int LUMP_EDGES = 12;
-constexpr int LUMP_SURFEDGES = 13;
-constexpr int LUMP_MODELS = 14;
-constexpr int HEADER_LUMPS = 15;
-
-struct dmodel_t
-{
-    float mins[3], maxs[3];
-    float origin[3];
-    int headnode[MAX_MAP_HULLS];
-    int visleafs; // not including the solid leaf 0
-    int firstface, numfaces;
-};
-
-struct dheader_t
-{
-    int version;
-    lump_t lumps[HEADER_LUMPS];
-};
-
-struct dmiptexlump_t
-{
-    int nummiptex;
-    int dataofs[4]; // [nummiptex]
-};
-
-constexpr int MIPLEVELS = 4;
-constexpr int MAX_TEXTURE_NAME_LENGTH = 16;
-struct miptex_t
-{
-    char name[MAX_TEXTURE_NAME_LENGTH];
-    unsigned width, height;
-    unsigned offsets[MIPLEVELS]; // four mip maps stored
-};
-
-struct dvertex_t
-{
-    float point[3];
-};
-
-struct dplane_t
-{
-    float normal[3];
-    float dist;
-    planetypes type; // PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
-};
-
-typedef enum
-{
-    CONTENTS_EMPTY = -1,
-    CONTENTS_SOLID = -2,
-    CONTENTS_WATER = -3,
-    CONTENTS_SLIME = -4,
-    CONTENTS_LAVA = -5,
-    CONTENTS_SKY = -6,
-    CONTENTS_ORIGIN = -7, // removed at csg time
-
-    CONTENTS_CURRENT_0 = -9,
-    CONTENTS_CURRENT_90 = -10,
-    CONTENTS_CURRENT_180 = -11,
-    CONTENTS_CURRENT_270 = -12,
-    CONTENTS_CURRENT_UP = -13,
-    CONTENTS_CURRENT_DOWN = -14,
-
-    CONTENTS_TRANSLUCENT = -15,
-    CONTENTS_HINT = -16, // Filters down to CONTENTS_EMPTY by bsp, ENGINE SHOULD NEVER SEE THIS
-
-    CONTENTS_NULL = -17, // AJM  // removed in csg and bsp, VIS or RAD shouldnt have to deal with this, only clip planes!
-
-    CONTENTS_BOUNDINGBOX = -19, // similar to CONTENTS_ORIGIN
-
-    CONTENTS_TOEMPTY = -32,
-} contents_t;
-
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
-struct dnode_t
-{
-    int planenum;
-    short children[2]; // negative numbers are -(leafs+1), not nodes
-    short mins[3];     // for sphere culling
-    short maxs[3];
-    unsigned short firstface;
-    unsigned short numfaces; // counting both sides
-};
-
-struct dclipnode_t
-{
-    int planenum;
-    short children[2]; // negative numbers are contents
-};
-
-struct texinfo_t
-{
-    float vecs[2][4]; // [s/t][xyz offset]
-    int miptex;
-    int flags;
-};
-
-constexpr int TEX_SPECIAL = 1; // sky or slime or null, no lightmap or 256 subdivision
-
-// note that edge 0 is never used, because negative edge nums are used for
-// counterclockwise use of the edge in a face
-struct dedge_t
-{
-    unsigned short v[2]; // vertex numbers
-};
-
-constexpr int MAXLIGHTMAPS = 4;
-struct dface_t
-{
-    unsigned short planenum;
-    short side;
-
-    int firstedge; // we must support > 64k edges
-    short numedges;
-    short texinfo;
-
-    // lighting info
-    byte styles[MAXLIGHTMAPS];
-    int lightofs; // start of [numstyles*surfsize] samples
-};
-
-constexpr int AMBIENT_WATER = 0;
-constexpr int AMBIENT_SKY = 1;
-constexpr int AMBIENT_SLIME = 2;
-constexpr int AMBIENT_LAVA = 3;
-
-constexpr int NUM_AMBIENTS = 4; // automatic ambient sounds
-
-// leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
-// all other leafs need visibility info
-struct dleaf_t
-{
-    int contents;
-    int visofs; // -1 = no visibility info
-
-    short mins[3]; // for frustum culling
-    short maxs[3];
-
-    unsigned short firstmarksurface;
-    unsigned short nummarksurfaces;
-
-    byte ambient_level[NUM_AMBIENTS];
-};
 // BSP File Data
 extern int g_nummodels;
 extern dmodel_t g_dmodels[MAX_MAP_MODELS];
@@ -309,16 +145,6 @@ bool CalcFaceExtents_test();
 void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
 void WriteExtentFile(const char *const filename);
 
-struct lightmapblock_t
-{
-    static constexpr int BLOCK_WIDTH = 128;
-    static constexpr int BLOCK_HEIGHT = 128;
-
-    lightmapblock_t *next;
-    bool used;
-    int allocated[BLOCK_WIDTH];
-};
-
 void PrintBSPFileSizes();
 void DeleteEmbeddedLightmaps();
 // Entity Related Stuff
@@ -336,6 +162,72 @@ entity_t *FindTargetEntity(const char *const target);
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
 void dtexdata_init();
+
+// Bounds-checked access to a texture lump image: nummiptex, dataofs[nummiptex] (offsets from
+// the lump start, -1 for a missing texture), then the miptex_t records.
+// size is the lump length; capacity is how many bytes of the buffer may be read, which can be
+// more than size (g_dtexdata is allocated with g_max_map_miptex bytes).
+class MiptexLumpView
+{
+  public:
+    MiptexLumpView(byte *data, long long size, long long capacity)
+        : m_data(data), m_size(data ? size : 0), m_capacity(data ? capacity : 0)
+    {
+    }
+
+    long long size() const { return m_size; }
+    long long capacity() const { return m_capacity; }
+
+    // nummiptex, or 0 for an empty lump.
+    int count() const { return m_size > 0 && m_capacity >= 4 ? Read(0) : 0; }
+
+    // Offset of the dataofs[i] slot from the lump start (also the header size for i == count).
+    static long long DataofsPosition(long long i) { return 4 + 4 * i; }
+
+    // dataofs[i] if that slot lies inside the buffer. i may be out of [0, count): callers rely on
+    // dataofs[-1] reading nummiptex (see GetTextureByNumber).
+    std::optional<int> dataofs(long long i) const
+    {
+        const long long pos = DataofsPosition(i);
+        if (pos < 0 || pos + 4 > m_capacity)
+        {
+            return std::nullopt;
+        }
+        return Read(pos);
+    }
+
+    // A copy of the miptex_t record at a lump offset (records need not be aligned), or nullopt if
+    // it does not lie entirely inside the lump.
+    std::optional<miptex_t> miptex_at(long long ofs) const
+    {
+        if (ofs < 0 || ofs + static_cast<long long>(sizeof(miptex_t)) > m_size)
+        {
+            return std::nullopt;
+        }
+        miptex_t mt;
+        std::memcpy(&mt, m_data + ofs, sizeof(mt));
+        return mt;
+    }
+
+    void set_count(int n) { Write(0, n); }
+    void set_dataofs(long long i, int ofs) { Write(DataofsPosition(i), ofs); }
+
+  private:
+    int Read(long long pos) const
+    {
+        int v;
+        std::memcpy(&v, m_data + pos, sizeof(v));
+        return v;
+    }
+    void Write(long long pos, int v) { std::memcpy(m_data + pos, &v, sizeof(v)); }
+
+    byte *m_data;
+    long long m_size;
+    long long m_capacity;
+};
+
+// View of g_dtexdata / g_texdatasize.
+MiptexLumpView TextureLump();
 void dtexdata_free();
 char *GetTextureByNumber(int texturenumber);
 

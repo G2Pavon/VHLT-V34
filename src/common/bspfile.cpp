@@ -1,13 +1,20 @@
 #include "common/bspfile.h"
 
+#include <algorithm>
+#include <array>
 #include <bit>
+#include <climits>
+#include <cstdint>
+#include <memory>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 #include <cerrno>
+#include <optional>
+#include <string>
+#include <vector>
 
-#include "common/blockmem.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
 #include "common/hlassert.h"
@@ -30,9 +37,11 @@ byte g_dvisdata[MAX_MAP_VISIBILITY];
 
 int g_lightdatasize;
 byte *g_dlightdata;
+static long long s_lightdata_capacity = 0; // bytes allocated for g_dlightdata
 
 int g_texdatasize;
 byte *g_dtexdata; // (dmiptexlump_t)
+static long long s_texdata_capacity = 0; // bytes allocated for g_dtexdata
 
 int g_entdatasize;
 char g_dentdata[MAX_MAP_ENTSTRING];
@@ -124,7 +133,7 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
 
     do
     {
-        hlassume(src - g_dvisdata < g_visdatasize, assume_DECOMPRESSVIS_OVERFLOW);
+        hlassume(src >= g_dvisdata && src - g_dvisdata < g_visdatasize, assume_DECOMPRESSVIS_OVERFLOW);
 
         if (*src)
         {
@@ -158,105 +167,284 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
     } while (out - dest < row);
 }
 
-static int CopyLump(int lump, void *dest, int size, const dheader_t *const header)
+namespace
 {
-    int length = header->lumps[lump].filelen;
-    int ofs = header->lumps[lump].fileofs;
+// One BSP lump as it lives in memory: the global array (or buffer) and its record count.
+// For the byte lumps (textures, visibility, lighting, entities) the record is one byte
+// and the count is the data size.
+struct LumpStorage
+{
+    const char *name;
+    void *data;
+    int *count;
+    int recordsize;
+    long long capacity; // records the destination can hold
+};
 
-    if (length % size)
-    {
-        Error("LoadBSPFile: odd lump size");
-    }
-
-    //special handling for tex and lightdata to keep things from exploding - KGP
-    if (lump == LUMP_TEXTURES && dest == (void *)g_dtexdata)
-    {
-        hlassume(g_max_map_miptex > length, assume_MAX_MAP_MIPTEX);
-    }
-    else if (lump == LUMP_LIGHTING && dest == (void *)g_dlightdata)
-    {
-        hlassume(g_max_map_lightdata > length, assume_MAX_MAP_LIGHTING);
-    }
-
-    std::memcpy(dest, (byte *)header + ofs, length);
-
-    return length / size;
+template <typename T, std::size_t N>
+LumpStorage Records(const char *name, T (&array)[N], int &count)
+{
+    return {name, array, &count, static_cast<int>(sizeof(T)), static_cast<long long>(N)};
 }
 
-static void LoadBSPImage(dheader_t *const header)
+// Indexed by LUMP_* number.
+std::array<LumpStorage, HEADER_LUMPS> LumpTable()
 {
-    if (header->version != BSPVERSION)
+    std::array<LumpStorage, HEADER_LUMPS> t{};
+    t[LUMP_ENTITIES] = Records("entities", g_dentdata, g_entdatasize);
+    t[LUMP_PLANES] = Records("planes", g_dplanes, g_numplanes);
+    t[LUMP_TEXTURES] = {"textures", g_dtexdata, &g_texdatasize, 1, s_texdata_capacity};
+    t[LUMP_VERTEXES] = Records("vertexes", g_dvertexes, g_numvertexes);
+    t[LUMP_VISIBILITY] = Records("visibility", g_dvisdata, g_visdatasize);
+    t[LUMP_NODES] = Records("nodes", g_dnodes, g_numnodes);
+    t[LUMP_TEXINFO] = Records("texinfo", g_texinfo, g_numtexinfo);
+    t[LUMP_FACES] = Records("faces", g_dfaces, g_numfaces);
+    t[LUMP_LIGHTING] = {"lighting", g_dlightdata, &g_lightdatasize, 1, s_lightdata_capacity};
+    t[LUMP_CLIPNODES] = Records("clipnodes", g_dclipnodes, g_numclipnodes);
+    t[LUMP_LEAFS] = Records("leafs", g_dleafs, g_numleafs);
+    t[LUMP_MARKSURFACES] = Records("marksurfaces", g_dmarksurfaces, g_nummarksurfaces);
+    t[LUMP_EDGES] = Records("edges", g_dedges, g_numedges);
+    t[LUMP_SURFEDGES] = Records("surfedges", g_dsurfedges, g_numsurfedges);
+    t[LUMP_MODELS] = Records("models", g_dmodels, g_nummodels);
+    return t;
+}
+
+// The order LoadBSPFile has always processed lumps in (decides which error a broken file reports).
+constexpr int k_load_order[HEADER_LUMPS] = {LUMP_MODELS, LUMP_VERTEXES, LUMP_PLANES, LUMP_LEAFS, LUMP_NODES,
+                                            LUMP_TEXINFO, LUMP_CLIPNODES, LUMP_FACES, LUMP_MARKSURFACES,
+                                            LUMP_SURFEDGES, LUMP_EDGES, LUMP_TEXTURES, LUMP_VISIBILITY,
+                                            LUMP_LIGHTING, LUMP_ENTITIES};
+
+// The order WriteBSPFile lays lumps out in the file; compat: must not change.
+constexpr int k_write_order[HEADER_LUMPS] = {LUMP_PLANES, LUMP_LEAFS, LUMP_VERTEXES, LUMP_NODES, LUMP_TEXINFO,
+                                             LUMP_FACES, LUMP_CLIPNODES, LUMP_MARKSURFACES, LUMP_SURFEDGES,
+                                             LUMP_EDGES, LUMP_MODELS, LUMP_LIGHTING, LUMP_VISIBILITY,
+                                             LUMP_ENTITIES, LUMP_TEXTURES};
+
+std::vector<byte> ReadWholeFile(const char *const filename)
+{
+    std::FILE *f = SafeOpenRead(filename);
+    const int length = q_filelength(f);
+    std::vector<byte> data(length > 0 ? length : 0);
+    SafeRead(f, data.data(), static_cast<int>(data.size()));
+    std::fclose(f);
+    return data;
+}
+} // namespace
+
+// Rejects files whose lumps refer to records that do not exist. Only references that the
+// tools follow as array indices are checked. visofs and lightofs are not: real maps carry
+// garbage there (e.g. visofs in stock plants_soc_final.bsp) and only hlrad reads them.
+static void ValidateReferences()
+{
+    for (int i = 0; i < g_numfaces; i++)
     {
-        Error("BSP is version %i, not %i", header->version, BSPVERSION);
+        const dface_t &f = g_dfaces[i];
+        if (f.planenum >= g_numplanes)
+        {
+            Error("LoadBSPFile: face %d refers to plane %d, but there are only %d", i, f.planenum, g_numplanes);
+        }
+        if (f.texinfo < 0 || f.texinfo >= g_numtexinfo)
+        {
+            Error("LoadBSPFile: face %d refers to texinfo %d, but there are only %d", i, f.texinfo, g_numtexinfo);
+        }
+        if (f.firstedge < 0 || f.numedges < 0 || static_cast<long long>(f.firstedge) + f.numedges > g_numsurfedges)
+        {
+            Error("LoadBSPFile: face %d uses surfedges %d..%lld, but there are only %d", i, f.firstedge, static_cast<long long>(f.firstedge) + f.numedges - 1, g_numsurfedges);
+        }
     }
-
-    g_nummodels = CopyLump(LUMP_MODELS, g_dmodels, sizeof(dmodel_t), header);
-    g_numvertexes = CopyLump(LUMP_VERTEXES, g_dvertexes, sizeof(dvertex_t), header);
-    g_numplanes = CopyLump(LUMP_PLANES, g_dplanes, sizeof(dplane_t), header);
-    g_numleafs = CopyLump(LUMP_LEAFS, g_dleafs, sizeof(dleaf_t), header);
-    g_numnodes = CopyLump(LUMP_NODES, g_dnodes, sizeof(dnode_t), header);
-    g_numtexinfo = CopyLump(LUMP_TEXINFO, g_texinfo, sizeof(texinfo_t), header);
-    g_numclipnodes = CopyLump(LUMP_CLIPNODES, g_dclipnodes, sizeof(dclipnode_t), header);
-    g_numfaces = CopyLump(LUMP_FACES, g_dfaces, sizeof(dface_t), header);
-    g_nummarksurfaces = CopyLump(LUMP_MARKSURFACES, g_dmarksurfaces, sizeof(g_dmarksurfaces[0]), header);
-    g_numsurfedges = CopyLump(LUMP_SURFEDGES, g_dsurfedges, sizeof(g_dsurfedges[0]), header);
-    g_numedges = CopyLump(LUMP_EDGES, g_dedges, sizeof(dedge_t), header);
-    g_texdatasize = CopyLump(LUMP_TEXTURES, g_dtexdata, 1, header);
-    g_visdatasize = CopyLump(LUMP_VISIBILITY, g_dvisdata, 1, header);
-    g_lightdatasize = CopyLump(LUMP_LIGHTING, g_dlightdata, 1, header);
-    g_entdatasize = CopyLump(LUMP_ENTITIES, g_dentdata, 1, header);
-
-    std::free(header); // everything has been copied out
+    for (int i = 0; i < g_numsurfedges; i++)
+    {
+        const long long e = g_dsurfedges[i];
+        if (e <= -g_numedges || e >= g_numedges)
+        {
+            Error("LoadBSPFile: surfedge %d refers to edge %lld, but there are only %d", i, e, g_numedges);
+        }
+    }
+    for (int i = 0; i < g_numedges; i++)
+    {
+        for (const int v : g_dedges[i].v)
+        {
+            if (v >= g_numvertexes)
+            {
+                Error("LoadBSPFile: edge %d refers to vertex %d, but there are only %d", i, v, g_numvertexes);
+            }
+        }
+    }
+    for (int i = 0; i < g_nummarksurfaces; i++)
+    {
+        if (g_dmarksurfaces[i] >= g_numfaces)
+        {
+            Error("LoadBSPFile: marksurface %d refers to face %d, but there are only %d", i, g_dmarksurfaces[i], g_numfaces);
+        }
+    }
+    for (int i = 0; i < g_numleafs; i++)
+    {
+        const dleaf_t &l = g_dleafs[i];
+        if (l.firstmarksurface + l.nummarksurfaces > g_nummarksurfaces)
+        {
+            Error("LoadBSPFile: leaf %d uses marksurfaces %d..%d, but there are only %d", i, l.firstmarksurface, l.firstmarksurface + l.nummarksurfaces - 1, g_nummarksurfaces);
+        }
+    }
+    for (int i = 0; i < g_numnodes; i++)
+    {
+        const dnode_t &n = g_dnodes[i];
+        if (n.planenum < 0 || n.planenum >= g_numplanes)
+        {
+            Error("LoadBSPFile: node %d refers to plane %d, but there are only %d", i, n.planenum, g_numplanes);
+        }
+        for (int side = 0; side < 2; side++)
+        {
+            const int c = n.children[side];
+            if (c >= 0 && c >= g_numnodes)
+            {
+                Error("LoadBSPFile: node %d child %d refers to node %d, but there are only %d", i, side, c, g_numnodes);
+            }
+            if (c < 0 && -(c + 1) >= g_numleafs)
+            {
+                Error("LoadBSPFile: node %d child %d refers to leaf %d, but there are only %d", i, side, -(c + 1), g_numleafs);
+            }
+        }
+        if (n.firstface + n.numfaces > g_numfaces)
+        {
+            Error("LoadBSPFile: node %d uses faces %d..%d, but there are only %d", i, n.firstface, n.firstface + n.numfaces - 1, g_numfaces);
+        }
+    }
+    for (int i = 0; i < g_numclipnodes; i++)
+    {
+        const dclipnode_t &c = g_dclipnodes[i];
+        if (c.planenum < 0 || c.planenum >= g_numplanes)
+        {
+            Error("LoadBSPFile: clipnode %d refers to plane %d, but there are only %d", i, c.planenum, g_numplanes);
+        }
+        for (int side = 0; side < 2; side++)
+        {
+            if (c.children[side] >= g_numclipnodes) // negative children are contents
+            {
+                Error("LoadBSPFile: clipnode %d child %d refers to clipnode %d, but there are only %d", i, side, c.children[side], g_numclipnodes);
+            }
+        }
+    }
+    for (int i = 0; i < g_nummodels; i++)
+    {
+        const dmodel_t &m = g_dmodels[i];
+        const int head = m.headnode[0];
+        if (head >= 0 && head >= g_numnodes)
+        {
+            Error("LoadBSPFile: model %d head node refers to node %d, but there are only %d", i, head, g_numnodes);
+        }
+        if (head < 0 && -(static_cast<long long>(head) + 1) >= g_numleafs)
+        {
+            Error("LoadBSPFile: model %d head node refers to leaf %lld, but there are only %d", i, -(static_cast<long long>(head) + 1), g_numleafs);
+        }
+        for (int hull = 1; hull < MAX_MAP_HULLS; hull++)
+        {
+            if (m.headnode[hull] >= g_numclipnodes) // negative head nodes are contents
+            {
+                Error("LoadBSPFile: model %d hull %d refers to clipnode %d, but there are only %d", i, hull, m.headnode[hull], g_numclipnodes);
+            }
+        }
+        if (m.firstface < 0 || m.numfaces < 0 || static_cast<long long>(m.firstface) + m.numfaces > g_numfaces)
+        {
+            Error("LoadBSPFile: model %d uses faces %d..%lld, but there are only %d", i, m.firstface, static_cast<long long>(m.firstface) + m.numfaces - 1, g_numfaces);
+        }
+    }
 }
 
 void LoadBSPFile(const char *const filename)
 {
-    dheader_t *header;
-    LoadFile(filename, (char **)&header);
-    LoadBSPImage(header);
-}
+    const std::vector<byte> file = ReadWholeFile(filename);
+    const long long filesize = static_cast<long long>(file.size());
 
-static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FILE *bspfile)
-{
-    lump_t *lump = &header->lumps[lumpnum];
-    lump->fileofs = std::ftell(bspfile);
-    lump->filelen = len;
-    SafeWrite(bspfile, data, (len + 3) & ~3);
+    if (file.size() < sizeof(dheader_t))
+    {
+        Error("LoadBSPFile: %s is too small to be a BSP file (%lld bytes, header is %d)", filename, filesize, static_cast<int>(sizeof(dheader_t)));
+    }
+    dheader_t header;
+    std::memcpy(&header, file.data(), sizeof(header));
+
+    if (header.version != BSPVERSION)
+    {
+        Error("BSP is version %i, not %i", header.version, BSPVERSION);
+    }
+    if (!g_dtexdata || !g_dlightdata)
+    {
+        Error("LoadBSPFile: internal error: texture and lighting buffers are not allocated (dtexdata_init)");
+    }
+
+    // Validate every lump before anything is copied.
+    const std::array<LumpStorage, HEADER_LUMPS> table = LumpTable();
+    for (const int lump : k_load_order)
+    {
+        const LumpStorage &l = table[lump];
+        const lump_t &disk = header.lumps[lump];
+        if (disk.fileofs < 0 || disk.filelen < 0)
+        {
+            Error("LoadBSPFile: lump %s (%d) has a negative offset or length (ofs %d, len %d)", l.name, lump, disk.fileofs, disk.filelen);
+        }
+        if (static_cast<long long>(disk.fileofs) + disk.filelen > filesize)
+        {
+            Error("LoadBSPFile: lump %s (%d) extends past end of file (ofs %d + len %d > %lld)", l.name, lump, disk.fileofs, disk.filelen, filesize);
+        }
+        if (disk.filelen % l.recordsize)
+        {
+            Error("LoadBSPFile: odd lump size");
+        }
+        // special handling for tex and lightdata to keep things from exploding - KGP
+        if (lump == LUMP_TEXTURES)
+        {
+            hlassume(g_max_map_miptex > disk.filelen, assume_MAX_MAP_MIPTEX);
+        }
+        else if (lump == LUMP_LIGHTING)
+        {
+            hlassume(g_max_map_lightdata > disk.filelen, assume_MAX_MAP_LIGHTING);
+        }
+        const long long records = disk.filelen / l.recordsize;
+        if (records > l.capacity)
+        {
+            Error("LoadBSPFile: lump %s (%d) has %lld records, limit is %lld", l.name, lump, records, l.capacity);
+        }
+    }
+
+    for (const int lump : k_load_order)
+    {
+        const LumpStorage &l = table[lump];
+        const lump_t &disk = header.lumps[lump];
+        std::memcpy(l.data, file.data() + disk.fileofs, disk.filelen);
+        *l.count = disk.filelen / l.recordsize;
+    }
+    ValidateReferences();
 }
 
 void WriteBSPFile(const char *const filename)
 {
-    dheader_t outheader;
-    dheader_t *header = &outheader;
-    std::memset(header, 0, sizeof(dheader_t));
+    dheader_t header{};
+    header.version = BSPVERSION;
 
-    header->version = BSPVERSION;
+    std::vector<byte> image(sizeof(dheader_t));
+    const std::array<LumpStorage, HEADER_LUMPS> table = LumpTable();
+    for (const int lump : k_write_order)
+    {
+        const LumpStorage &l = table[lump];
+        const long long length = static_cast<long long>(*l.count) * l.recordsize;
+        if (*l.count < 0 || *l.count > l.capacity)
+        {
+            Error("WriteBSPFile: internal error: lump %s (%d) has %d records, limit is %lld", l.name, lump, *l.count, l.capacity);
+        }
+        if (static_cast<long long>(image.size()) + length + 3 > INT32_MAX)
+        {
+            Error("WriteBSPFile: %s would exceed 2 GB", filename);
+        }
+        header.lumps[lump].fileofs = static_cast<std::int32_t>(image.size());
+        header.lumps[lump].filelen = static_cast<std::int32_t>(length);
+        const byte *data = static_cast<const byte *>(l.data);
+        image.insert(image.end(), data, data + length);
+        image.resize((image.size() + 3) & ~std::size_t{3}, 0); // lumps are 4-byte aligned; padding is zero
+    }
+    std::memcpy(image.data(), &header, sizeof(header));
 
     std::FILE *bspfile = SafeOpenWrite(filename);
-    SafeWrite(bspfile, header, sizeof(dheader_t)); // overwritten later
-
-    //      LUMP TYPE       DATA            LENGTH                              HEADER  BSPFILE
-    AddLump(LUMP_PLANES, g_dplanes, g_numplanes * sizeof(dplane_t), header, bspfile);
-    AddLump(LUMP_LEAFS, g_dleafs, g_numleafs * sizeof(dleaf_t), header, bspfile);
-    AddLump(LUMP_VERTEXES, g_dvertexes, g_numvertexes * sizeof(dvertex_t), header, bspfile);
-    AddLump(LUMP_NODES, g_dnodes, g_numnodes * sizeof(dnode_t), header, bspfile);
-    AddLump(LUMP_TEXINFO, g_texinfo, g_numtexinfo * sizeof(texinfo_t), header, bspfile);
-    AddLump(LUMP_FACES, g_dfaces, g_numfaces * sizeof(dface_t), header, bspfile);
-    AddLump(LUMP_CLIPNODES, g_dclipnodes, g_numclipnodes * sizeof(dclipnode_t), header, bspfile);
-
-    AddLump(LUMP_MARKSURFACES, g_dmarksurfaces, g_nummarksurfaces * sizeof(g_dmarksurfaces[0]), header, bspfile);
-    AddLump(LUMP_SURFEDGES, g_dsurfedges, g_numsurfedges * sizeof(g_dsurfedges[0]), header, bspfile);
-    AddLump(LUMP_EDGES, g_dedges, g_numedges * sizeof(dedge_t), header, bspfile);
-    AddLump(LUMP_MODELS, g_dmodels, g_nummodels * sizeof(dmodel_t), header, bspfile);
-
-    AddLump(LUMP_LIGHTING, g_dlightdata, g_lightdatasize, header, bspfile);
-    AddLump(LUMP_VISIBILITY, g_dvisdata, g_visdatasize, header, bspfile);
-    AddLump(LUMP_ENTITIES, g_dentdata, g_entdatasize, header, bspfile);
-    AddLump(LUMP_TEXTURES, g_dtexdata, g_texdatasize, header, bspfile);
-
-    std::fseek(bspfile, 0, SEEK_SET);
-    SafeWrite(bspfile, header, sizeof(dheader_t));
-
+    SafeWrite(bspfile, image.data(), static_cast<int>(image.size()));
     std::fclose(bspfile);
 }
 
@@ -270,6 +458,17 @@ static float CalculatePointVecsProduct(const volatile float *point, const volati
     val = val + (double)vecs[3];
 
     return (float)val;
+}
+
+// (int)v without undefined behaviour. compat: out-of-range values and NaN (only seen with
+// damaged geometry) give INT_MIN, which is what the x86 conversion instruction returned.
+static int TruncateToInt(double v)
+{
+    if (!(v >= -2147483648.0 && v < 2147483648.0))
+    {
+        return INT_MIN;
+    }
+    return static_cast<int>(v);
 }
 
 bool CalcFaceExtents_test()
@@ -303,7 +502,8 @@ bool CalcFaceExtents_test()
 // purpose: get the actual texinfo for a face. the tools shouldn't directly use f->texinfo after embedlightmap is done
 static int ParseImplicitTexinfoFromTexture(int miptex)
 {
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    const MiptexLumpView lump = TextureLump();
+    const int numtextures = lump.count();
     char name[MAX_TEXTURE_NAME_LENGTH];
 
     if (miptex < 0 || miptex >= numtextures)
@@ -311,15 +511,17 @@ static int ParseImplicitTexinfoFromTexture(int miptex)
         Warning("ParseImplicitTexinfoFromTexture: internal error: invalid texture number %d.", miptex);
         return -1;
     }
-    int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
-    int size = g_texdatasize - offset;
-    if (offset < 0 || g_dtexdata + offset < (byte *)&((dmiptexlump_t *)g_dtexdata)->dataofs[numtextures] ||
-        size < (int)sizeof(miptex_t))
+    const std::optional<int> offset = lump.dataofs(miptex);
+    if (!offset || *offset < MiptexLumpView::DataofsPosition(numtextures))
+    {
+        return -1; // inside the header (or a missing texture's -1)
+    }
+    const std::optional<miptex_t> mt = lump.miptex_at(*offset);
+    if (!mt)
     {
         return -1;
     }
 
-    miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
     safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
 
     if (!(std::strlen(name) >= 6 && !strncasecmp(&name[1], "_rad", 4) && '0' <= name[5] && name[5] <= '9'))
@@ -400,8 +602,8 @@ void GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 
     for (int i = 0; i < 2; i++)
     {
-        bmins[i] = (int)std::floor(mins[i] / TEXTURE_STEP);
-        bmaxs[i] = (int)std::ceil(maxs[i] / TEXTURE_STEP);
+        bmins[i] = TruncateToInt(std::floor(mins[i] / TEXTURE_STEP));
+        bmaxs[i] = TruncateToInt(std::ceil(maxs[i] / TEXTURE_STEP));
     }
 
     for (int i = 0; i < 2; i++)
@@ -429,28 +631,40 @@ void WriteExtentFile(const char *const filename)
     std::fclose(f);
 }
 
-static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
+namespace
 {
-    lightmapblock_t *block;
+struct lightmapblock_t
+{
+    static constexpr int BLOCK_WIDTH = 128;
+    static constexpr int BLOCK_HEIGHT = 128;
+
+    bool used;
+    int allocated[BLOCK_WIDTH];
+};
+} // namespace
+
+static void DoAllocBlock(std::vector<lightmapblock_t> &blocks, int w, int h)
+{
     // code from Quake
     int j;
-    int x;
+    int x = 0;
     if (w < 1 || h < 1)
     {
         Error("DoAllocBlock: internal error.");
     }
-    for (block = blocks; block; block = block->next)
+    for (std::size_t b = 0; b < blocks.size(); b++)
     {
+        lightmapblock_t &block = blocks[b];
         int best = lightmapblock_t::BLOCK_HEIGHT;
         for (int i = 0; i < lightmapblock_t::BLOCK_WIDTH - w; i++)
         {
             int best2 = 0;
             for (j = 0; j < w; j++)
             {
-                if (block->allocated[i + j] >= best)
+                if (block.allocated[i + j] >= best)
                     break;
-                if (block->allocated[i + j] > best2)
-                    best2 = block->allocated[i + j];
+                if (block.allocated[i + j] > best2)
+                    best2 = block.allocated[i + j];
             }
             if (j == w)
             {
@@ -460,32 +674,28 @@ static void DoAllocBlock(lightmapblock_t *blocks, int w, int h)
         }
         if (best + h <= lightmapblock_t::BLOCK_HEIGHT)
         {
-            block->used = true;
+            block.used = true;
             for (int i = 0; i < w; i++)
             {
-                block->allocated[x + i] = best + h;
+                block.allocated[x + i] = best + h;
             }
             return;
         }
-        if (!block->next)
+        if (b + 1 == blocks.size())
         { // need to allocate a new block
-            if (!block->used)
+            if (!block.used)
             {
                 Warning("CountBlocks: invalid extents %dx%d", w, h);
                 return;
             }
-            block->next = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
-            hlassume(block->next != nullptr, assume_NoMemory);
-            std::memset(block->next, 0, sizeof(lightmapblock_t));
+            blocks.push_back(lightmapblock_t{}); // invalidates block; the loop continues with the new one
         }
     }
 }
 
 static int CountBlocks()
 {
-    lightmapblock_t *blocks = (lightmapblock_t *)std::malloc(sizeof(lightmapblock_t));
-    hlassume(blocks != nullptr, assume_NoMemory);
-    std::memset(blocks, 0, sizeof(lightmapblock_t));
+    std::vector<lightmapblock_t> blocks(1);
 
     for (int k = 0; k < g_numfaces; k++)
     {
@@ -506,7 +716,8 @@ static int CountBlocks()
             GetFaceExtents(k, bmins, bmaxs);
             for (int i = 0; i < 2; i++)
             {
-                extents[i] = (bmaxs[i] - bmins[i]) * TEXTURE_STEP;
+                // compat: wraps like the old signed arithmetic did on x86, without the UB
+                extents[i] = static_cast<int>((static_cast<unsigned>(bmaxs[i]) - static_cast<unsigned>(bmins[i])) * TEXTURE_STEP);
             }
 
             VectorClear(point);
@@ -526,15 +737,12 @@ static int CountBlocks()
         DoAllocBlock(blocks, (extents[0] / TEXTURE_STEP) + 1, (extents[1] / TEXTURE_STEP) + 1);
     }
     int count = 0;
-    lightmapblock_t *next;
-    for (; blocks; blocks = next)
+    for (const lightmapblock_t &block : blocks)
     {
-        if (blocks->used)
+        if (block.used)
         {
             count++;
         }
-        next = blocks->next;
-        std::free(blocks);
     }
     return count;
 }
@@ -542,17 +750,21 @@ static int CountBlocks()
 static bool NoWadTextures()
 {
     // copied from loadtextures.cpp
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    const MiptexLumpView lump = TextureLump();
+    const int numtextures = lump.count();
     for (int i = 0; i < numtextures; i++)
     {
-        int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[i];
-        int size = g_texdatasize - offset;
-        if (offset < 0 || size < (int)sizeof(miptex_t))
+        const std::optional<int> offset = lump.dataofs(i);
+        if (!offset)
+        {
+            break; // nummiptex claims more slots than the buffer holds
+        }
+        const std::optional<miptex_t> mt = lump.miptex_at(*offset);
+        if (!mt)
         {
             // missing textures have ofs -1
             continue;
         }
-        miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
         if (!mt->offsets[0])
         {
             return false;
@@ -561,8 +773,8 @@ static bool NoWadTextures()
     return true;
 }
 
-static char *FindWadValue()
-// return NULL for syntax error
+static std::optional<std::string> FindWadValue()
+// return nullopt for syntax error
 // this function needs to be as stable as possible because it might be called from ripent
 {
     int lineend;
@@ -577,23 +789,23 @@ static char *FindWadValue()
             if (g_dentdata[linestart] == '{')
             {
                 if (inentity)
-                    return nullptr;
+                    return std::nullopt;
                 inentity = true;
             }
             else if (g_dentdata[linestart] == '}')
             {
                 if (!inentity)
-                    return nullptr;
+                    return std::nullopt;
                 inentity = false;
-                return _strdup(""); // only parse the first entity
+                return std::string(); // only parse the first entity
             }
             else
-                return nullptr;
+                return std::nullopt;
         }
         else
         {
             if (!inentity)
-                return nullptr;
+                return std::nullopt;
             int quotes[4];
             int i, j;
             for (i = 0, j = linestart; i < 4; i++, j++)
@@ -607,23 +819,19 @@ static char *FindWadValue()
             }
             if (i != 4 || quotes[0] != linestart || quotes[3] != lineend - 1)
             {
-                return nullptr;
+                return std::nullopt;
             }
             if (quotes[1] - (quotes[0] + 1) == (int)std::strlen("wad") && !std::strncmp(&g_dentdata[quotes[0] + 1], "wad", std::strlen("wad")))
             {
                 int len = quotes[3] - (quotes[2] + 1);
-                char *value = (char *)std::malloc(len + 1);
-                hlassume(value != nullptr, assume_NoMemory);
-                std::memcpy(value, &g_dentdata[quotes[2] + 1], len);
-                value[len] = '\0';
-                return value;
+                return std::string(&g_dentdata[quotes[2] + 1], len);
             }
         }
         for (linestart = lineend; linestart < g_entdatasize; linestart++)
             if (g_dentdata[linestart] != '\r' && g_dentdata[linestart] != '\n')
                 break;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 #define ENTRIES(a) (sizeof(a) / sizeof(*(a)))
@@ -651,12 +859,12 @@ static int GlobUsage(const char *const szItem, const int itemstorage, const int 
 // Dumps info about current file
 void PrintBSPFileSizes()
 {
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    int numtextures = TextureLump().count();
     int totalmemory = 0;
     int numallocblocks = CountBlocks();
     int maxallocblocks = 64;
     bool nowadtextures = NoWadTextures(); // We don't have this check at hlcsg, because only legacy compile tools don't empty "wad" value in "-nowadtextures" compiles.
-    char *wadvalue = FindWadValue();
+    const std::optional<std::string> wadvalue = FindWadValue();
 
     Log("\n");
     Log("Object names  Objects/Maxobjs  Memory / Maxmem  Fullness\n");
@@ -696,17 +904,13 @@ void PrintBSPFileSizes()
     {
         Log("Wad files required to run the map: (None)\n");
     }
-    else if (wadvalue == nullptr)
+    else if (!wadvalue)
     {
         Log("Wad files required to run the map: (Couldn't parse wad keyvalue from entity data)\n");
     }
     else
     {
-        Log("Wad files required to run the map: \"%s\"\n", wadvalue);
-    }
-    if (wadvalue)
-    {
-        std::free(wadvalue);
+        Log("Wad files required to run the map: \"%s\"\n", wadvalue->c_str());
     }
 }
 
@@ -719,7 +923,8 @@ void DeleteEmbeddedLightmaps()
     int countremovedtexinfos = 0;
     int countremovedtextures = 0;
     int i;
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    MiptexLumpView lump = TextureLump();
+    int numtextures = std::max(lump.count(), 0);
 
     // Step 1: parse the original texinfo index stored in each "?_rad*" texture
     //         and restore the texinfo for the faces that have had their lightmap embedded
@@ -739,13 +944,8 @@ void DeleteEmbeddedLightmaps()
 
     // Step 2: remove redundant texinfo
     {
-        bool *texinfoused = (bool *)std::malloc(g_numtexinfo * sizeof(bool));
-        hlassume(texinfoused != nullptr, assume_NoMemory);
+        std::vector<char> texinfoused(g_numtexinfo, false);
 
-        for (i = 0; i < g_numtexinfo; i++)
-        {
-            texinfoused[i] = false;
-        }
         for (i = 0; i < g_numfaces; i++)
         {
             dface_t *f = &g_dfaces[i];
@@ -775,18 +975,12 @@ void DeleteEmbeddedLightmaps()
             countremovedtexinfos++;
         }
         g_numtexinfo = i + 1; // shrink g_texinfo
-        std::free(texinfoused);
     }
 
     // Step 3: remove redundant textures
     {
-        bool *textureused = (bool *)std::malloc(numtextures * sizeof(bool));
-        hlassume(textureused != nullptr, assume_NoMemory);
+        std::vector<char> textureused(numtextures, false);
 
-        for (i = 0; i < numtextures; i++)
-        {
-            textureused[i] = false;
-        }
         for (i = 0; i < g_numtexinfo; i++)
         {
             texinfo_t *info = &g_texinfo[i];
@@ -806,27 +1000,38 @@ void DeleteEmbeddedLightmaps()
             countremovedtextures++;
         }
         int numremaining = i + 1; // number of remaining textures
-        std::free(textureused);
 
         if (numremaining < numtextures)
         {
-            dmiptexlump_t *texdata = (dmiptexlump_t *)g_dtexdata;
-            byte *dataaddr = (byte *)&texdata->dataofs[texdata->nummiptex];
-            int datasize = (g_dtexdata + texdata->dataofs[numremaining]) - dataaddr;
-            byte *newdataaddr = (byte *)&texdata->dataofs[numremaining];
-            std::memmove(newdataaddr, dataaddr, datasize);
-            g_texdatasize = (newdataaddr + datasize) - g_dtexdata;
-            texdata->nummiptex = numremaining;
-            for (i = 0; i < numremaining; i++)
+            // The kept textures' data runs from the end of the old dataofs table up to the data of
+            // the first removed texture; move it down to the end of the shortened table.
+            const long long oldheader = MiptexLumpView::DataofsPosition(numtextures);
+            const long long newheader = MiptexLumpView::DataofsPosition(numremaining);
+            const std::optional<int> keptend = lump.dataofs(numremaining);
+            if (!keptend || *keptend < oldheader || *keptend > g_texdatasize)
             {
-                if (texdata->dataofs[i] < 0) // bad texture
-                {
-                    continue;
-                }
-                texdata->dataofs[i] += newdataaddr - dataaddr;
+                Warning("DeleteEmbeddedLightmaps: texture lump is damaged; embedded lightmap textures were not removed.");
+                countremovedtextures = 0;
             }
+            else
+            {
+                const long long datasize = *keptend - oldheader;
+                std::memmove(g_dtexdata + newheader, g_dtexdata + oldheader, datasize);
+                g_texdatasize = static_cast<int>(newheader + datasize);
+                lump = TextureLump();
+                lump.set_count(numremaining);
+                for (i = 0; i < numremaining; i++)
+                {
+                    const int ofs = *lump.dataofs(i);
+                    if (ofs < 0) // bad texture
+                    {
+                        continue;
+                    }
+                    lump.set_dataofs(i, static_cast<int>(ofs + (newheader - oldheader)));
+                }
 
-            numtextures = texdata->nummiptex;
+                numtextures = numremaining;
+            }
         }
     }
 
@@ -1165,36 +1370,76 @@ entity_t *FindTargetEntity(const char *const target)
     return nullptr;
 }
 
+namespace
+{
+struct FreeDeleter
+{
+    void operator()(byte *p) const { std::free(p); }
+};
+using ZeroedBuffer = std::unique_ptr<byte, FreeDeleter>;
+
+// Owners of g_dtexdata / g_dlightdata. calloc rather than new byte[n]() so the tens of
+// megabytes reserved here stay untouched (lazily zeroed pages) until a tool uses them.
+ZeroedBuffer s_texdata;
+ZeroedBuffer s_lightdata;
+
+ZeroedBuffer AllocZeroed(int size)
+{
+    if (size <= 0)
+    {
+        Warning("Attempting to allocate %d bytes", size);
+    }
+    ZeroedBuffer p(static_cast<byte *>(std::calloc(1, size > 0 ? size : 1)));
+    hlassume(p != nullptr, assume_NoMemory);
+    return p;
+}
+} // namespace
+
 void dtexdata_init()
 {
-    g_dtexdata = (byte *)AllocBlock(g_max_map_miptex);
-    hlassume(g_dtexdata != nullptr, assume_NoMemory);
-    g_dlightdata = (byte *)AllocBlock(g_max_map_lightdata);
-    hlassume(g_dlightdata != nullptr, assume_NoMemory);
+    s_texdata = AllocZeroed(g_max_map_miptex);
+    g_dtexdata = s_texdata.get();
+    s_texdata_capacity = g_max_map_miptex;
+    s_lightdata = AllocZeroed(g_max_map_lightdata);
+    g_dlightdata = s_lightdata.get();
+    s_lightdata_capacity = g_max_map_lightdata;
 }
 
 void dtexdata_free()
 {
-    FreeBlock(g_dtexdata);
+    s_texdata.reset();
     g_dtexdata = nullptr;
-    FreeBlock(g_dlightdata);
+    s_texdata_capacity = 0;
+    s_lightdata.reset();
     g_dlightdata = nullptr;
+    s_lightdata_capacity = 0;
 }
 
-//      Touchy function, can fail with a page fault if all the data isnt kosher
-//      (i.e. map was compiled with missing textures)
+MiptexLumpView TextureLump()
+{
+    return MiptexLumpView(g_dtexdata, g_texdatasize, s_texdata_capacity);
+}
 
+// Returns "" where the texture name would lie outside the texture buffer (missing or
+// damaged texture data); this used to read arbitrary memory.
 static char emptystring[1] = {'\0'};
 char *GetTextureByNumber(int texturenumber)
 {
     if (texturenumber == -1)
         return emptystring;
+    if (texturenumber < 0 || texturenumber >= MAX_INTERNAL_MAP_TEXINFO)
+        return emptystring;
 
-    texinfo_t *info = &g_texinfo[texturenumber];
-    int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[info->miptex];
-    miptex_t *miptex = (miptex_t *)(&g_dtexdata[ofs]);
+    const texinfo_t *info = &g_texinfo[texturenumber];
+    // compat: a texinfo with miptex -1 reads dataofs[-1], which is nummiptex, and returns
+    // whatever lies at that offset; it stays inside the buffer, so it is kept as it was.
+    const MiptexLumpView lump = TextureLump();
+    const std::optional<int> ofs = lump.dataofs(info->miptex);
+    if (!ofs || *ofs < 0 || static_cast<long long>(*ofs) + MAX_TEXTURE_NAME_LENGTH > lump.capacity())
+        return emptystring;
 
-    return miptex->name;
+    static_assert(offsetof(miptex_t, name) == 0);
+    return reinterpret_cast<char *>(&g_dtexdata[*ofs]); // miptex_t::name; the record may be misaligned
 }
 
 // returns entity addy for given modelnum

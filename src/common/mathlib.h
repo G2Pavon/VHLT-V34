@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cfloat>
+#include <cstdint>
 
 #if !defined(qmax)
 #define qmax(a, b) (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn
@@ -165,7 +166,7 @@ inline bool isPointFinite(const vec_t *p)
     return false;
 }
 // Planetype Math
-typedef enum
+enum planetypes : std::int32_t // stored in dplane_t on disk
 {
     plane_x = 0,
     plane_y,
@@ -173,7 +174,7 @@ typedef enum
     plane_anyx,
     plane_anyy,
     plane_anyz
-} planetypes;
+};
 
 constexpr planetypes last_axial = plane_z;
 constexpr float DIR_EPSILON = 0.0001;
