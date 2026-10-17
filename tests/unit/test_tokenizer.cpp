@@ -6,18 +6,16 @@
 
 #include "common/tokenizer.h"
 
-extern int g_currentline; // defined in tokenizer.cpp, not declared in its header
-
 namespace
 {
-// GetToken(true) until end of stream.
+// Next(true) until end of stream.
 std::vector<std::string> Tokens(std::string text)
 {
-    ParseFromMemory(text.data(), static_cast<int>(text.size()));
+    Tokenizer t(std::move(text));
     std::vector<std::string> out;
-    while (GetToken(true))
+    while (t.Next(true))
     {
-        out.emplace_back(g_token);
+        out.push_back(t.token());
     }
     return out;
 }
@@ -85,28 +83,43 @@ TEST_SUITE("tokenizer")
         CHECK(!t.Next(true)); // stays at the end
     }
 
-    TEST_CASE("compat: g_currentline lags one line behind the token just read")
+    TEST_CASE("compat: currentline lags one line behind the token just read")
     {
-        std::string text = "a\nb\n\nc";
-        ParseFromMemory(text.data(), static_cast<int>(text.size()));
-        REQUIRE(GetToken(true));
-        CHECK(g_currentline == 1);
-        REQUIRE(GetToken(true));
-        CHECK(std::string(g_token) == "b");
-        CHECK(g_currentline == 1);
-        REQUIRE(GetToken(true));
-        CHECK(std::string(g_token) == "c");
-        CHECK(g_currentline == 3);
-        CHECK(!GetToken(true));
+        Tokenizer t("a\nb\n\nc");
+        REQUIRE(t.Next(true));
+        CHECK(t.currentline() == 1);
+        REQUIRE(t.Next(true));
+        CHECK(t.token() == "b");
+        CHECK(t.currentline() == 1);
+        REQUIRE(t.Next(true));
+        CHECK(t.token() == "c");
+        CHECK(t.currentline() == 3);
+        CHECK(!t.Next(true));
     }
 
-    TEST_CASE("GetToken(false) continues on the same line")
+    TEST_CASE("Next(false) continues on the same line")
     {
-        std::string text = "\"key\" \"value\"\n";
-        ParseFromMemory(text.data(), static_cast<int>(text.size()));
-        REQUIRE(GetToken(true));
-        REQUIRE(GetToken(false));
-        CHECK(std::string(g_token) == "value");
+        Tokenizer t("\"key\" \"value\"\n");
+        REQUIRE(t.Next(true));
+        REQUIRE(t.Next(false));
+        CHECK(t.token() == "value");
+    }
+
+    TEST_CASE("compat: a quoted token ends at its first NUL; outside quotes NUL is a blank")
+    {
+        using namespace std::string_literals;
+        CHECK(Tokens("\"ab\0cd\" next"s) == V{"ab", "next"});
+        CHECK(Tokens("ab\0cd"s) == V{"ab", "cd"});
+    }
+
+    TEST_CASE("two tokenizers do not share state")
+    {
+        Tokenizer a("x y"), b("1 2");
+        REQUIRE(a.Next(true));
+        REQUIRE(b.Next(true));
+        REQUIRE(a.Next(true));
+        CHECK(a.token() == "y");
+        CHECK(b.token() == "1");
     }
 
     TEST_CASE("a token of MAXTOKEN-1 characters fits")

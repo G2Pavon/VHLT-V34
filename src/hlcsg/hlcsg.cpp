@@ -18,6 +18,7 @@
 #include "common/blockmem.h"
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
+#include "common/cmdline.h"
 #include "common/filelib.h"
 #include "common/planefile.h"
 #include "common/threads.h"
@@ -85,7 +86,7 @@ void GetParamsFromEnt(entity_t *mapent)
     {
         g_max_map_miptex = iTmp;
     }
-    sprintf_s(szTmp, "%i", g_max_map_miptex);
+    std::snprintf(szTmp, sizeof(szTmp), "%i", g_max_map_miptex);
     Log("%30s [ %-9s ]\n", "Texture Data Memory", szTmp);
 
     if (!std::strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
@@ -925,32 +926,16 @@ static void ConvertHintToEmpty()
 static void LoadWadValue()
 {
     std::string wadvalue;
-    ParseFromMemory(g_dentdata, g_entdatasize);
-    entity_t ent0;
-    entity_t *mapent = &ent0;
-    if (!GetToken(true))
+    Tokenizer tokens(std::string(g_dentdata, g_entdatasize > 0 ? g_entdatasize : 0));
+    if (tokens.Next(true))
     {
-    }
-    else
-    {
-        if (std::strcmp(g_token, "{"))
+        if (tokens.token() != "{")
         {
             Error("ParseEntity: { not found");
         }
-        while (1)
-        {
-            if (!GetToken(true))
-            {
-                Error("ParseEntity: EOF without closing brace");
-            }
-            if (!std::strcmp(g_token, "}"))
-            {
-                break;
-            }
-            EntityKeyValue e = ParseEpair();
-            mapent->keys.Prepend(std::move(e.key), std::move(e.value));
-        }
-        wadvalue = ValueForKey(mapent, "wad");
+        entity_t ent0;
+        ParseEntityKeys(tokens, &ent0);
+        wadvalue = ValueForKey(&ent0, "wad");
     }
     if (!wadvalue.empty())
     {
@@ -1000,7 +985,6 @@ static void MarkEntForNoclip(entity_t *ent)
 // marks the noclip flag on any brushes that dont need clipnode generation, eg. func_illusionaries
 static void CheckForNoClip()
 {
-    char entclassname[MAX_KEY];
     int count = 0;
 
     if (!g_bClipNazi)
@@ -1016,7 +1000,7 @@ static void CheckForNoClip()
 
         entity_t *ent = &g_entities[i];
 
-        strcpy_s(entclassname, ValueForKey(ent, "classname"));
+        const char *entclassname = ValueForKey(ent, "classname"); // was copied, truncated to MAX_KEY - 1: no effect on these names
         int spawnflags = std::atoi(ValueForKey(ent, "spawnflags"));
         int skin = IntForKey(ent, "skin"); //vluzacn
 
@@ -1286,154 +1270,48 @@ int main(const int argc, char **argv)
     InitDefaultHulls();
 
     // detect argv
-    for (int i = 1; i < argc; i++)
-    {
-        if (!strcasecmp(argv[i], "-threads"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_numthreads = std::atoi(argv[++i]);
-                if (g_numthreads < 1)
-                {
-                    Log("Expected value of at least 1 for '-threads'\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-estimate"))
-        {
-            g_estimate = true;
-        }
-        else if (!strcasecmp(argv[i], "-chart"))
-        {
-            g_chart = true;
-        }
-        else if (!strcasecmp(argv[i], "-noskyclip"))
-        {
-            g_skyclip = false;
-        }
-        else if (!strcasecmp(argv[i], "-onlyents"))
-        {
-            g_onlyents = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-clipeconomy"))
-        {
-            g_bClipNazi = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-cliptype"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                ++i;
-                if (!strcasecmp(argv[i], "smallest"))
-                {
-                    g_cliptype = clip_smallest;
-                }
-                else if (!strcasecmp(argv[i], "normalized"))
-                {
-                    g_cliptype = clip_normalized;
-                }
-                else if (!strcasecmp(argv[i], "simple"))
-                {
-                    g_cliptype = clip_simple;
-                }
-                else if (!strcasecmp(argv[i], "precise"))
-                {
-                    g_cliptype = clip_precise;
-                }
-                else if (!strcasecmp(argv[i], "legacy"))
-                {
-                    g_cliptype = clip_legacy;
-                }
-            }
-            else
-            {
-                Log("Error: -cliptype: incorrect usage of parameter\n");
-                Usage();
-            }
-        }
-
-        else if (!strcasecmp(argv[i], "-wadautodetect"))
-        {
-            g_bWadAutoDetect = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-nowadtextures"))
-        {
-            g_wadtextures = false;
-        }
-        else if (!strcasecmp(argv[i], "-wadinclude"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_WadInclude.push_back(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-texdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = std::atoi(argv[++i]) * 1024;
-
-                //if (x > g_max_map_miptex) //--vluzacn
-                {
-                    g_max_map_miptex = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-lightdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = std::atoi(argv[++i]) * 1024;
-
-                //if (x > g_max_map_lightdata) //--vluzacn
-                {
-                    g_max_map_lightdata = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-nolightopt"))
-        {
-            g_nolightopt = true;
-        }
-        else if (!strcasecmp(argv[i], "-notextconvert"))
-        {
-            g_noutf8 = true;
-        }
-        else if (argv[i][0] == '-')
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-        else if (!mapname_from_arg)
-        {
-            mapname_from_arg = argv[i];
-        }
-        else
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-    }
+    const auto flag = [](const char *name, bool &target, bool value) {
+        return CommandLineOption{name, [&target, value](const char *) { target = value; }};
+    };
+    const CommandLineOption options[] = {
+        {"-threads", [](const char *value) {
+             g_numthreads = std::atoi(value);
+             if (g_numthreads < 1)
+             {
+                 Log("Expected value of at least 1 for '-threads'\n");
+                 Usage();
+             }
+         },
+         true},
+        flag("-estimate", g_estimate, true),
+        flag("-chart", g_chart, true),
+        flag("-noskyclip", g_skyclip, false),
+        flag("-onlyents", g_onlyents, true),
+        flag("-clipeconomy", g_bClipNazi, true),
+        {"-cliptype", [](const char *value) {
+             static constexpr std::pair<const char *, cliptype> types[] = {
+                 {"smallest", clip_smallest}, {"normalized", clip_normalized}, {"simple", clip_simple},
+                 {"precise", clip_precise}, {"legacy", clip_legacy}};
+             for (const auto &[name, type] : types)
+             {
+                 if (!strcasecmp(value, name))
+                 {
+                     g_cliptype = type;
+                     break;
+                 }
+             }
+             // compat: an unknown cliptype is ignored
+         },
+         true, "Error: -cliptype: incorrect usage of parameter\n"},
+        flag("-wadautodetect", g_bWadAutoDetect, true),
+        flag("-nowadtextures", g_wadtextures, false),
+        {"-wadinclude", [](const char *value) { g_WadInclude.push_back(value); }, true},
+        {"-texdata", [](const char *value) { g_max_map_miptex = std::atoi(value) * 1024; }, true},
+        {"-lightdata", [](const char *value) { g_max_map_lightdata = std::atoi(value) * 1024; }, true},
+        flag("-nolightopt", g_nolightopt, true),
+        flag("-notextconvert", g_noutf8, true),
+    };
+    mapname_from_arg = ParseCommandLine(argc, argv, options, Usage);
 
     // no mapfile?
     if (!mapname_from_arg)

@@ -1028,28 +1028,45 @@ void DeleteEmbeddedLightmaps()
     }
 }
 
-EntityKeyValue ParseEpair()
+EntityKeyValue ParseEpair(Tokenizer &tokens)
 {
-    if (std::strlen(g_token) >= MAX_KEY - 1)
-        Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)std::strlen(g_token));
+    if (tokens.token().size() >= std::size_t{MAX_KEY - 1})
+        Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)tokens.token().size());
 
-    std::string key(g_token);
-    GetToken(false);
+    std::string key = tokens.token();
+    tokens.Next(false);
 
-    if (std::strlen(g_token) >= MAX_VAL - 1) //MAX_VALUE //vluzacn
-        Error("ParseEpar: Value token too long (%i > MAX_VALUE)", (int)std::strlen(g_token));
+    if (tokens.token().size() >= std::size_t{MAX_VAL - 1}) //MAX_VALUE //vluzacn
+        Error("ParseEpar: Value token too long (%i > MAX_VALUE)", (int)tokens.token().size());
 
-    return {std::move(key), g_token};
+    return {std::move(key), tokens.token()};
 }
 
-bool ParseEntity(CompileParamsHandler on_compile_parameters)
+void ParseEntityKeys(Tokenizer &tokens, entity_t *mapent)
 {
-    if (!GetToken(true))
+    while (1)
+    {
+        if (!tokens.Next(true))
+        {
+            Error("ParseEntity: EOF without closing brace");
+        }
+        if (tokens.token() == "}")
+        {
+            break;
+        }
+        EntityKeyValue e = ParseEpair(tokens);
+        mapent->keys.Prepend(std::move(e.key), std::move(e.value));
+    }
+}
+
+bool ParseEntity(Tokenizer &tokens, CompileParamsHandler on_compile_parameters)
+{
+    if (!tokens.Next(true))
     {
         return false;
     }
 
-    if (std::strcmp(g_token, "{"))
+    if (tokens.token() != "{")
     {
         Error("ParseEntity: { not found");
     }
@@ -1062,20 +1079,7 @@ bool ParseEntity(CompileParamsHandler on_compile_parameters)
     entity_t *mapent = &g_entities[g_numentities];
     g_numentities++;
     *mapent = entity_t{};
-
-    while (1)
-    {
-        if (!GetToken(true))
-        {
-            Error("ParseEntity: EOF without closing brace");
-        }
-        if (!std::strcmp(g_token, "}"))
-        {
-            break;
-        }
-        EntityKeyValue e = ParseEpair();
-        mapent->keys.Prepend(std::move(e.key), std::move(e.value));
-    }
+    ParseEntityKeys(tokens, mapent);
 
     if (!std::strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
     {
@@ -1117,9 +1121,9 @@ bool ParseEntity(CompileParamsHandler on_compile_parameters)
 void ParseEntities(CompileParamsHandler on_compile_parameters)
 {
     g_numentities = 0;
-    ParseFromMemory(g_dentdata, g_entdatasize);
+    Tokenizer tokens(std::string(g_dentdata, g_entdatasize > 0 ? g_entdatasize : 0));
 
-    while (ParseEntity(on_compile_parameters))
+    while (ParseEntity(tokens, on_compile_parameters))
     {
     }
 }

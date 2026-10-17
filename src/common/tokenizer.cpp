@@ -2,9 +2,7 @@
 
 #include <cstring>
 #include <utility>
-#include <vector>
 
-#include "common/filelib.h"
 #include "common/log.h"
 
 namespace
@@ -84,6 +82,9 @@ bool Tokenizer::Next(bool crossline)
         }
         if (m_cursor < end)
             m_cursor++;
+        // compat: tokens were handed out as C strings, so a quoted token ends at its first NUL
+        // (NUL is a blank outside quotes)
+        m_token.resize(std::strlen(m_token.c_str()));
     }
     else
     {
@@ -95,38 +96,4 @@ bool Tokenizer::Next(bool crossline)
         }
     }
     return true;
-}
-
-char g_token[MAXTOKEN];
-int g_currentline;
-
-static Tokenizer s_stream;
-
-void OpenTokenStream(const char *const filename)
-{
-    const std::vector<char> data = ReadFile(filename);
-    s_stream.Reset(std::string(data.begin(), data.end()));
-    g_currentline = s_stream.currentline();
-}
-
-void ParseFromMemory(char *buffer, const int size)
-{
-    s_stream.Reset(std::string(buffer, size > 0 ? size : 0));
-    g_currentline = s_stream.currentline();
-}
-
-void CloseTokenStream()
-{
-    s_stream.Reset(std::string());
-}
-
-bool GetToken(const bool crossline)
-{
-    const bool found = s_stream.Next(crossline);
-    g_currentline = s_stream.currentline();
-    if (found)
-    {
-        std::memcpy(g_token, s_stream.token().c_str(), s_stream.token().size() + 1);
-    }
-    return found;
 }

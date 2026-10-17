@@ -21,7 +21,9 @@ ctest --test-dir build --output-on-failure
 `common/` is built as two object libraries, `common_f64` (`DOUBLEVEC_T`, used by hlcsg and
 hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
 `common_tests_f64` and `common_tests_f32`.
-`common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
+`test_cmdline.cpp` covers `ParseCommandLine` (common/cmdline.h), the table-driven option parser
+the tools move to as they are modernized (hlcsg since H6; `parity.py cli` checks its command
+lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
 `brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`).
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.
@@ -154,6 +156,7 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-h2-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios where the oracle's behaviour is undefined (e.g. texdata-growth)
+python3 $P cli --bin DIR [--tools hlcsg]         # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]

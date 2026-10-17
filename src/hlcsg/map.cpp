@@ -1,15 +1,18 @@
 #include "hlcsg/hlcsg.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <optional>
 #include <cmath>
 #include <string>
+#include <vector>
 
 #include "common/cmdlib.h"
 #include "common/blockmem.h"
+#include "common/filelib.h"
 #include "common/bspfile.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
@@ -110,7 +113,7 @@ static bool CheckForInvisible(entity_t *mapent)
     return false;
 }
 
-static void ParseBrush(entity_t *mapent)
+static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
 {
     bool nullify = CheckForInvisible(mapent);
     hlassume(g_nummapbrushes < MAX_MAP_BRUSHES, assume_MAX_MAP_BRUSHES);
@@ -173,10 +176,10 @@ static void ParseBrush(entity_t *mapent)
 
     mapent->numbrushes++;
 
-    bool ok = GetToken(true);
+    bool ok = tokens.Next(true);
     while (ok)
     {
-        if (!std::strcmp(g_token, "}"))
+        if (tokens.token() == "}")
         {
             break;
         }
@@ -193,125 +196,130 @@ static void ParseBrush(entity_t *mapent)
         {
             if (i != 0)
             {
-                GetToken(true);
+                tokens.Next(true);
             }
-            if (std::strcmp(g_token, "("))
+            if (tokens.token() != "(")
             {
                 Error("Parsing Entity %i, Brush %i, Side %i : Expecting '(' got '%s'",
                       b->originalentitynum, b->originalbrushnum,
-                      b->numsides, g_token);
+                      b->numsides, tokens.token().c_str());
             }
 
             for (int j = 0; j < 3; j++)
             {
-                GetToken(false);
-                side->planepts[i][j] = std::atof(g_token);
+                tokens.Next(false);
+                side->planepts[i][j] = std::atof(tokens.token().c_str());
             }
 
-            GetToken(false);
-            if (std::strcmp(g_token, ")"))
+            tokens.Next(false);
+            if (tokens.token() != ")")
             {
                 Error("Parsing	Entity %i, Brush %i, Side %i : Expecting ')' got '%s'",
                       b->originalentitynum, b->originalbrushnum,
-                      b->numsides, g_token);
+                      b->numsides, tokens.token().c_str());
             }
         }
 
         // read the     texturedef
-        GetToken(false);
-        _strupr(g_token);
+        tokens.Next(false);
+        std::string name = tokens.token();
+        for (char &c : name)
         {
-            if (!strncasecmp(g_token, "NOCLIP", 6) || !strncasecmp(g_token, "NULLNOCLIP", 10))
+            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        }
+        // name is upper case, so these prefix tests match what strncasecmp matched
+        {
+            if (name.starts_with("NOCLIP") || name.starts_with("NULLNOCLIP"))
             {
-                std::strcpy(g_token, "NULL");
+                name = "NULL";
                 b->noclip = true;
             }
-            if (!strncasecmp(g_token, "BEVELBRUSH", 10))
+            if (name.starts_with("BEVELBRUSH"))
             {
-                std::strcpy(g_token, "NULL");
+                name = "NULL";
                 b->bevel = true;
             }
-            if (!strncasecmp(g_token, "BEVEL", 5))
+            if (name.starts_with("BEVEL"))
             {
-                std::strcpy(g_token, "NULL");
+                name = "NULL";
                 side->bevel = true;
             }
-            if (!strncasecmp(g_token, "CLIP", 4))
+            if (name.starts_with("CLIP"))
             {
                 b->cliphull |= (1 << NUM_HULLS); // arbitrary nonexistent hull
                 int h;
-                if (!strncasecmp(g_token, "CLIPHULL", 8) && (h = g_token[8] - '0', 0 < h && h < NUM_HULLS))
+                if (name.starts_with("CLIPHULL") && (h = name[8] - '0', 0 < h && h < NUM_HULLS)) // name[8] is '\0' for "CLIPHULL"
                 {
                     b->cliphull |= (1 << h); // hull h
                 }
-                if (!strncasecmp(g_token, "CLIPBEVEL", 9))
+                if (name.starts_with("CLIPBEVEL"))
                 {
                     side->bevel = true;
                 }
-                if (!strncasecmp(g_token, "CLIPBEVELBRUSH", 14))
+                if (name.starts_with("CLIPBEVELBRUSH"))
                 {
                     b->bevel = true;
                 }
-                std::strcpy(g_token, "SKIP");
+                name = "SKIP";
             }
         }
-        safe_strncpy(side->td.name, g_token, sizeof(side->td.name));
+        safe_strncpy(side->td.name, name.c_str(), sizeof(side->td.name));
 
         // texture U axis
-        GetToken(false);
-        if (std::strcmp(g_token, "["))
+        tokens.Next(false);
+        if (tokens.token() != "[")
         {
             hlassume(false, assume_MISSING_BRACKET_IN_TEXTUREDEF);
         }
 
-        GetToken(false);
-        side->td.vects.UAxis[0] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.UAxis[1] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.UAxis[2] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.shift[0] = std::atof(g_token);
+        tokens.Next(false);
+        side->td.vects.UAxis[0] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.UAxis[1] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.UAxis[2] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.shift[0] = std::atof(tokens.token().c_str());
 
-        GetToken(false);
-        if (std::strcmp(g_token, "]"))
+        tokens.Next(false);
+        if (tokens.token() != "]")
         {
             Error("missing ']' in texturedef (U)");
         }
 
         // texture V axis
-        GetToken(false);
-        if (std::strcmp(g_token, "["))
+        tokens.Next(false);
+        if (tokens.token() != "[")
         {
             Error("missing '[' in texturedef (V)");
         }
 
-        GetToken(false);
-        side->td.vects.VAxis[0] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.VAxis[1] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.VAxis[2] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.shift[1] = std::atof(g_token);
+        tokens.Next(false);
+        side->td.vects.VAxis[0] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.VAxis[1] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.VAxis[2] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.shift[1] = std::atof(tokens.token().c_str());
 
-        GetToken(false);
-        if (std::strcmp(g_token, "]"))
+        tokens.Next(false);
+        if (tokens.token() != "]")
         {
             Error("missing ']' in texturedef (V)");
         }
 
         // Texture rotation is implicit in U/V axes.
-        GetToken(false);
+        tokens.Next(false);
         side->td.vects.rotate = 0;
 
         // texure scale
-        GetToken(false);
-        side->td.vects.scale[0] = std::atof(g_token);
-        GetToken(false);
-        side->td.vects.scale[1] = std::atof(g_token);
+        tokens.Next(false);
+        side->td.vects.scale[0] = std::atof(tokens.token().c_str());
+        tokens.Next(false);
+        side->td.vects.scale[1] = std::atof(tokens.token().c_str());
 
-        ok = GetToken(true); // Done with line, this reads the first item from the next line
+        ok = tokens.Next(true); // Done with line, this reads the first item from the next line
     };
     if (b->cliphull != 0) // has CLIP* texture
     {
@@ -489,21 +497,21 @@ static void ParseBrush(entity_t *mapent)
     }
 }
 
-static bool ParseMapEntity()
+static bool ParseMapEntity(Tokenizer &tokens)
 {
     g_numparsedbrushes = 0;
-    if (!GetToken(true))
+    if (!tokens.Next(true))
     {
         return false;
     }
 
     int this_entity = g_numentities;
 
-    if (std::strcmp(g_token, "{"))
+    if (tokens.token() != "{")
     {
         Error("Parsing Entity %i, expected '{' got '%s'",
               g_numparsedentities,
-              g_token);
+              tokens.token().c_str());
     }
 
     hlassume(g_numentities < MAX_MAP_ENTITIES, assume_MAX_MAP_ENTITIES);
@@ -515,20 +523,20 @@ static bool ParseMapEntity()
 
     while (1)
     {
-        if (!GetToken(true))
+        if (!tokens.Next(true))
             Error("ParseEntity: EOF without closing brace");
 
-        if (!std::strcmp(g_token, "}")) // end of our context
+        if (tokens.token() == "}") // end of our context
             break;
 
-        if (!std::strcmp(g_token, "{")) // must be a brush
+        if (tokens.token() == "{") // must be a brush
         {
-            ParseBrush(mapent);
+            ParseBrush(tokens, mapent);
             g_numparsedbrushes++;
         }
         else // else assume an epair
         {
-            EntityKeyValue e = ParseEpair();
+            EntityKeyValue e = ParseEpair(tokens);
             if (mapent->numbrushes > 0)
                 Warning("Error: ParseEntity: Keyvalue comes after brushes."); //--vluzacn
 
@@ -845,12 +853,13 @@ static unsigned int CountEngineEntities()
 
 void LoadMapFile(const char *const filename)
 {
-    OpenTokenStream(filename);
+    const std::vector<char> text = ReadFile(filename);
+    Tokenizer tokens(std::string(text.begin(), text.end()));
 
     g_numentities = 0;
 
     g_numparsedentities = 0;
-    while (ParseMapEntity())
+    while (ParseMapEntity(tokens))
     {
         g_numparsedentities++;
     }

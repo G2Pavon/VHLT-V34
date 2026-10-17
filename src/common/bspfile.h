@@ -151,12 +151,17 @@ void DeleteEmbeddedLightmaps();
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
-// Parses one "key" "value" pair; g_token holds the key.
-EntityKeyValue ParseEpair();
+class Tokenizer;
+
+// Parses one "key" "value" pair; tokens.token() holds the key.
+EntityKeyValue ParseEpair(Tokenizer &tokens);
+// Reads key/value pairs up to the closing brace (the "{" has been read), adding each in front.
+void ParseEntityKeys(Tokenizer &tokens, entity_t *mapent);
 
 // Called for an info_compile_parameters entity while parsing (each tool has its own); may be null.
 using CompileParamsHandler = void (*)(entity_t *mapent);
-bool ParseEntity(CompileParamsHandler on_compile_parameters);
+// Parses the next entity of the text into g_entities; false at the end of the text.
+bool ParseEntity(Tokenizer &tokens, CompileParamsHandler on_compile_parameters);
 void ParseEntities(CompileParamsHandler on_compile_parameters);
 
 // Writes g_entities back to g_dentdata. optimize_named_lights drops the targetname of lights that

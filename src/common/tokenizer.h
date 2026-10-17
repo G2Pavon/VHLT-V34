@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 constexpr int MAXTOKEN = 4096;
 
@@ -11,6 +12,9 @@ constexpr int MAXTOKEN = 4096;
 class Tokenizer
 {
   public:
+    Tokenizer() = default;
+    explicit Tokenizer(std::string text) { Reset(std::move(text)); }
+
     void Reset(std::string text);
 
     // The next token, or false at the end of the text. With crossline false the token must be on
@@ -31,12 +35,3 @@ class Tokenizer
     int m_currentline = 1;
     std::string m_token;
 };
-
-// The shared token stream hlcsg and ParseEntities read from.
-extern char g_token[MAXTOKEN];
-extern int g_currentline;
-
-void OpenTokenStream(const char *const filename);
-void ParseFromMemory(char *buffer, int size);
-void CloseTokenStream();
-bool GetToken(bool crossline);

@@ -23,7 +23,7 @@
 
 // legacy shims (MSVC spellings are native here)
 #define FASTCALL __fastcall // hlvis
-#define CDECL __cdecl       // hlcsg, hlrad
+#define CDECL __cdecl       // hlrad
 #define INLINE __inline     // hlvis
 #define FORCEINLINE __forceinline // hlrad
 
@@ -39,32 +39,12 @@
 
 // legacy shims: MSVC spellings used by the tools
 #define FASTCALL                                      // hlvis
-#define CDECL                                         // hlcsg, hlrad
+#define CDECL                                         // hlrad
 #define INLINE inline                                 // hlvis
 #define FORCEINLINE inline __attribute__((always_inline)) // hlrad
-#define _strdup strdup                                // hlcsg, common/bspfile.cpp (ParseEpair, Phase 5)
-
-static inline char *_strupr(char *s) // hlcsg
-{
-    if (s)
-        for (char *p = s; *p; ++p)
-            *p = toupper((unsigned char)*p);
-    return s;
-}
-
-static inline int strcpy_s(char *d, size_t s, const char *src) // hlcsg, common/tokenizer.cpp (Phase 5)
-{
-    if (!d || !src || s == 0)
-        return 22;
-    strncpy(d, src, s - 1);
-    d[s - 1] = '\0';
-    return 0;
-}
-template <size_t size>
-static inline int strcpy_s(char (&d)[size], const char *s) { return strcpy_s(d, size, s); }
 
 template <size_t size>
-static inline int sprintf_s(char (&d)[size], const char *f, ...) // hlcsg, hlrad
+static inline int sprintf_s(char (&d)[size], const char *f, ...) // hlrad
 {
     va_list a;
     va_start(a, f);

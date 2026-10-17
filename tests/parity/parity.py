@@ -973,6 +973,58 @@ def cmd_regress(args) -> int:
 
 
 # ---------------------------------------------------------------------------
+# command: cli (oracle vs candidate on command lines the corpus tiers never use)
+
+# "tiny" is a worldspawn-only map: hlcsg gets through its settings table (which shows what the
+# command line set) and writes every output file in well under a second.
+CLI_MAP = '{\n"classname" "worldspawn"\n}\n'
+
+CLI_CASES = {
+    "hlcsg": [
+        [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "abc", "tiny"],
+        ["-threads", "3", "tiny"], ["tiny", "-threads"], ["-estimate", "-chart", "tiny"],
+        ["-ESTIMATE", "tiny"], ["-noskyclip", "-onlyents", "-clipeconomy", "tiny"],
+        ["-cliptype"], ["-cliptype", "bogus", "tiny"], ["-CLIPTYPE", "PRECISE", "tiny"],
+        *[["-cliptype", t, "tiny"] for t in ("smallest", "normalized", "simple", "precise", "legacy")],
+        ["-cliptype", "simple", "-cliptype", "bogus", "tiny"],
+        ["-wadautodetect", "-nowadtextures", "-nolightopt", "-notextconvert", "tiny"],
+        ["-wadinclude"], ["-wadinclude", "a.wad", "-wadinclude", "b", "tiny"],
+        ["-texdata"], ["-texdata", "8192", "tiny"],
+        # not "-texdata x": a 0-byte texture buffer, which the oracle overflowed (fixed in H2: an error)
+        ["-lightdata"], ["-lightdata", "1024", "tiny"],
+        ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+    ],
+}
+
+
+def _cli_run(exe: Path, argv: list[str], cwd: Path) -> tuple:
+    cwd.mkdir(parents=True)
+    (cwd / "tiny.map").write_text(CLI_MAP)
+    proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
+    files = {f.name: normalize_log(f.read_bytes()) for f in sorted(cwd.iterdir())}
+    return proc.returncode, normalize_log(proc.stdout), normalize_log(proc.stderr), files
+
+
+def cmd_cli(args) -> int:
+    cand = check_bin(Path(args.bin))
+    oracle = DATA / "builds" / "oracle" / "bin"
+    failures = []
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+        for tool in args.tools:
+            for i, argv in enumerate(CLI_CASES[tool]):
+                ref = _cli_run(oracle / tool, argv, Path(tmp) / f"{tool}-{i}-ref")
+                new = _cli_run(cand / tool, argv, Path(tmp) / f"{tool}-{i}-new")
+                what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
+                if what:
+                    failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")
+        n = sum(len(CLI_CASES[t]) for t in args.tools)
+        log(f"  {'PASS' if not failures else 'FAIL'}: {n} command lines, {len(failures)} difference(s)")
+        for f in failures:
+            log(f"    {f}")
+    return 1 if failures else 0
+
+
+# ---------------------------------------------------------------------------
 # command: coverage (gcov line coverage of hlcsg over the csg tiers)
 
 
@@ -1121,6 +1173,11 @@ def main() -> int:
     p = sub.add_parser("regress", help="candidate-only regression scenarios (oracle behaviour undefined there)")
     p.add_argument("--bin", required=True)
     p.set_defaults(func=cmd_regress)
+
+    p = sub.add_parser("cli", help="oracle vs candidate on option-parsing command lines (output, files, exit code)")
+    p.add_argument("--bin", required=True)
+    p.add_argument("--tools", nargs="+", default=list(CLI_CASES), choices=list(CLI_CASES))
+    p.set_defaults(func=cmd_cli)
 
     p = sub.add_parser("coverage", help="gcov line coverage of hlcsg over the quick csg stage and every csg variant tier")
     p.add_argument("--maps", nargs="+")

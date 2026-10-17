@@ -40,6 +40,7 @@ set(COMMON_SOURCES
     src/common/blockmem.cpp
     src/common/bspfile.cpp
     src/common/cmdlib.cpp
+    src/common/cmdline.cpp
     src/common/entity.cpp
     src/common/filelib.cpp
     src/common/log.cpp
