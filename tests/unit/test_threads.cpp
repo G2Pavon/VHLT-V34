@@ -23,6 +23,17 @@ void CountWorker(int)
 {
     g_workers++;
 }
+
+std::atomic<int> g_nested{0};
+
+void NestedLock(int)
+{
+    ThreadLock();
+    ThreadLock(); // recursive: warns instead of deadlocking
+    g_nested++;
+    ThreadUnlock();
+    ThreadUnlock();
+}
 } // namespace
 
 TEST_SUITE("threads")
@@ -55,6 +66,16 @@ TEST_SUITE("threads")
         g_workers = 0;
         RunThreadsOn(10, false, CountWorker);
         CHECK(g_workers == 3);
+        g_numthreads = saved;
+    }
+
+    TEST_CASE("a nested ThreadLock on the same thread does not deadlock")
+    {
+        const int saved = g_numthreads;
+        g_numthreads = 4;
+        g_nested = 0;
+        RunThreadsOnIndividual(16, false, NestedLock);
+        CHECK(g_nested == 16);
         g_numthreads = saved;
     }
 

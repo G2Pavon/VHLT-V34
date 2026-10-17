@@ -18,10 +18,7 @@
 #include "common/bspfile.h"
 #include "common/log.h"
 
-#ifdef HLCSG
-bool g_nolightopt = true;
-#endif
-
+// The oracle's common/ calls an extern GetParamsFromEnt (since Phase 5 it is passed in instead).
 void GetParamsFromEnt(entity_t *)
 {
 }

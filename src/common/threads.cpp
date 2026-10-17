@@ -12,11 +12,12 @@
 #include "common/cmdlib.h"
 #include "common/messages.h"
 #include "common/log.h"
-#include "common/blockmem.h"
 #include "common/hlassert.h"
 
-static std::mutex g_thread_mutex;
-static std::atomic<int> g_enter_count{0};
+// Recursive, like the CRITICAL_SECTION the Windows tools were written against: a nested
+// ThreadLock on the same thread warns instead of deadlocking.
+static std::recursive_mutex g_thread_mutex;
+static std::atomic<int> g_enter_count{0}; // lock depth; only changed by the thread holding the lock
 static std::atomic<bool> g_is_threaded{false};
 
 static constexpr int MAX_THREADS = 64;
@@ -34,7 +35,7 @@ static constexpr float THREADTIMES_SIZE_F = static_cast<float>(THREADTIMES_SIZE)
 static double g_thread_start_time = 0;
 static double g_thread_times[THREADTIMES_SIZE];
 
-q_threadfunction workfunction;
+static q_threadfunction workfunction;
 
 void ThreadLock()
 {
@@ -64,7 +65,7 @@ void ThreadUnlock()
 
 int GetThreadWork()
 {
-    std::lock_guard<std::mutex> lock(g_thread_mutex);
+    std::lock_guard<std::recursive_mutex> lock(g_thread_mutex);
 
     if (g_dispatch_index == 0)
     {

@@ -43,11 +43,19 @@ set(COMMON_SOURCES
     src/common/winding.cpp
 )
 
+# common/ is built once per precision: vec_t is double for hlcsg and hlbsp (DOUBLEVEC_T), float
+# for hlvis and hlrad. DOUBLEVEC_T is PUBLIC so a tool can only be linked with the matching build.
+add_library(common_f64 OBJECT ${COMMON_SOURCES})
+target_include_directories(common_f64 PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(common_f64 PUBLIC DOUBLEVEC_T)
+
+add_library(common_f32 OBJECT ${COMMON_SOURCES})
+target_include_directories(common_f32 PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
 # =====================================================================================
 # hlcsg
 # =====================================================================================
 add_executable(hlcsg
-    ${COMMON_SOURCES}
     src/hlcsg/ansitoutf8.cpp
     src/hlcsg/brush.cpp
     src/hlcsg/hullfile.cpp
@@ -56,14 +64,13 @@ add_executable(hlcsg
     src/hlcsg/textures.cpp
     src/hlcsg/wadpath.cpp
 )
-target_include_directories(hlcsg PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_compile_definitions(hlcsg PRIVATE HLCSG DOUBLEVEC_T)
+target_link_libraries(hlcsg PRIVATE common_f64)
+target_compile_definitions(hlcsg PRIVATE HLCSG)
 
 # =====================================================================================
 # hlbsp
 # =====================================================================================
 add_executable(hlbsp
-    ${COMMON_SOURCES}
     src/hlbsp/brink.cpp
     src/hlbsp/merge.cpp
     src/hlbsp/outside.cpp
@@ -74,25 +81,23 @@ add_executable(hlbsp
     src/hlbsp/tjunc.cpp
     src/hlbsp/writebsp.cpp
 )
-target_include_directories(hlbsp PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_compile_definitions(hlbsp PRIVATE HLBSP DOUBLEVEC_T)
+target_link_libraries(hlbsp PRIVATE common_f64)
+target_compile_definitions(hlbsp PRIVATE HLBSP)
 
 # =====================================================================================
 # hlvis
 # =====================================================================================
 add_executable(hlvis
-    ${COMMON_SOURCES}
     src/hlvis/flow.cpp
     src/hlvis/hlvis.cpp
 )
-target_include_directories(hlvis PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(hlvis PRIVATE common_f32)
 target_compile_definitions(hlvis PRIVATE HLVIS)
 
 # =====================================================================================
 # hlrad
 # =====================================================================================
 add_executable(hlrad
-    ${COMMON_SOURCES}
     src/hlrad/compress.cpp
     src/hlrad/lerp.cpp
     src/hlrad/lightmap.cpp
@@ -107,7 +112,7 @@ add_executable(hlrad
     src/hlrad/vismatrix.cpp
     src/hlrad/vismatrixutil.cpp
 )
-target_include_directories(hlrad PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(hlrad PRIVATE common_f32)
 target_compile_definitions(hlrad PRIVATE HLRAD)
 
 # =====================================================================================

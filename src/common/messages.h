@@ -88,3 +88,5 @@ typedef enum
 } assume_msgs;
 
 const MessageTable_t *GetAssume(assume_msgs id);
+// Replaces the "Howto Fix" text of one message for this tool (call at startup).
+void SetAssumeHowto(assume_msgs id, const char *const howto);

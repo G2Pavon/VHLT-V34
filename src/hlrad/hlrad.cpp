@@ -2440,6 +2440,7 @@ int main(const int argc, char **argv)
     const char *mapname_from_arg = nullptr;
 
     g_Program = "hlrad";
+    SetAssumeHowto(assume_NoMemory, sizeof(intptr_t) <= 4 ? "The map is too complex for the compile tools to handle. Switch to the 64-bit version of hlrad if possible." : "Likely causes are (in order of likeliness) : the partition holding the swapfile is full; swapfile size is smaller than required; memory fragmentation; heap corruption");
 
     if (argc == 1)
         Usage();

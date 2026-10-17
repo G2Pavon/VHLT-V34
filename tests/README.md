@@ -18,8 +18,9 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-`common/` is compiled once per tool, so the tests are built twice: `common_tests_f64`
-(as hlcsg sees it: `HLCSG`, `DOUBLEVEC_T`) and `common_tests_f32` (as hlrad sees it: `HLRAD`).
+`common/` is built as two object libraries, `common_f64` (`DOUBLEVEC_T`, used by hlcsg and
+hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
+`common_tests_f64` and `common_tests_f32`.
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.
 
