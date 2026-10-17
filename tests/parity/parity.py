@@ -56,6 +56,7 @@ TIERS = {
 }
 # csg-only tiers: one per hlcsg option the default tiers never use. "ents" is a second hlcsg run.
 CSG_VARIANTS = {
+    "csg-default": [],  # hlcsg alone with default options (e.g. for --threads checks of hlcsg only)
     "csg-smallest": ["-cliptype", "smallest"],
     "csg-normalized": ["-cliptype", "normalized"],
     "csg-precise": ["-cliptype", "precise"],

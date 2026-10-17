@@ -19,6 +19,7 @@
 static std::recursive_mutex g_thread_mutex;
 static std::atomic<int> g_enter_count{0}; // lock depth; only changed by the thread holding the lock
 static std::atomic<bool> g_is_threaded{false};
+static std::atomic<bool> g_abort_after_error{false};
 
 static constexpr int MAX_THREADS = 64;
 int g_numthreads = DEFAULT_NUMTHREADS;
@@ -72,7 +73,7 @@ int GetThreadWork()
         g_old_percentage = 0;
     }
 
-    if (g_dispatch_index < 0 || g_dispatch_index >= g_work_count)
+    if (g_dispatch_index < 0 || g_dispatch_index >= g_work_count || g_abort_after_error)
     {
         return -1;
     }
@@ -138,6 +139,11 @@ static void ThreadWorkerFunction(int)
     }
 }
 
+void AbortThreadsAfterError()
+{
+    g_abort_after_error = true;
+}
+
 void ThreadSetDefault()
 {
     if (g_numthreads == -1)
@@ -152,13 +158,13 @@ void ThreadSetDefault()
     }
 }
 
-void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction func)
+void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction func, int maxthreads)
 {
     workfunction = func;
-    RunThreadsOn(workcnt, showpacifier, ThreadWorkerFunction);
+    RunThreadsOn(workcnt, showpacifier, ThreadWorkerFunction, maxthreads);
 }
 
-void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
+void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func, int maxthreads)
 {
     g_thread_start_time = I_FloatTime();
 
@@ -174,14 +180,15 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
     hlassume(g_work_count >= 0, assume_BadWorkcount);
 
     ThreadSetDefault();
+    const int numthreads = maxthreads > 0 ? std::min(maxthreads, g_numthreads) : g_numthreads;
 
-    Log("Running with %d threads\n", g_numthreads);
+    Log("Running with %d threads\n", numthreads);
 
     // RAII: the worker threads live in this vector
     std::vector<std::thread> workers;
-    workers.reserve(g_numthreads);
+    workers.reserve(numthreads);
 
-    for (int i = 0; i < g_numthreads; i++)
+    for (int i = 0; i < numthreads; i++)
     {
         // a lambda forwards the thread number to the entry function
         workers.emplace_back([i]()
@@ -199,6 +206,12 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
 
     q_entry = nullptr;
     g_is_threaded = false;
+    if (g_abort_after_error)
+    {
+        // A work item failed with an error whose output has been written: exit now, from the main
+        // thread, as a single-threaded run would have (before the elapsed-time line).
+        ExitAfterError();
+    }
     double total_time = I_FloatTime() - g_thread_start_time;
 
     if (g_show_pacifier)

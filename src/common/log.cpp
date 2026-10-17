@@ -1,5 +1,6 @@
 #include "common/log.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -16,7 +17,29 @@ char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
 bool g_log = DEFAULT_LOG;
 
 static UniqueFile CompileLog;
-static bool fatal = false;
+static std::atomic<bool> fatal{false};
+
+static thread_local LogCapture *t_capture = nullptr;
+
+void CaptureWriteLog(const char *message)
+{
+    t_capture->m_events.push_back({false, message});
+}
+
+void CaptureLogError(const char *message)
+{
+    t_capture->m_events.push_back({true, message});
+}
+
+ScopedLogCapture::ScopedLogCapture(LogCapture &capture) : m_previous(t_capture)
+{
+    t_capture = &capture;
+}
+
+ScopedLogCapture::~ScopedLogCapture()
+{
+    t_capture = m_previous;
+}
 
 // compat: formatted messages are cut at this many bytes, as they always were.
 constexpr int MAX_ERROR = 2048;
@@ -77,6 +100,11 @@ void CheckForErrorLog()
 
 void LogError(const char *const message)
 {
+    if (t_capture)
+    {
+        CaptureLogError(message);
+        return;
+    }
     if (g_log && CompileLog)
     {
         char logfilename[_MAX_PATH];
@@ -140,6 +168,11 @@ static void Safe_WriteLog(const char *const message)
 
 static void WriteLog(const char *const message)
 {
+    if (t_capture)
+    {
+        CaptureWriteLog(message);
+        return;
+    }
     Safe_WriteLog(message);
     std::fprintf(stdout, "%s", message);
     std::fflush(stdout);
@@ -168,9 +201,33 @@ void FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
     WriteLog(message2);
     LogError(message2);
 
+    if (t_capture)
+    {
+        throw CapturedError{}; // the owner of the capture replays it and exits (ExitAfterError)
+    }
+    ExitAfterError();
+}
+
+void ExitAfterError()
+{
     fatal = true;
     CheckFatal();
     std::exit(1); // not reached: CheckFatal() exits once fatal is set
+}
+
+void LogCapture::Replay() const
+{
+    for (const Event &e : m_events)
+    {
+        if (e.errorlog)
+        {
+            LogError(e.text.c_str());
+        }
+        else
+        {
+            WriteLog(e.text.c_str());
+        }
+    }
 }
 
 void FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...)

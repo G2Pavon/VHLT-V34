@@ -90,7 +90,7 @@ corpus by `corpus`) cover the rest:
 | `fm_usemodel`, `fm_transform`, `fm_gametext` | zhlt_usemodel, zhlt_transform, game_text Windows-1252 conversion |
 | `fm_err_*` | hlcsg's error paths (exit 1, log compared); `fm_err_hull_overflow` reaches the CreateHullBrush stack overflow |
 
-csg-only tiers run hlcsg with one option each: `csg-smallest`, `csg-normalized`, `csg-precise`,
+csg-only tiers run hlcsg alone: `csg-default` (default options), then one option each: `csg-smallest`, `csg-normalized`, `csg-precise`,
 `csg-legacy`, `csg-clipeconomy`, `csg-noskyclip`, `csg-nolightopt`, `csg-nowadtextures`,
 `csg-wadinclude`, `csg-misc`, and `csg-onlyents` (a second hlcsg `-onlyents` run on the first
 run's `.bsp`). `--tier csg-variants` means all of them (about 15 s for the whole corpus).
@@ -124,6 +124,15 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
   binaries. `--build-date` overrides it.
 - `--threads N` normalizes only the thread count in logs (command line, settings table, "Running
   with N threads"). Baseline at H0: 22 of 22 compiling maps differ at the csg stage with 16 threads.
+  Since H4, hlcsg with any thread count writes exactly what the oracle's `-threads 1` writes:
+  `check --tier csg-variants --threads 16` passes (`csg-default` is plain hlcsg). The downstream
+  tools are still nondeterministic with threads, so full-pipeline `--threads` checks fail there.
+- ThreadSanitizer (hlcsg, 16 threads; 0 warnings since H4, thousands at oracle-base):
+
+  ```sh
+  python3 $P build --tree --name tsan --cxx clang++ --cxx-flags "-ffp-contract=off -fno-fast-math -fsanitize=thread -g" --force
+  # then run ../vhlt-parity/builds/tsan/bin/hlcsg -threads 16 on corpus maps and grep for "WARNING: ThreadSanitizer"
+  ```
 
 ### Index verification build
 

@@ -1,6 +1,12 @@
 #include "hlcsg/hlcsg.h"
 
 #include <algorithm>
+#include <atomic>
+#include <cstdarg>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <string>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -169,45 +175,73 @@ static void FreeFace(bface_t *f)
     std::free(f);
 }
 
+// Everything CSGBrush produces for one brush: its .p<hull> faces, .b<hull> detail brushes and log
+// output. Brushes are processed in parallel, and their output is written in brush order, so a
+// multi-threaded run writes exactly what -threads 1 writes.
+struct BrushOutput
+{
+    std::string faces[NUM_HULLS];
+    std::string detail[NUM_HULLS];
+    LogCapture log;
+    bool failed = false; // CSGBrush stopped with an Error(); the run ends after this brush
+};
+
+static thread_local BrushOutput *t_brushoutput = nullptr;
+
+static void FORMAT_PRINTF(2, 3) Append(std::string &out, const char *const format, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    const int n = std::vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    if (n >= 0 && n < static_cast<int>(sizeof(buffer)))
+    {
+        out.append(buffer, n);
+        return;
+    }
+    std::string big(n > 0 ? n : 0, '\0'); // same formatting, longer than the buffer
+    va_start(args, format);
+    std::vsnprintf(big.data(), big.size() + 1, format, args);
+    va_end(args);
+    out += big;
+}
+
 static void WriteFace(const int hull, const bface_t *const f, int detaillevel)
 {
-
-    ThreadLock();
+    std::string &out = t_brushoutput->faces[hull];
 
     // .p0 format
     Winding *w = f->w;
 
     // plane summary
-    std::fprintf(out[hull], "%i %i %i %i %u\n", detaillevel, f->planenum, f->texinfo, f->contents, w->m_NumPoints);
+    Append(out, "%i %i %i %i %u\n", detaillevel, f->planenum, f->texinfo, f->contents, w->m_NumPoints);
 
     // for each of the points on the face
     for (unsigned int i = 0; i < w->m_NumPoints; i++)
     {
         // write the co-ords
-        std::fprintf(out[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+        Append(out, "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
     }
 
     // put in an extra line break
-    std::fprintf(out[hull], "\n");
-
-    ThreadUnlock();
+    out += "\n";
 }
 
 void WriteDetailBrush(int hull, const bface_t *faces)
 {
-    ThreadLock();
-    std::fprintf(out_detailbrush[hull], "0\n");
+    std::string &out = t_brushoutput->detail[hull];
+    out += "0\n";
     for (const bface_t *f = faces; f; f = f->next)
     {
         Winding *w = f->w;
-        std::fprintf(out_detailbrush[hull], "%i %u\n", f->planenum, w->m_NumPoints);
-        for (int i = 0; i < w->m_NumPoints; i++)
+        Append(out, "%i %u\n", f->planenum, w->m_NumPoints);
+        for (unsigned int i = 0; i < w->m_NumPoints; i++)
         {
-            std::fprintf(out_detailbrush[hull], "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+            Append(out, "%5.8f %5.8f %5.8f\n", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
         }
     }
-    std::fprintf(out_detailbrush[hull], "-1 -1\n");
-    ThreadUnlock();
+    out += "-1 -1\n";
 }
 
 //      The faces remaining on the outside list are final polygons.  Write them to the
@@ -643,6 +677,71 @@ static void CSGBrush(int brushnum)
     }
 }
 
+// Runs CSGBrush for one brush with its output (files and log) held back in a BrushOutput.
+static std::unique_ptr<BrushOutput> RunCSGBrush(int brushnum)
+{
+    auto output = std::make_unique<BrushOutput>();
+    t_brushoutput = output.get();
+    {
+        ScopedLogCapture capture(output->log);
+        try
+        {
+            CSGBrush(brushnum);
+        }
+        catch (const CapturedError &)
+        {
+            output->failed = true;
+        }
+    }
+    t_brushoutput = nullptr;
+    return output;
+}
+
+static void WriteBrushOutput(const BrushOutput &output)
+{
+    for (int h = 0; h < NUM_HULLS; h++)
+    {
+        SafeWrite(out[h], output.faces[h].data(), static_cast<int>(output.faces[h].size()));
+        SafeWrite(out_detailbrush[h], output.detail[h].data(), static_cast<int>(output.detail[h].size()));
+    }
+    output.log.Replay();
+}
+
+// Worldspawn's brushes are CSG'd in parallel; outputs are written as soon as all earlier brushes'
+// outputs have been. If a brush failed, nothing after it is written (as if the run had stopped
+// there) and the thread runner exits once the workers have finished.
+namespace
+{
+std::mutex s_ordered_mutex;
+int s_ordered_first = 0;                                  // brush number of work item 0
+int s_ordered_next = 0;                                   // next work item to write
+std::map<int, std::unique_ptr<BrushOutput>> s_ordered_pending;
+std::atomic<bool> s_ordered_failed{false};
+} // namespace
+
+static void CSGBrushInOrder(int item)
+{
+    if (s_ordered_failed)
+    {
+        return; // an earlier brush failed: this one would never have run
+    }
+    std::unique_ptr<BrushOutput> output = RunCSGBrush(s_ordered_first + item);
+
+    std::lock_guard lock(s_ordered_mutex);
+    s_ordered_pending.emplace(item, std::move(output));
+    while (!s_ordered_failed && !s_ordered_pending.empty() && s_ordered_pending.begin()->first == s_ordered_next)
+    {
+        auto node = s_ordered_pending.extract(s_ordered_pending.begin());
+        WriteBrushOutput(*node.mapped());
+        s_ordered_next++;
+        if (node.mapped()->failed)
+        {
+            s_ordered_failed = true;
+            AbortThreadsAfterError();
+        }
+    }
+}
+
 static void EmitPlanes()
 {
     g_numplanes = g_nummapplanes;
@@ -990,14 +1089,24 @@ static void ProcessModels()
         // csg them in order
         if (i == 0) // if its worldspawn....
         {
-            NamedRunThreadsOnIndividual(g_entities[i].numbrushes, g_estimate, CSGBrush);
+            s_ordered_first = first;
+            s_ordered_next = 0;
+            s_ordered_pending.clear();
+            s_ordered_failed = false;
+            Log("CSGBrush:\n"); // the stage keeps its name in the log
+            RunThreadsOnIndividual(g_entities[i].numbrushes, g_estimate, CSGBrushInOrder);
             CheckFatal();
         }
         else
         {
             for (int j = 0; j < g_entities[i].numbrushes; j++)
             {
-                CSGBrush(first + j);
+                const std::unique_ptr<BrushOutput> output = RunCSGBrush(first + j);
+                WriteBrushOutput(*output);
+                if (output->failed)
+                {
+                    ExitAfterError();
+                }
             }
         }
 
@@ -1431,8 +1540,9 @@ int main(const int argc, char **argv)
 
     CheckForNoClip();
 
-    // createbrush
-    NamedRunThreadsOnIndividual(g_nummapbrushes, g_estimate, CreateBrush);
+    // createbrush: in brush order, because plane and texinfo numbers are assigned in the order
+    // brushes ask for them (and a brush's planes depend on the planes created before it)
+    NamedRunThreadsOnIndividualInOrder(g_nummapbrushes, g_estimate, CreateBrush);
     CheckFatal();
 
     // boundworld

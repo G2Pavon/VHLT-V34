@@ -3,6 +3,7 @@
 #include <atomic>
 #include <vector>
 
+#include "common/log.h"
 #include "common/threads.h"
 
 namespace
@@ -25,6 +26,12 @@ void CountWorker(int)
 }
 
 std::atomic<int> g_nested{0};
+std::vector<int> g_order;
+
+void RecordOrder(int i)
+{
+    g_order.push_back(i); // one thread: no lock needed
+}
 
 void NestedLock(int)
 {
@@ -77,6 +84,53 @@ TEST_SUITE("threads")
         RunThreadsOnIndividual(16, false, NestedLock);
         CHECK(g_nested == 16);
         g_numthreads = saved;
+    }
+
+    TEST_CASE("maxthreads 1 runs the work items in order")
+    {
+        const int saved = g_numthreads;
+        g_numthreads = 8;
+        g_order.clear();
+        RunThreadsOnIndividual(50, false, RecordOrder, 1);
+        REQUIRE(g_order.size() == 50);
+        for (int i = 0; i < 50; i++)
+        {
+            CHECK(g_order[i] == i);
+        }
+        g_numthreads = saved;
+    }
+
+    TEST_CASE("log capture holds output back; Error() throws instead of exiting")
+    {
+        LogCapture capture;
+        bool thrown = false;
+        {
+            ScopedLogCapture scope(capture);
+            Log("captured line\n");
+            Warning("captured warning");
+            try
+            {
+                Error("captured error %d", 42);
+            }
+            catch (const CapturedError &)
+            {
+                thrown = true;
+            }
+        }
+        CHECK(thrown);
+        CHECK(!capture.empty());
+        LogCapture nested_outer, nested_inner;
+        {
+            ScopedLogCapture outer(nested_outer);
+            {
+                ScopedLogCapture inner(nested_inner);
+                Log("inner\n");
+            }
+            CHECK(nested_outer.empty()); // the inner capture took it
+            Log("outer\n");
+        }
+        CHECK(!nested_outer.empty());
+        capture.Replay(); // prints the three messages (no log file is open in the tests)
     }
 
     TEST_CASE("ThreadSetDefault picks a positive thread count when unset")
