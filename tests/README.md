@@ -120,21 +120,40 @@ corpus by `corpus`) cover the rest:
 | `fm_lightstyles` | texlight styles -1/-2/-3 before named lights, zhlt_usestyle, duplicate light names |
 | `fm_usemodel`, `fm_transform`, `fm_gametext` | zhlt_usemodel, zhlt_transform, game_text Windows-1252 conversion |
 | `fm_err_*` | hlcsg's error paths (exit 1, log compared); `fm_err_hull_overflow` reaches the CreateHullBrush stack overflow |
+| `fm_bsp_leak` | a 16-unit hole only hull 0 leaks through: hlbsp's leak trail (`.pts`/`.lin`, no `.prt`; hlvis then stops) |
+| `fm_bsp_models` | brush models without visible faces (head node split on an arbitrary plane), without clip hulls, several brushes, origin brush |
+| `fm_bsp_geometry` | stairs, slopes, a 40-sided column (faces above MAXPOINTS), boxes on large faces (T-junctions), rotated and off-grid brushes (brinks) |
+
+A leak in more than one hull is undefined behaviour in the oracle: after hull 0, hlbsp writes the
+next hull's leak trail to the point file it has already closed (it crashes or not, from run to
+run). `fm_bsp_leak` therefore leaks in hull 0 only; the multi-hull case is a candidate-only
+`regress` scenario once hlbsp is fixed.
 
 csg-only tiers run hlcsg alone: `csg-default` (default options), then one option each: `csg-smallest`, `csg-normalized`, `csg-precise`,
 `csg-legacy`, `csg-clipeconomy`, `csg-noskyclip`, `csg-nolightopt`, `csg-nowadtextures`,
 `csg-wadinclude`, `csg-misc`, and `csg-onlyents` (a second hlcsg `-onlyents` run on the first
 run's `.bsp`). `--tier csg-variants` means all of them (about 15 s for the whole corpus).
 
+bsp tiers run hlcsg (default options) and hlbsp with one option set: `bsp-nohull2`,
+`bsp-viewportal`, `bsp-subdivide64`, `bsp-subdivide512`, `bsp-maxnodesize64`,
+`bsp-maxnodesize65536`, `bsp-clamped` (out-of-range values: warning, then clamped; liminal_plaza
+then exceeds MAX_MAP_VERTS, an error path) and `bsp-misc` (`-chart -estimate -texdata -lightdata`).
+`--tier bsp-variants` means all of them.
+
 ```sh
-python3 $P ref --tier csg-variants               # oracle references (once)
+python3 $P ref --tier csg-variants               # oracle references (once; also bsp-variants)
 python3 $P check --bin DIR --tier csg-variants
-python3 $P coverage                              # gcov of hlcsg over quick csg + every variant tier
+python3 $P coverage [--tool hlbsp]               # gcov of a tool over the quick tier (up to it) + its variant tiers
 ```
 
 Coverage of `src/hlcsg` at H1: 88.0% of lines (brush.cpp 88.7%, hlcsg.cpp 89.1%, map.cpp 87.8%,
 textures.cpp 85.8%), up from 46-67% with the Valve maps alone. `corpus` refuses to change the
 content of an existing map silently: it reports maps whose references are now stale.
+
+Coverage of `src/hlbsp` before any hlbsp change: 86.9% with the Valve and hlcsg feature maps on the
+quick tier, 89.9% with the `fm_bsp_*` maps and bsp tiers (MarkLeakTrail 0% -> covered, outside.cpp
+75.0 -> 87.5%, portals.cpp 82.4 -> 93.3%). The rest is mostly error-message helpers, `Usage()`
+(covered by `cli`) and the `.void` loader, which is to be dropped rather than tested.
 
 ### csg-only checks and multi-threaded checks
 
@@ -156,8 +175,10 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
 - `--threads N` normalizes only the thread count in logs (command line, settings table, "Running
   with N threads"). Baseline at H0: 22 of 22 compiling maps differ at the csg stage with 16 threads.
   Since H4, hlcsg with any thread count writes exactly what the oracle's `-threads 1` writes:
-  `check --tier csg-variants --threads 16` passes (`csg-default` is plain hlcsg). The downstream
-  tools are still nondeterministic with threads, so full-pipeline `--threads` checks fail there.
+  `check --tier csg-variants --threads 16` passes (`csg-default` is plain hlcsg). Measured after H6
+  on the whole pipeline at 16 threads: the quick tier matches the `-threads 1` references entirely;
+  in the full tier hlvis differs on 15 of 29 maps (hlrad only because of its input). hlbsp is
+  single-threaded (`-threads` is parsed and discarded), so it always matches.
 - ThreadSanitizer (hlcsg, 16 threads; 0 warnings since H4, thousands at oracle-base):
 
   ```sh
@@ -183,7 +204,7 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-h2-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios where the oracle's behaviour is undefined (e.g. texdata-growth)
-python3 $P cli --bin DIR [--tools hlcsg]         # oracle vs candidate on option-parsing command lines: output, files, exit code
+python3 $P cli --bin DIR [--tools hlcsg hlbsp]   # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]

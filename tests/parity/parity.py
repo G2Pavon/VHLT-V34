@@ -74,7 +74,21 @@ for _name, _args in CSG_VARIANTS.items():
     TIERS[_name] = {"stages": ["csg"], "csg": _args}
 TIERS["csg-onlyents"] = {"stages": ["csg", "ents"], "csg": [], "ents": ["-onlyents"]}
 VARIANT_TIERS = [*CSG_VARIANTS, "csg-onlyents"]
-TIER_GROUPS = {"csg-variants": VARIANT_TIERS}
+# hlbsp option tiers: hlcsg with default options, then hlbsp with one option set each.
+BSP_VARIANTS = {
+    "bsp-nohull2": ["-nohull2"],
+    "bsp-viewportal": ["-viewportal"],
+    "bsp-subdivide64": ["-subdivide", "64"],
+    "bsp-subdivide512": ["-subdivide", "512"],
+    "bsp-maxnodesize64": ["-maxnodesize", "64"],
+    "bsp-maxnodesize65536": ["-maxnodesize", "65536"],
+    "bsp-clamped": ["-subdivide", "16", "-maxnodesize", "32"],  # out-of-range values: warnings, then clamped
+    "bsp-misc": ["-chart", "-estimate", "-texdata", "65536", "-lightdata", "65536"],
+}
+for _name, _args in BSP_VARIANTS.items():
+    TIERS[_name] = {"stages": ["csg", "bsp"], "csg": [], "bsp": _args}
+BSP_VARIANT_TIERS = [*BSP_VARIANTS]
+TIER_GROUPS = {"csg-variants": VARIANT_TIERS, "bsp-variants": BSP_VARIANT_TIERS}
 
 
 def tier_stages(tier: str) -> list[str]:
@@ -1151,12 +1165,25 @@ CLI_CASES = {
         ["-lightdata"], ["-lightdata", "1024", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
     ],
+    "hlbsp": [
+        [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "abc", "tiny"], ["-threads", "3", "tiny"],
+        ["tiny", "-threads"], ["-estimate", "-chart", "tiny"], ["-CHART", "tiny"], ["-nohull2", "-viewportal", "tiny"],
+        ["-subdivide"], ["-subdivide", "16", "tiny"], ["-subdivide", "100", "tiny"], ["-subdivide", "1000", "tiny"],
+        ["-subdivide", "x", "tiny"], ["-subdivide", "-chart", "tiny"],
+        ["-maxnodesize"], ["-maxnodesize", "32", "tiny"], ["-maxnodesize", "4096", "tiny"], ["-maxnodesize", "100000", "tiny"],
+        ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
+        ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-high", "tiny"], ["-", "tiny"],
+    ],
 }
+# Tools whose input comes from an earlier stage: the oracle's tools prepare it (same for both sides).
+CLI_PREPARE = {"hlbsp": ["hlcsg"]}
 
 
 def _cli_run(exe: Path, argv: list[str], cwd: Path) -> tuple:
     cwd.mkdir(parents=True)
     (cwd / "tiny.map").write_text(CLI_MAP)
+    for tool in CLI_PREPARE.get(exe.name, []):
+        run([DATA / "builds" / "oracle" / "bin" / tool, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, check=True)
     proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
     files = {f.name: normalize_log(f.read_bytes()) for f in sorted(cwd.iterdir())}
     return proc.returncode, normalize_log(proc.stdout), normalize_log(proc.stderr), files
@@ -1185,9 +1212,16 @@ def cmd_cli(args) -> int:
 # command: coverage (gcov line coverage of hlcsg over the csg tiers)
 
 
-def _coverage_job(bindir: Path, tier: str, name: str, root: Path) -> None:
+# Per tool: the tiers its coverage runs over, and the pipeline stage it stops after.
+COVERAGE_TOOLS = {
+    "hlcsg": {"tiers": lambda: ["quick", *VARIANT_TIERS], "last": "csg"},
+    "hlbsp": {"tiers": lambda: ["quick", *BSP_VARIANT_TIERS], "last": "bsp"},
+}
+
+
+def _coverage_job(bindir: Path, tier: str, name: str, root: Path, last_stage: str) -> None:
     stages = tier_stages(tier)
-    last = "csg" if stages[-1] == "rad" else stages[-1]
+    last = last_stage if stages[-1] == "rad" else stages[-1]
     run_chain(bindir, tier, name, root / tier / name, snapshots=False, last_stage=last)
 
 
@@ -1200,28 +1234,37 @@ def cmd_coverage(args) -> int:
     run(["cmake", "--no-warn-unused-cli", "-S", REPO, "-B", build, *generator, "-DCMAKE_BUILD_TYPE=Debug",
          f"-DCMAKE_CXX_FLAGS=--coverage -O0 {PARITY_CXX_FLAGS}", "-DVHLT_BUILD_TESTS=OFF",
          f"-DVHLT_BUILD_DATE={oracle_build_date()}"], check=True, stdout=subprocess.DEVNULL)
-    proc = run(["cmake", "--build", build, "--target", "hlcsg", "--parallel"], capture_output=True, text=True)
+    tool = args.tool
+    targets = ["hlcsg"] if tool == "hlcsg" else ["hlcsg", tool]  # a tool runs on hlcsg's output
+    proc = run(["cmake", "--build", build, "--target", *targets, "--parallel"], capture_output=True, text=True)
     if proc.returncode != 0:
         sys.exit(f"coverage build failed:\n{proc.stdout[-3000:]}{proc.stderr[-3000:]}")
     for gcda in build.rglob("*.gcda"):
         gcda.unlink()
     bindir = dest / "bin"
-    bindir.mkdir(exist_ok=True)
-    shutil.copy2(build / "bin" / "hlcsg", bindir / "hlcsg")
-    for t in ("hlbsp", "hlvis", "hlrad"):  # never run, but check_bin-style layout keeps run_chain happy
-        (bindir / t).touch()
+    if bindir.exists():
+        shutil.rmtree(bindir)
+    bindir.mkdir()
+    for t in ("hlcsg", "hlbsp", "hlvis", "hlrad"):
+        if t in targets:
+            shutil.copy2(build / "bin" / t, bindir / t)
+        else:
+            (bindir / t).touch()  # never run, but check_bin-style layout keeps run_chain happy
 
-    tiers = ["quick", *VARIANT_TIERS]
+    tiers = COVERAGE_TOOLS[tool]["tiers"]()
     maps = select_maps(args.maps)
-    log(f"running hlcsg (coverage build) on {len(maps)} maps x {len(tiers)} tiers")
+    log(f"running {tool} (coverage build) on {len(maps)} maps x {len(tiers)} tiers")
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:  # libgcov merges counters under a file lock
-            futs = [pool.submit(_coverage_job, bindir, t, n, Path(tmp)) for t in tiers for n in maps]
+            futs = [pool.submit(_coverage_job, bindir, t, n, Path(tmp), COVERAGE_TOOLS[tool]["last"])
+                    for t in tiers for n in maps]
             for fut in concurrent.futures.as_completed(futs):
                 fut.result()
 
+    # common/ counters are shared by every tool in the build: only meaningful for hlcsg's run,
+    # which runs no other instrumented tool. For hlbsp they include hlcsg's use of common/.
     rows, funcs = [], []
-    for objdir, sources in ((build / "CMakeFiles" / "hlcsg.dir" / "src" / "hlcsg", REPO / "src" / "hlcsg"),
+    for objdir, sources in ((build / "CMakeFiles" / f"{tool}.dir" / "src" / tool, REPO / "src" / tool),
                             (build / "CMakeFiles" / "common_f64.dir" / "src" / "common", REPO / "src" / "common")):
         gcdas = sorted(objdir.glob("*.gcda"))
         if not gcdas:
@@ -1230,23 +1273,23 @@ def cmd_coverage(args) -> int:
         for f, pct, n in re.findall(r"File '([^']+)'\nLines executed:([\d.]+)% of (\d+)", out):
             if Path(f).parent == sources:
                 rows.append((f"{sources.name}/{Path(f).name}", float(pct), int(n)))
-        if sources.name == "hlcsg":
+        if sources.name == tool:
             for fn, pct, n in re.findall(r"Function '([^']+)'\nLines executed:([\d.]+)% of (\d+)", out):
                 if "::" not in fn.split("(")[0] or fn.startswith(("Winding", "BoundingBox")):
                     funcs.append((fn.split("(")[0], float(pct), int(n)))
     lines = [f"{'file':28} {'lines':>7}  covered"]
     for f, pct, n in sorted(rows):
         lines.append(f"{f:28} {n:7}  {pct:6.2f}%")
-    hl = [r for r in rows if r[0].startswith("hlcsg/")]
+    hl = [r for r in rows if r[0].startswith(f"{tool}/")]
     total = sum(n for _, _, n in hl)
     covered = sum(n * pct / 100 for _, pct, n in hl)
-    lines.append(f"{'hlcsg/ total':28} {total:7}  {100 * covered / max(total, 1):6.2f}%")
-    lines.append("\nhlcsg functions under 50% (by size):")
+    lines.append(f"{tool + '/ total':28} {total:7}  {100 * covered / max(total, 1):6.2f}%")
+    lines.append(f"\n{tool} functions under 50% (by size):")
     for fn, (pct, n) in sorted({f: (p, n) for f, p, n in funcs}.items(), key=lambda x: -x[1][1]):
         if pct < 50 and n > 3:
             lines.append(f"  {pct:5.1f}% of {n:4}  {fn}")
     report = "\n".join(lines) + "\n"
-    path = DATA / "coverage" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}.txt"
+    path = DATA / "coverage" / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{tool}.txt"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(report)
     log(report)
@@ -1342,7 +1385,8 @@ def main() -> int:
     p.add_argument("--tools", nargs="+", default=list(CLI_CASES), choices=list(CLI_CASES))
     p.set_defaults(func=cmd_cli)
 
-    p = sub.add_parser("coverage", help="gcov line coverage of hlcsg over the quick csg stage and every csg variant tier")
+    p = sub.add_parser("coverage", help="gcov line coverage of a tool over the quick tier (up to that tool) and its variant tiers")
+    p.add_argument("--tool", choices=list(COVERAGE_TOOLS), default="hlcsg")
     p.add_argument("--maps", nargs="+")
     p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
     p.add_argument("--rebuild", action="store_true")

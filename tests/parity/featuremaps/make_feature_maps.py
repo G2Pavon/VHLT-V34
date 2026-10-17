@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Generate the synthetic feature maps used by the parity corpus.
 
-Each map exercises hlcsg features that the Valve maps in the corpus never use (measured with
-gcov): info_hullshape, CLIP*/BEVEL/HINT/SKIP/CONTENT* textures, detail brushes, zhlt_* keys,
-info_compile_parameters, light styles, game_text conversion, and hlcsg's error paths.
+Each map exercises features that the Valve maps in the corpus never use (measured with gcov):
+for hlcsg info_hullshape, CLIP*/BEVEL/HINT/SKIP/CONTENT* textures, detail brushes, zhlt_* keys,
+info_compile_parameters, light styles, game_text conversion and its error paths; for hlbsp
+(fm_bsp_*) a leak, brush models without visible or without any faces, and dense geometry for the
+T-junction, subdivision and clip-hull brink code.
 
     make_feature_maps.py [OUTDIR]     (default: ./maps next to this script)
 
-Every working map is a sealed room with a player start and a light, so the whole pipeline runs.
-Maps named fm_err_* are expected to stop with an error in hlcsg. Output is deterministic.
+Every working map is a sealed room with a player start and a light, so the whole pipeline runs,
+except fm_bsp_leak, whose room has a hole: hlbsp writes a point file instead of a portal file and
+hlvis then stops. Maps named fm_err_* are expected to stop with an error in hlcsg. Output is
+deterministic.
 """
 
 import math
@@ -363,6 +367,67 @@ def fm_gametext():
     ]
 
 
+def leaky_room(gap):
+    """room() with a gap of `gap` units in the +x wall, centred on y=0."""
+    (x0, y0, z0), (x1, y1, z1) = ROOM_MIN, ROOM_MAX
+    w = WALL
+    walls = room()
+    walls[3] = box((x1, y0, z0), (x1 + w, -gap // 2, z1), "C1A0_W1")  # +x wall, south part
+    walls.append(box((x1, gap // 2, z0), (x1 + w, y1, z1), "C1A0_W1"))  # north part
+    return walls
+
+
+def fm_bsp_leak():
+    """A 16-unit gap in the +x wall: hull 0 leaks (hlbsp writes .pts/.lin and no .prt); the expanded
+    clip hulls close the gap. A leak in a second hull is undefined behaviour in the oracle (it writes
+    the trail to the already closed point file), so that case is a candidate-only regress scenario."""
+    walls = leaky_room(16)
+    worldspawn = entity([("classname", "worldspawn"), ("mapversion", "220")],
+                        [*walls, box((-200, -200, -256), (200, 200, -100), "CRATE01")])
+    return [worldspawn, *start_and_light(),
+            entity([("classname", "func_wall")], [box((600, 600, -256), (700, 700, -100), "CRATE01")])]
+
+
+def fm_bsp_models():
+    """Brush models hlbsp special-cases: no visible faces (the head node becomes a leaf and is split
+    on an arbitrary plane), no faces at all ("Empty solid entity"), and empty clip hulls."""
+    return [
+        world(box((-900, -900, -256), (-800, -800, -156), "CRATE01")),
+        entity([("classname", "func_wall"), ("targetname", "nulls")],
+               [box((-600, -600, -256), (-500, -500, -100), "NULL")]),
+        entity([("classname", "func_illusionary"), ("targetname", "clips")],
+               [box((-400, -600, -256), (-300, -500, -100), "CLIP")]),
+        entity([("classname", "func_wall"), ("zhlt_noclip", "1"), ("targetname", "empty")],
+               [box((-200, -600, -256), (-100, -500, -100), "NULL")]),
+        entity([("classname", "func_wall"), ("zhlt_noclip", "1"), ("targetname", "noclip")],
+               [box((0, -600, -256), (100, -500, -100), "CRATE01")]),
+        entity([("classname", "func_door"), ("targetname", "multi")],
+               [box((200, -600, -256), (300, -500, -100), "CRATE01"),
+                box((200, -450, -256), (300, -350, -100), "CRATE01"),
+                prism((450, -550), 60, 5, -256, -100, "CRATE01")]),
+        entity([("classname", "func_door_rotating"), ("targetname", "rot")],
+               [box((600, -600, -256), (700, -500, 0), "CRATE01"), origin_brush(600, -550, -128)]),
+        *start_and_light(),
+    ]
+
+
+def fm_bsp_geometry():
+    """Dense geometry: stairs, slopes, a 40-sided column (faces above MAXPOINTS are split by tjunc),
+    small boxes on large faces (T-junctions), rotated and off-grid brushes (clip-hull brinks)."""
+    stairs = [box((-900 + 32 * i, -900, -256), (-868 + 32 * i, -700, -240 + 16 * i), "CRATE01") for i in range(16)]
+    crates = [box((-300 + 40 * i, 400 + 40 * j, -256), (-276 + 40 * i, 424 + 40 * j, -232), "CRATE01")
+              for i in range(8) for j in range(4)]
+    column = prism((600, 600), 128, 40, -256, 768, "C1A0_W1")
+    slopes = [wedge((-900, -600 + 120 * i, -256), (-900 + 100 + 60 * i, -500 + 120 * i, -256 + 30 * (i + 1)), "GENERIC015")
+              for i in range(5)]
+    rotated = [prism((200 + 150 * i, -700), 60, 4, -256, -100 - 20 * i, "CRATE01", rotation=0.2 * (i + 1)) for i in range(4)]
+    ball = [Face(f.points, f.normal, f.texture) for f in sphere(90, 30, "CRATE01")]
+    ball = [Face(tuple(tuple(round(c + d, 3) for c, d in zip(pt, (0, 0, 300))) for pt in f.points), f.normal, f.texture)
+            for f in ball]
+    ledge = box((-1024, 900, 200), (1024, 1024, 232), "C1A0_W1")  # long thin ledge along a wall
+    return [world(*stairs, *crates, column, *slopes, *rotated, ball, ledge), *start_and_light()]
+
+
 def err_map(*brushes, ents=()):
     return [world(*brushes), *ents, *start_and_light()]
 
@@ -416,7 +481,8 @@ def fm_err_hull_overflow():
 MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_lightstyles, fm_usemodel,
                                  fm_transform, fm_gametext, fm_err_coplanar, fm_err_mixed, fm_err_origin_world,
                                  fm_err_outside, fm_err_noplane, fm_err_two_origins, fm_err_detail_water,
-                                 fm_err_entity_contents, fm_err_hull_overflow]}
+                                 fm_err_entity_contents, fm_err_hull_overflow,
+                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry]}
 
 
 def main() -> int:
