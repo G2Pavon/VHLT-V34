@@ -89,7 +89,7 @@ static face_t *TryMerge(face_t *f1, face_t *f2)
     vec3_t delta;
     vec3_t planenormal;
 
-    dplane_t *plane = &g_dplanes[f1->planenum];
+    plane_t *plane = &g_mapplanes[f1->planenum];
     VectorCopy(plane->normal, planenormal);
 
     vec_t *back = f1->pts[(i + f1->numpoints - 1) % f1->numpoints];

@@ -4,6 +4,20 @@
 #include "common/mathtypes.h"
 #include "common/winding.h"
 
+#ifndef DOUBLEVEC_T
+#error you must add -dDOUBLEVEC_T to the project!
+#endif
+
+// hlbsp's in-memory plane: double precision, unlike the disk dplane_t (written out in writebsp.cpp).
+struct plane_t
+{
+    vec3_t normal;
+    vec3_t unused_origin;
+    vec_t dist;
+    planetypes type;
+};
+extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
+
 #define BOGUS_RANGE 144000
 
 // the exact bounding box of the brushes is expanded some for the headnode
@@ -67,7 +81,7 @@ struct surfchain_t
 struct side_t
 {
     side_t *next;
-    dplane_t plane; // facing inside (reversed when loading brush file)
+    plane_t plane; // facing inside (reversed when loading brush file)
     Winding *w;     // (also reversed)
 };
 
@@ -128,7 +142,7 @@ int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f);
 // portals.c
 struct portal_t
 {
-    dplane_t plane;
+    plane_t plane;
     node_t *onnode;   // NULL = outside box
     node_t *nodes[2]; // [0] = front side of plane
     portal_t *next[2];
@@ -178,7 +192,7 @@ void FreeSurface(surface_t *s);
 
 void FreeBrush(brush_t *b);
 brush_t *NewBrushFromBrush(const brush_t *b);
-void SplitBrush(brush_t *in, const dplane_t *split, brush_t **front, brush_t **back);
+void SplitBrush(brush_t *in, const plane_t *split, brush_t **front, brush_t **back);
 brush_t *BrushFromBox(const vec3_t mins, const vec3_t maxs);
 void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs);
 
@@ -228,4 +242,4 @@ extern char g_extentfilename[_MAX_PATH];
 extern vec3_t g_hull_size[NUM_HULLS][2];
 
 face_t *NewFaceFromFace(const face_t *const in);
-void SplitFace(face_t *in, const dplane_t *const split, face_t **front, face_t **back);
+void SplitFace(face_t *in, const plane_t *const split, face_t **front, face_t **back);

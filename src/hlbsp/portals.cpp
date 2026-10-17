@@ -79,7 +79,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
 {
     vec3_t bounds[2];
     portal_t *portals[6];
-    dplane_t bplanes[6];
+    plane_t bplanes[6];
 
     // pad with some space so there will never be null volume leafs
     for (int i = 0; i < 3; i++)
@@ -100,7 +100,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
             portal_t *p = AllocPortal();
             portals[n] = p;
 
-            dplane_t *pl = &bplanes[n];
+            plane_t *pl = &bplanes[n];
             std::memset(pl, 0, sizeof(*pl));
             if (j)
             {
@@ -135,7 +135,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
 static void WritePortalFile_r(const node_t *const node)
 {
     portal_t *p;
-    dplane_t plane2;
+    plane_t plane2;
 
     if (!node->isportalleaf)
     {

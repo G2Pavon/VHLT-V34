@@ -49,7 +49,7 @@ typedef struct bclipnode_s
     bool isleaf;
 
     int planenum;
-    const dplane_t *plane;
+    const plane_t *plane;
     bclipnode_s *children[2]; // children[0] is the front side of the plane (SIDE_FRONT = 0)
 
     int content;
@@ -63,7 +63,7 @@ typedef struct bbrinknode_s
     bool isleaf;
 
     int planenum;
-    const dplane_t *plane;
+    const plane_t *plane;
     int children[2];
 
     int content;
@@ -119,7 +119,7 @@ bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
     return b;
 }
 
-static void BrinkSplitClipnode(bbrink_t *b, const dplane_t *plane, int planenum, bclipnode_t *prev, bclipnode_t *n0, bclipnode_t *n1)
+static void BrinkSplitClipnode(bbrink_t *b, const plane_t *plane, int planenum, bclipnode_t *prev, bclipnode_t *n0, bclipnode_t *n1)
 {
     int found;
     int numfound = 0;
@@ -267,7 +267,7 @@ typedef struct btreeface_s
 
     btreeleaf_r leafs[2]; // pointing from leafs[0] to leafs[1] // this is a reversed reference
 
-    const dplane_t *plane; // not defined for infinite face
+    const plane_t *plane; // not defined for infinite face
     int planenum;
     bool planeside; // if ture, this face is pointing at -plane->normal
 
@@ -642,7 +642,7 @@ static void DeleteLeaf(int &numobjects, btreeleaf_t *tl)
     numobjects--;
 }
 
-static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const dplane_t *plane, int planenum, vec_t epsilon, btreeleaf_t *&front, btreeleaf_t *&back, bclipnode_t *c0, bclipnode_t *c1)
+static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane, int planenum, vec_t epsilon, btreeleaf_t *&front, btreeleaf_t *&back, bclipnode_t *c0, bclipnode_t *c1)
 {
     btreeface_l::iterator fi;
     btreeedge_l::iterator ei;
@@ -1106,7 +1106,7 @@ static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnode
     {
         c->isleaf = false;
         c->planenum = clipnodes[headnode].planenum;
-        c->plane = &g_dplanes[c->planenum];
+        c->plane = &g_mapplanes[c->planenum];
         for (int k = 0; k < 2; k++)
         {
             c->children[k] = ExpandClipnodes_r(bclipnodes, numbclipnodes, clipnodes, clipnodes[headnode].children[k]);
@@ -1392,7 +1392,7 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
             for (int side = 0; side < 2; side++)
             {
                 btreepoint_t *tp = GetPointFromEdge(ei->e, side);
-                const dplane_t *plane = &g_dplanes[planenum];
+                const plane_t *plane = &g_mapplanes[planenum];
                 vec_t dist = DotProduct(tp->v, plane->normal) - plane->dist;
                 if (planeside ? dist < -ON_EPSILON : dist > ON_EPSILON)
                 {

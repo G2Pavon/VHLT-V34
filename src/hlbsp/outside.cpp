@@ -35,7 +35,7 @@ static node_t *PointInLeaf(node_t *node, const vec3_t point)
         return node;
     }
 
-    vec_t d = DotProduct(g_dplanes[node->planenum].normal, point) - g_dplanes[node->planenum].dist;
+    vec_t d = DotProduct(g_mapplanes[node->planenum].normal, point) - g_mapplanes[node->planenum].dist;
 
     if (d > 0)
         return PointInLeaf(node->children[0], point);

@@ -17,7 +17,7 @@
 void SubdivideFace(face_t *f, face_t **prevptr)
 {
     vec_t v;
-    dplane_t plane;
+    plane_t plane;
     face_t *front;
     face_t *back;
     vec3_t temp;

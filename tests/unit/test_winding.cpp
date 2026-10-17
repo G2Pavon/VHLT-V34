@@ -1,6 +1,8 @@
 #include "doctest/doctest.h"
 
+#include <cmath>
 #include <cstring>
+#include <utility>
 
 #include "common/winding.h"
 
@@ -66,7 +68,7 @@ TEST_SUITE("winding")
         Winding a;
         a = w;
         CHECK(a.m_NumPoints == 4);
-        CHECK(std::memcmp(a.m_Points, w.m_Points, sizeof(vec3_t) * 4) == 0);
+        CHECK(std::memcmp(a.m_Points.get(), w.m_Points.get(), sizeof(vec3_t) * 4) == 0);
     }
 
     TEST_CASE("Clip splits exactly on axial planes")
@@ -205,6 +207,143 @@ TEST_SUITE("winding")
         w.getPlane(pn, pd);
         CHECK(pn[2] == 1); // same orientation as the plane
         CHECK(pd == 64);
+    }
+
+    TEST_CASE("points can be added to windings built from a plane (capacity used to be uninitialized)")
+    {
+        vec3_t n = {0, 0, 1};
+        Winding w(n, 64);
+        vec3_t extra = {1, 2, 64};
+        for (int i = 0; i < 20; i++) // grows several times
+        {
+            w.addPoint(extra);
+        }
+        CHECK(w.m_NumPoints == 24);
+        CHECK(std::abs(w.m_Points[0][0]) == 80000); // the original points survive each resize
+        CHECK(w.m_Points[3][2] == 64);
+        CHECK(w.m_Points[23][1] == 2);
+        vec3_t first = {7, 7, 64};
+        w.insertPoint(first, 0);
+        CHECK(w.m_Points[0][0] == 7);
+        CHECK(std::abs(w.m_Points[1][0]) == 80000);
+        CHECK(w.m_NumPoints == 25);
+    }
+
+    TEST_CASE("windings with more than MAX_POINTS_ON_WINDING points can be clipped and divided")
+    {
+        // The old fixed-size side/distance arrays overflowed here.
+        constexpr int N = 200;
+        vec3_t pts[N];
+        for (int i = 0; i < N; i++)
+        {
+            const double a = 2 * Q_PI * i / N;
+            pts[i][0] = 100 * std::cos(a);
+            pts[i][1] = 100 * std::sin(a);
+            pts[i][2] = 0;
+        }
+        Winding big(pts, N);
+        Winding clipped(big);
+        CHECK(clipped.Clip(Plane(1, 0, 0, 0), false));
+        CHECK(clipped.m_NumPoints > 90);
+        CHECK(clipped.m_NumPoints < 110);
+        for (unsigned i = 0; i < clipped.m_NumPoints; i++)
+        {
+            CHECK(clipped.m_Points[i][0] >= -ON_EPSILON); // points within epsilon of the plane are kept
+        }
+        vec3_t extra = {0, 0, 0};
+        clipped.addPoint(extra); // capacity follows the new points
+
+        Winding *front = nullptr, *back = nullptr;
+        big.Divide(Plane(0, 1, 0, 0), &front, &back);
+        REQUIRE(front != nullptr);
+        REQUIRE(back != nullptr);
+        CHECK(front != &big);
+        CHECK(front->m_NumPoints + back->m_NumPoints > N);
+        delete front;
+        delete back;
+    }
+
+    TEST_CASE("Chop keeps a usable capacity")
+    {
+        Winding w = Square();
+        vec3_t n = {1, 0, 0};
+        REQUIRE(w.Chop(n, 1));
+        vec3_t extra = {1.5, 1, 0};
+        for (int i = 0; i < 10; i++)
+        {
+            w.addPoint(extra);
+        }
+        CHECK(w.m_NumPoints == 14);
+        CHECK(w.m_Points[0][0] >= 1);
+    }
+
+    TEST_CASE("self-assignment and moves")
+    {
+        Winding w = Square();
+        Winding &alias = w;
+        w = alias;
+        CHECK(w.m_NumPoints == 4);
+        CHECK(w.getArea() == 4);
+
+        Winding moved(std::move(w));
+        CHECK(moved.m_NumPoints == 4);
+        CHECK(w.m_NumPoints == 0);
+        CHECK(!w.m_Points);
+        Winding target;
+        target = std::move(moved);
+        CHECK(target.getArea() == 4);
+        CHECK(moved.m_NumPoints == 0);
+    }
+
+    TEST_CASE("Split and DivideBy own their results")
+    {
+        const Winding w = Square();
+        vec3_t n = {1, 0, 0};
+        WindingSplit s = w.Split(n, 1);
+        REQUIRE(s.front);
+        REQUIRE(s.back);
+        CHECK(s.front->getArea() == 2);
+        CHECK(s.back->getArea() == 2);
+
+        WindingSplit outside = w.Split(n, 5);
+        CHECK(!outside.front);
+        REQUIRE(outside.back);
+        CHECK(outside.back->m_NumPoints == 4); // a copy; w is unchanged
+        CHECK(w.m_NumPoints == 4);
+
+        WindingDivision d = w.DivideBy(n, -5);
+        CHECK(d.side == SIDE_FRONT);
+        CHECK(!d.front);
+        WindingDivision cross = w.DivideBy(n, 1);
+        CHECK(cross.side == SIDE_CROSS);
+        REQUIRE(cross.front);
+        CHECK(cross.front->getArea() == 2);
+        vec3_t z = {0, 0, 1};
+        CHECK(w.DivideBy(z, 0).side == SIDE_BACK); // on the plane: summed distance 0 -> back
+    }
+
+    TEST_CASE("plane-taking functions accept any plane type with normal and dist")
+    {
+        struct DoublePlane // like hlbsp's plane_t
+        {
+            double normal[3];
+            double unused_origin[3];
+            double dist;
+        };
+        const DoublePlane dp{{1, 0, 0}, {0, 0, 0}, 1};
+        const dplane_t fp = Plane(1, 0, 0, 1);
+
+        Winding a = Square(), b = Square();
+        CHECK(a.Clip(dp, false));
+        CHECK(b.Clip(fp, false));
+        CHECK(a.getArea() == b.getArea());
+
+        Winding pw(dp);
+        CHECK(pw.m_NumPoints == 4);
+        DoublePlane out{};
+        Square().getPlane(out);
+        CHECK(out.normal[2] == 1);
+        CHECK(out.dist == 0);
     }
 
     TEST_CASE("winding from a dface_t follows surfedge signs")
