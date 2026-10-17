@@ -25,6 +25,13 @@
 #define ZHLT_VERSIONSTRING "v3.4"
 #define HACK_VERSIONSTRING "VL34" //--vluzacn
 
+// The build date shown in the banner and stored in worldspawn's "compiler" key, so it ends up in
+// every .bsp. Defaults to __DATE__; set it (CMake VHLT_BUILD_DATE, same "Mmm dd yyyy" format) for
+// reproducible builds - the parity harness pins it to the oracle's date.
+#ifndef VHLT_BUILD_DATE
+#define VHLT_BUILD_DATE __DATE__
+#endif
+
 #define PLATFORM_VERSIONSTRING "64-bit"
 
 // Seconds on a monotonic clock; only differences are meaningful.

@@ -75,6 +75,26 @@ python3 $P check --bin ../vhlt-parity/builds/cand/bin --tier full
 All tools run with `-threads 1`. Multi-threaded hlcsg is not deterministic even between two runs
 of the same binary (plane numbering depends on scheduling), so it cannot be compared byte for byte.
 
+### csg-only checks and multi-threaded checks
+
+```sh
+python3 $P check --bin DIR --stages csg          # stop after hlcsg (about 2 s for the corpus instead of about 45 s)
+python3 $P check --bin DIR --threads 16          # run every tool multi-threaded, compare with the -threads 1 refs
+```
+
+- `--stages csg` compares everything hlcsg writes (`.p*`, `.b*`, `.pln`, `.hsz`, `.wa_`, `.bsp`, log,
+  exit code). The downstream tools only see hlcsg through those files, so this is sufficient **as
+  long as hlbsp/hlvis/hlrad are unchanged**. The harness enforces that: csg-only runs only if the
+  candidate's `hlbsp`, `hlvis` and `hlrad` are byte-identical to the binaries of the last build that
+  passed a full single-threaded check of the whole corpus on the same tier
+  (`$DATA/builds/last-full-pass-<tier>.json`, written automatically). Otherwise it says why and runs
+  the full pipeline. `--downstream-from BUILD` compares with a named build instead.
+- Builds are reproducible: `build` passes the oracle's date as `VHLT_BUILD_DATE` (the date is in the
+  banner and in every `.bsp`'s worldspawn `compiler` key), so unchanged sources give identical
+  binaries. `--build-date` overrides it.
+- `--threads N` normalizes only the thread count in logs (command line, settings table, "Running
+  with N threads"). Baseline at H0: 22 of 22 compiling maps differ at the csg stage with 16 threads.
+
 ### Other commands
 
 ```sh

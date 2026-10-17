@@ -772,7 +772,7 @@ static bool ParseMapEntity()
     {
         // Let the map tell which version of the compiler it comes from, to help tracing compiler bugs.
         char versionstring[128];
-        std::sprintf(versionstring, "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (%s)", __DATE__);
+        std::snprintf(versionstring, sizeof(versionstring), "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (%s)", VHLT_BUILD_DATE);
         SetKeyValue(mapent, "compiler", versionstring);
     }
 

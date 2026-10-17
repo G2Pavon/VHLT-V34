@@ -138,8 +138,25 @@ def check_bin(bindir: Path) -> Path:
 # build
 
 
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def oracle_build_date() -> str:
+    """The oracle's __DATE__ ("Mmm dd yyyy", day space-padded), from its manifest."""
+    manifest = read_json(DATA / "builds" / "oracle" / "manifest.json")
+    if "build_date" in manifest:
+        return manifest["build_date"]
+    d = datetime.datetime.fromisoformat(manifest["built"])
+    return f"{MONTHS[d.month - 1]} {d.day:2d} {d.year}"
+
+
 def cmd_build(args) -> int:
     name = args.name or ("oracle" if not args.tree else "tree")
+    # The build date is written into every .bsp (worldspawn "compiler" key) and into the binaries,
+    # so candidates are built with the oracle's date. The oracle itself is never rebuilt.
+    build_date = args.build_date
+    if build_date is None and name != "oracle" and (DATA / "builds" / "oracle" / "manifest.json").exists():
+        build_date = oracle_build_date()
     flags = PARITY_CXX_FLAGS if args.cxx_flags is None else args.cxx_flags
     if args.sanitize:
         flags = f"{flags} {SANITIZE_CXX_FLAGS}".strip()
@@ -173,7 +190,8 @@ def cmd_build(args) -> int:
          "-DCMAKE_BUILD_TYPE=Release",
          f"-DCMAKE_CXX_COMPILER={args.cxx}",
          f"-DCMAKE_CXX_FLAGS={flags}",
-         "-DVHLT_BUILD_TESTS=OFF"], check=True, stdout=subprocess.DEVNULL)
+         "-DVHLT_BUILD_TESTS=OFF",
+         *([f"-DVHLT_BUILD_DATE={build_date}"] if build_date else [])], check=True, stdout=subprocess.DEVNULL)
     proc = run(["cmake", "--build", build, "--parallel"], capture_output=True, text=True)
     (dest / "build.log").write_text(proc.stdout + proc.stderr)
     if proc.returncode != 0:
@@ -192,6 +210,7 @@ def cmd_build(args) -> int:
         "compiler": compiler,
         "cmake_build_type": "Release",
         "cxx_flags": flags,
+        "build_date": build_date,
         "built": datetime.datetime.now().isoformat(timespec="seconds"),
         "binaries": {tool: sha256(bindir / tool) for _, tool in STAGES},
     }
@@ -366,8 +385,9 @@ def run_stage(bindir: Path, tool: str, args: list[str], name: str, cwd: Path, lo
     return {"exit": code, "seconds": round(seconds, 3)}
 
 
-def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, snapshots: bool = True) -> dict:
-    """Run all stages in one directory; snapshot the directory after each stage into root/<stage>."""
+def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, snapshots: bool = True,
+              last_stage: str = "rad") -> dict:
+    """Run the stages up to last_stage in one directory; snapshot the directory after each into root/<stage>."""
     work = root / "work"
     if root.exists():
         shutil.rmtree(root)
@@ -379,7 +399,7 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
         results[stage] = r
         if snapshots:
             snapshot(work, root / stage)
-        if r["exit"] != 0:
+        if r["exit"] != 0 or stage == last_stage:
             break
     shutil.rmtree(work)
     return results
@@ -407,6 +427,10 @@ def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path)
 
 
 LOG_RULES = [
+    # check --threads: the thread count shows up in the command line, the settings table and RunThreadsOn
+    (re.compile(rb"^Running with \d+ threads", re.M), b"Running with <n> threads"),
+    (re.compile(rb" -threads \d+ "), b" -threads <n> "),
+    (re.compile(rb"^(threads +)\[ +\d+ \]", re.M), rb"\1[ <n> ]"),
     (re.compile(rb"\(\w{3} [ \d]\d \d{4}\)"), b"(<build date>)"),             # Banner: __DATE__
     (re.compile(rb"^(Command line: )\S*/(hl\w+)", re.M), rb"\1\2"),            # argv[0] path
     (re.compile(rb"\(\d+\.\d+ seconds\)"), b"(<t> seconds)"),                  # RunThreadsOn
@@ -485,17 +509,45 @@ def cmd_ref(args) -> int:
     return 0
 
 
-def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, padding: str) -> dict:
+DOWNSTREAM = ["hlbsp", "hlvis", "hlrad"]
+
+
+def full_pass_record(tier: str) -> Path:
+    return DATA / "builds" / f"last-full-pass-{tier}.json"
+
+
+def downstream_guard(bindir: Path, tier: str, reference: str | None) -> tuple[bool, str]:
+    """csg-only checks are sound only if hlbsp/hlvis/hlrad are byte-identical to binaries that passed
+    a full-pipeline check of this tier. Returns (ok, explanation)."""
+    if reference:
+        path = DATA / "builds" / reference / "manifest.json"
+        if not path.exists():
+            return False, f"no build named {reference}"
+        known = {"name": reference, "binaries": read_json(path)["binaries"]}
+    else:
+        path = full_pass_record(tier)
+        if not path.exists():
+            return False, f"no build has passed a full {tier} check yet"
+        known = read_json(path)
+    differing = [t for t in DOWNSTREAM if sha256(bindir / t) != known["binaries"][t]]
+    if differing:
+        return False, f"{', '.join(differing)} differ from {known['name']}"
+    return True, f"hlbsp/hlvis/hlrad are identical to {known['name']}"
+
+
+def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, padding: str,
+               threads: int = 1, last_stage: str = "rad") -> dict:
     ref_root = DATA / "refs" / tier / name
     ref_res = read_json(ref_root / "result.json")
     out = {"map": name, "chain": {}, "isolated": {}}
+    run_stages = [s for s, _ in STAGES][: [s for s, _ in STAGES].index(last_stage) + 1]
     if mode in ("chain", "both"):
         root = run_root / "chain" / name
-        res = run_chain(bindir, tier, name, root)
-        for stage, _ in STAGES:
+        res = run_chain(bindir, tier, name, root, threads=threads, last_stage=last_stage)
+        for stage in run_stages:
             if stage in ref_res or stage in res:
                 out["chain"][stage] = {"result": res.get(stage), "problems": compare_stage(ref_root, ref_res, root, res, stage, padding)}
-    if mode in ("isolated", "both"):
+    if mode in ("isolated", "both") and last_stage != "csg":  # isolated runs only the downstream tools
         root = run_root / "isolated" / name
         res = run_isolated(bindir, tier, name, ref_root, root)
         for stage in res:
@@ -508,13 +560,22 @@ def cmd_check(args) -> int:
     maps = select_maps(args.maps)
     if not (DATA / "refs" / args.tier / "manifest.json").exists():
         sys.exit(f"no oracle reference for tier {args.tier}; run 'parity.py ref --tier {args.tier}'")
+    last_stage = "rad"
+    if args.stages == "csg":
+        ok, why = downstream_guard(bindir, args.tier, args.downstream_from)
+        if ok:
+            last_stage = "csg"
+            log(f"csg only: {why}")
+        else:
+            log(f"running the full pipeline instead of csg only: {why}")
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     run_root = DATA / "runs" / f"{stamp}-{args.label or bindir.parent.name}-{args.tier}"
     run_root.mkdir(parents=True)
 
     results = []
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-        futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, args.mode, args.padding) for n in maps]
+        futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, args.mode, args.padding, args.threads, last_stage)
+                   for n in maps]
         for fut in concurrent.futures.as_completed(futures):
             r = fut.result()
             results.append(r)
@@ -534,14 +595,23 @@ def cmd_check(args) -> int:
                     failures += 1
                     lines.append(f"[{r['map']}] {mode} {stage}:")
                     lines += [f"  {p}" for p in s["problems"]]
+    scope = "csg only" if last_stage == "csg" else "all stages"
     summary = (f"parity {'PASS' if not failures else 'FAIL'}: {len(results)} maps, tier {args.tier}, mode {args.mode}, "
-               f"padding {args.padding}, {failures} differing stage(s)")
+               f"{scope}, threads {args.threads}, padding {args.padding}, {failures} differing stage(s)")
     report = "\n".join([summary, *lines]) + "\n"
     (run_root / "report.txt").write_text(report)
     write_json(run_root / "report.json", {"bin": str(bindir), "summary": summary, "results": results})
     log("")
     log(report if failures else summary)
     log(f"report: {run_root / 'report.txt'}")
+    full_corpus = set(maps) == set(corpus_maps())
+    if not failures and last_stage == "rad" and args.threads == 1 and args.mode in ("chain", "both") and full_corpus:
+        # These downstream binaries are now known to match the oracle on this tier.
+        write_json(full_pass_record(args.tier), {
+            "name": bindir.parent.name, "bin": str(bindir), "run": str(run_root),
+            "binaries": {t: sha256(bindir / t) for _, t in STAGES},
+            "recorded": datetime.datetime.now().isoformat(timespec="seconds")})
+        log(f"recorded {bindir.parent.name} as the last full {args.tier} pass")
     if not args.keep and not failures:
         for mode in ("chain", "isolated"):
             shutil.rmtree(run_root / mode, ignore_errors=True)
@@ -608,7 +678,7 @@ def cmd_sanitize(args) -> int:
     if args.bin:
         bindir = check_bin(Path(args.bin))
     else:
-        build = argparse.Namespace(name="sanitize", tree=True, ref=None, cxx=args.cxx, cxx_flags=None, sanitize=True, force=True)
+        build = argparse.Namespace(name="sanitize", tree=True, ref=None, cxx=args.cxx, cxx_flags=None, sanitize=True, force=True, build_date=None)
         cmd_build(build)
         bindir = DATA / "builds" / "sanitize" / "bin"
     maps = select_maps(args.maps)
@@ -802,6 +872,7 @@ def main() -> int:
     p.add_argument("--cxx", default="g++")
     p.add_argument("--cxx-flags", help=f"override CMAKE_CXX_FLAGS (default '{PARITY_CXX_FLAGS}')")
     p.add_argument("--sanitize", action="store_true", help="add ASan/UBSan instrumentation")
+    p.add_argument("--build-date", help="VHLT_BUILD_DATE, \"Mmm dd yyyy\" (default: the oracle's date)")
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_build)
 
@@ -826,6 +897,13 @@ def main() -> int:
     p.add_argument("--padding", choices=["zero-or-equal", "zero", "strict", "ignore"], default="zero")
     p.add_argument("--label")
     p.add_argument("--keep", action="store_true", help="keep outputs even when everything matches")
+    p.add_argument("--stages", choices=["all", "csg"], default="all",
+                   help="csg: stop after hlcsg, but only if hlbsp/hlvis/hlrad are byte-identical to the last "
+                        "full pass of this tier (otherwise the full pipeline runs)")
+    p.add_argument("--downstream-from", metavar="BUILD",
+                   help="for --stages csg: compare downstream binaries with this build instead of the last full pass")
+    p.add_argument("--threads", type=int, default=1,
+                   help="run every tool with -threads N; compared with the single-threaded oracle references")
     p.set_defaults(func=cmd_check)
 
     p = sub.add_parser("bench", help="time each stage (sequential, median of --repeat runs)")

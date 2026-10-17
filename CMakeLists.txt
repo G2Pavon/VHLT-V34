@@ -25,6 +25,13 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Build date written into the banner and into every .bsp (worldspawn "compiler" key). Empty means
+# __DATE__; set it ("Mmm dd yyyy", e.g. "Oct 17 2026") for reproducible output and binaries.
+set(VHLT_BUILD_DATE "" CACHE STRING "Build date for the banner and the .bsp compiler key (empty: __DATE__)")
+if(VHLT_BUILD_DATE)
+    add_compile_definitions(VHLT_BUILD_DATE="${VHLT_BUILD_DATE}")
+endif()
+
 if (MSVC)
     add_compile_definitions(WIN32 _CONSOLE SYSTEM_WIN32)
 endif()

@@ -271,7 +271,7 @@ void Banner()
     Log("%s " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING
         " " PLATFORM_VERSIONSTRING
         " (%s)\n",
-        g_Program, __DATE__);
+        g_Program, VHLT_BUILD_DATE);
 
     Log("Zoner's Half-Life Compilation Tools -- Custom Build\n"
         "Based on code modifications by Sean 'Zoner' Cavanaugh\n"
