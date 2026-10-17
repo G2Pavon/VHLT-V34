@@ -20,6 +20,7 @@ import argparse
 import concurrent.futures
 import datetime
 import fnmatch
+import functools
 import hashlib
 import json
 import os
@@ -33,6 +34,7 @@ import time
 from pathlib import Path
 
 import bspdiff
+import stagecache
 
 REPO = Path(__file__).resolve().parents[2]
 DATA = Path(os.environ.get("VHLT_PARITY_DATA", REPO.parent / "vhlt-parity"))
@@ -82,6 +84,7 @@ def tier_stages(tier: str) -> list[str]:
 def expand_tiers(tier: str) -> list[str]:
     return TIER_GROUPS.get(tier, [tier])
 STAGE_TIMEOUT = 4 * 3600
+CACHE_ROOT = DATA / "cache"  # stagecache.py: tool runs and comparisons, content-addressed
 DEFAULT_JOBS = max(1, min(os.cpu_count() or 1, 8))
 
 # Maps left out of the compile corpus (fnmatch patterns on the map name). dm_* (dm_stalkfire_f1)
@@ -422,28 +425,97 @@ def run_stage(bindir: Path, tool: str, args: list[str], name: str, cwd: Path, lo
     return {"exit": code, "seconds": round(seconds, 3)}
 
 
+@functools.lru_cache(maxsize=None)
+def harness_digest() -> str:
+    here = Path(__file__).resolve().parent
+    return stagecache.digest([sha256(here / f) for f in ("parity.py", "bspdiff.py", "stagecache.py")])
+
+
+@functools.lru_cache(maxsize=None)
+def tool_identity(bindir: Path, tool: str) -> str:
+    """The tool binary, plus every other file in its directory (hlbsp reads entities.void from there)."""
+    others = {f.name: sha256(f) for f in sorted(bindir.iterdir()) if f.is_file() and f.name not in STAGE_TOOL.values()}
+    return stagecache.digest({"tool": sha256(bindir / tool), "others": others})
+
+
+@functools.lru_cache(maxsize=None)
+def wads_digest() -> str:
+    root = DATA / "corpus" / "wads"
+    return stagecache.digest([(str(f.relative_to(root)), sha256(f)) for f in sorted(root.rglob("*")) if f.is_file()])
+
+
+def run_key(bindir: Path, tool: str, args: list[str], name: str, inputs: dict) -> str:
+    return stagecache.digest({
+        "v": stagecache.VERSION, "tool": tool_identity(bindir, tool), "args": args, "map": name,
+        "input": stagecache.manifest_digest(inputs),
+        "wads": wads_digest() if tool == "hlcsg" else None, "WADROOT": os.environ.get("WADROOT")})
+
+
+def open_cache(root: Path | None) -> "stagecache.StageCache | None":
+    return stagecache.StageCache(root, normalize_log) if root else None
+
+
+def record_run(cache, key: str, r: dict, work: Path, console: Path, stage: str, audit: bool) -> dict:
+    """Store a fresh run under key; with audit, flag it if it differs from the entry already there."""
+    outputs = cache.manifest(work, store=True)
+    console_files = {n: cache.file_entry(console / n, store=True) for n in (f"{stage}.stdout", f"{stage}.stderr")}
+    old = cache.get_run(key)
+    if audit and old and (old["result"]["exit"] != r["exit"] or
+                          stagecache.manifest_digest(old["outputs"]) != stagecache.manifest_digest(outputs)):
+        r["audit"] = "differs from the cached run with the same key (nondeterminism, or an input the key misses)"
+    if r["exit"] != "timeout":
+        cache.put_run(key, {"result": {"exit": r["exit"], "seconds": r["seconds"]}, "outputs": outputs, "console": console_files})
+    r["console"] = console_files
+    return outputs
+
+
+def cached_result(entry: dict) -> dict:
+    return {**entry["result"], "cached": True, "console": entry["console"]}
+
+
 def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, snapshots: bool = True,
-              last_stage: str = "rad") -> dict:
-    """Run the stages up to last_stage in one directory; snapshot the directory after each into root/<stage>."""
+              last_stage: str = "rad", cache=None, audit: bool = False) -> dict:
+    """Run the stages up to last_stage in one directory; snapshot the directory after each into root/<stage>.
+
+    With a cache, a stage whose key is known is not run; the directory is only rebuilt from the
+    cache when a later stage has to run. Each result then carries "outputs", the manifest of the
+    directory after the stage (its snapshot is rebuilt on demand, see ensure_snapshot)."""
     work = root / "work"
     if root.exists():
         shutil.rmtree(root)
     work.mkdir(parents=True)
     shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
+    state = cache.manifest(work) if cache else None  # what the directory holds now
+    on_disk = True
     results = {}
     for stage in tier_stages(tier):
         tool = STAGE_TOOL[stage]
-        r = run_stage(bindir, tool, tool_args(tier, stage, threads), name, work, root / "console", stage)
+        args = tool_args(tier, stage, threads)
+        r = None
+        if cache:
+            key = run_key(bindir, tool, args, name, state)
+            entry = None if audit else cache.get_run(key)
+            if entry:
+                r, state, on_disk = cached_result(entry), entry["outputs"], False
+        if r is None:
+            if not on_disk:
+                cache.materialize(state, work)
+                on_disk = True
+            r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+            if snapshots:
+                snapshot(work, root / stage)
+            if cache:
+                state = record_run(cache, key, r, work, root / "console", stage, audit)
+        if cache:
+            r["outputs"] = state
         results[stage] = r
-        if snapshots:
-            snapshot(work, root / stage)
         if r["exit"] != 0 or stage == last_stage:
             break
     shutil.rmtree(work)
     return results
 
 
-def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path) -> dict:
+def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path, cache=None, audit: bool = False) -> dict:
     """Run each stage after the first on the oracle's output of the previous stage."""
     results = {}
     stages = tier_stages(tier)
@@ -454,13 +526,25 @@ def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path)
         prev = ref_root / stages[i - 1]
         if not prev.exists() or not (ref_root / stage).exists():
             continue
-        work = root / f"{stage}.work"
-        if work.exists():
+        args = tool_args(tier, stage, 1)
+        r = None
+        if cache:
+            key = run_key(bindir, tool, args, name, cache.manifest(prev))
+            entry = None if audit else cache.get_run(key)
+            if entry:
+                r = cached_result(entry)
+                r["outputs"] = entry["outputs"]
+        if r is None:
+            work = root / f"{stage}.work"
+            if work.exists():
+                shutil.rmtree(work)
+            shutil.copytree(prev, work)
+            r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+            snapshot(work, root / stage)
+            if cache:
+                r["outputs"] = record_run(cache, key, r, work, root / "console", stage, audit)
             shutil.rmtree(work)
-        shutil.copytree(prev, work)
-        results[stage] = run_stage(bindir, tool, tool_args(tier, stage, 1), name, work, root / "console", stage)
-        snapshot(work, root / stage)
-        shutil.rmtree(work)
+        results[stage] = r
     return results
 
 
@@ -525,6 +609,38 @@ def compare_stage(ref_root: Path, ref_res: dict, cand_root: Path, cand_res: dict
     return problems
 
 
+def ensure_snapshot(cache, root: Path, stage: str, result: dict | None) -> None:
+    """Rebuild root/<stage> (and the stage's console output) from the cache if the run was reused."""
+    if cache and result and result.get("outputs") is not None and not (root / stage).exists():
+        cache.materialize(result["outputs"], root / stage)
+    if cache and result and result.get("console"):
+        (root / "console").mkdir(parents=True, exist_ok=True)
+        for n, (_, blob) in result["console"].items():
+            if not (root / "console" / n).exists():
+                shutil.copyfile(cache.root / "blobs" / blob[:2] / blob, root / "console" / n)
+
+
+def compare_stage_cached(cache, ref_root: Path, ref_res: dict, cand_root: Path, cand_res: dict, stage: str,
+                         padding: str) -> list[str]:
+    if cache is None:
+        return compare_stage(ref_root, ref_res, cand_root, cand_res, stage, padding)
+    cand = cand_res.get(stage)
+    ref_dir = ref_root / stage
+    key = stagecache.digest({
+        "v": stagecache.VERSION, "harness": harness_digest(), "padding": padding, "stage": stage,
+        "ref": stagecache.manifest_digest(cache.manifest(ref_dir)) if ref_dir.exists() else None,
+        "ref_exit": ref_res.get(stage, {}).get("exit"),
+        "cand": stagecache.manifest_digest(cand.get("outputs")) if cand else None,
+        "cand_exit": cand.get("exit") if cand else None})
+    hit = cache.get_compare(key)
+    if hit is not None:
+        return hit["problems"]
+    ensure_snapshot(cache, cand_root, stage, cand)
+    problems = compare_stage(ref_root, ref_res, cand_root, cand_res, stage, padding)
+    cache.put_compare(key, {"problems": problems})
+    return problems
+
+
 # ---------------------------------------------------------------------------
 # commands: ref, check
 
@@ -578,24 +694,39 @@ def downstream_guard(bindir: Path, tier: str, reference: str | None) -> tuple[bo
 
 
 def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, padding: str,
-               threads: int = 1, last_stage: str = "rad") -> dict:
+               threads: int = 1, last_stage: str = "rad", cache_root: Path | None = None, audit: bool = False) -> dict:
+    """One map in one mode ("chain" or "isolated")."""
+    cache = open_cache(cache_root)
     ref_root = DATA / "refs" / tier / name
     ref_res = read_json(ref_root / "result.json")
-    out = {"map": name, "chain": {}, "isolated": {}}
-    stages = tier_stages(tier)
-    run_stages = stages[: stages.index(last_stage) + 1] if last_stage in stages else stages
-    if mode in ("chain", "both"):
-        root = run_root / "chain" / name
-        res = run_chain(bindir, tier, name, root, threads=threads, last_stage=last_stage)
-        for stage in run_stages:
-            if stage in ref_res or stage in res:
-                out["chain"][stage] = {"result": res.get(stage), "problems": compare_stage(ref_root, ref_res, root, res, stage, padding)}
-    if mode in ("isolated", "both") and last_stage != "csg":  # isolated runs only the downstream tools
-        root = run_root / "isolated" / name
-        res = run_isolated(bindir, tier, name, ref_root, root)
-        for stage in res:
-            out["isolated"][stage] = {"result": res[stage], "problems": compare_stage(ref_root, ref_res, root, res, stage, padding)}
+    out = {"map": name, "mode": mode, "stages": {}}
+    root = run_root / mode / name
+    if mode == "chain":
+        stages = tier_stages(tier)
+        run_stages = stages[: stages.index(last_stage) + 1] if last_stage in stages else stages
+        res = run_chain(bindir, tier, name, root, threads=threads, last_stage=last_stage, cache=cache, audit=audit)
+        compared = [s for s in run_stages if s in ref_res or s in res]
+    else:
+        res = run_isolated(bindir, tier, name, ref_root, root, cache=cache, audit=audit)
+        compared = list(res)
+    for stage in compared:
+        problems = compare_stage_cached(cache, ref_root, ref_res, root, res, stage, padding)
+        if res.get(stage, {}).get("audit"):
+            problems = [f"cache audit: {res[stage]['audit']}", *problems]
+        out["stages"][stage] = {"result": res.get(stage), "problems": problems}
+    if any(s["problems"] for s in out["stages"].values()):
+        for stage in res:  # keep everything for inspection, as an uncached run would have
+            ensure_snapshot(cache, root, stage, res[stage])
     return out
+
+
+def job_weight(tier: str, name: str, mode: str) -> float:
+    """The oracle's time for the stages the job runs: longest jobs are started first."""
+    try:
+        ref = read_json(DATA / "refs" / tier / name / "result.json")
+    except FileNotFoundError:
+        return 0.0
+    return sum(v.get("seconds", 0) for k, v in ref.items() if mode == "chain" or k in ("bsp", "vis", "rad"))
 
 
 def for_each_tier(command):
@@ -627,20 +758,32 @@ def cmd_check(args) -> int:
     run_root = DATA / "runs" / f"{stamp}-{args.label or bindir.parent.name}-{args.tier}"
     run_root.mkdir(parents=True)
 
-    results = []
+    # The cache relies on single-threaded determinism; multi-threaded runs are what checks it.
+    cache_root = CACHE_ROOT if args.threads == 1 else None
+    if args.threads != 1:
+        log("cache not used: --threads > 1")
+    modes = [m for m in ("chain", "isolated") if args.mode in (m, "both")]
+    if last_stage == "csg":
+        modes = [m for m in modes if m == "chain"]  # isolated runs only the downstream tools
+    jobs = sorted(((n, m) for n in maps for m in modes), key=lambda j: -job_weight(args.tier, *j))
+    by_map = {n: {"map": n, "chain": {}, "isolated": {}} for n in maps}
+    pending = {n: len(modes) for n in maps}
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-        futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, args.mode, args.padding, args.threads, last_stage)
-                   for n in maps]
+        futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, m, args.padding, args.threads, last_stage,
+                               cache_root, args.no_cache) for n, m in jobs]
         for fut in concurrent.futures.as_completed(futures):
             r = fut.result()
-            results.append(r)
-            cells = []
-            for mode in ("chain", "isolated"):
-                for stage, s in r[mode].items():
-                    cells.append(f"{mode[0]}:{stage}={'ok' if not s['problems'] else 'DIFF'}")
-            log(f"  {r['map']:24} {' '.join(cells)}")
+            by_map[r["map"]][r["mode"]] = r["stages"]
+            pending[r["map"]] -= 1
+            if pending[r["map"]] == 0:
+                cells = []
+                for mode in ("chain", "isolated"):
+                    for stage, s in by_map[r["map"]][mode].items():
+                        mark = "*" if (s["result"] or {}).get("cached") else ""
+                        cells.append(f"{mode[0]}:{stage}={'ok' if not s['problems'] else 'DIFF'}{mark}")
+                log(f"  {r['map']:24} {' '.join(cells)}")
 
-    results.sort(key=lambda r: r["map"])
+    results = [by_map[n] for n in sorted(maps)]
     lines = []
     failures = 0
     for r in results:
@@ -651,8 +794,11 @@ def cmd_check(args) -> int:
                     lines.append(f"[{r['map']}] {mode} {stage}:")
                     lines += [f"  {p}" for p in s["problems"]]
     scope = "csg only" if last_stage == "csg" else "all stages"
+    runs = [s["result"] for r in results for mode in ("chain", "isolated") for s in r[mode].values() if s["result"]]
+    reused = sum(1 for x in runs if x.get("cached"))
+    cache_note = "cache off" if cache_root is None else ("cache audit" if args.no_cache else f"{reused}/{len(runs)} tool runs from cache")
     summary = (f"parity {'PASS' if not failures else 'FAIL'}: {len(results)} maps, tier {args.tier}, mode {args.mode}, "
-               f"{scope}, threads {args.threads}, padding {args.padding}, {failures} differing stage(s)")
+               f"{scope}, threads {args.threads}, padding {args.padding}, {failures} differing stage(s), {cache_note}")
     report = "\n".join([summary, *lines]) + "\n"
     (run_root / "report.txt").write_text(report)
     write_json(run_root / "report.json", {"bin": str(bindir), "summary": summary, "results": results})
@@ -671,6 +817,17 @@ def cmd_check(args) -> int:
         for mode in ("chain", "isolated"):
             shutil.rmtree(run_root / mode, ignore_errors=True)
     return 1 if failures else 0
+
+
+def cmd_cache(args) -> int:
+    cache = open_cache(CACHE_ROOT)
+    if args.clear:
+        cache.clear()
+        log(f"cleared {CACHE_ROOT}")
+        return 0
+    for kind, (n, size) in cache.stats().items():
+        log(f"  {kind:9} {n:7} files {size / 1e6:9.1f} MB")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -1145,7 +1302,13 @@ def main() -> int:
                    help="for --stages csg: compare downstream binaries with this build instead of the last full pass")
     p.add_argument("--threads", type=int, default=1,
                    help="run every tool with -threads N; compared with the single-threaded oracle references")
+    p.add_argument("--no-cache", action="store_true",
+                   help="run every tool (no reuse), refresh the cache, and fail where a run differs from its cache entry")
     p.set_defaults(func=for_each_tier(cmd_check))
+
+    p = sub.add_parser("cache", help="size of the run/comparison cache used by check; --clear empties it")
+    p.add_argument("--clear", action="store_true")
+    p.set_defaults(func=cmd_cache)
 
     p = sub.add_parser("bench", help="time each stage (sequential, median of --repeat runs)")
     common(p)
