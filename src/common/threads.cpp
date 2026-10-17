@@ -176,18 +176,18 @@ void RunThreadsOn(int workcnt, bool showpacifier, q_threadfunction func)
 
     Log("Running with %d threads\n", g_numthreads);
 
-    // RAII: Los hilos se gestionan en este vector
+    // RAII: the worker threads live in this vector
     std::vector<std::thread> workers;
     workers.reserve(g_numthreads);
 
     for (int i = 0; i < g_numthreads; i++)
     {
-        // Usamos una lambda para invocar la función de entrada
+        // a lambda forwards the thread number to the entry function
         workers.emplace_back([i]()
                              { q_entry(i); });
     }
 
-    // Esperar a que todos los hilos terminen
+    // wait for all threads to finish
     for (auto &t : workers)
     {
         if (t.joinable())

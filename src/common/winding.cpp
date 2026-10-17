@@ -1,4 +1,6 @@
+#ifdef _MSC_VER
 #pragma warning(disable : 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
+#endif
 
 #include <cstring>
 #include <cmath>

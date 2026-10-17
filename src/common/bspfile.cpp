@@ -1,5 +1,6 @@
 #include "common/bspfile.h"
 
+#include <bit>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -14,6 +15,9 @@
 #include "common/messages.h"
 #include "common/mathlib.h"
 #include "common/tokenizer.h"
+
+// BSP lumps are read and written as raw memory images of the little-endian disk format.
+static_assert(std::endian::native == std::endian::little, "BSP I/O assumes a little-endian host");
 
 int g_max_map_miptex = DEFAULT_MAX_MAP_MIPTEX;
 int g_max_map_lightdata = DEFAULT_MAX_MAP_LIGHTDATA;
@@ -154,140 +158,6 @@ void DecompressVis(const byte *src, byte *const dest, const unsigned int dest_le
     } while (out - dest < row);
 }
 
-// byte swaps all data in a bsp file
-static void SwapBSPFile(const bool todisk)
-{
-    // models
-    for (int i = 0; i < g_nummodels; i++)
-    {
-        dmodel_t *d = &g_dmodels[i];
-
-        for (int j = 0; j < MAX_MAP_HULLS; j++)
-        {
-            d->headnode[j] = d->headnode[j];
-        }
-
-        d->visleafs = d->visleafs;
-        d->firstface = d->firstface;
-        d->numfaces = d->numfaces;
-
-        for (int j = 0; j < 3; j++)
-        {
-            d->mins[j] = d->mins[j];
-            d->maxs[j] = d->maxs[j];
-            d->origin[j] = d->origin[j];
-        }
-    }
-    // vertexes
-    for (int i = 0; i < g_numvertexes; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            g_dvertexes[i].point[j] = g_dvertexes[i].point[j];
-        }
-    }
-    // planes
-    for (int i = 0; i < g_numplanes; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            g_dplanes[i].normal[j] = g_dplanes[i].normal[j];
-        }
-        g_dplanes[i].dist = g_dplanes[i].dist;
-        g_dplanes[i].type = (planetypes)g_dplanes[i].type;
-    }
-    // texinfos
-    for (int i = 0; i < g_numtexinfo; i++)
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            g_texinfo[i].vecs[0][j] = g_texinfo[i].vecs[0][j];
-        }
-        g_texinfo[i].miptex = g_texinfo[i].miptex;
-        g_texinfo[i].flags = g_texinfo[i].flags;
-    }
-    // faces
-    for (int i = 0; i < g_numfaces; i++)
-    {
-        g_dfaces[i].texinfo = g_dfaces[i].texinfo;
-        g_dfaces[i].planenum = g_dfaces[i].planenum;
-        g_dfaces[i].side = g_dfaces[i].side;
-        g_dfaces[i].lightofs = g_dfaces[i].lightofs;
-        g_dfaces[i].firstedge = g_dfaces[i].firstedge;
-        g_dfaces[i].numedges = g_dfaces[i].numedges;
-    }
-    // nodes
-    for (int i = 0; i < g_numnodes; i++)
-    {
-        g_dnodes[i].planenum = g_dnodes[i].planenum;
-        for (int j = 0; j < 3; j++)
-        {
-            g_dnodes[i].mins[j] = g_dnodes[i].mins[j];
-            g_dnodes[i].maxs[j] = g_dnodes[i].maxs[j];
-        }
-        g_dnodes[i].children[0] = g_dnodes[i].children[0];
-        g_dnodes[i].children[1] = g_dnodes[i].children[1];
-        g_dnodes[i].firstface = g_dnodes[i].firstface;
-        g_dnodes[i].numfaces = g_dnodes[i].numfaces;
-    }
-    // leafs
-    for (int i = 0; i < g_numleafs; i++)
-    {
-        g_dleafs[i].contents = g_dleafs[i].contents;
-        for (int j = 0; j < 3; j++)
-        {
-            g_dleafs[i].mins[j] = g_dleafs[i].mins[j];
-            g_dleafs[i].maxs[j] = g_dleafs[i].maxs[j];
-        }
-
-        g_dleafs[i].firstmarksurface = g_dleafs[i].firstmarksurface;
-        g_dleafs[i].nummarksurfaces = g_dleafs[i].nummarksurfaces;
-        g_dleafs[i].visofs = g_dleafs[i].visofs;
-    }
-    // clipnodes
-    for (int i = 0; i < g_numclipnodes; i++)
-    {
-        g_dclipnodes[i].planenum = g_dclipnodes[i].planenum;
-        g_dclipnodes[i].children[0] = g_dclipnodes[i].children[0];
-        g_dclipnodes[i].children[1] = g_dclipnodes[i].children[1];
-    }
-    // miptex
-    if (g_texdatasize)
-    {
-        int c;
-        dmiptexlump_t *mtl = (dmiptexlump_t *)g_dtexdata;
-        if (todisk)
-        {
-            c = mtl->nummiptex;
-        }
-        else
-        {
-            c = mtl->nummiptex;
-        }
-        mtl->nummiptex = mtl->nummiptex;
-        for (int i = 0; i < c; i++)
-        {
-            mtl->dataofs[i] = mtl->dataofs[i];
-        }
-    }
-    // marksurfaces
-    for (int i = 0; i < g_nummarksurfaces; i++)
-    {
-        g_dmarksurfaces[i] = g_dmarksurfaces[i];
-    }
-    // surfedges
-    for (int i = 0; i < g_numsurfedges; i++)
-    {
-        g_dsurfedges[i] = g_dsurfedges[i];
-    }
-    // edges
-    for (int i = 0; i < g_numedges; i++)
-    {
-        g_dedges[i].v[0] = g_dedges[i].v[0];
-        g_dedges[i].v[1] = g_dedges[i].v[1];
-    }
-}
-
 static int CopyLump(int lump, void *dest, int size, const dheader_t *const header)
 {
     int length = header->lumps[lump].filelen;
@@ -315,12 +185,6 @@ static int CopyLump(int lump, void *dest, int size, const dheader_t *const heade
 
 static void LoadBSPImage(dheader_t *const header)
 {
-    // swap the header
-    for (unsigned int i = 0; i < sizeof(dheader_t) / 4; i++)
-    {
-        ((int *)header)[i] = ((int *)header)[i];
-    }
-
     if (header->version != BSPVERSION)
     {
         Error("BSP is version %i, not %i", header->version, BSPVERSION);
@@ -343,8 +207,6 @@ static void LoadBSPImage(dheader_t *const header)
     g_entdatasize = CopyLump(LUMP_ENTITIES, g_dentdata, 1, header);
 
     std::free(header); // everything has been copied out
-                       // swap everything
-    SwapBSPFile(false);
 }
 
 void LoadBSPFile(const char *const filename)
@@ -362,14 +224,11 @@ static void AddLump(int lumpnum, void *data, int len, dheader_t *header, std::FI
     SafeWrite(bspfile, data, (len + 3) & ~3);
 }
 
-// Swaps the bsp file in place, so it should not be referenced again
 void WriteBSPFile(const char *const filename)
 {
     dheader_t outheader;
     dheader_t *header = &outheader;
     std::memset(header, 0, sizeof(dheader_t));
-
-    SwapBSPFile(true);
 
     header->version = BSPVERSION;
 
@@ -1314,7 +1173,7 @@ void dtexdata_init()
     hlassume(g_dlightdata != nullptr, assume_NoMemory);
 }
 
-void CDECL dtexdata_free()
+void dtexdata_free()
 {
     FreeBlock(g_dtexdata);
     g_dtexdata = nullptr;

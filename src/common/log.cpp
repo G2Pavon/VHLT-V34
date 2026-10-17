@@ -15,7 +15,7 @@
 #include <windows.h>
 #endif
 
-char *g_Program = "Uninitialized variable ::g_Program";
+const char *g_Program = "Uninitialized variable ::g_Program";
 char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
 
 bool g_log = DEFAULT_LOG;
@@ -154,7 +154,7 @@ void LogError(const char *const message)
     }
 }
 
-void CDECL OpenLog()
+void OpenLog()
 {
     if (g_log)
     {
@@ -177,7 +177,7 @@ void CDECL OpenLog()
     }
 }
 
-void CDECL CloseLog()
+void CloseLog()
 {
     if (g_log && CompileLog)
     {
@@ -239,7 +239,7 @@ void CheckFatal()
 #define MAX_WARNING 2048
 #define MAX_MESSAGE 2048
 
-void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
+void FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
 {
     char message[MAX_ERROR];
     char message2[MAX_ERROR];
@@ -255,9 +255,10 @@ void CDECL FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
 
     fatal = 1;
     CheckFatal();
+    std::exit(1); // not reached: CheckFatal() exits once fatal is set
 }
 
-void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...)
+void FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...)
 {
     char message[MAX_WARNING];
     char message2[MAX_WARNING];
@@ -283,7 +284,7 @@ void CDECL FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warnin
     fatal = 1;
 }
 
-void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
+void FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
 {
     char message[MAX_WARNING];
     char message2[MAX_WARNING];
@@ -305,7 +306,7 @@ void CDECL FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
     LogError(message2);
 }
 
-void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
+void FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
 {
     char message[MAX_WARNING];
     char message2[MAX_WARNING];
@@ -320,7 +321,7 @@ void CDECL FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
     WriteLog(message2);
 }
 
-void CDECL FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
+void FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];
 
@@ -427,7 +428,7 @@ void LogTimeElapsed(float elapsed_time)
     }
 }
 
-void CDECL FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
+void FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 {
     char message[MAX_MESSAGE];
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef _MSC_VER
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4127) // conditional expression is constant
 #pragma warning(disable : 4115) // named type definition in parentheses
@@ -8,6 +9,7 @@
 #pragma warning(disable : 4786) // identifier was truncated to '255' characters in the browser information
 #pragma warning(disable : 4305) // truncation from 'const double' to 'float'
 #pragma warning(disable : 4800) // forcing value to bool 'true' or 'false' (performance warning)
+#endif
 
 #include <cstddef>
 
@@ -36,7 +38,7 @@ void StripExtension(char *path);
 void ExtractFilePath(const char *const path, char *dest);
 void ExtractFile(const char *const path, char *dest);
 
-bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
+bool FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
 bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
 bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
 bool TerminatedString(const char *buffer, const int size);

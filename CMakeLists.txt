@@ -15,6 +15,14 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Output must be bit-identical to the reference tools, so float evaluation is pinned:
+# no fused multiply-add contraction (Clang's default is on) and no fast-math.
+if(MSVC)
+    add_compile_options(/fp:precise) # contraction stays off unless /fp:contract is given (VS 2022+)
+else()
+    add_compile_options(-ffp-contract=off -fno-fast-math)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if (MSVC)

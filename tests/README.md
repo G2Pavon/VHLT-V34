@@ -13,7 +13,7 @@ deliberate, documented behaviour change; quirks the tests pin are marked `compat
 ## Unit tests
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS=-ffp-contract=off -fno-fast-math"
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
@@ -89,11 +89,11 @@ python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
 
 ### Sanitizer baseline (oracle-base, quick tier)
 
-No ASan findings. UBSan reports four known issues, all left untouched in Phase 0:
+No ASan findings. UBSan reported four issues at oracle-base:
 
 | Finding | Tools | Planned fix |
 |---|---|---|
-| `common/bspfile.cpp:204` `vecs[0][j]` with `j < 8` in the no-op `SwapBSPFile` | all | Phase 1 (delete `SwapBSPFile`) |
+| `common/bspfile.cpp:204` `vecs[0][j]` with `j < 8` in the no-op `SwapBSPFile` | all | fixed in Phase 1 (`SwapBSPFile` deleted) |
 | `hlcsg/hlcsg.cpp:298` `g_texinfo[-1]` | hlcsg | hlcsg phase |
 | `hlbsp/brink.cpp:1131` pointer arithmetic overflow | hlbsp | hlbsp phase |
 | `hlvis/hlvis.cpp:123` member access through a null `winding_t*` | hlvis | hlvis phase |

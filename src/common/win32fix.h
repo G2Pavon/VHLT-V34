@@ -13,6 +13,8 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
+// STDCALL/FASTCALL/CDECL/INLINE/FORCEINLINE are no longer used by common/; they stay
+// until hlcsg, hlvis and hlrad stop using them.
 #define STDCALL __stdcall
 #define FASTCALL __fastcall
 #define CDECL __cdecl

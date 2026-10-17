@@ -159,7 +159,7 @@ void ExtractFile(const char *const path, char *dest)
     dest[length] = 0;
 }
 
-bool CDECL FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...)
+bool FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...)
 {
     va_list argptr;
 

@@ -6,16 +6,16 @@
 //  consequently ive made them into const strings which each occurance can point to.
 
 // Common descriptions
-constexpr char *const INTERNALLIMIT = "The compiler tool hit an internal limit";
-constexpr char *const INTERNALERROR = "The compiler tool had an internal error";
-constexpr char *const MAPERROR = "The map has a problem which must be fixed";
+constexpr const char *const INTERNALLIMIT = "The compiler tool hit an internal limit";
+constexpr const char *const INTERNALERROR = "The compiler tool had an internal error";
+constexpr const char *const MAPERROR = "The map has a problem which must be fixed";
 
 // Common explanations
-constexpr char *const SELFEXPLANITORY = "self explanitory";
-constexpr char *const REFERENCE = "Check the file http://www.zhlt.info/common-mapping-problems.html for a detailed explanation of this problem";
-constexpr char *const SIMPLIFY = "The map is too complex for the game engine/compile tools to handle.  Simplify";
-constexpr char *const CONTACTMERL = "contact amckern@yahoo.com concerning this issue.";
-constexpr char *const CONTACT = "contact vluzacn@163.com concerning this issue.";
+constexpr const char *const SELFEXPLANITORY = "self explanitory";
+constexpr const char *const REFERENCE = "Check the file http://www.zhlt.info/common-mapping-problems.html for a detailed explanation of this problem";
+constexpr const char *const SIMPLIFY = "The map is too complex for the game engine/compile tools to handle.  Simplify";
+constexpr const char *const CONTACTMERL = "contact amckern@yahoo.com concerning this issue.";
+constexpr const char *const CONTACT = "contact vluzacn@163.com concerning this issue.";
 static const MessageTable_t assumes[assume_last] = {
     {"invalid assume message", "This is a message should never be printed.", CONTACT},
 

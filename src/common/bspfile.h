@@ -336,7 +336,7 @@ entity_t *FindTargetEntity(const char *const target);
 extern int g_max_map_miptex;
 extern int g_max_map_lightdata;
 void dtexdata_init();
-void CDECL dtexdata_free();
+void dtexdata_free();
 char *GetTextureByNumber(int texturenumber);
 
 entity_t *EntityForModel(int modnum);
