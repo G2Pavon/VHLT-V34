@@ -58,19 +58,31 @@ TEST_SUITE("tokenizer")
         CHECK(Tokens("\"abc def") == V{"abc def"});
     }
 
-    TEST_CASE("compat: bytes >= 0x80 are whitespace outside quotes where char is signed")
+    TEST_CASE("compat: bytes >= 0x80 are whitespace outside quotes, on every platform")
     {
-        // *cursor <= 32 on a signed char treats high-bit bytes as separators.
-        // On platforms with unsigned char (ARM) the same code keeps them in the token.
-        if constexpr (std::is_signed_v<char>)
-        {
-            CHECK(Tokens("caf\xE9 x") == V{"caf", "x"});
-        }
-        else
-        {
-            CHECK(Tokens("caf\xE9 x") == V{"caf\xE9", "x"});
-        }
+        // The original compared a plain char with 32, which on x86 (signed char) treats high-bit
+        // bytes as separators; since Phase 5 that is explicit, so unsigned-char platforms match.
+        CHECK(Tokens("caf\xE9 x") == V{"caf", "x"});
+        CHECK(Tokens("\xC3\xA9t\xC3\xA9") == V{"t"});
         CHECK(Tokens("\"caf\xE9\" x") == V{"caf\xE9", "x"}); // kept inside quotes
+    }
+
+    TEST_CASE("a '/' at the very end of the text is a token, not a comment")
+    {
+        CHECK(Tokens("a /") == V{"a", "/"});
+    }
+
+    TEST_CASE("Tokenizer can be used on its own")
+    {
+        Tokenizer t;
+        t.Reset("{ \"k\" \"v\" }");
+        std::vector<std::string> toks;
+        while (t.Next(true))
+        {
+            toks.push_back(t.token());
+        }
+        CHECK(toks == V{"{", "k", "v", "}"});
+        CHECK(!t.Next(true)); // stays at the end
     }
 
     TEST_CASE("compat: g_currentline lags one line behind the token just read")

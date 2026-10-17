@@ -8,10 +8,6 @@
 #include "common/bspfile.h"
 #include "common/entity.h"
 
-#ifdef HLCSG
-extern bool g_nolightopt;
-#endif
-
 namespace
 {
 // ParseEntities() resets g_numentities but not the slots, so tests start from empty slots.
@@ -19,11 +15,7 @@ void ClearEntities()
 {
     for (int i = 0; i < MAX_MAP_ENTITIES; i++)
     {
-        while (g_entities[i].epairs)
-        {
-            DeleteKey(&g_entities[i], g_entities[i].epairs->key);
-        }
-        std::memset(&g_entities[i], 0, sizeof(entity_t));
+        g_entities[i] = entity_t{};
     }
     g_numentities = 0;
 }
@@ -33,13 +25,13 @@ void Parse(const std::string &text)
     ClearEntities();
     std::memcpy(g_dentdata, text.c_str(), text.size() + 1);
     g_entdatasize = static_cast<int>(text.size()) + 1;
-    ParseEntities();
+    ParseEntities(nullptr);
 }
 
 // Entity lump text without the trailing NUL that g_entdatasize counts.
-std::string Unparse()
+std::string Unparse(bool optimize_named_lights = false)
 {
-    UnparseEntities();
+    UnparseEntities(optimize_named_lights);
     REQUIRE(g_entdatasize >= 1);
     CHECK(g_dentdata[g_entdatasize - 1] == '\0');
     return std::string(g_dentdata, g_entdatasize - 1);
@@ -48,9 +40,9 @@ std::string Unparse()
 std::vector<std::string> Keys(const entity_t *ent)
 {
     std::vector<std::string> keys;
-    for (const epair_t *ep = ent->epairs; ep; ep = ep->next)
+    for (const EntityKeyValue &kv : ent->keys)
     {
-        keys.emplace_back(ep->key);
+        keys.push_back(kv.key);
     }
     return keys;
 }
@@ -73,7 +65,47 @@ TEST_SUITE("entity")
         CHECK(Keys(&ent) == V{"a"});
         DeleteKey(&ent, "missing");
         DeleteKey(&ent, "a");
-        CHECK(ent.epairs == nullptr);
+        CHECK(ent.keys.empty());
+    }
+
+    TEST_CASE("ValueForKey pointers stay valid while other keys are added or removed")
+    {
+        entity_t ent{};
+        SetKeyValue(&ent, "keep", "value-that-must-survive");
+        const char *kept = ValueForKey(&ent, "keep");
+        for (int i = 0; i < 200; i++) // forces the key storage to grow many times
+        {
+            SetKeyValue(&ent, ("k" + std::to_string(i)).c_str(), "x");
+        }
+        DeleteKey(&ent, "k0");
+        CHECK(std::string(kept) == "value-that-must-survive");
+        CHECK(kept == ValueForKey(&ent, "keep"));
+        // a value taken from the same entity can be stored under a new key
+        SetKeyValue(&ent, "copy", ValueForKey(&ent, "keep"));
+        CHECK(std::string(ValueForKey(&ent, "copy")) == "value-that-must-survive");
+    }
+
+    TEST_CASE("compat: duplicate keys from a parsed entity are kept; the last one in the file wins")
+    {
+        Parse("{\n\"classname\" \"info_null\"\n\"origin\" \"1 1 1\"\n\"origin\" \"2 2 2\"\n}\n");
+        CHECK(Keys(&g_entities[0]) == V{"origin", "origin", "classname"});
+        CHECK(std::string(ValueForKey(&g_entities[0], "origin")) == "2 2 2");
+        CHECK(Unparse() == "{\n\"origin\" \"2 2 2\"\n\"origin\" \"1 1 1\"\n\"classname\" \"info_null\"\n}\n");
+        DeleteKey(&g_entities[0], "origin"); // removes the first match only
+        CHECK(std::string(ValueForKey(&g_entities[0], "origin")) == "1 1 1");
+    }
+
+    TEST_CASE("UnparseEntities handles values longer than the old 4096-byte line buffer")
+    {
+        ClearEntities();
+        g_numentities = 1;
+        const std::string longvalue(5000, 'w');
+        g_entities[0].keys.Prepend("classname", "worldspawn");
+        g_entities[0].keys.Prepend("wad", longvalue);
+        const std::string out = Unparse();
+        CHECK(out == "{\n\"wad\" \"" + longvalue + "\"\n\"classname\" \"worldspawn\"\n}\n");
+        CHECK(g_entdatasize == static_cast<int>(out.size()) + 1);
+        ClearEntities();
     }
 
     TEST_CASE("ValueForKey is case-sensitive and returns \"\" for missing keys")
@@ -183,7 +215,6 @@ TEST_SUITE("entity")
               "{\n\"origin\" \"0 100 -100\"\n\"targetname\" \"t\"\n\"classname\" \"info_target\"\n}\n");
     }
 
-#ifdef HLCSG
     TEST_CASE("hlcsg: redundant named lights lose their targetname unless -nolightopt")
     {
         const std::string text =
@@ -191,15 +222,13 @@ TEST_SUITE("entity")
             "{\n\"classname\" \"light\"\n\"targetname\" \"t\"\n\"style\" \"32\"\n}\n"
             "{\n\"classname\" \"light\"\n\"targetname\" \"t\"\n\"style\" \"33\"\n}\n";
         Parse(text);
-        g_nolightopt = false;
-        const std::string out = Unparse();
-        g_nolightopt = true;
+        const std::string out = Unparse(true);
         CHECK(out ==
               "{\n\"style\" \"32\"\n\"classname\" \"light\"\n}\n"
               "{\n\"style\" \"32\"\n\"targetname\" \"t\"\n\"classname\" \"light\"\n}\n"
               "{\n\"style\" \"33\"\n\"targetname\" \"t\"\n\"classname\" \"light\"\n}\n");
 
-        Parse(text); // g_nolightopt == true: all three keep their targetname
+        Parse(text); // without the optimization all three keep their targetname
         const std::string kept = Unparse();
         size_t count = 0;
         for (size_t pos = kept.find("\"targetname\""); pos != std::string::npos; pos = kept.find("\"targetname\"", pos + 1))
@@ -208,7 +237,6 @@ TEST_SUITE("entity")
         }
         CHECK(count == 3);
     }
-#endif
 
     TEST_CASE("FindTargetEntity and EntityForModel")
     {

@@ -1028,25 +1028,21 @@ void DeleteEmbeddedLightmaps()
     }
 }
 
-epair_t *ParseEpair()
+EntityKeyValue ParseEpair()
 {
-    epair_t *e = (epair_t *)std::calloc(1, sizeof(epair_t));
-
     if (std::strlen(g_token) >= MAX_KEY - 1)
         Error("ParseEpair: Key token too long (%i > MAX_KEY)", (int)std::strlen(g_token));
 
-    e->key = _strdup(g_token);
+    std::string key(g_token);
     GetToken(false);
 
     if (std::strlen(g_token) >= MAX_VAL - 1) //MAX_VALUE //vluzacn
         Error("ParseEpar: Value token too long (%i > MAX_VALUE)", (int)std::strlen(g_token));
 
-    e->value = _strdup(g_token);
-
-    return e;
+    return {std::move(key), g_token};
 }
 
-bool ParseEntity()
+bool ParseEntity(CompileParamsHandler on_compile_parameters)
 {
     if (!GetToken(true))
     {
@@ -1065,6 +1061,7 @@ bool ParseEntity()
 
     entity_t *mapent = &g_entities[g_numentities];
     g_numentities++;
+    *mapent = entity_t{};
 
     while (1)
     {
@@ -1076,15 +1073,17 @@ bool ParseEntity()
         {
             break;
         }
-        epair_t *e = ParseEpair();
-        e->next = mapent->epairs;
-        mapent->epairs = e;
+        EntityKeyValue e = ParseEpair();
+        mapent->keys.Prepend(std::move(e.key), std::move(e.value));
     }
 
     if (!std::strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))
     {
         Log("Map entity info_compile_parameters detected, using compile settings\n");
-        GetParamsFromEnt(mapent);
+        if (on_compile_parameters)
+        {
+            on_compile_parameters(mapent);
+        }
     }
     // ugly code
     if (!std::strncmp(ValueForKey(mapent, "classname"), "light", 5) && *ValueForKey(mapent, "_tex"))
@@ -1101,11 +1100,7 @@ bool ParseEntity()
     if (!std::strcmp(ValueForKey(mapent, "classname"), "light_environment") &&
         !std::strcmp(ValueForKey(mapent, "convertfrom"), "info_sunlight"))
     {
-        while (mapent->epairs)
-        {
-            DeleteKey(mapent, mapent->epairs->key);
-        }
-        std::memset(mapent, 0, sizeof(entity_t));
+        *mapent = entity_t{};
         g_numentities--;
         return true;
     }
@@ -1119,12 +1114,12 @@ bool ParseEntity()
 }
 
 // Parses the dentdata string into entities
-void ParseEntities()
+void ParseEntities(CompileParamsHandler on_compile_parameters)
 {
     g_numentities = 0;
     ParseFromMemory(g_dentdata, g_entdatasize);
 
-    while (ParseEntity())
+    while (ParseEntity(on_compile_parameters))
     {
     }
 }
@@ -1179,14 +1174,8 @@ static int anglesforvector(float angles[3], const float vector[3])
     return 0;
 }
 
-void UnparseEntities()
+void UnparseEntities(bool optimize_named_lights)
 {
-    char line[MAXTOKEN];
-
-    char *buf = g_dentdata;
-    char *end = buf;
-    *end = 0;
-
     for (int i = 0; i < g_numentities; i++)
     {
         entity_t *mapent = &g_entities[i];
@@ -1226,10 +1215,10 @@ void UnparseEntities()
                     Error("g_numentities == MAX_MAP_ENTITIES");
                 }
                 entity_t *newent = &g_entities[g_numentities++];
-                newent->epairs = mapent->epairs;
+                newent->keys = std::move(mapent->keys);
+                mapent->keys.Clear();
                 SetKeyValue(newent, "classname", "light_environment");
                 SetKeyValue(newent, "_fake", "1");
-                mapent->epairs = nullptr;
             }
         }
     }
@@ -1269,15 +1258,11 @@ void UnparseEntities()
             SetKeyValue(mapent, "convertto", "");
         }
     }
-#ifdef HLCSG
-    extern bool g_nolightopt;
-    if (!g_nolightopt)
+    if (optimize_named_lights) // hlcsg unless -nolightopt
     {
         int j;
         int count = 0;
-        bool *lightneedcompare = (bool *)std::malloc(g_numentities * sizeof(bool));
-        hlassume(lightneedcompare != nullptr, assume_NoMemory);
-        std::memset(lightneedcompare, 0, g_numentities * sizeof(bool));
+        std::vector<char> lightneedcompare(g_numentities, false);
         for (int i = g_numentities - 1; i > -1; i--)
         {
             entity_t *ent = &g_entities[i];
@@ -1311,35 +1296,35 @@ void UnparseEntities()
         {
             Log("%d redundant named lights optimized.\n", count);
         }
-        std::free(lightneedcompare);
     }
-#endif
+
+    std::string text;
     for (int i = 0; i < g_numentities; i++)
     {
-        epair_t *ep = g_entities[i].epairs;
-        if (!ep)
+        const EntityKeys &keys = g_entities[i].keys;
+        if (keys.empty())
         {
             continue; // ent got removed
         }
 
-        std::strcat(end, "{\n");
-        end += 2;
-
-        for (ep = g_entities[i].epairs; ep; ep = ep->next)
+        text += "{\n";
+        for (const EntityKeyValue &kv : keys)
         {
-            std::sprintf(line, "\"%s\" \"%s\"\n", ep->key, ep->value);
-            std::strcat(end, line);
-            end += std::strlen(line);
+            text += '"';
+            text += kv.key;
+            text += "\" \"";
+            text += kv.value;
+            text += "\"\n";
         }
-        std::strcat(end, "}\n");
-        end += 2;
+        text += "}\n";
 
-        if (end > buf + MAX_MAP_ENTSTRING)
+        if (text.size() + 1 > static_cast<std::size_t>(MAX_MAP_ENTSTRING)) // +1: the lump ends with a NUL
         {
             Error("Entity text too long");
         }
     }
-    g_entdatasize = end - buf + 1;
+    std::memcpy(g_dentdata, text.c_str(), text.size() + 1);
+    g_entdatasize = static_cast<int>(text.size()) + 1;
 }
 
 entity_t *FindTargetEntity(const char *const target)
@@ -1433,7 +1418,7 @@ entity_t *EntityForModel(const int modnum)
 {
     char name[MAX_TEXTURE_NAME_LENGTH];
 
-    std::sprintf(name, "*%i", modnum);
+    std::snprintf(name, sizeof(name), "*%i", modnum);
     // search the entities for one using modnum
     for (int i = 0; i < g_numentities; i++)
     {

@@ -1,61 +1,81 @@
 #include "common/entity.h"
 
-#include <cstring>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
+
+EntityKeys::Storage::iterator EntityKeys::FindEntry(std::string_view key)
+{
+    for (auto it = m_entries.end(); it != m_entries.begin();)
+    {
+        --it;
+        if ((*it)->key == key)
+        {
+            return it;
+        }
+    }
+    return m_entries.end();
+}
+
+const EntityKeyValue *EntityKeys::Find(std::string_view key) const
+{
+    for (auto it = m_entries.crbegin(); it != m_entries.crend(); ++it)
+    {
+        if ((*it)->key == key)
+        {
+            return it->get();
+        }
+    }
+    return nullptr;
+}
+
+void EntityKeys::Prepend(std::string key, std::string value)
+{
+    m_entries.push_back(std::make_unique<EntityKeyValue>(EntityKeyValue{std::move(key), std::move(value)}));
+}
+
+void EntityKeys::Set(std::string_view key, std::string_view value)
+{
+    if (value.empty())
+    {
+        Erase(key);
+        return;
+    }
+    // key and value may point into this entity's own entries: copy them before changing anything
+    std::string newvalue(value);
+    const auto it = FindEntry(key);
+    if (it != m_entries.end())
+    {
+        (*it)->value = std::move(newvalue);
+        return;
+    }
+    Prepend(std::string(key), std::move(newvalue));
+}
+
+bool EntityKeys::Erase(std::string_view key)
+{
+    const auto it = FindEntry(key);
+    if (it == m_entries.end())
+    {
+        return false;
+    }
+    m_entries.erase(it);
+    return true;
+}
 
 void DeleteKey(entity_t *ent, const char *const key)
 {
-    for (epair_t **pep = &ent->epairs; *pep; pep = &(*pep)->next)
-    {
-        if (!std::strcmp((*pep)->key, key))
-        {
-            epair_t *ep = *pep;
-            *pep = ep->next;
-            std::free(ep->key);
-            std::free(ep->value);
-            std::free(ep);
-            return;
-        }
-    }
+    ent->keys.Erase(key);
 }
 
 void SetKeyValue(entity_t *ent, const char *const key, const char *const value)
 {
-    epair_t *ep;
-
-    if (!value[0])
-    {
-        DeleteKey(ent, key);
-        return;
-    }
-    for (ep = ent->epairs; ep; ep = ep->next)
-    {
-        if (!std::strcmp(ep->key, key))
-        {
-            char *value2 = strdup(value);
-            std::free(ep->value);
-            ep->value = value2;
-            return;
-        }
-    }
-    ep = (epair_t *)std::calloc(1, sizeof(*ep));
-    ep->next = ent->epairs;
-    ent->epairs = ep;
-    ep->key = strdup(key);
-    ep->value = strdup(value);
+    ent->keys.Set(key, value);
 }
 
 const char *ValueForKey(const entity_t *const ent, const char *const key)
 {
-    for (epair_t *ep = ent->epairs; ep; ep = ep->next)
-    {
-        if (!std::strcmp(ep->key, key))
-        {
-            return ep->value;
-        }
-    }
-    return "";
+    const EntityKeyValue *kv = ent->keys.Find(key);
+    return kv ? kv->value.c_str() : "";
 }
 
 int IntForKey(const entity_t *const ent, const char *const key)

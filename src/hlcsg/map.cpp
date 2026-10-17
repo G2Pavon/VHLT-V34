@@ -106,11 +106,7 @@ static void DeleteCurrentEntity(entity_t *entity)
     }
     std::memset(&g_mapbrushes[entity->firstbrush], 0, entity->numbrushes * sizeof(brush_t));
     g_nummapbrushes -= entity->numbrushes;
-    while (entity->epairs)
-    {
-        DeleteKey(entity, entity->epairs->key);
-    }
-    std::memset(entity, 0, sizeof(entity_t));
+    *entity = entity_t{};
     g_numentities--;
 }
 
@@ -560,19 +556,16 @@ static bool ParseMapEntity()
         }
         else // else assume an epair
         {
-            epair_t *e = ParseEpair();
+            EntityKeyValue e = ParseEpair();
             if (mapent->numbrushes > 0)
                 Warning("Error: ParseEntity: Keyvalue comes after brushes."); //--vluzacn
 
-            if (!std::strcmp(e->key, "mapversion"))
+            if (!std::strcmp(e.key.c_str(), "mapversion"))
             {
-                g_nMapFileVersion = std::atoi(e->value);
+                g_nMapFileVersion = std::atoi(e.value.c_str());
             }
 
-            SetKeyValue(mapent, e->key, e->value);
-            std::free(e->key);
-            std::free(e->value);
-            std::free(e);
+            SetKeyValue(mapent, e.key.c_str(), e.value.c_str());
         }
     }
 
@@ -821,7 +814,7 @@ static bool ParseMapEntity()
         {
             g_entities[i].firstbrush += newbrushes;
         }
-        std::memset(mapent, 0, sizeof(*mapent));
+        *mapent = entity_t{};
         std::free(temp);
         return true;
     }

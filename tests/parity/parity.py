@@ -633,8 +633,12 @@ def cmd_sanitize(args) -> int:
     log(report)
     log(f"saved {path}")
     if args.baseline:
-        base = {l.split("  [")[0] for l in Path(args.baseline).read_text().splitlines()[1:] if l}
-        new = sorted(set(findings) - base)
+        # Compare on file and message only: edits elsewhere in a file shift line/column numbers.
+        def key(finding: str) -> str:
+            return re.sub(r":\d+:\d+:", ":", finding.split("  [")[0])
+
+        base = {key(l) for l in Path(args.baseline).read_text().splitlines()[1:] if l}
+        new = sorted(f for f in findings if key(f) not in base)
         log(f"{len(new)} finding(s) not in baseline" + (":\n  " + "\n  ".join(new) if new else ""))
         return 1 if new else 0
     return 0

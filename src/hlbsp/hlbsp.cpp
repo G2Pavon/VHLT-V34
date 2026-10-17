@@ -1188,7 +1188,7 @@ static void ProcessFile(const char *const filename)
     // load the output of csg
     safe_snprintf(g_bspfilename, _MAX_PATH, "%s.bsp", filename);
     LoadBSPFile(g_bspfilename);
-    ParseEntities();
+    ParseEntities(GetParamsFromEnt);
 
     Settings(); // AJM: moved here due to info_compile_parameters entity
 

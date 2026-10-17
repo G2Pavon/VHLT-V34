@@ -797,15 +797,15 @@ static void ReadCustomChopValue()
         for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
+            for (const EntityKeyValue &ep : mapent->keys)
             {
-                if (strcasecmp(ep->key, texname))
+                if (strcasecmp(ep.key.c_str(), texname))
                     continue;
-                if (!strcasecmp(ep->key, "origin"))
+                if (!strcasecmp(ep.key.c_str(), "origin"))
                     continue;
-                if (std::atof(ep->value) <= 0)
+                if (std::atof(ep.value.c_str()) <= 0)
                     continue;
-                chopscales[i] = std::atof(ep->value);
+                chopscales[i] = std::atof(ep.value.c_str());
             }
         }
     }
@@ -833,13 +833,13 @@ static void ReadCustomSmoothValue()
         for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
+            for (const EntityKeyValue &ep : mapent->keys)
             {
-                if (strcasecmp(ep->key, texname))
+                if (strcasecmp(ep.key.c_str(), texname))
                     continue;
-                if (!strcasecmp(ep->key, "origin"))
+                if (!strcasecmp(ep.key.c_str(), "origin"))
                     continue;
-                g_smoothvalues[i] = std::cos(std::atof(ep->value) * (Q_PI / 180.0));
+                g_smoothvalues[i] = std::cos(std::atof(ep.value.c_str()) * (Q_PI / 180.0));
             }
         }
     }
@@ -861,23 +861,23 @@ static void ReadTranslucentTextures()
         for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
+            for (const EntityKeyValue &ep : mapent->keys)
             {
-                if (strcasecmp(ep->key, texname))
+                if (strcasecmp(ep.key.c_str(), texname))
                     continue;
-                if (!strcasecmp(ep->key, "origin"))
+                if (!strcasecmp(ep.key.c_str(), "origin"))
                     continue;
                 double r;
                 double g;
                 double b;
-                int count = std::sscanf(ep->value, "%lf %lf %lf", &r, &g, &b);
+                int count = std::sscanf(ep.value.c_str(), "%lf %lf %lf", &r, &g, &b);
                 if (count == 1)
                 {
                     g = b = r;
                 }
                 else if (count != 3)
                 {
-                    Warning("ignore bad translucent value '%s'", ep->value);
+                    Warning("ignore bad translucent value '%s'", ep.value.c_str());
                     continue;
                 }
                 if (r < 0.0 || r > 1.0 || g < 0.0 || g > 1.0 || b < 0.0 || b > 1.0)
@@ -918,27 +918,27 @@ static void ReadLightingCone()
         for (int i = 0; i < num; i++)
         {
             const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
-            for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
+            for (const EntityKeyValue &ep : mapent->keys)
             {
-                if (strcasecmp(ep->key, texname))
+                if (strcasecmp(ep.key.c_str(), texname))
                     continue;
-                if (!strcasecmp(ep->key, "origin"))
+                if (!strcasecmp(ep.key.c_str(), "origin"))
                     continue;
                 double power;
                 double scale;
-                int count = std::sscanf(ep->value, "%lf %lf", &power, &scale);
+                int count = std::sscanf(ep.value.c_str(), "%lf %lf", &power, &scale);
                 if (count == 1)
                 {
                     scale = 1.0;
                 }
                 else if (count != 2)
                 {
-                    Warning("ignore bad angular fade value '%s'", ep->value);
+                    Warning("ignore bad angular fade value '%s'", ep.value.c_str());
                     continue;
                 }
                 if (power < 0.0 || scale < 0.0)
                 {
-                    Warning("ignore disallowed angular fade value '%s'", ep->value);
+                    Warning("ignore disallowed angular fade value '%s'", ep.value.c_str());
                     continue;
                 }
                 scale *= DefaultScaleForPower(power);
@@ -2401,12 +2401,12 @@ static void ReadInfoTexlights()
 
         Log("Reading texlights from info_texlights map entity\n");
 
-        for (epair_t *ep = mapent->epairs; ep; ep = ep->next)
+        for (const EntityKeyValue &ep : mapent->keys)
         {
-            if (!std::strcmp(ep->key, "classname") || !std::strcmp(ep->key, "origin"))
+            if (!std::strcmp(ep.key.c_str(), "classname") || !std::strcmp(ep.key.c_str(), "origin"))
                 continue; // we dont care about these keyvalues
 
-            int values = std::sscanf(ep->value, "%f %f %f %f", &r, &g, &b, &i);
+            int values = std::sscanf(ep.value.c_str(), "%f %f %f %f", &r, &g, &b, &i);
 
             if (values == 1)
             {
@@ -2420,11 +2420,11 @@ static void ReadInfoTexlights()
             }
             else if (values != 3)
             {
-                Warning("ignoring bad texlight '%s' in info_texlights entity", ep->key);
+                Warning("ignoring bad texlight '%s' in info_texlights entity", ep.key.c_str());
                 continue;
             }
 
-            texlight.name = ep->key;
+            texlight.name = ep.key;
             texlight.value[0] = r;
             texlight.value[1] = g;
             texlight.value[2] = b;
@@ -2999,7 +2999,7 @@ int main(const int argc, char **argv)
 
     safe_snprintf(g_source, _MAX_PATH, "%s.bsp", g_Mapname);
     LoadBSPFile(g_source);
-    ParseEntities();
+    ParseEntities(GetParamsFromEnt);
     if (g_fastmode)
     {
         g_numbounce = 0;

@@ -795,7 +795,7 @@ int main(const int argc, char **argv)
     safe_strncat(portalfile, ".prt", _MAX_PATH);
 
     LoadBSPFile(source);
-    ParseEntities();
+    ParseEntities(GetParamsFromEnt);
     {
         for (int i = 0; i < g_numentities; i++)
         {

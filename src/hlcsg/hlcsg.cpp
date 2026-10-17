@@ -1,5 +1,6 @@
 #include "hlcsg/hlcsg.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -736,9 +737,7 @@ static void ReuseModel()
         {
             // move this entity backward
             // to prevent precache error in case of .mdl/.spr and wrong result of EntityForModel in case of map model
-            entity_t tmp = g_entities[i];
-            std::memmove(&g_entities[i], &g_entities[i + 1], ((j + 1) - (i + 1)) * sizeof(entity_t));
-            g_entities[j] = tmp;
+            std::rotate(&g_entities[i], &g_entities[i + 1], &g_entities[j + 1]);
         }
     }
 }
@@ -836,10 +835,8 @@ static void LoadWadValue()
 {
     char *wadvalue;
     ParseFromMemory(g_dentdata, g_entdatasize);
-    epair_t *e;
     entity_t ent0;
     entity_t *mapent = &ent0;
-    std::memset(mapent, 0, sizeof(entity_t));
     if (!GetToken(true))
     {
         wadvalue = strdup("");
@@ -860,19 +857,10 @@ static void LoadWadValue()
             {
                 break;
             }
-            e = ParseEpair();
-            e->next = mapent->epairs;
-            mapent->epairs = e;
+            EntityKeyValue e = ParseEpair();
+            mapent->keys.Prepend(std::move(e.key), std::move(e.value));
         }
         wadvalue = strdup(ValueForKey(mapent, "wad"));
-        epair_t *next;
-        for (e = mapent->epairs; e; e = next)
-        {
-            next = e->next;
-            std::free(e->key);
-            std::free(e->value);
-            std::free(e);
-        }
     }
     if (*wadvalue)
     {
@@ -903,7 +891,7 @@ static void WriteBSP(const char *const name)
         LoadWadValue();
     }
 
-    UnparseEntities();
+    UnparseEntities(!g_nolightopt);
     ConvertHintToEmpty(); // this is ridiculous. --vluzacn
     if (g_chart)
         PrintBSPFileSizes();

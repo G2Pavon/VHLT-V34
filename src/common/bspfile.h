@@ -151,11 +151,17 @@ void DeleteEmbeddedLightmaps();
 extern int g_numentities;
 extern entity_t g_entities[MAX_MAP_ENTITIES];
 
-epair_t *ParseEpair();
-extern void GetParamsFromEnt(entity_t *mapent);
-bool ParseEntity();
-void ParseEntities();
-void UnparseEntities();
+// Parses one "key" "value" pair; g_token holds the key.
+EntityKeyValue ParseEpair();
+
+// Called for an info_compile_parameters entity while parsing (each tool has its own); may be null.
+using CompileParamsHandler = void (*)(entity_t *mapent);
+bool ParseEntity(CompileParamsHandler on_compile_parameters);
+void ParseEntities(CompileParamsHandler on_compile_parameters);
+
+// Writes g_entities back to g_dentdata. optimize_named_lights drops the targetname of lights that
+// share targetname and style with a later light (hlcsg, unless -nolightopt).
+void UnparseEntities(bool optimize_named_lights);
 
 entity_t *FindTargetEntity(const char *const target);
 // Texture Related Stuff

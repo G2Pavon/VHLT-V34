@@ -6,14 +6,3 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
-
-#include "common/bspfile.h"
-
-// Symbols common/ expects the tool to define.
-#ifdef HLCSG
-bool g_nolightopt = true;
-#endif
-
-void GetParamsFromEnt(entity_t *)
-{
-}
