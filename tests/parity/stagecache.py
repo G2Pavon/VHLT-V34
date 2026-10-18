@@ -73,19 +73,24 @@ def compare_digest(manifest: dict | None) -> str | None:
                          for name, entry in manifest.items()))
 
 
-def bsp_key(data: bytes) -> str:
-    """SHA-256 of a .bsp with every byte that is neither header nor lump content zeroed."""
+def bsp_canonical(data: bytes) -> bytes:
+    """A .bsp with every byte that is neither header nor lump content zeroed (raw bytes if malformed)."""
     if len(data) < BSP_HEADER_SIZE:
-        return sha256_bytes(data)
+        return data
     canonical = bytearray(len(data))
     canonical[:BSP_HEADER_SIZE] = data[:BSP_HEADER_SIZE]
     for i in range(BSP_HEADER_LUMPS):
         ofs = int.from_bytes(data[4 + 8 * i: 8 + 8 * i], "little", signed=True)
         length = int.from_bytes(data[8 + 8 * i: 12 + 8 * i], "little", signed=True)
         if ofs < 0 or length < 0 or ofs + length > len(data):
-            return sha256_bytes(data)  # malformed: no canonical form, use the raw bytes
+            return data  # malformed: no canonical form
         canonical[ofs:ofs + length] = data[ofs:ofs + length]
-    return sha256_bytes(bytes(canonical))
+    return bytes(canonical)
+
+
+def bsp_key(data: bytes) -> str:
+    """SHA-256 of bsp_canonical(data)."""
+    return sha256_bytes(bsp_canonical(data))
 
 
 def _write_atomic(path: Path, data: bytes) -> None:

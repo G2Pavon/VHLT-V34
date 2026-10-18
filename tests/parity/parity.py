@@ -98,7 +98,39 @@ VIS_VARIANTS = {
 for _name, _args in VIS_VARIANTS.items():
     TIERS[_name] = {"stages": ["csg", "bsp", "vis"], "csg": [], "bsp": [], "vis": _args}
 VIS_VARIANT_TIERS = [*VIS_VARIANTS]
-TIER_GROUPS = {"csg-variants": VARIANT_TIERS, "bsp-variants": BSP_VARIANT_TIERS, "vis-variants": VIS_VARIANT_TIERS}
+# hlrad option tiers: hlrad alone, on the oracle's VIS-complete output of the full tier (pre-baked
+# input, refs/full/<map>/vis), so neither the references nor a check run csg, bsp or vis again.
+RAD_INPUT = ("full", "vis")
+RAD_VARIANTS = {
+    "rad-extra": ["-extra"],
+    "rad-bounce0": ["-bounce", "0"],
+    "rad-bounce1": ["-bounce", "1"],
+    "rad-bounce16": ["-bounce", "16"],
+    "rad-chop": ["-chop", "32", "-texchop", "16"],
+    "rad-smooth": ["-smooth", "80", "-smooth2", "20"],
+    "rad-vismatrix-normal": ["-vismatrix", "normal"],
+    "rad-vismatrix-off": ["-vismatrix", "off"],
+    "rad-compress0": ["-compress", "0"],  # FLOAT32 transfers (default FLOAT16)
+    "rad-compress2": ["-compress", "2"],  # FLOAT8
+    "rad-rgb": ["-rgbtransfers"],  # VECTOR32 (default)
+    "rad-rgb0": ["-rgbtransfers", "-rgbcompress", "0"],  # VECTOR96
+    "rad-rgb1": ["-rgbtransfers", "-rgbcompress", "1"],  # VECTOR48
+    "rad-rgb3": ["-rgbtransfers", "-rgbcompress", "3"],  # VECTOR24
+    "rad-customshadow": ["-customshadowwithbounce"],
+    "rad-sky": ["-sky", "0.5", "-softsky", "0", "-nospread", "-noskyfix"],
+    "rad-colour": ["-gamma", "0.8", "-scale", "1.5", "-limiter", "-1", "-minlight", "20", "-coring", "0.1",
+                   "-ambient", "0.1", "0.1", "0.1", "-circus", "-dscale", "2", "-blur", "3"],
+    "rad-colour2": ["-colourgamma", "0.6", "0.5", "0.4", "-colourscale", "1", "2", "3", "-texreflectgamma", "1.5",
+                    "-texreflectscale", "0.9", "-fade", "2", "-depth", "4", "-blockopaque", "0", "-dlight", "5"],
+    "rad-notextures": ["-notextures"],
+    "rad-misc": ["-chart", "-estimate", "-texdata", "65536", "-lightdata", "65536", "-notexscale", "-nosubdivide",
+                 "-texlightgap", "2"],
+}
+for _name, _args in RAD_VARIANTS.items():
+    TIERS[_name] = {"stages": ["rad"], "rad": _args, "input": RAD_INPUT}
+RAD_VARIANT_TIERS = [*RAD_VARIANTS]
+TIER_GROUPS = {"csg-variants": VARIANT_TIERS, "bsp-variants": BSP_VARIANT_TIERS, "vis-variants": VIS_VARIANT_TIERS,
+               "rad-variants": RAD_VARIANT_TIERS}
 
 
 def tier_stages(tier: str) -> list[str]:
@@ -137,6 +169,23 @@ CORE_MAPS = (
     "fm_err_mixed", "fm_err_noplane", "fm_err_origin_world", "fm_err_two_origins",
 )
 FULL_CORPUS = False  # set by --full (and always for ref)
+# The rad micro-corpus: the default map set for hlrad runs (rad tiers, --stages rad, coverage --tool
+# hlrad). Chosen in R0 by per-map hlrad line coverage over the quick, full and rad tiers: the
+# lighting feature maps and unnamed reach 6429 of the 6541 lines the rad pool reaches, cs_estate
+# (the cheapest real map with sky, smoothing and seam handling at scale) 87 more; the 25 left need
+# the other heavy maps (README). ~10% of the pool's rad-tier time.
+RAD_CORE_MAPS = (
+    "cs_estate", "unnamed",
+    "fm_rad_brushkeys", "fm_rad_compileparams", "fm_rad_err_ambient", "fm_rad_err_spread", "fm_rad_infoents",
+    "fm_rad_opaque", "fm_rad_point", "fm_rad_sky", "fm_rad_spot", "fm_rad_styles", "fm_rad_texlights",
+)
+RAD_ROUTINE = False  # set when the run is about hlrad
+# What the rad tiers ever run, also with --full and for their references: the feature maps and the
+# real maps whose full-tier hlrad takes at most ~31 s. The quick and full tiers light every map at
+# default options; option coverage does not need the heavy maps (as_forest alone is 172 s a run).
+RAD_TIER_REAL_MAPS = ("unnamed", "unnamed-compile", "de_train", "cs_estate", "cs_747", "cs_militia", "cs_assault",
+                      "de_vertigo", "cs_siege", "de_aztec", "de_dust2")
+RAD_TIER = False  # set when the tier is a rad tier
 
 MISSING_TEXTURE_RE = re.compile(r"::FindTexture\(\) texture (\S+) not found!")
 
@@ -198,9 +247,15 @@ def corpus_maps(archived: bool | None = None) -> list[str]:
 def routine_maps() -> list[str]:
     """What a check runs by default: CORE_MAPS, or the corpus with --full (plus --archived maps)."""
     maps = corpus_maps()
+    if RAD_TIER:  # rad tiers never leave their pool
+        pool = [m for m in maps if m.startswith("fm_") or m in RAD_TIER_REAL_MAPS]
+        if FULL_CORPUS or not RAD_CORE_MAPS:
+            return pool
+        return sorted(m for m in pool if m in RAD_CORE_MAPS)
     if FULL_CORPUS:
         return maps
-    return sorted(m for m in maps if m in CORE_MAPS or m in (ARCHIVED_MAPS if INCLUDE_ARCHIVED else ()))
+    core = RAD_CORE_MAPS if RAD_ROUTINE and RAD_CORE_MAPS else CORE_MAPS
+    return sorted(m for m in maps if m in core or m in (ARCHIVED_MAPS if INCLUDE_ARCHIVED else ()))
 
 
 def select_maps(requested: list[str] | None) -> list[str]:
@@ -541,7 +596,17 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
     if root.exists():
         shutil.rmtree(root)
     work.mkdir(parents=True)
-    shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
+    source = TIERS[tier].get("input")
+    if source:  # a pre-baked input: the oracle's output of an earlier stage of another tier
+        pre = DATA / "refs" / source[0] / name / source[1]
+        if not pre.exists():  # the map stopped before that stage (an error map, a leak)
+            shutil.rmtree(work)
+            return {}
+        for f in pre.iterdir():
+            if f.is_file():
+                shutil.copy2(f, work / f.name)
+    else:
+        shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
     state = cache.manifest(work) if cache else None  # what the directory holds now
     on_disk = True
     results = {}
@@ -578,12 +643,13 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
     return results
 
 
-def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path, cache=None, audit: bool = False) -> dict:
-    """Run each stage after the first on the oracle's output of the previous stage."""
+def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path, cache=None, audit: bool = False,
+                 only: tuple | None = None) -> dict:
+    """Run each stage after the first on the oracle's output of the previous stage (only: just these)."""
     results = {}
     stages = tier_stages(tier)
     for i, stage in enumerate(stages[1:], start=1):
-        if stage not in ("bsp", "vis", "rad"):
+        if stage not in ("bsp", "vis", "rad") or (only and stage not in only):
             continue  # isolated mode exercises the downstream tools only
         tool = STAGE_TOOL[stage]
         prev = ref_root / stages[i - 1]
@@ -763,7 +829,8 @@ def downstream_guard(bindir: Path, tier: str, reference: str | None) -> tuple[bo
 
 
 def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, padding: str,
-               threads: int = 1, last_stage: str = "rad", cache_root: Path | None = None, audit: bool = False) -> dict:
+               threads: int = 1, last_stage: str = "rad", cache_root: Path | None = None, audit: bool = False,
+               only: tuple | None = None) -> dict:
     """One map in one mode ("chain" or "isolated")."""
     cache = open_cache(cache_root)
     ref_root = DATA / "refs" / tier / name
@@ -776,7 +843,7 @@ def _check_job(bindir: Path, tier: str, name: str, run_root: Path, mode: str, pa
         res = run_chain(bindir, tier, name, root, threads=threads, last_stage=last_stage, cache=cache, audit=audit)
         compared = [s for s in run_stages if s in ref_res or s in res]
     else:
-        res = run_isolated(bindir, tier, name, ref_root, root, cache=cache, audit=audit)
+        res = run_isolated(bindir, tier, name, ref_root, root, cache=cache, audit=audit, only=only)
         compared = list(res)
     for stage in compared:
         problems = compare_stage_cached(cache, ref_root, ref_res, root, res, stage, padding)
@@ -832,14 +899,17 @@ def cmd_check(args) -> int:
     if args.threads != 1:
         log("cache not used: --threads > 1")
     modes = [m for m in ("chain", "isolated") if args.mode in (m, "both")]
-    if last_stage == "csg":
-        modes = [m for m in modes if m == "chain"]  # isolated runs only the downstream tools
+    if last_stage == "csg" or TIERS[args.tier].get("input"):
+        modes = [m for m in modes if m == "chain"]  # isolated runs only the downstream tools; one stage: chain
+    only = None
+    if args.stages == "rad":  # hlrad alone, on the oracle's VIS output of this tier (pre-baked input)
+        modes, only = ["isolated"], ("rad",)
     jobs = sorted(((n, m) for n in maps for m in modes), key=lambda j: -job_weight(args.tier, *j))
     by_map = {n: {"map": n, "chain": {}, "isolated": {}} for n in maps}
     pending = {n: len(modes) for n in maps}
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
         futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, m, args.padding, args.threads, last_stage,
-                               cache_root, args.no_cache) for n, m in jobs]
+                               cache_root, args.no_cache, only) for n, m in jobs]
         for fut in concurrent.futures.as_completed(futures):
             r = fut.result()
             by_map[r["map"]][r["mode"]] = r["stages"]
@@ -1324,18 +1394,30 @@ CLI_CASES = {
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
     ],
     "hlvis-empty": [["tiny"], ["-full", "tiny"]],
+    "hlrad": [
+        [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "3", "tiny"], ["tiny", "-threads"],
+        ["-bounce"], ["-bounce", "abc", "tiny"], ["-bounce", "2000", "tiny"], ["-bounce", "2", "tiny"],
+        ["-chop", "0", "tiny"], ["-chop", "16", "tiny"], ["-texchop", "0", "tiny"], ["-texchop", "20", "tiny"],
+        ["-fade", "-1", "tiny"], ["-vismatrix", "bogus", "tiny"], ["-VISMATRIX", "off", "tiny"],
+        ["-compress", "5", "tiny"], ["-rgbcompress", "9", "tiny"], ["-compress"],
+        ["-ambient", "0.1", "tiny"], ["-ambient", "0.1", "0.2", "0.3", "tiny"], ["-colourgamma", "1", "tiny"],
+        ["-minlight", "300", "tiny"], ["-minlight", "-5", "tiny"], ["-blur", "0.5", "tiny"], ["-smooth", "30", "tiny"],
+        ["-dscale", "2", "tiny"], ["-scale", "3", "tiny"], ["-nosubdivide", "tiny"], ["-texlightgap", "3", "tiny"],
+        ["-limiter", "-1", "tiny"], ["-gamma", "1", "tiny"], ["-softsky", "0", "tiny"], ["-extra", "-fast", "tiny"],
+        ["-waddir", "/nonexistent", "tiny"], ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+    ],
 }
 # hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map).
 # "hlvis-empty" runs hlvis on the worldspawn-only map, whose .bsp has a dummy edge 0 referring to
 # vertex 0 of 0: the bounds-checked loader rejected it from Phase 2 to V1, where the oracle got as
 # far as the missing .prt. A case group "tool-suffix" runs that tool.
-CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview"}
+CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview", "hlrad": "fm_rad_point"}
 # Usage lines the candidate adds on purpose (new options): removed from its output before comparing.
 CLI_ADDED_LINES = {
     "hlvis": [b"    -fastthreads    : Faster with many threads, but the result can differ from run to run\n"],  # V3
 }
 # Tools whose input comes from an earlier stage: the oracle's tools prepare it (same for both sides).
-CLI_PREPARE = {"hlbsp": ["hlcsg"], "hlvis": ["hlcsg", "hlbsp"]}
+CLI_PREPARE = {"hlbsp": ["hlcsg"], "hlvis": ["hlcsg", "hlbsp"], "hlrad": ["hlcsg", "hlbsp", "hlvis"]}
 
 
 def _drop_lines(data: bytes, lines: list[bytes]) -> bytes:
@@ -1353,7 +1435,9 @@ def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str, added: list[byte
     for tool in CLI_PREPARE.get(exe.name, []):
         run([DATA / "builds" / "oracle" / "bin" / tool, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, check=True)
     proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
-    files = {f.name: _drop_lines(normalize_log(f.read_bytes()), added) for f in sorted(cwd.iterdir())}
+    # .bsp files without lump padding: the oracle leaves stale bytes there (check verifies the padding)
+    files = {f.name: stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp"
+             else _drop_lines(normalize_log(f.read_bytes()), added) for f in sorted(cwd.iterdir())}
     return (proc.returncode, _drop_lines(normalize_log(proc.stdout), added),
             _drop_lines(normalize_log(proc.stderr), added), files)
 
@@ -1387,6 +1471,7 @@ COVERAGE_TOOLS = {
     "hlcsg": {"tiers": lambda: ["quick", *VARIANT_TIERS], "last": "csg"},
     "hlbsp": {"tiers": lambda: ["quick", *BSP_VARIANT_TIERS], "last": "bsp"},
     "hlvis": {"tiers": lambda: ["quick", "full", *VIS_VARIANT_TIERS], "last": "vis"},  # quick: -fast
+    "hlrad": {"tiers": lambda: ["quick", "full", *RAD_VARIANT_TIERS], "last": "rad"},
 }
 
 
@@ -1513,9 +1598,10 @@ def main() -> int:
     p.add_argument("--padding", choices=["zero-or-equal", "zero", "strict", "ignore"], default="zero")
     p.add_argument("--label")
     p.add_argument("--keep", action="store_true", help="keep outputs even when everything matches")
-    p.add_argument("--stages", choices=["all", "csg"], default="all",
+    p.add_argument("--stages", choices=["all", "csg", "rad"], default="all",
                    help="csg: stop after hlcsg, but only if hlbsp/hlvis/hlrad are byte-identical to the last "
-                        "full pass of this tier (otherwise the full pipeline runs)")
+                        "full pass of this tier (otherwise the full pipeline runs); rad: only hlrad, on the "
+                        "oracle's VIS output of this tier (pre-baked input)")
     p.add_argument("--downstream-from", metavar="BUILD",
                    help="for --stages csg: compare downstream binaries with this build instead of the last full pass")
     p.add_argument("--threads", type=int, default=1,
@@ -1571,8 +1657,11 @@ def main() -> int:
     p.set_defaults(func=cmd_coverage)
 
     args = ap.parse_args()
-    global INCLUDE_ARCHIVED, FULL_CORPUS
+    global INCLUDE_ARCHIVED, FULL_CORPUS, RAD_ROUTINE, RAD_TIER
     INCLUDE_ARCHIVED = getattr(args, "archived", False)
+    RAD_TIER = getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants")
+    RAD_ROUTINE = (getattr(args, "stages", None) == "rad" or getattr(args, "tool", None) == "hlrad"
+                   or getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants"))
     FULL_CORPUS = getattr(args, "full", False) or args.cmd == "ref"  # references cover the whole corpus
     DATA.mkdir(parents=True, exist_ok=True)
     return args.func(args)

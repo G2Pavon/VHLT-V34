@@ -5,7 +5,9 @@ Each map exercises features that the Valve maps in the corpus never use (measure
 for hlcsg info_hullshape, CLIP*/BEVEL/HINT/SKIP/CONTENT* textures, detail brushes, zhlt_* keys,
 info_compile_parameters, light styles, game_text conversion and its error paths; for hlbsp
 (fm_bsp_*) a leak, brush models without visible or without any faces, and dense geometry for the
-T-junction, subdivision and clip-hull brink code; for hlvis (fm_vis_*) overview points.
+T-junction, subdivision and clip-hull brink code; for hlvis (fm_vis_*) overview points; for hlrad
+(fm_rad_*) each family of lighting features (point, spot, sky, texture lights, styles, shadows,
+per-texture info entities, brush keys, compile parameters) and its error paths.
 
     make_feature_maps.py [OUTDIR]     (default: ./maps next to this script)
 
@@ -466,6 +468,169 @@ def fm_vis_overview():
     ]
 
 
+def shrunk(ents, f=0.5):
+    """The map scaled by f (brush points and the point-valued keys): hlrad's cost grows with the square
+    of the patch count, i.e. roughly the fourth power of the room size, so the fm_rad maps are small."""
+    pointkeys = ("origin", "model_center")
+    out = []
+    for ent in ents:
+        keys = [(k, " ".join(fmt(float(c) * f) for c in v.split()) if k in pointkeys else v) for k, v in ent["keys"]]
+        brushes = [[Face(tuple(tuple(round(c * f, 3) for c in pt) for pt in face.points), face.normal, face.texture)
+                    for face in brush] for brush in ent["brushes"]]
+        out.append({"keys": keys, "brushes": brushes})
+    return out
+
+
+def player_start():
+    return entity([("classname", "info_player_start"), ("origin", "-512 -512 36"), ("angles", "0 0 0")])
+
+
+def lit_props():
+    """A few occluders so lights cast shadows and bounces have something to hit."""
+    return [box((-300, -300, -256), (-100, -100, 0), "CRATE01"), box((100, 100, -256), (300, 300, 200), "CRATE02"),
+            prism((500, -500), 80, 8, -256, 100, "C1A0_W1")]
+
+
+def fm_rad_point():
+    """Point lights: the 1-, 3- and 4-value forms of _light, _fade, a styled light."""
+    return shrunk([world(*lit_props()), player_start(),
+            entity([("classname", "light"), ("origin", "0 0 600"), ("_light", "255 220 180 400")]),
+            entity([("classname", "light"), ("origin", "-700 600 100"), ("_light", "200")]),
+            entity([("classname", "light"), ("origin", "700 600 100"), ("_light", "100 150 255"), ("_fade", "2")]),
+            entity([("classname", "light"), ("origin", "0 -700 300"), ("_light", "255 255 255 150"), ("style", "1"),
+                    ("zhlt_stylecoring", "0.2"), ("targetname", "flicker")])])
+
+
+def fm_rad_spot():
+    """light_spot aimed every way: target, angle -1 (up), angle -2 (down), angles, pitch, a missing target."""
+    return shrunk([world(*lit_props()), player_start(),
+            entity([("classname", "info_target"), ("targetname", "aim"), ("origin", "200 200 -200")]),
+            entity([("classname", "light_spot"), ("origin", "-600 0 600"), ("_light", "255 255 200 600"),
+                    ("_cone", "20"), ("_cone2", "40"), ("target", "aim")]),
+            entity([("classname", "light_spot"), ("origin", "0 0 -200"), ("_light", "200 255 200 300"), ("angle", "-1")]),
+            entity([("classname", "light_spot"), ("origin", "600 0 600"), ("_light", "255 200 200 400"), ("angle", "-2"),
+                    ("_cone", "30"), ("_cone2", "30")]),
+            entity([("classname", "light_spot"), ("origin", "0 600 400"), ("_light", "200 200 255 400"),
+                    ("angles", "0 90 0"), ("pitch", "-45")]),
+            entity([("classname", "light_spot"), ("origin", "0 -600 400"), ("_light", "255 255 255 200"), ("target", "nowhere")])])
+
+
+def fm_rad_sky():
+    """A sky opening and light_environment (sun, diffuse sky, _spread), a second sun faked as info_sunlight,
+    and a _sky spot light."""
+    (x0, y0, z0), (x1, y1, z1) = ROOM_MIN, ROOM_MAX
+    walls = room()
+    walls[1] = box((x0 - WALL, y0 - WALL, z1), (x1 + WALL, y1 + WALL, z1 + WALL), {"*": "C1A0_W1", "-z": "SKY"})
+    worldspawn = entity([("classname", "worldspawn"), ("mapversion", "220")], [*walls, *lit_props()])
+    return shrunk([worldspawn, player_start(),
+            entity([("classname", "light_environment"), ("origin", "0 0 500"), ("_light", "255 240 200 250"),
+                    ("_diffuse_light", "100 120 160 60"), ("_spread", "5"), ("pitch", "-60"), ("angles", "0 45 0")]),
+            entity([("classname", "light_environment"), ("origin", "100 0 500"), ("_light", "200 200 255 100"),
+                    ("pitch", "-30"), ("angles", "0 200 0"), ("_fake", "1")]),
+            entity([("classname", "light_spot"), ("origin", "-500 500 600"), ("_light", "150 150 200 100"),
+                    ("_sky", "1"), ("angle", "-2")])])
+
+
+def fm_rad_texlights():
+    """Texture lights from info_texlights (1-, 3- and 4-value forms) and from a light with _tex (light_surface:
+    distance, class and name filters, _scale, _chop, _texcolor, _texlightgap)."""
+    panels = [box((-200, -1024, 200), (200, -1000, 400), {"*": "C1A0_W1", "+y": "~GENERIC87"}),
+              box((-1024, -200, 200), (-1000, 200, 400), {"*": "C1A0_W1", "+x": "+0~C2A4_LGT1"}),
+              box((-100, -100, 740), (100, 100, 768), {"*": "C1A0_W1", "-z": "~LAB1_CMP"})]
+    return shrunk([world(*panels, *lit_props()), player_start(),
+            entity([("classname", "info_texlights"), ("~GENERIC87", "255 255 255 600"), ("+0~C2A4_LGT1", "255 128 0"),
+                    ("~LAB1_COMP1", "300")]),
+            entity([("classname", "light"), ("origin", "0 0 700"), ("_tex", "~LAB1_CMP"), ("_light", "180 220 255 500"),
+                    ("_frange", "400"), ("_fdist", "64"), ("_fclass", "worldspawn"), ("_scale", "1.5"), ("_chop", "32"),
+                    ("_texcolor", "255 200 200"), ("_texlightgap", "4")]),
+            entity([("classname", "func_wall"), ("targetname", "glow")],
+                   [box((600, 600, -256), (700, 700, -100), {"*": "CRATE01", "+z": "~LAB1_COMP1"})])])
+
+
+def fm_rad_styles():
+    """Light styles on one face (more than four: the discard path), a styled func_wall, light_shadow and
+    light_bounce aimed at a func_wall."""
+    lights = [entity([("classname", "light"), ("origin", f"{-800 + 150 * k} 900 0"), ("_light", "255 255 255 120"),
+                      ("style", str(k + 1)), ("targetname", f"s{k}")]) for k in range(6)]
+    return shrunk([world(*lit_props()), player_start(), *lights,
+            entity([("classname", "light"), ("origin", "0 0 600"), ("_light", "255 255 255 300")]),
+            entity([("classname", "func_wall"), ("targetname", "lit"), ("style", "2")],
+                   [box((-600, 300, -256), (-500, 400, 0), "CRATE01")]),
+            entity([("classname", "light_shadow"), ("target", "shadowed"), ("style", "3")]),
+            entity([("classname", "light_bounce"), ("target", "shadowed"), ("style", "4")]),
+            entity([("classname", "func_wall"), ("targetname", "shadowed")],
+                   [box((500, 300, -256), (600, 400, 0), "CRATE02")])])
+
+
+def fm_rad_opaque():
+    """Opaque and custom-shadow brush models (zhlt_lightflags 2 and 10, zhlt_customshadow 1 and 3 values) and
+    a translucent texture."""
+    return shrunk([world(), player_start(),
+            entity([("classname", "light"), ("origin", "0 0 600"), ("_light", "255 255 255 500")]),
+            entity([("classname", "func_wall"), ("zhlt_lightflags", "2")], [box((-600, -100, -256), (-500, 0, 400), "CRATE01")]),
+            entity([("classname", "func_wall"), ("zhlt_lightflags", "10")], [box((-300, -100, -256), (-200, 0, 400), "CRATE01")]),
+            entity([("classname", "func_wall"), ("zhlt_lightflags", "2"), ("zhlt_customshadow", "0.5")],
+                   [box((0, -100, -256), (100, 0, 400), "CRATE02")]),
+            entity([("classname", "func_wall"), ("zhlt_lightflags", "2"), ("zhlt_customshadow", "0.2 0.5 0.8")],
+                   [box((300, -100, -256), (400, 0, 400), "CRATE02")]),
+            entity([("classname", "func_illusionary"), ("rendermode", "4")], [box((600, -100, -256), (616, 200, 300), "{BARS")]),
+            entity([("classname", "info_translucent"), ("{BARS", "0.5")])])
+
+
+def fm_rad_infoents():
+    """The per-texture info entities: info_smoothvalue on a smooth column, info_chopscale, info_angularfade,
+    info_translucent with three values."""
+    return shrunk([world(prism((0, 0), 200, 16, -256, 400, "C1A0A_W3"), box((-600, 300, -256), (-400, 500, -50), "CRATE01"),
+                  box((400, 300, -256), (600, 500, -50), "CRATE02"), box((-100, -600, -256), (100, -584, 200), "{BARS")),
+            player_start(),
+            entity([("classname", "light"), ("origin", "-500 -500 500"), ("_light", "255 255 255 500")]),
+            entity([("classname", "light"), ("origin", "500 500 500"), ("_light", "255 200 150 300")]),
+            entity([("classname", "info_smoothvalue"), ("C1A0A_W3", "30")]),
+            entity([("classname", "info_chopscale"), ("CRATE01", "2")]),
+            entity([("classname", "info_angularfade"), ("CRATE02", "2 0.5")]),
+            entity([("classname", "info_translucent"), ("{BARS", "0.3 0.6 0.9")])])
+
+
+def fm_rad_brushkeys():
+    """Brush model keys: _minlight, zhlt_striprad, zhlt_embedlightmap (+ resolution), light_origin with
+    model_center, and zhlt_copylight on a point entity."""
+    return shrunk([world(*lit_props()), player_start(),
+            entity([("classname", "light"), ("origin", "0 0 600"), ("_light", "255 255 255 400"), ("targetname", "lamp")]),
+            entity([("classname", "func_wall"), ("_minlight", "0.3")], [box((-800, 600, -256), (-700, 700, -100), "CRATE01")]),
+            entity([("classname", "func_wall"), ("zhlt_striprad", "1")], [box((-600, 600, -256), (-500, 700, -100), "CRATE01")]),
+            entity([("classname", "func_wall"), ("zhlt_embedlightmap", "1"), ("zhlt_embedlightmapresolution", "4")],
+                   [box((-400, 600, -256), (-300, 700, -100), "CRATE02")]),
+            entity([("classname", "info_target"), ("targetname", "lo"), ("origin", "0 650 -150")]),
+            entity([("classname", "func_door"), ("light_origin", "lo"), ("model_center", "-150 650 -178")],
+                   [box((-200, 600, -256), (-100, 700, -100), "CRATE01")]),
+            entity([("classname", "env_sprite"), ("origin", "300 650 -150"), ("zhlt_copylight", "lamp")])])
+
+
+def fm_rad_compileparams():
+    """info_compile_parameters as hlrad reads it: extra on, normal vismatrix, bounce, chop, ambient, dscale,
+    a larger lightdata, rgb transfers."""
+    return shrunk([world(*lit_props()), player_start(),
+            entity([("classname", "light"), ("origin", "0 0 600"), ("_light", "255 255 255 400")]),
+            entity([("classname", "info_compile_parameters"), ("hlcsg", "1"), ("hlbsp", "1"), ("hlvis", "1"),
+                    ("hlrad", "2"), ("sparse", "2"), ("bounce", "-3"), ("chop", "48"), ("texchop", "24"),
+                    ("ambient", "0.1 0.1 0.1"), ("dscale", "1.5"), ("lightdata", "65536"), ("rgbtransfers", "1"),
+                    ("customshadowwithbounce", "1"), ("circus", "1"), ("estimate", "1")])])
+
+
+def fm_rad_err_spread():
+    """A light_environment _spread outside 0..180: hlrad stops with an error."""
+    return [world(), player_start(),
+            entity([("classname", "light_environment"), ("origin", "0 0 500"), ("_light", "255 255 255 200"),
+                    ("_spread", "200"), ("pitch", "-60")])]
+
+
+def fm_rad_err_ambient():
+    """info_compile_parameters ambient outside 0..1: hlrad stops with an error."""
+    return [world(), *start_and_light(),
+            entity([("classname", "info_compile_parameters"), ("hlcsg", "1"), ("hlbsp", "1"), ("hlvis", "1"),
+                    ("hlrad", "1"), ("ambient", "2 0 0")])]
+
+
 def err_map(*brushes, ents=()):
     return [world(*brushes), *ents, *start_and_light()]
 
@@ -520,7 +685,10 @@ MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_
                                  fm_transform, fm_gametext, fm_err_coplanar, fm_err_mixed, fm_err_origin_world,
                                  fm_err_outside, fm_err_noplane, fm_err_two_origins, fm_err_detail_water,
                                  fm_err_entity_contents, fm_err_hull_overflow,
-                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview, fm_clipeconomy]}
+                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview, fm_clipeconomy,
+                                 fm_rad_point, fm_rad_spot, fm_rad_sky, fm_rad_texlights, fm_rad_styles, fm_rad_opaque,
+                                 fm_rad_infoents, fm_rad_brushkeys, fm_rad_compileparams, fm_rad_err_spread,
+                                 fm_rad_err_ambient]}
 
 
 def main() -> int:

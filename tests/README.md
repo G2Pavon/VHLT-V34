@@ -92,6 +92,8 @@ corpus' tool time. hlrad was not part of that measurement.
 - `--full` uses the whole corpus; `--archived` adds the archived maps (`ARCHIVED_MAPS`:
   liminal_plaza, out of every routine run since 2026-10-18); `--maps` names maps explicitly.
 - `ref` always records the whole corpus (and the archived maps), so `--full` works at any time.
+- hlrad runs (rad tiers, `--stages rad`, `coverage --tool hlrad`) use the rad micro-corpus instead,
+  `RAD_CORE_MAPS` (see hlrad tiers below).
 - Cold gate on the core set (every tool changed, empty cache): quick 6 s, full 23 s, all csg tiers
   8 s, bsp tiers 9 s, vis tiers 6 s; `--no-cache` quick 9 s; sanitize 60 s.
 
@@ -143,6 +145,17 @@ corpus by `corpus`) cover the rest:
 | `fm_bsp_models` | brush models without visible faces (head node split on an arbitrary plane), without clip hulls, several brushes, origin brush |
 | `fm_bsp_geometry` | stairs, slopes, a 40-sided column (faces above MAXPOINTS), boxes on large faces (T-junctions), rotated and off-grid brushes (brinks) |
 | `fm_vis_overview` | zones that cannot all see each other, an `info_overview_point` and a reversed one (skybox point) |
+| `fm_rad_point`, `fm_rad_spot` | point lights (1-, 3-, 4-value `_light`, `_fade`, a styled light with `zhlt_stylecoring`); `light_spot` aimed by target, angle -1/-2, angles + pitch, a missing target |
+| `fm_rad_sky` | a sky opening, `light_environment` (sun, `_diffuse_light`, `_spread`), a second sun with `_fake`, a `_sky` spot |
+| `fm_rad_texlights` | texture lights from `info_texlights` and from a light with `_tex` (light_surface filters, `_scale`, `_chop`, `_texcolor`, `_texlightgap`), animated and toggled light textures |
+| `fm_rad_styles` | more than four styles on one face (discard path), a styled func_wall, `light_shadow`, `light_bounce` |
+| `fm_rad_opaque`, `fm_rad_infoents` | `zhlt_lightflags` opaque models, `zhlt_customshadow` (1 and 3 values), a translucent texture; `info_smoothvalue`, `info_chopscale`, `info_angularfade`, `info_translucent` |
+| `fm_rad_brushkeys` | `_minlight`, `zhlt_striprad`, `zhlt_embedlightmap`, `light_origin` + `model_center`, `zhlt_copylight` |
+| `fm_rad_compileparams` | `info_compile_parameters` as hlrad reads it (vismatrix, bounce, chop, ambient, dscale, lightdata, rgb transfers) |
+| `fm_rad_err_spread`, `fm_rad_err_ambient` | hlrad's error stops (`_spread` outside 0..180, ambient outside 0..1) |
+
+The `fm_rad_*` maps (except the error maps) are scaled to half size by the generator: a full-tier
+hlrad run takes 1-2 s each instead of 8-15 s.
 
 A leak in more than one hull is undefined behaviour in the oracle: after hull 0, hlbsp writes the
 next hull's leak trail to the point file it has already closed (it crashes or not, from run to
@@ -185,6 +198,51 @@ Coverage of `src/hlvis` before any hlvis change: 61.0% on the quick and full tie
 WindingDist, BestNormalFromWinding, SaveVisData, VisLeafnumForPoint never ran), 90.9% with the vis
 tiers and `fm_vis_overview` (flow.cpp 53.0 -> 95.9%). Measured without the three slowest vis maps
 (`coverage --maps`), which the -O0 coverage build would take very long on; `--tiers` picks tiers.
+
+### hlrad tiers, pre-baked inputs and the rad micro-corpus
+
+hlrad iteration does not rerun hlcsg, hlbsp and hlvis. A rad tier starts from a **pre-baked
+input**: the oracle's VIS-complete directory of the full tier, `refs/full/<map>/vis` (`.bsp`,
+`.wa_`, `.ext`, ...), copied into the work directory, and runs hlrad alone with one option set
+(`"input": RAD_INPUT` in `TIERS`). A map that stopped before vis (an error map, `fm_bsp_leak`) has
+no input and is skipped. Rad tiers run in chain mode only (with the oracle's input, chain and
+isolated are the same run).
+
+20 rad tiers, `--tier rad-variants`: `rad-extra`, `rad-bounce0/1/16`, `rad-chop`, `rad-smooth`,
+`rad-vismatrix-normal`, `rad-vismatrix-off` (default: sparse), `rad-compress0/2` (FLOAT32/FLOAT8
+transfers), `rad-rgb`, `rad-rgb0/1/3` (`-rgbtransfers` with VECTOR32/96/48/24), `rad-customshadow`,
+`rad-sky`, `rad-colour`, `rad-colour2` (gamma/scale/limiter/minlight/coring/ambient/... options),
+`rad-notextures` and `rad-misc` (`-chart -estimate -texdata -lightdata -notexscale -nosubdivide
+-texlightgap`). The quick tier covers `-fast`, the full tier default hlrad.
+
+```sh
+python3 $P check --bin DIR --tier rad-variants   # hlrad x 20 option sets on the micro-corpus
+python3 $P check --bin DIR --stages rad          # quick tier, hlrad alone on the oracle's quick vis output
+python3 $P check --bin DIR --stages rad --tier full
+python3 $P coverage --tool hlrad                 # quick + full + rad tiers
+```
+
+`--stages rad` is the isolated hlrad stage of the quick or full tier (input `refs/<tier>/<map>/vis`).
+The rad tiers ever run on the **rad pool**: the feature maps and the real maps whose full-tier
+hlrad takes at most ~31 s (`RAD_TIER_REAL_MAPS`); `ref` records the pool, `--full` checks it.
+
+Routine hlrad runs use the **rad micro-corpus**, `RAD_CORE_MAPS`: the eleven `fm_rad_*` maps,
+`unnamed` and `cs_estate`. It was chosen from per-map hlrad line coverage of the pool (43 maps)
+over the quick, full and all rad tiers (gcov, greedy, cost-weighted): of the 6541 hlrad lines the
+pool reaches, the feature maps and `unnamed` reach 6429 and `cs_estate` 87 more (sky visibility,
+edge smoothing and seam handling that need real geometry). The 25 left need the heavy maps
+(`cs_militia`, `cs_747`, `cs_siege`, `fm_compileparams`, `fm_specials`, `fm_lightstyles`: discarded
+direct lights, a degenerate light map, `info_compile_parameters` turning `-extra` off, negative
+texlight styles); `--full` covers them. The micro-corpus costs about 10% of the pool's rad-tier time.
+Cold (new hlrad binary, empty cache for it): all 20 rad tiers on the micro-corpus 4 min; the pool
+(`--full`) 13 min more.
+
+Coverage of `src/hlrad` on the micro-corpus (before any hlrad change): 84.0% of 7287 lines on the
+quick and full tiers, 89.7% with the rad tiers (compress.h 53.1 -> 91.0%, nomatrix.cpp 33.3 ->
+91.7%, transparency.cpp 19.3 -> 64.8%, loadtextures.cpp 72.9 -> 86.6%, hlrad.cpp 77.3 -> 85.3%).
+6.5 minutes with the -O0 coverage build. Largest uncovered functions: `Usage()` (covered by `cli`),
+`CalcSightArea_SpotLight`, the opaque-style arrays in transparency.cpp (`AddStyleToStyleArray`,
+`CreateFinalStyleArrays`, `SortStyleList`) and `AddWadFolder` (`-waddir`, broken on Linux until R4).
 
 ### csg-only checks and multi-threaded checks
 
@@ -242,11 +300,15 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads
-python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis]  # oracle vs candidate on option-parsing command lines: output, files, exit code
+python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad]  # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
 ```
+
+`cli` runs hlrad's 40 command lines on `fm_rad_point` (prepared by the oracle's hlcsg, hlbsp and
+hlvis). It compares `.bsp` files without their lump padding (`stagecache.bsp_canonical`): the
+oracle leaves stale bytes there, which `check --padding zero` already covers.
 
 ### Harness self-tests (done when the oracle was set up)
 
