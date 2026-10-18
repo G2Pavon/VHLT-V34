@@ -1,5 +1,6 @@
 #include "hlrad/hlrad.h"
 
+#include <atomic>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -148,10 +149,22 @@ vec_t g_texlightgap = DEFAULT_TEXLIGHTGAP;
 // Misc
 int leafparents[MAX_MAP_LEAFS];
 int nodeparents[MAX_MAP_NODES];
-int stylewarningcount = 0;
-int stylewarningnext = 1;
-vec_t g_maxdiscardedlight = 0;
-vec3_t g_maxdiscardedpos = {0, 0, 0};
+static std::atomic<vec_t> s_maxdiscardedlight{0}; // see NoteDiscardedLight
+static vec3_t s_maxdiscardedpos = {0, 0, 0};
+
+void NoteDiscardedLight(vec_t light, const vec3_t pos)
+{
+    if (light > s_maxdiscardedlight.load(std::memory_order_relaxed) + NORMAL_EPSILON) // cheap test before the lock
+    {
+        ThreadLock();
+        if (light > s_maxdiscardedlight.load(std::memory_order_relaxed) + NORMAL_EPSILON)
+        {
+            s_maxdiscardedlight.store(light, std::memory_order_relaxed);
+            VectorCopy(pos, s_maxdiscardedpos);
+        }
+        ThreadUnlock();
+    }
+}
 
 static float totalarea = 0;
 
@@ -1597,7 +1610,7 @@ static void GatherLight(int /*threadnum*/)
 {
     float f;
     vec3_t adds[ALLSTYLES];
-    unsigned int fastfind_index = 0;
+    unsigned int fastfind_index;
 
     while (1)
     {
@@ -1607,6 +1620,7 @@ static void GatherLight(int /*threadnum*/)
             break;
         }
         std::memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
+        fastfind_index = StyleSearchStart(j);
 
         patch_t *patch = &g_patches[j];
 
@@ -1723,16 +1737,7 @@ static void GatherLight(int /*threadnum*/)
         }
         for (int style = 1; style < ALLSTYLES; style++)
         {
-            if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[style];
-                    VectorCopy(patch->origin, g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(maxlights[style], patch->origin);
         }
     }
 }
@@ -1743,7 +1748,7 @@ static void GatherRGBLight(int /*threadnum*/)
 
     float f[3];
     vec3_t adds[ALLSTYLES];
-    unsigned int fastfind_index = 0;
+    unsigned int fastfind_index;
 
     while (1)
     {
@@ -1753,6 +1758,7 @@ static void GatherRGBLight(int /*threadnum*/)
             break;
         }
         std::memset(adds, 0, ALLSTYLES * sizeof(vec3_t));
+        fastfind_index = StyleSearchStart(j);
 
         patch_t *patch = &g_patches[j];
 
@@ -1868,16 +1874,7 @@ static void GatherRGBLight(int /*threadnum*/)
         }
         for (int style = 1; style < ALLSTYLES; style++)
         {
-            if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (maxlights[style] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[style];
-                    VectorCopy(patch->origin, g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(maxlights[style], patch->origin);
         }
     }
 }
@@ -2052,7 +2049,7 @@ static void RadWorld()
     FreeTriangulations();
 
     NamedRunThreadsOnIndividual(g_numfaces, g_estimate, FinalLightFace);
-    // g_maxdiscardedlight > 0.01 Maximum brightness loss (too many light styles on a face)
+    // s_maxdiscardedlight > 0.01 Maximum brightness loss (too many light styles on a face)
 
     MdlLightHack();
     ReduceLightmap();
@@ -2840,6 +2837,7 @@ int main(const int argc, char **argv)
     OpenLog();
     std::atexit(CloseLog);
     ThreadSetDefault();
+    ThreadSetOrderedLog(true); // the log of any thread count is the -threads 1 log
     LogStart(argc, argv);
     {
         Log("Arguments: ");

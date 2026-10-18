@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -53,13 +54,20 @@ class LogCapture
   private:
     friend void CaptureWriteLog(const char *message);
     friend void CaptureLogError(const char *message);
+    friend void LogInOrder(std::function<void()> action);
     struct Event
     {
         bool errorlog; // LogError (the .err file) rather than WriteLog
         std::string text;
+        std::function<void()> action; // set for LogInOrder: run instead of writing text
     };
     std::vector<Event> m_events;
 };
+
+// Runs action now or, while this thread's output is being captured, when the capture is replayed. For
+// output that depends on state shared by work items (a warning counter, PrintOnce), so that the state
+// changes in work order. action may log; it must not throw.
+void LogInOrder(std::function<void()> action);
 
 struct CapturedError
 {

@@ -215,11 +215,25 @@ void ExitAfterError()
     std::exit(1); // not reached: CheckFatal() exits once fatal is set
 }
 
+void LogInOrder(std::function<void()> action)
+{
+    if (t_capture)
+    {
+        t_capture->m_events.push_back({false, {}, std::move(action)});
+        return;
+    }
+    action();
+}
+
 void LogCapture::Replay() const
 {
     for (const Event &e : m_events)
     {
-        if (e.errorlog)
+        if (e.action)
+        {
+            e.action();
+        }
+        else if (e.errorlog)
         {
             LogError(e.text.c_str());
         }
@@ -261,21 +275,22 @@ void FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
     char message[MAX_WARNING];
     char message2[MAX_WARNING];
     va_list argptr;
-    static int count = 0;
-
-    if (count > 0) // make sure it only gets called once
-    {
-        return;
-    }
-    count++;
 
     va_start(argptr, warning);
     std::vsnprintf(message, MAX_WARNING, warning, argptr);
     va_end(argptr);
 
     safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Error: ", message);
-    WriteLog(message2);
-    LogError(message2);
+    // which call is the first is decided in work order (see LogInOrder)
+    LogInOrder([text = std::string(message2)]()
+               {
+                   static std::atomic<bool> printed{false};
+                   if (printed.exchange(true)) // make sure it only gets called once
+                   {
+                       return;
+                   }
+                   WriteLog(text.c_str());
+                   LogError(text.c_str()); });
 }
 
 void FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)

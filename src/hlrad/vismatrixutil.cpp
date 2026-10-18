@@ -98,7 +98,7 @@ void MakeScales(int /*threadnum*/)
     patch_t *patch2;
     vec3_t origin;
 
-    unsigned int fastfind_index = 0;
+    unsigned int fastfind_index;
 
     std::vector<transfer_raw_index_t> tIndex_All(g_num_patches + 1);
     std::vector<float> tData_All(g_num_patches + 1);
@@ -113,6 +113,7 @@ void MakeScales(int /*threadnum*/)
 
         patch_t *patch = g_patches + i;
         patch_transfers_t &transfers = g_patch_transfers[i];
+        fastfind_index = TransparencySearchStart(i);
         transfers.iIndex = 0;
         transfers.iData = 0;
 
@@ -313,7 +314,7 @@ void MakeRGBScales(int /*threadnum*/)
     patch_t *patch2;
     vec3_t origin;
 
-    unsigned int fastfind_index = 0;
+    unsigned int fastfind_index;
 
     std::vector<transfer_raw_index_t> tIndex_All(g_num_patches + 1);
     std::vector<float> tRGBData_All(3 * (g_num_patches + 1));
@@ -328,6 +329,7 @@ void MakeRGBScales(int /*threadnum*/)
 
         patch_t *patch = g_patches + i;
         patch_transfers_t &transfers = g_patch_transfers[i];
+        fastfind_index = TransparencySearchStart(i);
         transfers.iIndex = 0;
         transfers.iData = 0;
 

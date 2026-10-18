@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <string>
 #include <vector>
 #include <cmath>
 
@@ -2231,6 +2232,22 @@ void BuildDiffuseNormals()
     }
 }
 
+// Counts a light style that did not fit; the warning is written for the 1st, 2nd, 4th, 8th... of them,
+// counted in work order (see LogInOrder), so a multi-threaded run warns as -threads 1 does.
+static int stylewarningcount = 0;
+static int stylewarningnext = 1;
+static void WarnTooManyStyles(std::string message)
+{
+    LogInOrder([message = std::move(message)]()
+               {
+                   if (++stylewarningcount >= stylewarningnext)
+                   {
+                       stylewarningnext = stylewarningcount * 2;
+                       Warning("%s", message.c_str());
+                       Warning(" total %d warnings for too many styles", stylewarningcount);
+                   } });
+}
+
 static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec3_t normal, vec3_t *sample, byte *styles, int step, int miptex, int texlightgap_surfacenum)
 {
     vec3_t delta;
@@ -2651,12 +2668,9 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
 
             if (style_index == ALLSTYLES) // shouldn't happen
             {
-                if (++stylewarningcount >= stylewarningnext)
-                {
-                    stylewarningnext = stylewarningcount * 2;
-                    Warning("Too many direct light styles on a face(%f,%f,%f)", pos[0], pos[1], pos[2]);
-                    Warning(" total %d warnings for too many styles", stylewarningcount);
-                }
+                char message[128];
+                std::snprintf(message, sizeof(message), "Too many direct light styles on a face(%f,%f,%f)", pos[0], pos[1], pos[2]);
+                WarnTooManyStyles(message);
                 return;
             }
 
@@ -2669,16 +2683,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
         }
         else
         {
-            if (VectorMaximum(adds[style]) > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (VectorMaximum(adds[style]) > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = VectorMaximum(adds[style]);
-                    VectorCopy(pos, g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(VectorMaximum(adds[style]), pos);
         }
     }
 }
@@ -2761,12 +2766,7 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
                     }
                     if (k == ALLSTYLES)
                     {
-                        if (++stylewarningcount >= stylewarningnext)
-                        {
-                            stylewarningnext = stylewarningcount * 2;
-                            Warning("Too many direct light styles on a face(?,?,?)\n");
-                            Warning(" total %d warnings for too many styles", stylewarningcount);
-                        }
+                        WarnTooManyStyles("Too many direct light styles on a face(?,?,?)\n");
                     }
                     else
                     {
@@ -3556,12 +3556,7 @@ void BuildFacelights(const int facenum)
             }
             if (j == ALLSTYLES)
             {
-                if (++stylewarningcount >= stylewarningnext)
-                {
-                    stylewarningnext = stylewarningcount * 2;
-                    Warning("Too many direct light styles on a face(?,?,?)");
-                    Warning(" total %d warnings for too many styles", stylewarningcount);
-                }
+                WarnTooManyStyles("Too many direct light styles on a face(?,?,?)");
             }
             else
             {
@@ -3593,16 +3588,7 @@ void BuildFacelights(const int facenum)
             }
             if (maxlights[j] <= g_corings[f_styles[j]] * 0.1) // light is too dim, discard this style to reduce RAM usage
             {
-                if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    ThreadLock();
-                    if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                    {
-                        g_maxdiscardedlight = maxlights[j];
-                        VectorCopy(g_face_centroids[facenum], g_maxdiscardedpos);
-                    }
-                    ThreadUnlock();
-                }
+                NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
                 maxlights[j] = 0;
             }
         }
@@ -3640,16 +3626,7 @@ void BuildFacelights(const int facenum)
         }
         for (j = 1; j < ALLSTYLES && f_styles[j] != 255; j++)
         {
-            if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[j];
-                    VectorCopy(g_face_centroids[facenum], g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
         }
     }
     // patches
@@ -3692,16 +3669,7 @@ void BuildFacelights(const int facenum)
         }
         for (j = 1; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
         {
-            if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[j];
-                    VectorCopy(patch->origin, g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(maxlights[j], patch->origin);
         }
         for (j = 0; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
         {
@@ -3739,16 +3707,7 @@ void BuildFacelights(const int facenum)
         }
         for (j = 1; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
         {
-            if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-            {
-                ThreadLock();
-                if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[j];
-                    VectorCopy(patch->origin, g_maxdiscardedpos);
-                }
-                ThreadUnlock();
-            }
+            NoteDiscardedLight(maxlights[j], patch->origin);
         }
         patch->totalstyle_all = nullptr; // patchstyles goes away with this function
         patch->samplelight_all = nullptr;
@@ -3811,11 +3770,7 @@ void PrecompLightmapOffsets()
                     maxlights[j] = VectorMaximum(v);
                     if (maxlights[j] <= g_corings[j] * 0.01)
                     {
-                        if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                        {
-                            g_maxdiscardedlight = maxlights[j];
-                            VectorCopy(g_face_centroids[facenum], g_maxdiscardedpos);
-                        }
+                        NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
                         maxlights[j] = 0;
                     }
                 }
@@ -3879,11 +3834,7 @@ void PrecompLightmapOffsets()
             }
             for (int j = 1; j < ALLSTYLES; j++)
             {
-                if (maxlights[j] > g_maxdiscardedlight + NORMAL_EPSILON)
-                {
-                    g_maxdiscardedlight = maxlights[j];
-                    VectorCopy(g_face_centroids[facenum], g_maxdiscardedpos);
-                }
+                NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
             }
         }
 
@@ -4312,16 +4263,7 @@ void AddPatchLights(int facenum)
                     }
                     else
                     {
-                        if (VectorMaximum(v) > g_maxdiscardedlight + NORMAL_EPSILON)
-                        {
-                            ThreadLock();
-                            if (VectorMaximum(v) > g_maxdiscardedlight + NORMAL_EPSILON)
-                            {
-                                g_maxdiscardedlight = VectorMaximum(v);
-                                VectorCopy(samp->pos, g_maxdiscardedpos);
-                            }
-                            ThreadUnlock();
-                        }
+                        NoteDiscardedLight(VectorMaximum(v), samp->pos);
                     }
                 }
             } // loop samples

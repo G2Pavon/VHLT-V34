@@ -21,6 +21,15 @@ void RunThreadsOnIndividual(int workcnt, bool showpacifier, q_threadfunction fun
 
 int GetThreadWork();
 
+// With ordered log on (off by default), a multi-threaded RunThreadsOn* writes exactly the log that
+// -threads 1 writes: the output of each work item (from GetThreadWork handing it out until the thread
+// asks for the next one) is captured (see LogCapture) and written in work order, as soon as every
+// earlier item's has been. A captured Error() ends the run after the output of the items before it
+// (the items after it are dropped, as they would never have run), from the main thread. Output
+// written outside a work item (before the first or after the last GetThreadWork of a thread) is not
+// ordered. With one thread nothing is captured: the work runs and logs as it always did.
+void ThreadSetOrderedLog(bool ordered);
+
 // From a work item: stop handing out work; once the workers have finished, RunThreadsOn exits via
 // ExitAfterError() instead of returning. Used when an Error() was captured (see LogCapture) and its
 // output has been written.

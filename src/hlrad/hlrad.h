@@ -265,8 +265,6 @@ extern float_type g_transfer_compress_type;
 extern vector_type g_rgbtransfer_compress_type;
 extern bool g_softsky;
 extern vec_t g_corings[ALLSTYLES];
-extern int stylewarningcount; // not thread safe
-extern int stylewarningnext;  // not thread safe
 extern vec3_t *g_translucenttextures;
 extern vec_t g_translucentdepth;
 extern vec3_t *g_lightingconeinfo; //[nummiptex]; X component = power, Y component = scale, Z component = nothing
@@ -274,8 +272,9 @@ extern bool g_notextures;
 extern vec_t g_texreflectgamma;
 extern vec_t g_texreflectscale;
 extern vec_t g_blur;
-extern vec_t g_maxdiscardedlight;
-extern vec3_t g_maxdiscardedpos;
+// Keeps the largest light lost to the light style limits (MAXLIGHTMAPS per face, ALLSTYLES per sample) and
+// where it was. Thread-safe. Not reported (the oracle never printed it either).
+void NoteDiscardedLight(vec_t light, const vec3_t pos);
 extern vec_t g_texlightgap;
 
 void MakeTnodes(dmodel_t *bm);
@@ -367,6 +366,11 @@ void MakeRGBScales(int /*threadnum*/);
 
 // transparency.c (transparency array functions - shared between vismatrix.c and sparse.c)
 void GetTransparency(const unsigned p1, const unsigned p2, vec3_t &trans, unsigned int &next_index);
+// Where a work item for receiver p1 starts its GetTransparency/GetStyle searches (next_index): the first
+// entry with that p1. Its calls then go up in p2. (A thread used to carry next_index over from its
+// previous item, which only gave the same results because each thread got increasing patch numbers.)
+unsigned int TransparencySearchStart(unsigned p1);
+unsigned int StyleSearchStart(unsigned p1);
 void AddTransparencyToRawArray(const unsigned p1, const unsigned p2, const vec3_t trans);
 void CreateFinalTransparencyArrays(const char *print_name);
 void FreeTransparencyArrays();

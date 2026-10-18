@@ -12,6 +12,7 @@
 #include "common/threads.h"
 #include "common/win32fix.h"
 
+#include <algorithm>
 #include <memory>
 
 // compat: the arrays grow as they did with realloc (by 1.41, at least 64 entries, new entries zeroed),
@@ -165,6 +166,14 @@ void FreeTransparencyArrays()
     s_max_trans_count = s_trans_count = s_sorted_count = 0;
 }
 
+unsigned int TransparencySearchStart(unsigned p1)
+{
+    const transList_t *list = s_sorted_list.get();
+    return std::lower_bound(list, list + s_sorted_count, p1, [](const transList_t &e, unsigned p)
+                            { return e.p1 < p; }) -
+           list;
+}
+
 // find transparency from list. remembers last location
 void GetTransparency(const unsigned p1, const unsigned p2, vec3_t &trans, unsigned int &next_index)
 {
@@ -278,6 +287,14 @@ void FreeStyleArrays()
     s_style_list.reset();
 
     s_max_style_count = s_style_count = 0;
+}
+
+unsigned int StyleSearchStart(unsigned p1)
+{
+    const styleList_t *list = s_style_list.get();
+    return std::lower_bound(list, list + s_style_count, p1, [](const styleList_t &e, unsigned p)
+                            { return e.p1 < p; }) -
+           list;
 }
 
 void GetStyle(const unsigned p1, const unsigned p2, int &style, unsigned int &next_index)

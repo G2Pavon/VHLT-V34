@@ -278,6 +278,18 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
   in either mode (oracle: 186 on cs_assault, 398 on de_dust2). hlbsp is
   single-threaded, so it always matches (until B4 `-threads` was parsed into a local and discarded;
   now it sets the thread count shown in the settings table, checked by `regress hlbsp-threads`).
+- hlrad's BSP output never depended on the thread count; since R3 its log does not either. With
+  `ThreadSetOrderedLog(true)` (common/threads.h) every work item's output is captured from
+  `GetThreadWork` handing it out until the thread asks for the next, and written in work order; a
+  captured `Error()` ends the run after the earlier items' output (the thread's `ThreadLock`s are
+  released first). Output that depends on state shared by items runs at replay (`LogInOrder`): the
+  "too many light styles" counter and `PrintOnce`. No corpus map logs from an hlrad worker, so
+  `test_threads.cpp` checks the order (scrambled finish times, both runner styles) and the error
+  path (a forked run: exit 1, exactly the earlier items' output, no deadlock). Also: the unread
+  `g_maxdiscardedlight` race (now `NoteDiscardedLight`), and the transparency/style searches start
+  each work item at `lower_bound(p1)` instead of relying on increasing items per thread.
+  ThreadSanitizer, hlrad at 16 threads on 8 option/map runs: 0 warnings (before R3: the discarded
+  light race on every map). Time at 16 threads unchanged.
 - ThreadSanitizer (hlcsg, 16 threads; 0 warnings since H4, thousands at oracle-base):
 
   ```sh
