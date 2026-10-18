@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "common/blockmem.h"
+#include "common/cmdline.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
 #include "common/tokenizer.h"
@@ -161,7 +162,7 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
-    int iTmp = IntForKey(mapent, "lightdata") * 1024; //lightdata
+    int iTmp = KilobytesToBytes(IntForKey(mapent, "lightdata")); //lightdata
     if (iTmp > g_max_map_lightdata)                   //--vluzacn
     {
         g_max_map_lightdata = iTmp;
@@ -392,12 +393,7 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
         return;
     }
     // check for light emited by texture
-    texinfo_t *tx = &g_texinfo[f->texinfo];
-
-    int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
-    miptex_t *mt = (miptex_t *)((byte *)g_dtexdata + ofs);
-
-    LightForTexture(mt->name, light);
+    LightForTexture(GetTextureByNumber(f->texinfo), light);
 }
 
 static bool IsSpecial(const dface_t *const f)
@@ -783,7 +779,7 @@ static void SubdividePatch(patch_t *patch)
 vec_t *chopscales; //[nummiptex]
 static void ReadCustomChopValue()
 {
-    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = TextureLump().count();
     chopscales = (vec_t *)std::malloc(num * sizeof(vec_t));
     for (int i = 0; i < num; i++)
     {
@@ -796,7 +792,7 @@ static void ReadCustomChopValue()
             continue;
         for (int i = 0; i < num; i++)
         {
-            const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
+            const char *texname = GetMiptexName(i);
             for (const EntityKeyValue &ep : mapent->keys)
             {
                 if (strcasecmp(ep.key.c_str(), texname))
@@ -819,7 +815,7 @@ static vec_t ChopScaleForTexture(int facenum)
 vec_t *g_smoothvalues; //[nummiptex]
 static void ReadCustomSmoothValue()
 {
-    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = TextureLump().count();
     g_smoothvalues = (vec_t *)std::malloc(num * sizeof(vec_t));
     for (int i = 0; i < num; i++)
     {
@@ -832,7 +828,7 @@ static void ReadCustomSmoothValue()
             continue;
         for (int i = 0; i < num; i++)
         {
-            const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
+            const char *texname = GetMiptexName(i);
             for (const EntityKeyValue &ep : mapent->keys)
             {
                 if (strcasecmp(ep.key.c_str(), texname))
@@ -847,7 +843,7 @@ static void ReadCustomSmoothValue()
 
 static void ReadTranslucentTextures()
 {
-    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = TextureLump().count();
     g_translucenttextures = (vec3_t *)std::malloc(num * sizeof(vec3_t));
     for (int i = 0; i < num; i++)
     {
@@ -860,7 +856,7 @@ static void ReadTranslucentTextures()
             continue;
         for (int i = 0; i < num; i++)
         {
-            const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
+            const char *texname = GetMiptexName(i);
             for (const EntityKeyValue &ep : mapent->keys)
             {
                 if (strcasecmp(ep.key.c_str(), texname))
@@ -903,7 +899,7 @@ static vec_t DefaultScaleForPower(vec_t power)
 
 static void ReadLightingCone()
 {
-    int num = ((dmiptexlump_t *)g_dtexdata)->nummiptex;
+    int num = TextureLump().count();
     g_lightingconeinfo = (vec3_t *)std::malloc(num * sizeof(vec3_t));
     for (int i = 0; i < num; i++)
     {
@@ -917,7 +913,7 @@ static void ReadLightingCone()
             continue;
         for (int i = 0; i < num; i++)
         {
-            const char *texname = ((miptex_t *)(g_dtexdata + ((dmiptexlump_t *)g_dtexdata)->dataofs[i]))->name;
+            const char *texname = GetMiptexName(i);
             for (const EntityKeyValue &ep : mapent->keys)
             {
                 if (strcasecmp(ep.key.c_str(), texname))
@@ -1045,6 +1041,7 @@ static vec_t getChop(const patch_t *const patch)
     return rval;
 }
 
+// Takes ownership of w: it becomes the patch's winding, or is deleted if the face gets no patch.
 static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyle) //LRC
 {
     const dface_t *f = g_dfaces + fn;
@@ -1070,6 +1067,7 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 
         if (numpoints < 3) // WTF! (Actually happens in real-world maps too)
         {
+            delete w;
             return;
         }
         if (numpoints > MAX_POINTS_ON_WINDING)
@@ -1229,6 +1227,10 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
                 }
             }
         }
+    }
+    else
+    {
+        delete w;
     }
 }
 
@@ -2693,7 +2695,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //added "1" .--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_miptex) //--vluzacn
                 {
@@ -2709,7 +2711,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_lightdata) //--vluzacn
                 {
@@ -2834,9 +2836,10 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc)
             {
-                g_transfer_compress_type = (float_type)std::atoi(argv[++i]);
-                if (g_transfer_compress_type < 0 || g_transfer_compress_type >= float_type_count)
+                const int type = std::atoi(argv[++i]); // checked before the cast: an enum cannot hold any int
+                if (type < 0 || type >= float_type_count)
                     Usage();
+                g_transfer_compress_type = (float_type)type;
             }
             else
             {
@@ -2847,9 +2850,10 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc)
             {
-                g_rgbtransfer_compress_type = (vector_type)std::atoi(argv[++i]);
-                if (g_rgbtransfer_compress_type < 0 || g_rgbtransfer_compress_type >= vector_type_count)
+                const int type = std::atoi(argv[++i]);
+                if (type < 0 || type >= vector_type_count)
                     Usage();
+                g_rgbtransfer_compress_type = (vector_type)type;
             }
             else
             {
@@ -3001,6 +3005,7 @@ int main(const int argc, char **argv)
     safe_snprintf(g_source, _MAX_PATH, "%s.bsp", g_Mapname);
     LoadBSPFile(g_source);
     ParseEntities(GetParamsFromEnt);
+    dtexdata_grow(); // info_compile_parameters may have raised g_max_map_lightdata
     if (g_fastmode)
     {
         g_numbounce = 0;

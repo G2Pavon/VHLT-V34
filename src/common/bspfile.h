@@ -244,5 +244,8 @@ class MiptexLumpView
 MiptexLumpView TextureLump();
 void dtexdata_free();
 char *GetTextureByNumber(int texturenumber);
+// The name of texture lump entry miptex (dataofs[miptex]), or "" where it would lie outside the texture
+// buffer (a missing texture, dataofs -1, or a damaged lump).
+char *GetMiptexName(int miptex);
 
 entity_t *EntityForModel(int modnum);

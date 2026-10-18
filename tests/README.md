@@ -24,7 +24,10 @@ hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built again
 `test_cmdline.cpp` covers `ParseCommandLine` (common/cmdline.h), the table-driven option parser
 the tools move to as they are modernized (hlcsg since H6, hlbsp since B5, hlvis since V4;
 `parity.py cli` checks their command lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
-`brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`).
+`brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`). `common_tests_f32` also holds
+hlrad's transfer compression (`test_compress.cpp`): every float/vector type, packed and unpacked at
+each alignment, against a table produced by the oracle's compress.h (the corpus never reaches some
+of its paths, e.g. a zero component of an RGB transfer).
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.
 
@@ -299,7 +302,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad]  # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
@@ -355,7 +358,24 @@ ORIGIN/BOUNDINGBOX/cliphull brushes, plus the `.wa_` lump table); since H5 it le
 hlbsp leaked 32 MB over all 32 compiling maps before B2 (every BSP tree, pruned subtrees, clip-hull
 faces, split fragments, portals on the split plane); since B2 it leaks nothing on the quick tier
 or any bsp tier that completes (an Error exit leaves the tree being written behind, by design).
-Still leaking: hlrad about 0.5 MB over 23 maps (its phase).
+hlrad leaked about 0.5 MB over 23 maps before R1 (the winding of every face without a patch, e.g.
+sky, and each sky light's sun normals); since R1 it leaks nothing on the full tier or any rad tier.
+
+R1 (hlrad): the full tier showed 5 UBSan findings at oracle-base and up to V4, all in
+`hlrad/compress.h` (transfers packed at 1-6 byte strides, read and written as misaligned 32-bit
+words; float bits through `unsigned*`). Since R1: no findings and no leaks on the full tier or the
+rad tiers (`sanitize --tier rad-variants`, 260 hlrad runs). compress.h now goes through memcpy and
+`std::bit_cast` with the same bytes, keeping the oracle's arithmetic for two shifts that were
+undefined: `bitget(x, s, 32)` (GCC folded it to `x >> s`) and the VECTOR32/24 mantissa shift by
+`1 + max - exponent`, which can reach 32 or more and which the oracle's x86 `shr` takes mod 32
+(`test_compress.cpp`). R1 also fixed, without sanitizer reports on the corpus: the lighting buffer
+overflow when `info_compile_parameters` raises `lightdata` (`regress lightdata-growth`; v4 dies
+with SIGBUS), `pvs2` read uninitialized for a translucent face's first patch, the luxel flags read
+past `w*h`, an overlapping `strcpy` and unbounded texture-name copies, texture lump reads
+(`dataofs`, miptex records) without bounds or alignment, an unchecked face miptex index (now an
+error), the wad `wad`-key copy, signed overflows (`* 1024`, wad offsets), enum casts before
+their range check, and the final light's float-to-int conversion (NaN or out of range: INT_MIN,
+as the oracle's x86 conversion gives, then clamped to 0).
 
 ### Environment
 

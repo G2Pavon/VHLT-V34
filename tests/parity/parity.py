@@ -1041,15 +1041,18 @@ def cmd_sanitize(args) -> int:
         os.environ["ASAN_OPTIONS"] = "detect_leaks=1:halt_on_error=0:abort_on_error=0"
     findings: dict[str, set[str]] = {}
     leaks: dict[str, dict[str, int]] = {}  # tool -> map -> bytes
+    tiers = expand_tiers(args.tier)
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-            futs = {pool.submit(run_chain, bindir, args.tier, n, Path(tmp) / n, 1, False): n for n in maps}
+            # a tier group runs each of its tiers; maps are then reported as tier/map
+            futs = {pool.submit(run_chain, bindir, t, n, Path(tmp) / t / n, 1, False): (t, n) for t in tiers for n in maps}
             for fut in concurrent.futures.as_completed(futs):
-                name = futs[fut]
+                tier, map_name = futs[fut]
+                name = map_name if len(tiers) == 1 else f"{tier}/{map_name}"
                 fut.result()
-                for stage in tier_stages(args.tier):
+                for stage in tier_stages(tier):
                     tool = STAGE_TOOL[stage]
-                    err = Path(tmp) / name / "console" / f"{stage}.stderr"
+                    err = Path(tmp) / tier / map_name / "console" / f"{stage}.stderr"
                     if err.exists():
                         data = err.read_bytes()
                         for f in summarize_sanitizer(data):
@@ -1340,8 +1343,33 @@ def regress_hlvis_fastthreads(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_lightdata_growth(bindir: Path, tmp: Path) -> list[str]:
+    """fm_rad_compileparams' info_compile_parameters raises lightdata above the buffer allocated for
+    -lightdata 1: hlrad used to write the lightmaps past the 1 KB buffer (heap overflow). The .bsp must
+    equal the oracle's default-buffer run (refs/full)."""
+    name = "fm_rad_compileparams"
+    tmp.mkdir(parents=True)
+    for f in (DATA / "refs" / "full" / name / "vis").iterdir():
+        if f.is_file():
+            shutil.copy2(f, tmp / f.name)
+    proc = run([bindir / "hlrad", "-threads", "1", "-lightdata", "1", name], cwd=tmp, capture_output=True,
+               env=env_for(bindir))
+    out = proc.stdout + proc.stderr
+    problems = []
+    if proc.returncode != 0:
+        problems.append(f"exit {proc.returncode} with -lightdata 1")
+    if b"ERROR: AddressSanitizer" in out or b"runtime error:" in out:
+        problems.append("sanitizer error with -lightdata 1")
+    expected = (DATA / "refs" / "full" / name / "rad" / f"{name}.bsp").read_bytes()
+    bsp = tmp / f"{name}.bsp"
+    if stagecache.bsp_canonical(bsp.read_bytes()) != stagecache.bsp_canonical(expected):
+        problems.append(".bsp differs from the oracle's run with the default lighting buffer")
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
-               "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads}
+               "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
+               "lightdata-growth": regress_lightdata_growth}
 
 
 def cmd_regress(args) -> int:

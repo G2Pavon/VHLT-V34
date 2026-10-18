@@ -1434,11 +1434,15 @@ char *GetTextureByNumber(int texturenumber)
     if (texturenumber < 0 || texturenumber >= MAX_INTERNAL_MAP_TEXINFO)
         return emptystring;
 
-    const texinfo_t *info = &g_texinfo[texturenumber];
     // compat: a texinfo with miptex -1 reads dataofs[-1], which is nummiptex, and returns
     // whatever lies at that offset; it stays inside the buffer, so it is kept as it was.
+    return GetMiptexName(g_texinfo[texturenumber].miptex);
+}
+
+char *GetMiptexName(int miptex)
+{
     const MiptexLumpView lump = TextureLump();
-    const std::optional<int> ofs = lump.dataofs(info->miptex);
+    const std::optional<int> ofs = lump.dataofs(miptex);
     if (!ofs || *ofs < 0 || static_cast<long long>(*ofs) + MAX_TEXTURE_NAME_LENGTH > lump.capacity())
         return emptystring;
 

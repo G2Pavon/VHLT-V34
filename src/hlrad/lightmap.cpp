@@ -1,3 +1,4 @@
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -519,13 +520,7 @@ typedef struct
 
 static const char *TextureNameFromFace(const dface_t *const f)
 {
-    // check for light emited by texture
-    texinfo_t *tx = &g_texinfo[f->texinfo];
-
-    int ofs = ((dmiptexlump_t *)g_dtexdata)->dataofs[tx->miptex];
-    miptex_t *mt = (miptex_t *)((byte *)g_dtexdata + ofs);
-
-    return mt->name;
+    return GetTextureByNumber(f->texinfo);
 }
 
 //      Fills in s->texmins[] and s->texsize[]
@@ -1468,7 +1463,7 @@ static void CalcPoints(lightinfo_t *l)
                 break;
         }
     }
-    for (int i = 0; i < MAX_SINGLEMAP; i++)
+    for (int i = 0; i < l->numsurfpt; i++) // the flags past w * h were never set
     {
         l->surfpt_lightoutside[i] = (LuxelFlags[i] == LightOutside);
     }
@@ -2123,6 +2118,8 @@ void DeleteDirectLights()
         while (dl)
         {
             directlights[l] = dl->next;
+            std::free(dl->sunnormals);
+            std::free(dl->sunnormalweights);
             std::free(dl);
             dl = directlights[l];
         }
@@ -3514,7 +3511,9 @@ void BuildFacelights(const int facenum)
                 dleaf_t *leaf2 = PointInLeaf(spot2);
 
                 thisoffset2 = leaf2->visofs;
-                if (l.numsurfpt == 0 || thisoffset2 != lastoffset2)
+                // The first patch always fills pvs2: lastoffset2 starts at -1, so a first leaf with visofs -1
+                // read it uninitialized.
+                if (patch == g_face_patches[facenum] || l.numsurfpt == 0 || thisoffset2 != lastoffset2)
                 {
                     if (thisoffset2 == -1)
                     {
@@ -4443,6 +4442,13 @@ void AddPatchLights(int facenum)
     }
 }
 
+// compat: (int)d is undefined for NaN or a d outside int's range (very bright light with -limiter -1); the
+// oracle's x86 conversion (cvttsd2si) gives INT_MIN, which the caller then clamps to 0.
+static int TruncateToInt(double d)
+{
+    return d > -2147483649.0 && d < 2147483648.0 ? (int)d : INT_MIN;
+}
+
 // Add the indirect lighting on top of the direct lighting and save into final map format
 void FinalLightFace(const int facenum)
 {
@@ -4547,7 +4553,7 @@ void FinalLightFace(const int facenum)
 
             for (int i = 0; i < 3; ++i)
             {
-                lbi[i] = (int)std::floor(lb[i] + 0.5);
+                lbi[i] = TruncateToInt(std::floor(lb[i] + 0.5));
                 if (lbi[i] < 0)
                     lbi[i] = 0;
             }

@@ -42,3 +42,5 @@ vhlt_common_tests(common_tests_f64 common_f64)
 target_sources(common_tests_f64 PRIVATE unit/test_hlcsg.cpp
                ${CMAKE_SOURCE_DIR}/src/hlcsg/faces.cpp ${CMAKE_SOURCE_DIR}/src/hlcsg/ansitoutf8.cpp)
 vhlt_common_tests(common_tests_f32 common_f32)
+# hlrad's transfer compression (header-only; compress.cpp holds its tables)
+target_sources(common_tests_f32 PRIVATE unit/test_compress.cpp ${CMAKE_SOURCE_DIR}/src/hlrad/compress.cpp)

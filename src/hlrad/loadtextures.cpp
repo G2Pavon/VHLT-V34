@@ -66,7 +66,8 @@ static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
 
 static void OpenWadFile(const char *name, bool fullpath = false)
 {
-    wadfile_t *wad = (wadfile_t *)std::malloc(sizeof(wadfile_t));
+    // Zeroed: the node is linked before the file is found, and TryCloseWadFiles must see no file or lumps.
+    wadfile_t *wad = (wadfile_t *)std::calloc(1, sizeof(wadfile_t));
     hlassume(wad != nullptr, assume_NoMemory);
     {
         wadfile_t **pos;
@@ -120,7 +121,7 @@ static void OpenWadFile(const char *name, bool fullpath = false)
     if (std::strncmp(wadinfo.identification, "WAD3", 4))
         Error("%s isn't a Wadfile!", wad->path);
     wad->numlumps = wadinfo.numlumps;
-    if (wad->numlumps < 0 || wadinfo.infotableofs < 0 || wadinfo.infotableofs + wad->numlumps * (int)sizeof(lumpinfo_t) > wad->filesize)
+    if (wad->numlumps < 0 || wadinfo.infotableofs < 0 || wadinfo.infotableofs + wad->numlumps * (long long)sizeof(lumpinfo_t) > wad->filesize)
     {
         Error("Invalid wad file '%s'.", wad->path);
     }
@@ -186,7 +187,7 @@ static void TryOpenWadFiles()
                     }
                     j = 0;
                 }
-                else
+                else if (j < MAX_VAL - 1) // longer names are cut (they overflowed path)
                 {
                     path[j] = value[i];
                     j++;
@@ -207,19 +208,32 @@ static void TryCloseWadFiles()
         {
             next = wadfile->next;
             std::free(wadfile->lumpinfos);
-            std::fclose(wadfile->file);
+            if (wadfile->file)
+            {
+                std::fclose(wadfile->file);
+            }
             std::free(wadfile);
         }
         g_wadfiles = NULL;
     }
 }
 
+// tex->name = name, cut to MAX_TEXTURE_NAME_LENGTH - 1 characters (name may be tex->name itself, and need
+// not be terminated within MAX_TEXTURE_NAME_LENGTH bytes).
+static void SetTextureName(radtexture_t *tex, const char *name)
+{
+    if (name != tex->name)
+    {
+        safe_strncpy(tex->name, name, MAX_TEXTURE_NAME_LENGTH);
+    }
+    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
+}
+
 static void DefaultTexture(radtexture_t *tex, const char *name)
 {
     tex->width = 16;
     tex->height = 16;
-    std::strcpy(tex->name, name);
-    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
+    SetTextureName(tex, name);
     tex->canvas = (byte *)std::malloc(tex->width * tex->height);
     hlassume(tex->canvas != nullptr, assume_NoMemory);
     for (int i = 0; i < 256; i++)
@@ -232,14 +246,13 @@ static void DefaultTexture(radtexture_t *tex, const char *name)
     }
 }
 
-static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
+// data: the miptex record (size bytes, any alignment); header: a copy of its miptex_t.
+static void LoadTexture(radtexture_t *tex, const miptex_t &header, const byte *data, int size)
 {
-    const miptex_t *header = mt;
-    const byte *data = (const byte *)mt;
-    tex->width = header->width;
-    tex->height = header->height;
-    std::strcpy(tex->name, header->name);
-    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
+    const miptex_t *mt = &header;
+    tex->width = header.width;
+    tex->height = header.height;
+    SetTextureName(tex, header.name);
     if (tex->width <= 0 || tex->height <= 0 ||
         tex->width % (2 * 1 << (MIPLEVELS - 1)) != 0 || tex->height % (2 * (1 << (MIPLEVELS - 1))) != 0)
     {
@@ -259,7 +272,9 @@ static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
     {
         Error("Texture '%s': no enough data.", tex->name);
     }
-    if (*(unsigned short *)&data[sizeof(miptex_t) + mipsize] != 256)
+    unsigned short palettesize;
+    std::memcpy(&palettesize, &data[sizeof(miptex_t) + mipsize], sizeof(palettesize));
+    if (palettesize != 256)
     {
         Error("Texture '%s': palette size is not 256.", tex->name);
     }
@@ -281,12 +296,11 @@ static void LoadTexture(radtexture_t *tex, const miptex_t *mt, int size)
     }
 }
 
-static void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
+static void LoadTextureFromWad(radtexture_t *tex, const miptex_t &header)
 {
-    tex->width = header->width;
-    tex->height = header->height;
-    std::strcpy(tex->name, header->name);
-    tex->name[MAX_TEXTURE_NAME_LENGTH - 1] = '\0';
+    tex->width = header.width;
+    tex->height = header.height;
+    SetTextureName(tex, header.name);
     wadfile_t *wad;
     for (wad = g_wadfiles; wad; wad = wad->next)
     {
@@ -297,7 +311,7 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
         {
             if (found->type != 67 || found->compression != 0)
                 continue;
-            if (found->disksize < (int)sizeof(miptex_t) || found->filepos < 0 || found->filepos + found->disksize > wad->filesize)
+            if (found->disksize < (int)sizeof(miptex_t) || found->filepos < 0 || (long long)found->filepos + found->disksize > wad->filesize)
             {
                 Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path);
                 continue;
@@ -317,7 +331,7 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t *header)
             {
                 Warning("Texture '%s': texture name '%s' differs from its reference name '%s' in '%s'.", tex->name, mt->name, tex->name, wad->path);
             }
-            LoadTexture(tex, mt, found->disksize);
+            LoadTexture(tex, *mt, (const byte *)mt, found->disksize);
             std::free(mt);
             break;
         }
@@ -336,12 +350,18 @@ void LoadTextures()
     {
         Log("Load Textures:\n");
     }
-    g_numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    const MiptexLumpView lump = TextureLump();
+    g_numtextures = lump.count();
+    if (g_numtextures < 0)
+    {
+        Error("Invalid texture lump in '%s': %d textures.", g_source, g_numtextures);
+    }
     g_textures = (radtexture_t *)std::malloc(g_numtextures * sizeof(radtexture_t));
     hlassume(g_textures != nullptr, assume_NoMemory);
     for (int i = 0; i < g_numtextures; i++)
     {
-        int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[i];
+        // A dataofs slot past the buffer counts as a bad offset (it was read out of bounds).
+        int offset = lump.dataofs(i).value_or(-1);
         int size = g_texdatasize - offset;
         radtexture_t *tex = &g_textures[i];
         if (g_notextures)
@@ -355,10 +375,10 @@ void LoadTextures()
         }
         else
         {
-            miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
-            if (mt->offsets[0])
+            const miptex_t mt = *lump.miptex_at(offset);
+            if (mt.offsets[0])
             {
-                LoadTexture(tex, mt, size);
+                LoadTexture(tex, mt, &g_dtexdata[offset], size);
             }
             else
             {
@@ -399,6 +419,16 @@ void LoadTextures()
     {
         Log("%i textures referenced\n", g_numtextures);
         TryCloseWadFiles();
+    }
+    // Every per-texture table (g_textures, chop/smooth/translucent/lighting-cone values) is indexed by a
+    // face's miptex without a check.
+    for (int i = 0; i < g_numfaces; i++)
+    {
+        const int miptex = g_texinfo[g_dfaces[i].texinfo].miptex;
+        if (miptex < 0 || miptex >= g_numtextures)
+        {
+            Error("Face %d refers to texture %d, but there are only %d.", i, miptex, g_numtextures);
+        }
     }
 }
 
@@ -953,24 +983,30 @@ static void GetLight(dface_t *face, const int texsize[2], double x, double y, ve
 
 static bool GetValidTextureName(int miptex, char *name)
 {
-    int numtextures = g_texdatasize ? ((dmiptexlump_t *)g_dtexdata)->nummiptex : 0;
+    const MiptexLumpView lump = TextureLump();
+    int numtextures = lump.count();
 
     if (miptex < 0 || miptex >= numtextures)
     {
         return false;
     }
-    int offset = ((dmiptexlump_t *)g_dtexdata)->dataofs[miptex];
+    std::optional<int> dataofs = lump.dataofs(miptex);
+    if (!dataofs)
+    {
+        return false;
+    }
+    int offset = *dataofs;
     int size = g_texdatasize - offset;
-    if (offset < 0 || g_dtexdata + offset < (byte *)&((dmiptexlump_t *)g_dtexdata)->dataofs[numtextures] ||
+    if (offset < 0 || offset < MiptexLumpView::DataofsPosition(numtextures) ||
         size < (int)sizeof(miptex_t))
     {
         return false;
     }
 
-    miptex_t *mt = (miptex_t *)&g_dtexdata[offset];
-    safe_strncpy(name, mt->name, MAX_TEXTURE_NAME_LENGTH);
+    const miptex_t mt = *lump.miptex_at(offset);
+    safe_strncpy(name, mt.name, MAX_TEXTURE_NAME_LENGTH);
 
-    if (std::strcmp(name, mt->name))
+    if (std::strncmp(name, mt.name, MAX_TEXTURE_NAME_LENGTH))
     {
         return false;
     }
@@ -1369,11 +1405,12 @@ void EmbedLightmapInTextures()
                 }
             }
         }
-        *(short *)p = 256;
+        const short palettesize = 256;
+        std::memcpy(p, &palettesize, sizeof(palettesize));
         p += 2;
         std::memcpy(p, palette, 256 * 3);
         p += 256 * 3;
-        *(short *)p = 0;
+        std::memset(p, 0, 2);
         p += 2;
         if (p != (byte *)miptex + miptexsize)
         {
