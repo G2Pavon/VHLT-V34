@@ -5,7 +5,7 @@ Each map exercises features that the Valve maps in the corpus never use (measure
 for hlcsg info_hullshape, CLIP*/BEVEL/HINT/SKIP/CONTENT* textures, detail brushes, zhlt_* keys,
 info_compile_parameters, light styles, game_text conversion and its error paths; for hlbsp
 (fm_bsp_*) a leak, brush models without visible or without any faces, and dense geometry for the
-T-junction, subdivision and clip-hull brink code.
+T-junction, subdivision and clip-hull brink code; for hlvis (fm_vis_*) overview points.
 
     make_feature_maps.py [OUTDIR]     (default: ./maps next to this script)
 
@@ -436,6 +436,23 @@ def fm_bsp_geometry():
     return [world(*stairs, *crates, column, *slopes, *rotated, ball, ledge), *start_and_light()]
 
 
+def fm_vis_overview():
+    """Two staggered walls split the room into zones that cannot all see each other; an
+    info_overview_point (seen from everywhere) and a reversed one (sees everything) sit in two of them."""
+    (x0, y0, z0), (x1, y1, z1) = ROOM_MIN, ROOM_MAX
+    walls = [box((-332, y0, z0), (-300, 600, z1), "C1A0_W1"),  # open to the north
+             box((300, -600, z0), (332, y1, z1), "C1A0_W1")]  # open to the south
+    pillars = [box((-700 + 200 * i, -100, z0), (-668 + 200 * i, -68, -100), "CRATE01") for i in range(2)]
+    return [
+        world(*walls, *pillars),
+        entity([("classname", "info_player_start"), ("origin", "-700 -700 36"), ("angles", "0 0 0")]),
+        entity([("classname", "light"), ("origin", "-700 0 640"), ("_light", "255 255 255 400")]),
+        entity([("classname", "light"), ("origin", "700 0 640"), ("_light", "255 255 255 400")]),
+        entity([("classname", "info_overview_point"), ("origin", "-700 700 100")]),
+        entity([("classname", "info_overview_point"), ("origin", "700 -700 100"), ("reverse", "1")]),
+    ]
+
+
 def err_map(*brushes, ents=()):
     return [world(*brushes), *ents, *start_and_light()]
 
@@ -490,7 +507,7 @@ MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_
                                  fm_transform, fm_gametext, fm_err_coplanar, fm_err_mixed, fm_err_origin_world,
                                  fm_err_outside, fm_err_noplane, fm_err_two_origins, fm_err_detail_water,
                                  fm_err_entity_contents, fm_err_hull_overflow,
-                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry]}
+                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview]}
 
 
 def main() -> int:

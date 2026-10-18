@@ -123,6 +123,7 @@ corpus by `corpus`) cover the rest:
 | `fm_bsp_leak` | a 16-unit hole only hull 0 leaks through: hlbsp's leak trail (`.pts`/`.lin`, no `.prt`; hlvis then stops) |
 | `fm_bsp_models` | brush models without visible faces (head node split on an arbitrary plane), without clip hulls, several brushes, origin brush |
 | `fm_bsp_geometry` | stairs, slopes, a 40-sided column (faces above MAXPOINTS), boxes on large faces (T-junctions), rotated and off-grid brushes (brinks) |
+| `fm_vis_overview` | zones that cannot all see each other, an `info_overview_point` and a reversed one (skybox point) |
 
 A leak in more than one hull is undefined behaviour in the oracle: after hull 0, hlbsp writes the
 next hull's leak trail to the point file it has already closed (it crashes or not, from run to
@@ -140,6 +141,12 @@ bsp tiers run hlcsg (default options) and hlbsp with one option set: `bsp-nohull
 then exceeds MAX_MAP_VERTS, an error path) and `bsp-misc` (`-chart -estimate -texdata -lightdata`).
 `--tier bsp-variants` means all of them.
 
+vis tiers run hlcsg and hlbsp (default options) and hlvis with one option set: `vis-full`,
+`vis-maxdistance512`, `vis-maxdistance2048` and `vis-misc` (`-chart -estimate -texdata
+-lightdata`); `--tier vis-variants` means all of them. The quick tier covers `-fast`, the full tier
+default vis. Recording `vis-full` takes long (liminal_plaza); the run cache keeps it to one run per
+hlvis change.
+
 ```sh
 python3 $P ref --tier csg-variants               # oracle references (once; also bsp-variants)
 python3 $P check --bin DIR --tier csg-variants
@@ -154,6 +161,11 @@ Coverage of `src/hlbsp` before any hlbsp change: 86.9% with the Valve and hlcsg 
 quick tier, 89.9% with the `fm_bsp_*` maps and bsp tiers (MarkLeakTrail 0% -> covered, outside.cpp
 75.0 -> 87.5%, portals.cpp 82.4 -> 93.3%). The rest is mostly error-message helpers, `Usage()`
 (covered by `cli`) and the `.void` loader, which is to be dropped rather than tested.
+
+Coverage of `src/hlvis` before any hlvis change: 61.0% on the quick and full tiers (MaxDistVis,
+WindingDist, BestNormalFromWinding, SaveVisData, VisLeafnumForPoint never ran), 90.9% with the vis
+tiers and `fm_vis_overview` (flow.cpp 53.0 -> 95.9%). Measured without the three slowest vis maps
+(`coverage --maps`), which the -O0 coverage build would take very long on; `--tiers` picks tiers.
 
 ### csg-only checks and multi-threaded checks
 
@@ -205,7 +217,7 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-b1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads
-python3 $P cli --bin DIR [--tools hlcsg hlbsp]   # oracle vs candidate on option-parsing command lines: output, files, exit code
+python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis]  # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]

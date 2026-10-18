@@ -88,7 +88,17 @@ BSP_VARIANTS = {
 for _name, _args in BSP_VARIANTS.items():
     TIERS[_name] = {"stages": ["csg", "bsp"], "csg": [], "bsp": _args}
 BSP_VARIANT_TIERS = [*BSP_VARIANTS]
-TIER_GROUPS = {"csg-variants": VARIANT_TIERS, "bsp-variants": BSP_VARIANT_TIERS}
+# hlvis option tiers: hlcsg and hlbsp with default options, then hlvis with one option set each.
+VIS_VARIANTS = {
+    "vis-full": ["-full"],
+    "vis-maxdistance512": ["-maxdistance", "512"],
+    "vis-maxdistance2048": ["-maxdistance", "2048"],
+    "vis-misc": ["-chart", "-estimate", "-texdata", "65536", "-lightdata", "65536"],
+}
+for _name, _args in VIS_VARIANTS.items():
+    TIERS[_name] = {"stages": ["csg", "bsp", "vis"], "csg": [], "bsp": [], "vis": _args}
+VIS_VARIANT_TIERS = [*VIS_VARIANTS]
+TIER_GROUPS = {"csg-variants": VARIANT_TIERS, "bsp-variants": BSP_VARIANT_TIERS, "vis-variants": VIS_VARIANT_TIERS}
 
 
 def tier_stages(tier: str) -> list[str]:
@@ -1238,14 +1248,28 @@ CLI_CASES = {
         ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-high", "tiny"], ["-", "tiny"],
     ],
+    "hlvis": [
+        [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "abc", "tiny"], ["-threads", "3", "tiny"],
+        ["tiny", "-threads"], ["-estimate", "-chart", "tiny"], ["-FAST", "tiny"], ["-full", "tiny"], ["-fast", "-full", "tiny"],
+        ["-maxdistance"], ["-maxdistance", "512", "tiny"], ["-maxdistance", "-512", "tiny"], ["-maxdistance", "x", "tiny"],
+        ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
+        ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+    ],
 }
+# hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map). The empty
+# worldspawn-only map's .bsp is rejected by the bounds-checked loader since Phase 2 (its dummy edge 0
+# refers to vertex 0 of 0) where the oracle got as far as the missing .prt: fixed in V1.
+CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview"}
 # Tools whose input comes from an earlier stage: the oracle's tools prepare it (same for both sides).
-CLI_PREPARE = {"hlbsp": ["hlcsg"]}
+CLI_PREPARE = {"hlbsp": ["hlcsg"], "hlvis": ["hlcsg", "hlbsp"]}
 
 
 def _cli_run(exe: Path, argv: list[str], cwd: Path) -> tuple:
     cwd.mkdir(parents=True)
-    (cwd / "tiny.map").write_text(CLI_MAP)
+    if exe.name in CLI_MAP_FROM_CORPUS:
+        shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[exe.name]}.map", cwd / "tiny.map")
+    else:
+        (cwd / "tiny.map").write_text(CLI_MAP)
     for tool in CLI_PREPARE.get(exe.name, []):
         run([DATA / "builds" / "oracle" / "bin" / tool, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, check=True)
     proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
@@ -1280,6 +1304,7 @@ def cmd_cli(args) -> int:
 COVERAGE_TOOLS = {
     "hlcsg": {"tiers": lambda: ["quick", *VARIANT_TIERS], "last": "csg"},
     "hlbsp": {"tiers": lambda: ["quick", *BSP_VARIANT_TIERS], "last": "bsp"},
+    "hlvis": {"tiers": lambda: ["quick", "full", *VIS_VARIANT_TIERS], "last": "vis"},  # quick: -fast
 }
 
 
@@ -1299,7 +1324,8 @@ def cmd_coverage(args) -> int:
          f"-DCMAKE_CXX_FLAGS=--coverage -O0 {PARITY_CXX_FLAGS}", "-DVHLT_BUILD_TESTS=OFF",
          f"-DVHLT_BUILD_DATE={oracle_build_date()}"], check=True, stdout=subprocess.DEVNULL)
     tool = args.tool
-    targets = ["hlcsg"] if tool == "hlcsg" else ["hlcsg", tool]  # a tool runs on hlcsg's output
+    tools = [t for _, t in STAGES]
+    targets = tools[: tools.index(tool) + 1]  # a tool runs on the earlier tools' output
     proc = run(["cmake", "--build", build, "--target", *targets, "--parallel"], capture_output=True, text=True)
     if proc.returncode != 0:
         sys.exit(f"coverage build failed:\n{proc.stdout[-3000:]}{proc.stderr[-3000:]}")
@@ -1315,7 +1341,7 @@ def cmd_coverage(args) -> int:
         else:
             (bindir / t).touch()  # never run, but check_bin-style layout keeps run_chain happy
 
-    tiers = COVERAGE_TOOLS[tool]["tiers"]()
+    tiers = args.tiers or COVERAGE_TOOLS[tool]["tiers"]()
     maps = select_maps(args.maps)
     log(f"running {tool} (coverage build) on {len(maps)} maps x {len(tiers)} tiers")
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
@@ -1325,11 +1351,12 @@ def cmd_coverage(args) -> int:
             for fut in concurrent.futures.as_completed(futs):
                 fut.result()
 
+    common_lib = "common_f64.dir" if tool in ("hlcsg", "hlbsp") else "common_f32.dir"  # vec_t precision
     # common/ counters are shared by every tool in the build: only meaningful for hlcsg's run,
     # which runs no other instrumented tool. For hlbsp they include hlcsg's use of common/.
     rows, funcs = [], []
     for objdir, sources in ((build / "CMakeFiles" / f"{tool}.dir" / "src" / tool, REPO / "src" / tool),
-                            (build / "CMakeFiles" / "common_f64.dir" / "src" / "common", REPO / "src" / "common")):
+                            (build / "CMakeFiles" / common_lib / "src" / "common", REPO / "src" / "common")):
         gcdas = sorted(objdir.glob("*.gcda"))
         if not gcdas:
             continue
@@ -1451,6 +1478,7 @@ def main() -> int:
 
     p = sub.add_parser("coverage", help="gcov line coverage of a tool over the quick tier (up to that tool) and its variant tiers")
     p.add_argument("--tool", choices=list(COVERAGE_TOOLS), default="hlcsg")
+    p.add_argument("--tiers", nargs="+", choices=list(TIERS), help="instead of the tool's usual tiers")
     p.add_argument("--maps", nargs="+")
     p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
     p.add_argument("--rebuild", action="store_true")
