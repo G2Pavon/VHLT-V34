@@ -1,7 +1,7 @@
 #include <cstring>
 
 #include "hlrad/hlrad.h"
-#include "common/blockmem.h"
+#include <memory>
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/log.h"
@@ -12,7 +12,7 @@
 //      VISIBILITY MATRIX: Determine which patches can see each other
 //      Use the PVS to accelerate if available
 
-static byte *s_vismatrix;
+static std::unique_ptr<byte[]> s_vismatrix;
 
 // Sets vis bits for all patches in the face
 static void TestPatchToFace(const unsigned patchnum, const int facenum, const unsigned int bitpos, byte *pvs)
@@ -171,30 +171,14 @@ static void BuildVisMatrix()
 
     Log("%-20s: %5.1f megs\n", "visibility matrix", c / (1024 * 1024.0));
 
-    s_vismatrix = (byte *)AllocBlock(c);
-
-    if (!s_vismatrix)
-    {
-        Log("Failed to allocate s_vismatrix");
-        hlassume(s_vismatrix != nullptr, assume_NoMemory);
-    }
+    s_vismatrix = std::make_unique<byte[]>(c); // zeroed: no bit set
 
     NamedRunThreadsOn(g_dmodels[0].visleafs, g_estimate, BuildVisLeafs);
 }
 
 static void FreeVisMatrix()
 {
-    if (s_vismatrix)
-    {
-        if (FreeBlock(s_vismatrix))
-        {
-            s_vismatrix = nullptr;
-        }
-        else
-        {
-            Warning("Unable to free s_vismatrix");
-        }
-    }
+    s_vismatrix.reset();
 }
 
 static bool CheckVisBitVismatrix(unsigned p1, unsigned p2, vec3_t &transparency_out, unsigned int &next_index)

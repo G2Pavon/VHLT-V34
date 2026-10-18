@@ -377,6 +377,16 @@ error), the wad `wad`-key copy, signed overflows (`* 1024`, wad offsets), enum c
 their range check, and the final light's float-to-int conversion (NaN or out of range: INT_MIN,
 as the oracle's x86 conversion gives, then clamped to 0).
 
+R2 (hlrad ownership): every allocation is owned (vectors, `unique_ptr`, stores). Three constraints
+keep the output: `patch_t` stays trivially copyable (`static_assert`), because SortPatches orders
+patches with qsort (glibc's stable merge sort: the oracle's order) and subdivision copies them with
+memcpy, so patch windings live in a store and transfers in `g_patch_transfers`; the lists that used
+to be prepended (edge vertex faces, face light dependencies) are read newest first, the order that
+sets the summation order; and logged sizes keep their old arithmetic (the transparency/style
+arrays' 1.41x capacity, `sizeof(sparse_column_t)`, AllocBlock's zero-size warning). hlrad time
+unchanged (full tier, one job: cs_estate 11.25 s, cs_assault 14.69 s, de_dust2 15.75 s; R1 11.25,
+14.96, 15.87 s).
+
 ### Environment
 
 | Variable | Default |

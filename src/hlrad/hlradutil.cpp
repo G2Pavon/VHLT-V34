@@ -376,7 +376,7 @@ typedef struct
 //   = 200MB of RAM
 // But they are freed before BuildVisLeafs, so it's not a problem.
 
-typedef struct
+struct positionmap_t
 {
     bool valid;
     int facenum;
@@ -384,19 +384,19 @@ typedef struct
     vec3_t face_centroid;
     matrix_t worldtotex;
     matrix_t textoworld;
-    Winding *facewinding;
+    std::unique_ptr<Winding> facewinding;
     dplane_t faceplane;
-    Winding *facewindingwithoffset;
+    std::unique_ptr<Winding> facewindingwithoffset;
     dplane_t faceplanewithoffset;
-    Winding *texwinding;
+    std::unique_ptr<Winding> texwinding;
     dplane_t texplane; // (0, 0, 1, 0) or (0, 0, -1, 0)
     vec3_t texcentroid;
     vec3_t start;     // s_start, t_start, 0
     vec3_t step;      // s_step, t_step, 0
     int w;            // number of s
     int h;            // number of t
-    position_t *grid; // [h][w]
-} positionmap_t;
+    std::unique_ptr<position_t[]> grid; // [h][w]
+};
 
 static positionmap_t g_face_positions[MAX_MAP_FACES];
 
@@ -477,7 +477,7 @@ static void CalcSinglePosition(positionmap_t *map, int is, int it)
     clipplanes[3].dist = -tmax;
 
     p->nudged = true; // it's nudged unless it can get its position directly from its s,t
-    Winding *zone = new Winding(*map->texwinding);
+    const auto zone = std::make_unique<Winding>(*map->texwinding);
     for (int x = 0; x < 4 && zone->m_NumPoints > 0; x++)
     {
         zone->Clip(clipplanes[x], false);
@@ -543,7 +543,6 @@ static void CalcSinglePosition(positionmap_t *map, int is, int it)
             }
         }
     }
-    delete zone;
 }
 
 void FindFacePositions(int facenum)
@@ -579,9 +578,9 @@ void FindFacePositions(int facenum)
         return;
     }
 
-    map->facewinding = new Winding(*f);
+    map->facewinding = std::make_unique<Winding>(*f);
     map->faceplane = *getPlaneFromFace(f);
-    map->facewindingwithoffset = new Winding(map->facewinding->m_NumPoints);
+    map->facewindingwithoffset = std::make_unique<Winding>(map->facewinding->m_NumPoints);
     for (int x = 0; x < map->facewinding->m_NumPoints; x++)
     {
         VectorAdd(map->facewinding->m_Points[x], map->face_offset, map->facewindingwithoffset->m_Points[x]);
@@ -589,7 +588,7 @@ void FindFacePositions(int facenum)
     map->faceplanewithoffset = map->faceplane;
     map->faceplanewithoffset.dist = map->faceplane.dist + DotProduct(map->face_offset, map->faceplane.normal);
 
-    map->texwinding = new Winding(map->facewinding->m_NumPoints);
+    map->texwinding = std::make_unique<Winding>(map->facewinding->m_NumPoints);
     for (int x = 0; x < map->facewinding->m_NumPoints; x++)
     {
         ApplyMatrix(map->worldtotex, map->facewinding->m_Points[x], map->texwinding->m_Points[x]);
@@ -604,12 +603,9 @@ void FindFacePositions(int facenum)
     map->texplane.dist = 0.0;
     if (map->texwinding->m_NumPoints == 0)
     {
-        delete map->facewinding;
-        map->facewinding = nullptr;
-        delete map->facewindingwithoffset;
-        map->facewindingwithoffset = nullptr;
-        delete map->texwinding;
-        map->texwinding = nullptr;
+        map->facewinding.reset();
+        map->facewindingwithoffset.reset();
+        map->texwinding.reset();
         map->valid = false;
         return;
     }
@@ -647,18 +643,14 @@ void FindFacePositions(int facenum)
     map->h = imaxs[1] - imins[1] + 1;
     if (map->w <= 0 || map->h <= 0 || (double)map->w * (double)map->h > 99999999)
     {
-        delete map->facewinding;
-        map->facewinding = nullptr;
-        delete map->facewindingwithoffset;
-        map->facewindingwithoffset = nullptr;
-        delete map->texwinding;
-        map->texwinding = nullptr;
+        map->facewinding.reset();
+        map->facewindingwithoffset.reset();
+        map->texwinding.reset();
         map->valid = false;
         return;
     }
 
-    map->grid = (position_t *)std::malloc(map->w * map->h * sizeof(position_t));
-    hlassume(map->grid != nullptr, assume_NoMemory);
+    map->grid = std::make_unique_for_overwrite<position_t[]>(map->w * map->h);
 
     for (int it = 0; it < map->h; it++)
     {
@@ -678,14 +670,10 @@ void FreePositionMaps()
         positionmap_t *map = &g_face_positions[facenum];
         if (map->valid)
         {
-            delete map->facewinding;
-            map->facewinding = nullptr;
-            delete map->facewindingwithoffset;
-            map->facewindingwithoffset = nullptr;
-            delete map->texwinding;
-            map->texwinding = nullptr;
-            std::free(map->grid);
-            map->grid = nullptr;
+            map->facewinding.reset();
+            map->facewindingwithoffset.reset();
+            map->texwinding.reset();
+            map->grid.reset();
             map->valid = false;
         }
     }

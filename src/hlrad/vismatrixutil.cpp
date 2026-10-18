@@ -2,7 +2,6 @@
 #include <cmath>
 
 #include "hlrad/hlrad.h"
-#include "common/blockmem.h"
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 #include "common/threads.h"
@@ -39,7 +38,7 @@ static unsigned GetLengthOfRun(const transfer_raw_index_t *raw, const transfer_r
     return run_size;
 }
 
-static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, const unsigned rawSize, unsigned *iSize)
+static std::unique_ptr<transfer_index_t[]> CompressTransferIndicies(transfer_raw_index_t *tRaw, const unsigned rawSize, unsigned *iSize)
 {
     unsigned size = rawSize;
     unsigned compressed_count = 0;
@@ -60,8 +59,8 @@ static transfer_index_t *CompressTransferIndicies(transfer_raw_index_t *tRaw, co
         return nullptr;
     }
 
-    transfer_index_t *CompressedArray = (transfer_index_t *)AllocBlock(sizeof(transfer_index_t) * compressed_count_1);
-    transfer_index_t *compressed = CompressedArray;
+    auto CompressedArray = std::make_unique<transfer_index_t[]>(compressed_count_1);
+    transfer_index_t *compressed = CompressedArray.get();
 
     for (unsigned x = 0; x < size; x++, raw++, compressed++)
     {
@@ -101,8 +100,8 @@ void MakeScales(int /*threadnum*/)
 
     unsigned int fastfind_index = 0;
 
-    transfer_raw_index_t *tIndex_All = (transfer_raw_index_t *)AllocBlock(sizeof(transfer_index_t) * (g_num_patches + 1));
-    float *tData_All = (float *)AllocBlock(sizeof(float) * (g_num_patches + 1));
+    std::vector<transfer_raw_index_t> tIndex_All(g_num_patches + 1);
+    std::vector<float> tData_All(g_num_patches + 1);
 
     int count = 0;
 
@@ -113,11 +112,12 @@ void MakeScales(int /*threadnum*/)
             break;
 
         patch_t *patch = g_patches + i;
-        patch->iIndex = 0;
-        patch->iData = 0;
+        patch_transfers_t &transfers = g_patch_transfers[i];
+        transfers.iIndex = 0;
+        transfers.iData = 0;
 
-        transfer_raw_index_t *tIndex = tIndex_All;
-        float *tData = tData_All;
+        transfer_raw_index_t *tIndex = tIndex_All.data();
+        float *tData = tData_All.data();
 
         VectorCopy(patch->origin, origin);
         const vec_t *normal1 = getPlaneFromFaceNumber(patch->faceNumber)->normal;
@@ -252,20 +252,17 @@ void MakeScales(int /*threadnum*/)
             *tIndex = j;
             tData++;
             tIndex++;
-            patch->iData++;
+            transfers.iData++;
             count++;
         }
 
         // copy the transfers out
-        if (patch->iData)
+        if (transfers.iData)
         {
-            unsigned data_size = patch->iData * float_size[g_transfer_compress_type] + unused_size;
+            unsigned data_size = transfers.iData * float_size[g_transfer_compress_type] + unused_size;
 
-            patch->tData = (transfer_data_t *)AllocBlock(data_size);
-            patch->tIndex = CompressTransferIndicies(tIndex_All, patch->iData, &patch->iIndex);
-
-            hlassume(patch->tData != nullptr, assume_NoMemory);
-            hlassume(patch->tIndex != nullptr, assume_NoMemory);
+            transfers.data = std::make_unique<unsigned char[]>(data_size);
+            transfers.index = CompressTransferIndicies(tIndex_All.data(), transfers.iData, &transfers.iIndex);
 
             ThreadLock();
             g_transfer_data_bytes += data_size;
@@ -274,11 +271,11 @@ void MakeScales(int /*threadnum*/)
             vec_t total = 1 / Q_PI;
             {
                 unsigned x;
-                transfer_data_t *t1 = patch->tData;
-                float *t2 = tData_All;
+                transfer_data_t *t1 = transfers.data.get();
+                float *t2 = tData_All.data();
 
                 float f;
-                for (x = 0; x < patch->iData; x++, t1 += float_size[g_transfer_compress_type], t2++)
+                for (x = 0; x < transfers.iData; x++, t1 += float_size[g_transfer_compress_type], t2++)
                 {
                     f = (*t2) * total;
                     float_compress(g_transfer_compress_type, t1, &f);
@@ -287,8 +284,6 @@ void MakeScales(int /*threadnum*/)
         }
     }
 
-    FreeBlock(tIndex_All);
-    FreeBlock(tData_All);
 
     ThreadLock();
     g_total_transfer += count;
@@ -320,8 +315,8 @@ void MakeRGBScales(int /*threadnum*/)
 
     unsigned int fastfind_index = 0;
 
-    transfer_raw_index_t *tIndex_All = (transfer_raw_index_t *)AllocBlock(sizeof(transfer_index_t) * (g_num_patches + 1));
-    float *tRGBData_All = (float *)AllocBlock(sizeof(float[3]) * (g_num_patches + 1));
+    std::vector<transfer_raw_index_t> tIndex_All(g_num_patches + 1);
+    std::vector<float> tRGBData_All(3 * (g_num_patches + 1));
 
     int count = 0;
 
@@ -332,11 +327,12 @@ void MakeRGBScales(int /*threadnum*/)
             break;
 
         patch_t *patch = g_patches + i;
-        patch->iIndex = 0;
-        patch->iData = 0;
+        patch_transfers_t &transfers = g_patch_transfers[i];
+        transfers.iIndex = 0;
+        transfers.iData = 0;
 
-        transfer_raw_index_t *tIndex = tIndex_All;
-        float *tRGBData = tRGBData_All;
+        transfer_raw_index_t *tIndex = tIndex_All.data();
+        float *tRGBData = tRGBData_All.data();
 
         VectorCopy(patch->origin, origin);
         const vec_t *normal1 = getPlaneFromFaceNumber(patch->faceNumber)->normal;
@@ -479,20 +475,17 @@ void MakeRGBScales(int /*threadnum*/)
             *tIndex = j;
             tRGBData += 3;
             tIndex++;
-            patch->iData++;
+            transfers.iData++;
             count++;
         }
 
         // copy the transfers out
-        if (patch->iData)
+        if (transfers.iData)
         {
-            unsigned data_size = patch->iData * vector_size[g_rgbtransfer_compress_type] + unused_size;
+            unsigned data_size = transfers.iData * vector_size[g_rgbtransfer_compress_type] + unused_size;
 
-            patch->tRGBData = (rgb_transfer_data_t *)AllocBlock(data_size);
-            patch->tIndex = CompressTransferIndicies(tIndex_All, patch->iData, &patch->iIndex);
-
-            hlassume(patch->tRGBData != nullptr, assume_NoMemory);
-            hlassume(patch->tIndex != nullptr, assume_NoMemory);
+            transfers.data = std::make_unique<unsigned char[]>(data_size);
+            transfers.index = CompressTransferIndicies(tIndex_All.data(), transfers.iData, &transfers.iIndex);
 
             ThreadLock();
             g_transfer_data_bytes += data_size;
@@ -501,11 +494,11 @@ void MakeRGBScales(int /*threadnum*/)
             vec_t total = 1 / Q_PI;
             {
                 unsigned x;
-                rgb_transfer_data_t *t1 = patch->tRGBData;
-                float *t2 = tRGBData_All;
+                rgb_transfer_data_t *t1 = transfers.data.get();
+                float *t2 = tRGBData_All.data();
 
                 float f[3];
-                for (x = 0; x < patch->iData; x++, t1 += vector_size[g_rgbtransfer_compress_type], t2 += 3)
+                for (x = 0; x < transfers.iData; x++, t1 += vector_size[g_rgbtransfer_compress_type], t2 += 3)
                 {
                     VectorScale(t2, total, f);
                     vector_compress(g_rgbtransfer_compress_type, t1, &f[0], &f[1], &f[2]);
@@ -514,8 +507,6 @@ void MakeRGBScales(int /*threadnum*/)
         }
     }
 
-    FreeBlock(tIndex_All);
-    FreeBlock(tRGBData_All);
 
     ThreadLock();
     g_total_transfer += count;

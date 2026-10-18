@@ -7,7 +7,6 @@
 #include <string>
 #include <cmath>
 
-#include "common/blockmem.h"
 #include "common/cmdline.h"
 #include "common/cmdlib.h"
 #include "common/filelib.h"
@@ -87,17 +86,21 @@ static float g_smoothing_value_2 = DEFAULT_SMOOTHING2_VALUE;
 static int g_blockopaque = DEFAULT_BLOCKOPAQUE;
 // Cosine of smoothing angle(in radians)
 static float g_coring = DEFAULT_CORING;      // Light threshold to force to blackness(minimizes lightmaps)
-static unsigned g_max_opaque_face_count = 0; // Current array maximum (used for reallocs)
 
-static vec3_t (*emitlight)[MAXLIGHTMAPS]; //LRC
-static vec3_t (*addlight)[MAXLIGHTMAPS];  //LRC
-static unsigned char (*newstyles)[MAXLIGHTMAPS];
+// [g_num_patches + 1], only while the bounces run
+static std::unique_ptr<vec3_t[][MAXLIGHTMAPS]> emitlight; //LRC
+static std::unique_ptr<vec3_t[][MAXLIGHTMAPS]> addlight;  //LRC
+static std::unique_ptr<unsigned char[][MAXLIGHTMAPS]> newstyles;
 static float g_smoothing_threshold;
 
 patch_t *g_face_patches[MAX_MAP_FACES];
 entity_t *g_face_entity[MAX_MAP_FACES];
 eModelLightmodes g_face_lightmode[MAX_MAP_FACES];
-patch_t *g_patches;
+patch_t *g_patches; // s_patches.data()
+// Owners of the patches and of their windings (patch_t only points to its winding: see hlrad.h).
+static std::vector<patch_t> s_patches;
+static std::vector<std::unique_ptr<Winding>> s_patch_windings;
+std::vector<patch_transfers_t> g_patch_transfers;
 entity_t *g_face_texlights[MAX_MAP_FACES];
 unsigned g_num_patches;
 vec3_t g_face_offset[MAX_MAP_FACES]; // for rotating bmodels
@@ -133,10 +136,12 @@ bool g_subdivide = DEFAULT_SUBDIVIDE;
 vec_t g_chop = DEFAULT_CHOP;       // Chop value for normal textures
 vec_t g_texchop = DEFAULT_TEXCHOP; // Chop value for texture lights
 // Opaque faces
-opaqueList_t *g_opaque_face_list = nullptr;
+opaqueList_t *g_opaque_face_list = nullptr; // a view of s_opaque_face_list
+static std::vector<opaqueList_t> s_opaque_face_list;
 unsigned g_opaque_face_count = 0;
 float g_corings[ALLSTYLES];
-vec3_t *g_translucenttextures = nullptr;
+vec3_t *g_translucenttextures = nullptr; // [nummiptex], a view of s_translucenttextures
+static std::unique_ptr<vec3_t[]> s_translucenttextures;
 vec_t g_translucentdepth = DEFAULT_TRANSLUCENTDEPTH;
 vec_t g_blur = DEFAULT_BLUR;
 vec_t g_texlightgap = DEFAULT_TEXLIGHTGAP;
@@ -149,7 +154,6 @@ vec_t g_maxdiscardedlight = 0;
 vec3_t g_maxdiscardedpos = {0, 0, 0};
 
 static float totalarea = 0;
-static constexpr int OPAQUE_ARRAY_GROWTH_SIZE = 1024;
 
 //      this function is called from parseentity when it encounters the
 //      info_compile_parameters entity. each tool should have its own version of this
@@ -518,18 +522,13 @@ static void UpdateEmitterInfo(patch_t *patch)
 // SUBDIVIDE PATCHES
 // NOTE:  every surface must be divided into at least two g_patches each axis
 
-// misc
-constexpr int MAX_SUBDIVIDE = 16384;
-static Winding *windingArray[MAX_SUBDIVIDE];
-static unsigned g_numwindings = 0;
-
-// Caller must free this returned value at some point
-static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane_t *plB)
+// Cuts the patch's winding along a grid of planes A and B into pieces (strips along A, then each strip
+// along B), in the order the patches are made from them.
 // This function has been rewritten because the original one is not totally correct and may fail to do what it claims.
+static std::vector<std::unique_ptr<Winding>> cutWindingWithGrid(const patch_t *patch, const dplane_t *plA, const dplane_t *plB)
 {
     // patch->winding->m_NumPoints must > 0
     // plA->dist and plB->dist will not be used
-    Winding *winding = nullptr;
     const int max_gridsize = 64;
     vec_t gridstartA;
     vec_t gridstartB;
@@ -538,7 +537,7 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
     vec_t gridchopA;
     vec_t gridchopB;
 
-    winding = new Winding(*patch->winding); // perform all the operations on the copy
+    auto winding = std::make_unique<Winding>(*patch->winding); // perform all the operations on the copy
     vec_t chop = patch->chop;
     chop = qmax(1.0, chop);
     vec_t epsilon = 0.6;
@@ -582,126 +581,49 @@ static void cutWindingWithGrid(patch_t *patch, const dplane_t *plA, const dplane
         gridstartB = (minB + maxB) / 2.0 - (gridsizeB / 2.0) * gridchopB;
     }
 
-    // cut the winding by the direction of plane A and save into windingArray
+    // cut the winding by the direction of plane A into strips
+    std::vector<std::unique_ptr<Winding>> strips;
+    for (int i = 1; i < gridsizeA; i++)
     {
-        g_numwindings = 0;
-        for (int i = 1; i < gridsizeA; i++)
+        vec_t dist = gridstartA + i * gridchopA;
+        WindingSplit split = winding->Split(plA->normal, dist);
+
+        if (!split.front || split.front->WindingOnPlaneSide(plA->normal, dist, epsilon) == SIDE_ON) // ended
         {
-            Winding *front = nullptr;
-            Winding *back = nullptr;
+            break;
+        }
+        if (!split.back || split.back->WindingOnPlaneSide(plA->normal, dist, epsilon) == SIDE_ON) // didn't begin
+        {
+            continue;
+        }
+        strips.push_back(std::move(split.back));
+        winding = std::move(split.front);
+    }
+    strips.push_back(std::move(winding));
 
-            vec_t dist = gridstartA + i * gridchopA;
-            winding->Clip(plA->normal, dist, &front, &back);
+    // cut each strip by the direction of plane B
+    std::vector<std::unique_ptr<Winding>> pieces;
+    for (std::unique_ptr<Winding> &strip : strips)
+    {
+        for (int j = 1; j < gridsizeB; j++)
+        {
+            vec_t dist = gridstartB + j * gridchopB;
+            WindingSplit split = strip->Split(plB->normal, dist);
 
-            if (!front || front->WindingOnPlaneSide(plA->normal, dist, epsilon) == SIDE_ON) // ended
+            if (!split.front || split.front->WindingOnPlaneSide(plB->normal, dist, epsilon) == SIDE_ON) // ended
             {
-                if (front)
-                {
-                    delete front;
-                    front = nullptr;
-                }
-                if (back)
-                {
-                    delete back;
-                    back = nullptr;
-                }
                 break;
             }
-            if (!back || back->WindingOnPlaneSide(plA->normal, dist, epsilon) == SIDE_ON) // didn't begin
+            if (!split.back || split.back->WindingOnPlaneSide(plB->normal, dist, epsilon) == SIDE_ON) // didn't begin
             {
-                if (front)
-                {
-                    delete front;
-                    front = nullptr;
-                }
-                if (back)
-                {
-                    delete back;
-                    back = nullptr;
-                }
                 continue;
             }
-
-            delete winding;
-            winding = nullptr;
-
-            windingArray[g_numwindings] = back;
-            g_numwindings++;
-            back = nullptr;
-
-            winding = front;
-            front = nullptr;
+            pieces.push_back(std::move(split.back));
+            strip = std::move(split.front);
         }
-
-        windingArray[g_numwindings] = winding;
-        g_numwindings++;
-        winding = nullptr;
+        pieces.push_back(std::move(strip));
     }
-
-    // cut by the direction of plane B
-    {
-        int numstrips = g_numwindings;
-        for (int i = 0; i < numstrips; i++)
-        {
-            Winding *strip = windingArray[i];
-            windingArray[i] = nullptr;
-
-            for (int j = 1; j < gridsizeB; j++)
-            {
-                Winding *front = nullptr;
-                Winding *back = nullptr;
-
-                vec_t dist = gridstartB + j * gridchopB;
-                strip->Clip(plB->normal, dist, &front, &back);
-
-                if (!front || front->WindingOnPlaneSide(plB->normal, dist, epsilon) == SIDE_ON) // ended
-                {
-                    if (front)
-                    {
-                        delete front;
-                        front = nullptr;
-                    }
-                    if (back)
-                    {
-                        delete back;
-                        back = nullptr;
-                    }
-                    break;
-                }
-                if (!back || back->WindingOnPlaneSide(plB->normal, dist, epsilon) == SIDE_ON) // didn't begin
-                {
-                    if (front)
-                    {
-                        delete front;
-                        front = nullptr;
-                    }
-                    if (back)
-                    {
-                        delete back;
-                        back = nullptr;
-                    }
-                    continue;
-                }
-
-                delete strip;
-                strip = nullptr;
-
-                windingArray[g_numwindings] = back;
-                g_numwindings++;
-                back = nullptr;
-
-                strip = front;
-                front = nullptr;
-            }
-
-            windingArray[g_numwindings] = strip;
-            g_numwindings++;
-            strip = nullptr;
-        }
-    }
-
-    delete patch->winding;
-    patch->winding = nullptr;
+    return pieces;
 }
 
 //      From patch, determine perpindicular grid planes to subdivide with (returned in planeA and planeB)
@@ -726,61 +648,46 @@ static void getGridPlanes(const patch_t *const p, dplane_t *const pl)
     }
 }
 
+// Replaces patch's winding with the first grid piece and makes a patch (a copy of this one) from each
+// other piece. The pieces go to the winding store; patch's old winding stays with its owner.
 static void SubdividePatch(patch_t *patch)
 {
     dplane_t planes[2];
     dplane_t *plA = &planes[0];
     dplane_t *plB = &planes[1];
 
-    std::memset(windingArray, 0, sizeof(windingArray));
-    g_numwindings = 0;
-
     getGridPlanes(patch, planes);
-    cutWindingWithGrid(patch, plA, plB);
+    std::vector<std::unique_ptr<Winding>> pieces = cutWindingWithGrid(patch, plA, plB);
 
-    unsigned x = 0;
     patch->next = nullptr;
-    Winding **winding = windingArray;
-    while (*winding == nullptr)
-    {
-        winding++;
-        x++;
-    }
-    patch->winding = *winding;
-    winding++;
-    x++;
+    patch->winding = s_patch_windings.emplace_back(std::move(pieces[0])).get();
     patch->area = patch->winding->getArea();
     patch->winding->getCenter(patch->origin);
     PlacePatchInside(patch);
     UpdateEmitterInfo(patch);
 
-    patch_t *new_patch = g_patches + g_num_patches;
-    for (; x < g_numwindings; x++, winding++)
+    for (std::size_t x = 1; x < pieces.size(); x++)
     {
-        if (*winding)
-        {
-            std::memcpy(new_patch, patch, sizeof(patch_t));
+        patch_t *new_patch = &s_patches.emplace_back(*patch); // s_patches has room for MAX_PATCHES: patch stays valid
 
-            new_patch->winding = *winding;
-            new_patch->area = new_patch->winding->getArea();
-            new_patch->winding->getCenter(new_patch->origin);
-            PlacePatchInside(new_patch);
-            UpdateEmitterInfo(new_patch);
+        new_patch->winding = s_patch_windings.emplace_back(std::move(pieces[x])).get();
+        new_patch->area = new_patch->winding->getArea();
+        new_patch->winding->getCenter(new_patch->origin);
+        PlacePatchInside(new_patch);
+        UpdateEmitterInfo(new_patch);
 
-            new_patch++;
-            g_num_patches++;
-            hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
-        }
+        g_num_patches++;
+        hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
     }
 
     // ATTENTION: We let SortPatches relink all the ->next correctly! instead of doing it here too which is somewhat complicated
 }
 
-vec_t *chopscales; //[nummiptex]
+static std::unique_ptr<vec_t[]> chopscales; //[nummiptex]
 static void ReadCustomChopValue()
 {
     int num = TextureLump().count();
-    chopscales = (vec_t *)std::malloc(num * sizeof(vec_t));
+    chopscales = std::make_unique_for_overwrite<vec_t[]>(num); // every entry is set below
     for (int i = 0; i < num; i++)
     {
         chopscales[i] = 1.0;
@@ -812,11 +719,13 @@ static vec_t ChopScaleForTexture(int facenum)
     return chopscales[g_texinfo[g_dfaces[facenum].texinfo].miptex];
 }
 
-vec_t *g_smoothvalues; //[nummiptex]
+vec_t *g_smoothvalues; //[nummiptex], a view of s_smoothvalues
+static std::unique_ptr<vec_t[]> s_smoothvalues;
 static void ReadCustomSmoothValue()
 {
     int num = TextureLump().count();
-    g_smoothvalues = (vec_t *)std::malloc(num * sizeof(vec_t));
+    s_smoothvalues = std::make_unique_for_overwrite<vec_t[]>(num); // every entry is set below
+    g_smoothvalues = s_smoothvalues.get();
     for (int i = 0; i < num; i++)
     {
         g_smoothvalues[i] = g_smoothing_threshold;
@@ -844,7 +753,8 @@ static void ReadCustomSmoothValue()
 static void ReadTranslucentTextures()
 {
     int num = TextureLump().count();
-    g_translucenttextures = (vec3_t *)std::malloc(num * sizeof(vec3_t));
+    s_translucenttextures = std::make_unique_for_overwrite<vec3_t[]>(num); // every entry is set below
+    g_translucenttextures = s_translucenttextures.get();
     for (int i = 0; i < num; i++)
     {
         VectorClear(g_translucenttextures[i]);
@@ -889,7 +799,8 @@ static void ReadTranslucentTextures()
     }
 }
 
-vec3_t *g_lightingconeinfo; //[nummiptex]
+vec3_t *g_lightingconeinfo; //[nummiptex], a view of s_lightingconeinfo
+static std::unique_ptr<vec3_t[]> s_lightingconeinfo;
 static vec_t DefaultScaleForPower(vec_t power)
 {
     // scale = Pi / Integrate [2 Pi * Sin [x] * Cos[x] ^ power, {x, 0, Pi / 2}]
@@ -900,7 +811,8 @@ static vec_t DefaultScaleForPower(vec_t power)
 static void ReadLightingCone()
 {
     int num = TextureLump().count();
-    g_lightingconeinfo = (vec3_t *)std::malloc(num * sizeof(vec3_t));
+    s_lightingconeinfo = std::make_unique_for_overwrite<vec3_t[]>(num); // every entry is set below
+    g_lightingconeinfo = s_lightingconeinfo.get();
     for (int i = 0; i < num; i++)
     {
         g_lightingconeinfo[i][0] = 1.0; // default power
@@ -1041,8 +953,8 @@ static vec_t getChop(const patch_t *const patch)
     return rval;
 }
 
-// Takes ownership of w: it becomes the patch's winding, or is deleted if the face gets no patch.
-static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyle) //LRC
+// w becomes the patch's winding (or its grid pieces do); it is dropped if the face gets no patch.
+static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style, int bouncestyle) //LRC
 {
     const dface_t *f = g_dfaces + fn;
 
@@ -1067,7 +979,6 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
 
         if (numpoints < 3) // WTF! (Actually happens in real-world maps too)
         {
-            delete w;
             return;
         }
         if (numpoints > MAX_POINTS_ON_WINDING)
@@ -1076,11 +987,10 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
             return;
         }
 
-        patch_t *patch = &g_patches[g_num_patches];
         hlassume(g_num_patches < MAX_PATCHES, assume_MAX_PATCHES);
-        std::memset(patch, 0, sizeof(patch_t));
+        patch_t *patch = &s_patches.emplace_back(); // zeroed
 
-        patch->winding = w;
+        patch->winding = w.get();
 
         patch->area = patch->winding->getArea();
         patch->winding->getCenter(patch->origin);
@@ -1227,28 +1137,20 @@ static void MakePatchForFace(const int fn, Winding *w, int style, int bouncestyl
                 }
             }
         }
-    }
-    else
-    {
-        delete w;
+        if (patch->winding == w.get()) // not subdivided
+        {
+            s_patch_windings.push_back(std::move(w));
+        }
     }
 }
 
 static void AddFaceToOpaqueList(
     int entitynum, int modelnum, const vec3_t origin, const vec3_t &transparency_scale, const bool transparency, int style, bool block)
 {
-    if (g_opaque_face_count == g_max_opaque_face_count)
     {
-        g_max_opaque_face_count += OPAQUE_ARRAY_GROWTH_SIZE;
-        g_opaque_face_list = (opaqueList_t *)realloc(g_opaque_face_list, sizeof(opaqueList_t) * g_max_opaque_face_count);
-
-        hlassume(g_opaque_face_list != nullptr, assume_NoMemory);
-    }
-
-    {
-        opaqueList_t *opaque = &g_opaque_face_list[g_opaque_face_count];
-
-        g_opaque_face_count++;
+        opaqueList_t *opaque = &s_opaque_face_list.emplace_back();
+        g_opaque_face_list = s_opaque_face_list.data();
+        g_opaque_face_count = s_opaque_face_list.size();
 
         if (transparency && style != -1)
         {
@@ -1267,16 +1169,9 @@ static void AddFaceToOpaqueList(
 
 static void FreeOpaqueFaceList()
 {
-    opaqueList_t *opaque = g_opaque_face_list;
-
-    for (unsigned x = 0; x < g_opaque_face_count; x++, opaque++)
-    {
-    }
-    std::free(g_opaque_face_list);
-
+    s_opaque_face_list = std::vector<opaqueList_t>();
     g_opaque_face_list = nullptr;
     g_opaque_face_count = 0;
-    g_max_opaque_face_count = 0;
 }
 
 static void LoadOpaqueEntities()
@@ -1401,9 +1296,7 @@ static entity_t *FindTexlightEntity(int facenum)
     const char *texname = GetTextureByNumber(face->texinfo);
     entity_t *faceent = g_face_entity[facenum];
     vec3_t centroid;
-    Winding *w = new Winding(*face);
-    w->getCenter(centroid);
-    delete w;
+    Winding(*face).getCenter(centroid);
     VectorAdd(centroid, g_face_offset[facenum], centroid);
 
     entity_t *found = nullptr;
@@ -1459,7 +1352,9 @@ static void MakePatches()
     Log("%i faces\n", g_numfaces);
 
     Log("Create Patches : ");
-    g_patches = (patch_t *)AllocBlock(MAX_PATCHES * sizeof(patch_t));
+    s_patches.clear();
+    s_patches.reserve(MAX_PATCHES); // patches are made through pointers to earlier ones: no reallocation
+    g_patches = s_patches.data();
 
     for (int i = 0; i < g_nummodels; i++)
     {
@@ -1578,12 +1473,12 @@ static void MakePatches()
             g_face_texlights[fn] = FindTexlightEntity(fn);
             g_face_lightmode[fn] = lightmode;
             dface_t *f = g_dfaces + fn;
-            Winding *w = new Winding(*f);
+            auto w = std::make_unique<Winding>(*f);
             for (unsigned int k = 0; k < w->m_NumPoints; k++)
             {
                 VectorAdd(w->m_Points[k], origin, w->m_Points[k]);
             }
-            MakePatchForFace(fn, w, style, bouncestyle); //LRC
+            MakePatchForFace(fn, std::move(w), style, bouncestyle); //LRC
         }
     }
 
@@ -1614,10 +1509,10 @@ static int CDECL patch_sorter(const void *p1, const void *p2)
 static void SortPatches()
 {
     // SortPatches is the ideal place to do this, because the address of the patches are going to be invalidated.
-    patch_t *old_patches = g_patches;
-    g_patches = (patch_t *)AllocBlock((g_num_patches + 1) * sizeof(patch_t)); // allocate one extra slot considering how terribly the code were written
-    std::memcpy(g_patches, old_patches, g_num_patches * sizeof(patch_t));
-    FreeBlock(old_patches);
+    std::vector<patch_t> sorted(s_patches.begin(), s_patches.begin() + g_num_patches);
+    sorted.emplace_back(); // one extra (zeroed) slot considering how terribly the code were written
+    s_patches = std::move(sorted); // also gives back the MAX_PATCHES reservation
+    g_patches = s_patches.data();
     qsort((void *)g_patches, (std::size_t)g_num_patches, sizeof(patch_t), patch_sorter);
 
     // Fixup g_face_patches & Fixup patch->next
@@ -1651,14 +1546,8 @@ static void SortPatches()
 
 static void FreePatches()
 {
-    patch_t *patch = g_patches;
-
-    for (unsigned x = 0; x < g_num_patches; x++, patch++)
-    {
-        delete patch->winding;
-    }
-    std::memset(g_patches, 0, sizeof(patch_t) * g_num_patches);
-    FreeBlock(g_patches);
+    s_patch_windings = std::vector<std::unique_ptr<Winding>>();
+    s_patches = std::vector<patch_t>();
     g_patches = nullptr;
 }
 
@@ -1721,9 +1610,9 @@ static void GatherLight(int /*threadnum*/)
 
         patch_t *patch = &g_patches[j];
 
-        transfer_data_t *tData = patch->tData;
-        transfer_index_t *tIndex = patch->tIndex;
-        unsigned iIndex = patch->iIndex;
+        const transfer_data_t *tData = g_patch_transfers[j].data.get();
+        const transfer_index_t *tIndex = g_patch_transfers[j].index.get();
+        unsigned iIndex = g_patch_transfers[j].iIndex;
 
         for (unsigned m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
         {
@@ -1867,9 +1756,9 @@ static void GatherRGBLight(int /*threadnum*/)
 
         patch_t *patch = &g_patches[j];
 
-        rgb_transfer_data_t *tRGBData = patch->tRGBData;
-        transfer_index_t *tIndex = patch->tIndex;
-        unsigned iIndex = patch->iIndex;
+        const rgb_transfer_data_t *tRGBData = g_patch_transfers[j].data.get();
+        const transfer_index_t *tIndex = g_patch_transfers[j].index.get();
+        unsigned iIndex = g_patch_transfers[j].iIndex;
 
         for (unsigned m = 0; m < MAXLIGHTMAPS && patch->totalstyle[m] != 255; m++)
         {
@@ -2046,6 +1935,7 @@ static void CheckMaxPatches()
 
 static void MakeScalesStub()
 {
+    g_patch_transfers = std::vector<patch_transfers_t>(g_num_patches); // each thread fills its patches' entries
     switch (g_method)
     {
     case eMethodVismatrix:
@@ -2062,26 +1952,7 @@ static void MakeScalesStub()
 
 static void FreeTransfers()
 {
-    patch_t *patch = g_patches;
-
-    for (unsigned x = 0; x < g_num_patches; x++, patch++)
-    {
-        if (patch->tData)
-        {
-            FreeBlock(patch->tData);
-            patch->tData = nullptr;
-        }
-        if (patch->tRGBData)
-        {
-            FreeBlock(patch->tRGBData);
-            patch->tRGBData = nullptr;
-        }
-        if (patch->tIndex)
-        {
-            FreeBlock(patch->tIndex);
-            patch->tIndex = nullptr;
-        }
-    }
+    g_patch_transfers = std::vector<patch_transfers_t>();
 }
 
 static void ExtendLightmapBuffer()
@@ -2148,18 +2019,15 @@ static void RadWorld()
         MakeScalesStub();
 
         // these arrays are only used in CollectLight, GatherLight and BounceLight
-        emitlight = (vec3_t(*)[MAXLIGHTMAPS])AllocBlock((g_num_patches + 1) * sizeof(vec3_t[MAXLIGHTMAPS]));
-        addlight = (vec3_t(*)[MAXLIGHTMAPS])AllocBlock((g_num_patches + 1) * sizeof(vec3_t[MAXLIGHTMAPS]));
-        newstyles = (unsigned char (*)[MAXLIGHTMAPS])AllocBlock((g_num_patches + 1) * sizeof(unsigned char[MAXLIGHTMAPS]));
+        emitlight = std::make_unique<vec3_t[][MAXLIGHTMAPS]>(g_num_patches + 1);
+        addlight = std::make_unique<vec3_t[][MAXLIGHTMAPS]>(g_num_patches + 1);
+        newstyles = std::make_unique<unsigned char[][MAXLIGHTMAPS]>(g_num_patches + 1);
         // spread light around
         BounceLight();
 
-        FreeBlock(emitlight);
-        emitlight = nullptr;
-        FreeBlock(addlight);
-        addlight = nullptr;
-        FreeBlock(newstyles);
-        newstyles = nullptr;
+        emitlight.reset();
+        addlight.reset();
+        newstyles.reset();
     }
 
     FreeTransfers();

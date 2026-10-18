@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <memory>
+#include <vector>
 
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
@@ -19,7 +21,8 @@ typedef struct tnode_s
     int pad;
 } tnode_t;
 
-static tnode_t *tnodes;
+static std::vector<tnode_t> s_tnodes;
+static tnode_t *tnodes; // s_tnodes.data()
 static tnode_t *tnode_p;
 
 // Converts the disk node structure into the efficient tracing structure
@@ -54,12 +57,9 @@ static void MakeTnode(const int nodenum)
 // Loads the node structure out of a .bsp file to be used for light occlusion
 void MakeTnodes(dmodel_t * /*bm*/)
 {
-    // 32 byte align the structs
-    tnodes = (tnode_t *)std::calloc((g_numnodes + 1), sizeof(tnode_t));
-
-    // The alignment doesn't have any effect at all. --vluzacn
-    int ofs = 31 - (int)(((uintptr_t)tnodes + (uintptr_t)31) & (uintptr_t)31);
-    tnodes = (tnode_t *)((byte *)tnodes + ofs);
+    // (this used to shift the array for 32-byte alignment, which had no effect at all --vluzacn)
+    s_tnodes.assign(g_numnodes + 1, tnode_t{});
+    tnodes = s_tnodes.data();
     tnode_p = tnodes;
 
     MakeTnode(0);
@@ -158,20 +158,20 @@ int TestLine(const vec3_t start, const vec3_t stop, vec_t *skyhit)
     return TestLine_r(0, start, stop, linecontent, skyhit);
 }
 
-typedef struct
+struct opaqueface_t
 {
-    Winding *winding;
+    std::unique_ptr<Winding> winding;
     dplane_t plane;
     int numedges;
-    dplane_t *edges;
+    std::unique_ptr<dplane_t[]> edges; // [numedges]
     int texinfo;
     bool tex_alphatest;
     vec_t tex_vecs[2][4];
     int tex_width;
     int tex_height;
     const byte *tex_canvas;
-} opaqueface_t;
-opaqueface_t *opaquefaces;
+};
+static std::unique_ptr<opaqueface_t[]> opaquefaces; // [g_numfaces]
 
 typedef struct opaquenode_s
 {
@@ -182,9 +182,10 @@ typedef struct opaquenode_s
     int firstface;
     int numfaces;
 } opaquenode_t;
-opaquenode_t *opaquenodes;
+static std::unique_ptr<opaquenode_t[]> opaquenodes; // [g_numnodes]
 
-opaquemodel_t *opaquemodels;
+opaquemodel_t *opaquemodels; // [g_nummodels], a view of s_opaquemodels
+static std::unique_ptr<opaquemodel_t[]> s_opaquemodels;
 
 static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
 {
@@ -201,8 +202,8 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
         return false;
     }
 
-    Winding *w = f->winding;
-    const Winding *w2 = f2->winding;
+    Winding *w = f->winding.get();
+    const Winding *w2 = f2->winding.get();
     const vec_t *pA, *pB, *pD, *p2A, *p2B, *p2D;
     int i, i2;
 
@@ -265,7 +266,7 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     }
     int side2 = (DotProduct(p2B, pl2.normal) - pl2.dist > ON_EPSILON) ? 1 : 0;
 
-    Winding *neww = new Winding(w->m_NumPoints + w2->m_NumPoints - 4 + side1 + side2);
+    auto neww = std::make_unique<Winding>(w->m_NumPoints + w2->m_NumPoints - 4 + side1 + side2);
     int j;
     int k = 0;
     for (j = (i + 2) % w->m_NumPoints; j != i; j = (j + 1) % w->m_NumPoints)
@@ -291,11 +292,9 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
     neww->RemoveColinearPoints();
     if (neww->m_NumPoints < 3) // Empty winding
     {
-        delete neww;
-        neww = nullptr;
+        neww.reset();
     }
-    delete f->winding;
-    f->winding = neww;
+    f->winding = std::move(neww);
     return true;
 }
 
@@ -309,8 +308,7 @@ static int MergeOpaqueFaces(int firstface, int numfaces)
         {
             if (TryMerge(&faces[i], &faces[j]))
             {
-                delete faces[j].winding;
-                faces[j].winding = nullptr;
+                faces[j].winding.reset();
                 j = -1;
                 continue;
             }
@@ -320,14 +318,14 @@ static int MergeOpaqueFaces(int firstface, int numfaces)
     {
         if (faces[i].winding)
         {
-            faces[j] = faces[i];
+            faces[j] = std::move(faces[i]);
             j++;
         }
     }
     int newnum = j;
     for (; j < numfaces; j++)
     {
-        std::memset(&faces[j], 0, sizeof(opaqueface_t));
+        faces[j] = opaqueface_t{};
     }
     return newnum;
 }
@@ -337,7 +335,7 @@ static void BuildFaceEdges(opaqueface_t *f)
     if (!f->winding)
         return;
     f->numedges = f->winding->m_NumPoints;
-    f->edges = (dplane_t *)std::calloc(f->numedges, sizeof(dplane_t));
+    f->edges = std::make_unique<dplane_t[]>(f->numedges);
     const vec_t *n = f->plane.normal;
     vec3_t e;
     for (int x = 0; x < f->winding->m_NumPoints; x++)
@@ -359,18 +357,18 @@ static void BuildFaceEdges(opaqueface_t *f)
 
 void CreateOpaqueNodes()
 {
-    opaquemodels = (opaquemodel_t *)std::calloc(g_nummodels, sizeof(opaquemodel_t));
-    opaquenodes = (opaquenode_t *)std::calloc(g_numnodes, sizeof(opaquenode_t));
-    opaquefaces = (opaqueface_t *)std::calloc(g_numfaces, sizeof(opaqueface_t));
+    s_opaquemodels = std::make_unique<opaquemodel_t[]>(g_nummodels);
+    opaquemodels = s_opaquemodels.get();
+    opaquenodes = std::make_unique<opaquenode_t[]>(g_numnodes);
+    opaquefaces = std::make_unique<opaqueface_t[]>(g_numfaces);
     for (int i = 0; i < g_numfaces; i++)
     {
         opaqueface_t *of = &opaquefaces[i];
         dface_t *df = &g_dfaces[i];
-        of->winding = new Winding(*df);
+        of->winding = std::make_unique<Winding>(*df);
         if (of->winding->m_NumPoints < 3)
         {
-            delete of->winding;
-            of->winding = nullptr;
+            of->winding.reset();
         }
         of->plane = g_dplanes[df->planenum];
         if (df->side)
@@ -391,7 +389,7 @@ void CreateOpaqueNodes()
         of->tex_alphatest = tex->name[0] == '{';
         of->tex_width = tex->width;
         of->tex_height = tex->height;
-        of->tex_canvas = tex->canvas;
+        of->tex_canvas = tex->canvas.get();
     }
     for (int i = 0; i < g_numnodes; i++)
     {
@@ -425,17 +423,10 @@ void CreateOpaqueNodes()
 
 void DeleteOpaqueNodes()
 {
-    for (int i = 0; i < g_numfaces; i++)
-    {
-        opaqueface_t *of = &opaquefaces[i];
-        if (of->winding)
-            delete of->winding;
-        if (of->edges)
-            std::free(of->edges);
-    }
-    std::free(opaquefaces);
-    std::free(opaquenodes);
-    std::free(opaquemodels);
+    opaquefaces.reset();
+    opaquenodes.reset();
+    s_opaquemodels.reset();
+    opaquemodels = nullptr;
 }
 
 static int TestLineOpaque_face(int facenum, const vec3_t hit)

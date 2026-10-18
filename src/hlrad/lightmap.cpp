@@ -1,7 +1,11 @@
+#include <algorithm>
+#include <array>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <vector>
 #include <cmath>
 
 #include "hlrad/hlrad.h"
@@ -19,40 +23,34 @@ vec3_t g_face_centroids[MAX_MAP_EDGES]; // BUG: should this be [MAX_MAP_FACES]?
 bool g_sky_lighting_fix = DEFAULT_SKY_LIGHTING_FIX;
 
 // PairEdges
-typedef struct
+struct intersecttest_t
 {
-    int numclipplanes;
-    dplane_t *clipplanes;
-} intersecttest_t;
+    std::vector<dplane_t> clipplanes;
+};
 
-static bool TestFaceIntersect(intersecttest_t *t, int facenum)
+static bool TestFaceIntersect(const intersecttest_t &t, int facenum)
 {
     dface_t *f2 = &g_dfaces[facenum];
-    Winding *w = new Winding(*f2);
-    for (int k = 0; k < w->m_NumPoints; k++)
+    Winding w(*f2);
+    for (int k = 0; k < w.m_NumPoints; k++)
     {
-        VectorAdd(w->m_Points[k], g_face_offset[facenum], w->m_Points[k]);
+        VectorAdd(w.m_Points[k], g_face_offset[facenum], w.m_Points[k]);
     }
-    for (int k = 0; k < t->numclipplanes; k++)
+    for (const dplane_t &plane : t.clipplanes)
     {
-        if (!w->Clip(t->clipplanes[k], false, ON_EPSILON * 4))
+        if (!w.Clip(plane, false, ON_EPSILON * 4))
         {
             break;
         }
     }
-    bool intersect = w->m_NumPoints > 0;
-    delete w;
-    return intersect;
+    return w.m_NumPoints > 0;
 }
 
-static intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
+static intersecttest_t CreateIntersectTest(const dplane_t *p, int facenum)
 {
     dface_t *f = &g_dfaces[facenum];
-    intersecttest_t *t = (intersecttest_t *)std::malloc(sizeof(intersecttest_t));
-    hlassume(t != nullptr, assume_NoMemory);
-    t->clipplanes = (dplane_t *)std::malloc(f->numedges * sizeof(dplane_t));
-    hlassume(t->clipplanes != nullptr, assume_NoMemory);
-    t->numclipplanes = 0;
+    intersecttest_t t;
+    t.clipplanes.reserve(f->numedges);
 
     for (int j = 0; j < f->numedges; j++)
     {
@@ -79,18 +77,12 @@ static intersecttest_t *CreateIntersectTest(const dplane_t *p, int facenum)
             {
                 continue;
             }
-            VectorCopy(normal, t->clipplanes[t->numclipplanes].normal);
-            t->clipplanes[t->numclipplanes].dist = DotProduct(v0, normal);
-            t->numclipplanes++;
+            dplane_t &plane = t.clipplanes.emplace_back(); // zeroed: type and the padding are not set
+            VectorCopy(normal, plane.normal);
+            plane.dist = DotProduct(v0, normal);
         }
     }
     return t;
-}
-
-static void FreeIntersectTest(intersecttest_t *t)
-{
-    std::free(t->clipplanes);
-    std::free(t);
 }
 
 static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int edgeend, int &edgeendnext, dface_t *const f, dface_t *&fnext, vec_t &angle, vec3_t &normal)
@@ -242,7 +234,7 @@ void PairEdges()
 {
     edgeshare_t *e;
 
-    std::memset(&g_edgeshare, 0, sizeof(g_edgeshare));
+    std::fill(std::begin(g_edgeshare), std::end(g_edgeshare), edgeshare_t{});
 
     dface_t *f = g_dfaces;
     for (int i = 0; i < g_numfaces; i++, f++)
@@ -368,8 +360,8 @@ void PairEdges()
             {
                 const dplane_t *p0 = getPlaneFromFace(e->faces[0]);
                 const dplane_t *p1 = getPlaneFromFace(e->faces[1]);
-                intersecttest_t *test0 = CreateIntersectTest(p0, e->faces[0] - g_dfaces);
-                intersecttest_t *test1 = CreateIntersectTest(p1, e->faces[1] - g_dfaces);
+                const intersecttest_t test0 = CreateIntersectTest(p0, e->faces[0] - g_dfaces);
+                const intersecttest_t test1 = CreateIntersectTest(p1, e->faces[1] - g_dfaces);
                 for (int edgeend = 0; edgeend < 2; edgeend++)
                 {
                     vec3_t errorpos;
@@ -427,20 +419,16 @@ void PairEdges()
                                 {
                                     in = true;
                                 }
-                                for (facelist_t *l = e->vertex_facelist[edgeend]; l; l = l->next)
+                                for (dface_t *face : e->vertex_faces[edgeend])
                                 {
-                                    if (fcurrent == l->face)
+                                    if (fcurrent == face)
                                     {
                                         in = true;
                                     }
                                 }
                                 if (!in)
                                 {
-                                    facelist_t *l = (facelist_t *)std::malloc(sizeof(facelist_t));
-                                    hlassume(l != nullptr, assume_NoMemory);
-                                    l->face = fcurrent;
-                                    l->next = e->vertex_facelist[edgeend];
-                                    e->vertex_facelist[edgeend] = l;
+                                    e->vertex_faces[edgeend].push_back(fcurrent);
                                 }
                             }
                             if (r != 0 || fnext == f)
@@ -458,8 +446,6 @@ void PairEdges()
                         VectorCopy(normals, e->vertex_normal[edgeend]);
                     }
                 }
-                FreeIntersectTest(test0);
-                FreeIntersectTest(test1);
             }
             if (e->coplanar)
             {
@@ -482,7 +468,7 @@ typedef enum
     WALLFLAG_SHADOWED = 0x4,
 } wallflag_t;
 
-typedef struct
+struct lightinfo_t
 {
     vec_t *light;
     vec_t facedist;
@@ -493,8 +479,8 @@ typedef struct
 
     int numsurfpt;
     vec3_t surfpt[MAX_SINGLEMAP];
-    vec3_t *surfpt_position; //[MAX_SINGLEMAP] // surfpt_position[] are valid positions for light tracing, while surfpt[] are positions for getting phong normal and doing patch interpolation
-    int *surfpt_surface;     //[MAX_SINGLEMAP] // the face that owns this position
+    std::unique_ptr<vec3_t[]> surfpt_position; //[MAX_SINGLEMAP] // surfpt_position[] are valid positions for light tracing, while surfpt[] are positions for getting phong normal and doing patch interpolation
+    std::unique_ptr<int[]> surfpt_surface;     //[MAX_SINGLEMAP] // the face that owns this position
     bool surfpt_lightoutside[MAX_SINGLEMAP];
 
     vec3_t texorg;
@@ -511,12 +497,12 @@ typedef struct
     int lmcache_density; // shared by both s and t direction
     int lmcache_offset;  // shared by both s and t direction
     int lmcache_side;
-    vec3_t (*lmcache)[ALLSTYLES]; // lm: short for lightmap // don't forget to free!
-    vec3_t *lmcache_normal;       // record the phong normals
-    int *lmcache_wallflags;       // wallflag_t
+    std::unique_ptr<vec3_t[][ALLSTYLES]> lmcache; // lm: short for lightmap
+    std::unique_ptr<vec3_t[]> lmcache_normal;     // record the phong normals
+    std::unique_ptr<int[]> lmcache_wallflags;     // wallflag_t
     int lmcachewidth;
     int lmcacheheight;
-} lightinfo_t;
+};
 
 static const char *TextureNameFromFace(const dface_t *const f)
 {
@@ -623,15 +609,13 @@ static void CalcFaceExtents(lightinfo_t *l)
         l->lmcache_offset = l->lmcache_side;
         l->lmcachewidth = l->texsize[0] * l->lmcache_density + 1 + 2 * l->lmcache_side;
         l->lmcacheheight = l->texsize[1] * l->lmcache_density + 1 + 2 * l->lmcache_side;
-        l->lmcache = (vec3_t(*)[ALLSTYLES])std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
-        hlassume(l->lmcache != nullptr, assume_NoMemory);
-        l->lmcache_normal = (vec3_t *)std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t));
-        hlassume(l->lmcache_normal != nullptr, assume_NoMemory);
-        l->lmcache_wallflags = (int *)std::malloc(l->lmcachewidth * l->lmcacheheight * sizeof(int));
-        hlassume(l->lmcache_wallflags != nullptr, assume_NoMemory);
-        l->surfpt_position = (vec3_t *)std::malloc(MAX_SINGLEMAP * sizeof(vec3_t));
-        l->surfpt_surface = (int *)std::malloc(MAX_SINGLEMAP * sizeof(int));
-        hlassume(l->surfpt_position != nullptr && l->surfpt_surface != nullptr, assume_NoMemory);
+        // uninitialized, as malloc left them: each is written before it is read
+        const int lmcachesize = l->lmcachewidth * l->lmcacheheight;
+        l->lmcache = std::make_unique_for_overwrite<vec3_t[][ALLSTYLES]>(lmcachesize);
+        l->lmcache_normal = std::make_unique_for_overwrite<vec3_t[]>(lmcachesize);
+        l->lmcache_wallflags = std::make_unique_for_overwrite<int[]>(lmcachesize);
+        l->surfpt_position = std::make_unique_for_overwrite<vec3_t[]>(MAX_SINGLEMAP);
+        l->surfpt_surface = std::make_unique_for_overwrite<int[]>(MAX_SINGLEMAP);
     }
 }
 
@@ -664,16 +648,15 @@ static void CalcFaceVectors(lightinfo_t *l)
 
         ThreadLock();
         Log("Malformed face (%d) normal @ \n", facenum);
-        Winding *w = new Winding(*l->face);
+        Winding w(*l->face);
         {
-            const unsigned numpoints = w->m_NumPoints;
+            const unsigned numpoints = w.m_NumPoints;
             for (unsigned x = 0; x < numpoints; x++)
             {
-                VectorAdd(w->m_Points[x], g_face_offset[facenum], w->m_Points[x]);
+                VectorAdd(w.m_Points[x], g_face_offset[facenum], w.m_Points[x]);
             }
         }
-        w->Print();
-        delete w;
+        w.Print();
         ThreadUnlock();
 
         hlassume(false, assume_MalformedTextureFace);
@@ -774,10 +757,10 @@ typedef struct
     dplane_t planes[4];
 } samplefragrect_t;
 
-typedef struct samplefrag_s
+struct samplefrag_t
 {
-    samplefrag_s *next;       // since this is a node in a list
-    samplefrag_s *parentfrag; // where it grew from
+    samplefrag_t *next;       // since this is a node in a list (owned by samplefraginfo_t::frags)
+    samplefrag_t *parentfrag; // where it grew from
     samplefragedge_t *parentedge;
     int facenum; // facenum
 
@@ -792,21 +775,22 @@ typedef struct samplefrag_s
     samplefragrect_t rect;   // original rectangle that forms the boundary
     samplefragrect_t myrect; // relative to the texture coordinate on that face
 
-    Winding *winding;      // a fragment of the original rectangle in the texture coordinate plane; windings of different frags should not overlap
-    dplane_t windingplane; // normal = (0,0,1) or (0,0,-1); if this normal is wrong, point_in_winding() will never return true
-    Winding *mywinding;    // relative to the texture coordinate on that face
+    std::unique_ptr<Winding> winding;   // a fragment of the original rectangle in the texture coordinate plane; windings of different frags should not overlap
+    dplane_t windingplane;              // normal = (0,0,1) or (0,0,-1); if this normal is wrong, point_in_winding() will never return true
+    std::unique_ptr<Winding> mywinding; // relative to the texture coordinate on that face
     dplane_t mywindingplane;
 
-    int numedges;            // # of candicates for the next growth
-    samplefragedge_t *edges; // candicates for the next growth
-} samplefrag_t;
+    int numedges;                               // # of candicates for the next growth
+    std::unique_ptr<samplefragedge_t[]> edges; // candicates for the next growth
+};
 
-typedef struct
+struct samplefraginfo_t
 {
     int maxsize;
     int size;
-    samplefrag_t *head;
-} samplefraginfo_t;
+    samplefrag_t *head; // newest first
+    std::vector<std::unique_ptr<samplefrag_t>> frags;
+};
 
 static void ChopFrag(samplefrag_t *frag)
 // fill winding, windingplane, mywinding, mywindingplane, numedges, edges
@@ -816,13 +800,13 @@ static void ChopFrag(samplefrag_t *frag)
     const vec3_t v_up = {0, 0, 1};
 
     dface_t *f = &g_dfaces[frag->facenum];
-    Winding *facewinding = new Winding(*f);
+    const Winding facewinding(*f);
 
     TranslateWorldToTex(frag->facenum, worldtotex);
-    frag->mywinding = new Winding(facewinding->m_NumPoints);
-    for (int x = 0; x < facewinding->m_NumPoints; x++)
+    frag->mywinding = std::make_unique<Winding>(facewinding.m_NumPoints);
+    for (int x = 0; x < facewinding.m_NumPoints; x++)
     {
-        ApplyMatrix(worldtotex, facewinding->m_Points[x], frag->mywinding->m_Points[x]);
+        ApplyMatrix(worldtotex, facewinding.m_Points[x], frag->mywinding->m_Points[x]);
         frag->mywinding->m_Points[x][2] = 0.0;
     }
     frag->mywinding->RemoveColinearPoints();
@@ -838,7 +822,7 @@ static void ChopFrag(samplefrag_t *frag)
         frag->mywinding->Clip(frag->myrect.planes[x], false);
     }
 
-    frag->winding = new Winding(frag->mywinding->m_NumPoints);
+    frag->winding = std::make_unique<Winding>(frag->mywinding->m_NumPoints);
     for (int x = 0; x < frag->mywinding->m_NumPoints; x++)
     {
         ApplyMatrix(frag->mycoordtocoord, frag->mywinding->m_Points[x], frag->winding->m_Points[x]);
@@ -851,12 +835,9 @@ static void ChopFrag(samplefrag_t *frag)
     }
     frag->windingplane.dist = 0.0;
 
-    delete facewinding;
-
     // find the edges where the fragment can grow in the future
     frag->numedges = 0;
-    frag->edges = (samplefragedge_t *)std::malloc(f->numedges * sizeof(samplefragedge_t));
-    hlassume(frag->edges != nullptr, assume_NoMemory);
+    frag->edges = std::make_unique_for_overwrite<samplefragedge_t[]>(f->numedges);
     for (int i = 0; i < f->numedges; i++)
     {
 
@@ -968,11 +949,10 @@ static void ChopFrag(samplefrag_t *frag)
     }
 }
 
-static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *parent, samplefragedge_t *edge)
+// A new fragment, or nullptr if it would be empty or overlap one in info.
+static std::unique_ptr<samplefrag_t> GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *parent, samplefragedge_t *edge)
 {
-
-    samplefrag_t *frag = (samplefrag_t *)std::malloc(sizeof(samplefrag_t));
-    hlassume(frag != nullptr, assume_NoMemory);
+    auto frag = std::make_unique<samplefrag_t>();
 
     // some basic info
     frag->next = nullptr;
@@ -1000,7 +980,6 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
         double len = VectorLength(frag->myrect.planes[x].normal);
         if (!len) // couldn't translate sample boundaries on face
         {
-            std::free(frag);
             return nullptr;
         }
         VectorScale(frag->myrect.planes[x].normal, 1 / len, frag->myrect.planes[x].normal);
@@ -1008,23 +987,18 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
     }
 
     // chop windings and edges
-    ChopFrag(frag);
+    ChopFrag(frag.get());
 
     if (frag->winding->m_NumPoints == 0 || frag->mywinding->m_NumPoints == 0)
     {
         // empty
-        delete frag->mywinding;
-        delete frag->winding;
-        std::free(frag->edges);
-        std::free(frag);
         return nullptr;
     }
 
     // do overlap test
 
     bool overlap = false;
-    dplane_t *clipplanes = (dplane_t *)std::malloc(frag->winding->m_NumPoints * sizeof(dplane_t));
-    hlassume(clipplanes != nullptr, assume_NoMemory);
+    std::vector<dplane_t> clipplanes(frag->winding->m_NumPoints);
     int numclipplanes = 0;
     for (int x = 0; x < frag->winding->m_NumPoints; x++)
     {
@@ -1040,25 +1014,19 @@ static samplefrag_t *GrowSingleFrag(const samplefraginfo_t *info, samplefrag_t *
     }
     for (samplefrag_t *f2 = info->head; f2 && !overlap; f2 = f2->next)
     {
-        Winding *w = new Winding(*f2->winding);
-        for (int x = 0; x < numclipplanes && w->m_NumPoints > 0; x++)
+        Winding w(*f2->winding);
+        for (int x = 0; x < numclipplanes && w.m_NumPoints > 0; x++)
         {
-            w->Clip(clipplanes[x], false, 4 * ON_EPSILON);
+            w.Clip(clipplanes[x], false, 4 * ON_EPSILON);
         }
-        if (w->m_NumPoints > 0)
+        if (w.m_NumPoints > 0)
         {
             overlap = true;
         }
-        delete w;
     }
-    std::free(clipplanes);
     if (overlap)
     {
         // in the original texture plane, this fragment overlaps with some existing fragments
-        delete frag->mywinding;
-        delete frag->winding;
-        std::free(frag->edges);
-        std::free(frag);
         return nullptr;
     }
 
@@ -1071,7 +1039,7 @@ static bool FindBestEdge(samplefraginfo_t *info, samplefrag_t *&bestfrag, sample
 
     for (samplefrag_t *f = info->head; f; f = f->next)
     {
-        for (samplefragedge_t *e = f->edges; e < f->edges + f->numedges; e++)
+        for (samplefragedge_t *e = f->edges.get(); e < f->edges.get() + f->numedges; e++)
         {
             if (e->tried)
             {
@@ -1117,19 +1085,18 @@ static bool FindBestEdge(samplefraginfo_t *info, samplefrag_t *&bestfrag, sample
     return found;
 }
 
-static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
-                                          const vec_t square[2][2],
-                                          int maxsize)
+static samplefraginfo_t CreateSampleFrag(int facenum, vec_t s, vec_t t,
+                                         const vec_t square[2][2],
+                                         int maxsize)
 {
     const vec3_t v_s = {1, 0, 0};
     const vec3_t v_t = {0, 1, 0};
 
-    samplefraginfo_t *info = (samplefraginfo_t *)std::malloc(sizeof(samplefraginfo_t));
-    hlassume(info != nullptr, assume_NoMemory);
+    samplefraginfo_t fraginfo;
+    samplefraginfo_t *info = &fraginfo;
     info->maxsize = maxsize;
     info->size = 1;
-    info->head = (samplefrag_t *)std::malloc(sizeof(samplefrag_t));
-    hlassume(info->head != nullptr, assume_NoMemory);
+    info->head = info->frags.emplace_back(std::make_unique<samplefrag_t>()).get();
 
     info->head->next = nullptr;
     info->head->parentfrag = nullptr;
@@ -1162,17 +1129,14 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
     if (info->head->winding->m_NumPoints == 0 || info->head->mywinding->m_NumPoints == 0)
     {
         // empty
-        delete info->head->mywinding;
-        delete info->head->winding;
-        std::free(info->head->edges);
-        std::free(info->head);
+        info->frags.clear();
         info->head = nullptr;
         info->size = 0;
     }
     else
     {
         // prune edges
-        for (samplefragedge_t *e = info->head->edges; e < info->head->edges + info->head->numedges; e++)
+        for (samplefragedge_t *e = info->head->edges.get(); e < info->head->edges.get() + info->head->numedges; e++)
         {
             if (e->nextfacenum == info->head->facenum)
             {
@@ -1191,18 +1155,19 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
             break;
         }
 
-        samplefrag_t *newfrag = GrowSingleFrag(info, bestfrag, bestedge);
+        std::unique_ptr<samplefrag_t> grown = GrowSingleFrag(info, bestfrag, bestedge);
         bestedge->tried = true;
 
-        if (newfrag)
+        if (grown)
         {
+            samplefrag_t *newfrag = info->frags.emplace_back(std::move(grown)).get();
             newfrag->next = info->head;
             info->head = newfrag;
             info->size++;
 
             for (samplefrag_t *f = info->head; f; f = f->next)
             {
-                for (samplefragedge_t *e = newfrag->edges; e < newfrag->edges + newfrag->numedges; e++)
+                for (samplefragedge_t *e = newfrag->edges.get(); e < newfrag->edges.get() + newfrag->numedges; e++)
                 {
                     if (e->nextfacenum == f->facenum)
                     {
@@ -1212,7 +1177,7 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
             }
             for (samplefrag_t *f = info->head; f; f = f->next)
             {
-                for (samplefragedge_t *e = f->edges; e < f->edges + f->numedges; e++)
+                for (samplefragedge_t *e = f->edges.get(); e < f->edges.get() + f->numedges; e++)
                 {
                     if (e->nextfacenum == newfrag->facenum)
                     {
@@ -1223,21 +1188,7 @@ static samplefraginfo_t *CreateSampleFrag(int facenum, vec_t s, vec_t t,
         }
     }
 
-    return info;
-}
-
-static void DeleteSampleFrag(samplefraginfo_t *fraginfo)
-{
-    while (fraginfo->head)
-    {
-        samplefrag_t *f = fraginfo->head;
-        fraginfo->head = f->next;
-        delete f->mywinding;
-        delete f->winding;
-        std::free(f->edges);
-        std::free(f);
-    }
-    std::free(fraginfo);
+    return fraginfo;
 }
 
 static light_flag_t SetSampleFromST(vec_t *const point,
@@ -1254,7 +1205,7 @@ static light_flag_t SetSampleFromST(vec_t *const point,
     dface_t *face = l->face;
     const dplane_t *faceplane = getPlaneFromFace(face);
 
-    samplefraginfo_t *fraginfo = CreateSampleFrag(facenum, original_s, original_t,
+    const samplefraginfo_t fraginfo = CreateSampleFrag(facenum, original_s, original_t,
                                                   square,
                                                   100);
 
@@ -1265,14 +1216,14 @@ static light_flag_t SetSampleFromST(vec_t *const point,
     bool best_nudged;
 
     bool found = false;
-    for (samplefrag_t *f = fraginfo->head; f; f = f->next)
+    for (samplefrag_t *f = fraginfo.head; f; f = f->next)
     {
         vec3_t pos;
         vec_t s, t;
         vec_t dist;
 
         bool nudged_one;
-        if (!FindNearestPosition(f->facenum, f->mywinding, f->myorigin[0], f->myorigin[1], pos, &s, &t, &dist, &nudged_one))
+        if (!FindNearestPosition(f->facenum, f->mywinding.get(), f->myorigin[0], f->myorigin[1], pos, &s, &t, &dist, &nudged_one))
         {
             continue;
         }
@@ -1323,13 +1274,12 @@ static light_flag_t SetSampleFromST(vec_t *const point,
             const unsigned facenum = bestfrag->facenum;
             ThreadLock();
             Log("Malformed face (%d) normal @ \n", facenum);
-            Winding *w = new Winding(g_dfaces[facenum]);
-            for (int x = 0; x < w->m_NumPoints; x++)
+            Winding w(g_dfaces[facenum]);
+            for (int x = 0; x < w.m_NumPoints; x++)
             {
-                VectorAdd(w->m_Points[x], g_face_offset[facenum], w->m_Points[x]);
+                VectorAdd(w.m_Points[x], g_face_offset[facenum], w.m_Points[x]);
             }
-            w->Print();
-            delete w;
+            w.Print();
             ThreadUnlock();
             hlassume(false, assume_MalformedTextureFace);
         }
@@ -1362,7 +1312,6 @@ static light_flag_t SetSampleFromST(vec_t *const point,
         LuxelFlag = LightOutside;
     }
 
-    DeleteSampleFrag(fraginfo);
 
     return LuxelFlag;
 }
@@ -1478,13 +1427,20 @@ typedef struct
     int surface; // this sample can grow into another face
 } sample_t;
 
-typedef struct
+struct facelight_t
 {
     int numsamples;
-    sample_t *samples[MAXLIGHTMAPS];
-} facelight_t;
+    std::unique_ptr<sample_t[]> samples[MAXLIGHTMAPS]; // [numsamples], for each of the face's styles
+};
 
-static directlight_t *directlights[MAX_MAP_LEAFS];
+static directlight_t *directlights[MAX_MAP_LEAFS];                 // per-leaf lists
+static std::vector<std::unique_ptr<directlight_t>> s_directlight_store; // owns every light in them
+
+// A zeroed light, owned by the store.
+static directlight_t *NewDirectLight()
+{
+    return s_directlight_store.emplace_back(std::make_unique<directlight_t>()).get();
+}
 static facelight_t facelight[MAX_MAP_FACES];
 static int numdlights;
 
@@ -1517,9 +1473,7 @@ void CreateDirectLights()
             DotProduct(p->baselight, p->texturereflectivity) / 3 > 0.0 && !(g_face_texlights[p->faceNumber] && *ValueForKey(g_face_texlights[p->faceNumber], "_scale") && FloatForKey(g_face_texlights[p->faceNumber], "_scale") <= 0)) //LRC
         {
             numdlights++;
-            dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
-
-            hlassume(dl != nullptr, assume_NoMemory);
+            dl = NewDirectLight();
 
             VectorCopy(p->origin, dl->origin);
 
@@ -1585,9 +1539,8 @@ void CreateDirectLights()
             {
                 directlight_t *dl2;
                 numdlights++;
-                dl2 = (directlight_t *)std::calloc(1, sizeof(directlight_t));
-                hlassume(dl2 != nullptr, assume_NoMemory);
-                *dl2 = *dl;
+                dl2 = NewDirectLight();
+                static_cast<directlight_fields_t &>(*dl2) = *dl; // a texture light: no sun normals
                 VectorMA(dl->origin, -2, dl->normal, dl2->origin);
                 VectorSubtract(vec3_origin, dl->normal, dl2->normal);
                 leaf = PointInLeaf(dl2->origin);
@@ -1643,9 +1596,7 @@ void CreateDirectLights()
         }
 
         numdlights++;
-        dl = (directlight_t *)std::calloc(1, sizeof(directlight_t));
-
-        hlassume(dl != nullptr, assume_NoMemory);
+        dl = NewDirectLight();
 
         GetVectorForKey(e, "origin", dl->origin);
 
@@ -1921,10 +1872,8 @@ void CreateDirectLights()
                             Error("collect spread normals: internal error: can not collect enough normals.");
                         }
                         dl->numsunnormals = count;
-                        dl->sunnormals = (vec3_t *)std::malloc(count * sizeof(vec3_t));
-                        dl->sunnormalweights = (vec_t *)std::malloc(count * sizeof(vec_t));
-                        hlassume(dl->sunnormals != nullptr, assume_NoMemory);
-                        hlassume(dl->sunnormalweights != nullptr, assume_NoMemory);
+                        dl->sunnormals = std::make_unique_for_overwrite<vec3_t[]>(count);
+                        dl->sunnormalweights = std::make_unique_for_overwrite<vec_t[]>(count);
                         for (count = 0, i = 0; i < g_numskynormals[SUNSPREAD_SKYLEVEL]; i++)
                         {
                             vec3_t &testnormal = g_skynormals[SUNSPREAD_SKYLEVEL][i];
@@ -1960,10 +1909,8 @@ void CreateDirectLights()
                 else
                 {
                     dl->numsunnormals = 1;
-                    dl->sunnormals = (vec3_t *)std::malloc(sizeof(vec3_t));
-                    dl->sunnormalweights = (vec_t *)std::malloc(sizeof(vec_t));
-                    hlassume(dl->sunnormals != nullptr, assume_NoMemory);
-                    hlassume(dl->sunnormalweights != nullptr, assume_NoMemory);
+                    dl->sunnormals = std::make_unique_for_overwrite<vec3_t[]>(1);
+                    dl->sunnormalweights = std::make_unique_for_overwrite<vec_t[]>(1);
                     VectorCopy(dl->normal, dl->sunnormals[0]);
                     dl->sunnormalweights[0] = 1.0;
                 }
@@ -2077,12 +2024,8 @@ void CreateDirectLights()
                 }
             }
         }
-        while ((dl = directlights[0]) != nullptr)
-        {
-            // since they are in leaf 0, they won't emit a light anyway
-            directlights[0] = dl->next;
-            std::free(dl);
-        }
+        // since the lights already in leaf 0 won't emit a light anyway, they are dropped from the list (the
+        // store frees them with the others)
         directlights[0] = skylights;
     }
     if (g_sky_lighting_fix)
@@ -2114,16 +2057,9 @@ void DeleteDirectLights()
 {
     for (int l = 0; l < 1 + g_dmodels[0].visleafs; l++)
     {
-        directlight_t *dl = directlights[l];
-        while (dl)
-        {
-            directlights[l] = dl->next;
-            std::free(dl->sunnormals);
-            std::free(dl->sunnormalweights);
-            std::free(dl);
-            dl = directlights[l];
-        }
+        directlights[l] = nullptr;
     }
+    s_directlight_store = std::vector<std::unique_ptr<directlight_t>>();
 
     // AJM: todo: strip light entities out at this point
     // vluzacn: hlvis and hlrad must not modify entity data, because the following procedures are supposed to produce the same bsp file:
@@ -2134,8 +2070,10 @@ void DeleteDirectLights()
 
 // GatherSampleLight
 int g_numskynormals[SKYLEVELMAX + 1];
-vec3_t *g_skynormals[SKYLEVELMAX + 1];
-vec_t *g_skynormalsizes[SKYLEVELMAX + 1];
+vec3_t *g_skynormals[SKYLEVELMAX + 1];   // views of s_skynormals
+vec_t *g_skynormalsizes[SKYLEVELMAX + 1]; // views of s_skynormalsizes
+static std::unique_ptr<vec3_t[]> s_skynormals[SKYLEVELMAX + 1];
+static std::unique_ptr<vec_t[]> s_skynormalsizes[SKYLEVELMAX + 1];
 typedef double point_t[3];
 typedef struct
 {
@@ -2155,8 +2093,10 @@ static void CopyToSkynormals(int skylevel, int numpoints, point_t *points, int n
     hlassume(numedges == (1 << (2 * skylevel)) * 4 - 4, assume_first);
     hlassume(numtriangles == (1 << (2 * skylevel)) * 2, assume_first);
     g_numskynormals[skylevel] = numpoints;
-    g_skynormals[skylevel] = (vec3_t *)std::malloc(numpoints * sizeof(vec3_t));
-    g_skynormalsizes[skylevel] = (vec_t *)std::malloc(numpoints * sizeof(vec_t));
+    s_skynormals[skylevel] = std::make_unique_for_overwrite<vec3_t[]>(numpoints);
+    s_skynormalsizes[skylevel] = std::make_unique_for_overwrite<vec_t[]>(numpoints);
+    g_skynormals[skylevel] = s_skynormals[skylevel].get();
+    g_skynormalsizes[skylevel] = s_skynormalsizes[skylevel].get();
     hlassume(g_skynormals[skylevel] != nullptr, assume_NoMemory);
     hlassume(g_skynormalsizes[skylevel] != nullptr, assume_NoMemory);
 
@@ -2194,8 +2134,8 @@ void BuildDiffuseNormals()
     g_skynormals[0] = nullptr; //don't use this
     g_skynormalsizes[0] = nullptr;
     int numpoints = 6;
-    point_t *points = (point_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) + 2) * sizeof(point_t));
-    hlassume(points != nullptr, assume_NoMemory);
+    const auto pointstorage = std::make_unique<point_t[]>(((1 << (2 * SKYLEVELMAX)) + 2));
+    point_t *points = pointstorage.get();
     points[0][0] = 1, points[0][1] = 0, points[0][2] = 0;
     points[1][0] = -1, points[1][1] = 0, points[1][2] = 0;
     points[2][0] = 0, points[2][1] = 1, points[2][2] = 0;
@@ -2203,8 +2143,8 @@ void BuildDiffuseNormals()
     points[4][0] = 0, points[4][1] = 0, points[4][2] = 1;
     points[5][0] = 0, points[5][1] = 0, points[5][2] = -1;
     int numedges = 12;
-    edge_t *edges = (edge_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) * 4 - 4) * sizeof(edge_t));
-    hlassume(edges != nullptr, assume_NoMemory);
+    std::vector<edge_t> edgestorage(((1 << (2 * SKYLEVELMAX)) * 4 - 4));
+    edge_t *edges = edgestorage.data();
     edges[0].point[0] = 0, edges[0].point[1] = 2, edges[0].divided = false;
     edges[1].point[0] = 2, edges[1].point[1] = 1, edges[1].divided = false;
     edges[2].point[0] = 1, edges[2].point[1] = 3, edges[2].divided = false;
@@ -2218,8 +2158,8 @@ void BuildDiffuseNormals()
     edges[10].point[0] = 5, edges[10].point[1] = 1, edges[10].divided = false;
     edges[11].point[0] = 1, edges[11].point[1] = 4, edges[11].divided = false;
     int numtriangles = 8;
-    triangle_t *triangles = (triangle_t *)std::malloc(((1 << (2 * SKYLEVELMAX)) * 2) * sizeof(triangle_t));
-    hlassume(triangles != nullptr, assume_NoMemory);
+    std::vector<triangle_t> trianglestorage(((1 << (2 * SKYLEVELMAX)) * 2));
+    triangle_t *triangles = trianglestorage.data();
     triangles[0].edge[0] = 0, triangles[0].dir[0] = 0, triangles[0].edge[1] = 4, triangles[0].dir[1] = 0, triangles[0].edge[2] = 8, triangles[0].dir[2] = 0;
     triangles[1].edge[0] = 1, triangles[1].dir[0] = 0, triangles[1].edge[1] = 11, triangles[1].dir[1] = 0, triangles[1].edge[2] = 4, triangles[1].dir[2] = 1;
     triangles[2].edge[0] = 2, triangles[2].dir[0] = 0, triangles[2].edge[1] = 5, triangles[2].dir[1] = 1, triangles[2].edge[2] = 11, triangles[2].dir[2] = 1;
@@ -2289,9 +2229,6 @@ void BuildDiffuseNormals()
         }
         CopyToSkynormals(i + 1, numpoints, points, numedges, edges, numtriangles, triangles);
     }
-    std::free(points);
-    std::free(edges);
-    std::free(triangles);
 }
 
 static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec3_t normal, vec3_t *sample, byte *styles, int step, int miptex, int texlightgap_surfacenum)
@@ -2757,23 +2694,22 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
     {
         numtexwindings++;
     }
-    Winding **texwindings = (Winding **)std::malloc(numtexwindings * sizeof(Winding *));
-    hlassume(texwindings != nullptr, assume_NoMemory);
+    std::vector<Winding> texwindings;
+    texwindings.reserve(numtexwindings);
 
     // translate world winding into winding in s,t plane
     for (j = 0, patch = g_face_patches[facenum]; j < numtexwindings; j++, patch = patch->next)
     {
-        Winding *w = new Winding(patch->winding->m_NumPoints);
-        for (int x = 0; x < w->m_NumPoints; x++)
+        Winding &w = texwindings.emplace_back(patch->winding->m_NumPoints);
+        for (int x = 0; x < w.m_NumPoints; x++)
         {
             vec_t s, t;
             SetSTFromSurf(l, patch->winding->m_Points[x], s, t);
-            w->m_Points[x][0] = s;
-            w->m_Points[x][1] = t;
-            w->m_Points[x][2] = 0.0;
+            w.m_Points[x][0] = s;
+            w.m_Points[x][1] = t;
+            w.m_Points[x][2] = 0.0;
         }
-        w->RemoveColinearPoints();
-        texwindings[j] = w;
+        w.RemoveColinearPoints();
     }
 
     for (int i = 0; i < l->numsurfpt; i++)
@@ -2799,18 +2735,18 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
         // clip each patch
         for (j = 0, patch = g_face_patches[facenum]; j < numtexwindings; j++, patch = patch->next)
         {
-            Winding *w = new Winding(*texwindings[j]);
+            Winding w(texwindings[j]);
             for (k = 0; k < 4; k++)
             {
-                if (w->m_NumPoints)
+                if (w.m_NumPoints)
                 {
-                    w->Clip(clipplanes[k], false);
+                    w.Clip(clipplanes[k], false);
                 }
             }
-            if (w->m_NumPoints)
+            if (w.m_NumPoints)
             {
                 // add sample to patch
-                vec_t area = w->getArea() / (TEXTURE_STEP * TEXTURE_STEP);
+                vec_t area = w.getArea() / (TEXTURE_STEP * TEXTURE_STEP);
                 patch->samples += area;
                 for (int m = 0; m < ALLSTYLES && styles[m] != 255; m++)
                 {
@@ -2842,15 +2778,8 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
                     }
                 }
             }
-            delete w;
         }
     }
-
-    for (j = 0; j < numtexwindings; j++)
-    {
-        delete texwindings[j];
-    }
-    std::free(texwindings);
 }
 
 void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal)
@@ -3019,7 +2948,7 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
     byte pvs2[(MAX_MAP_LEAFS + 7) / 8];
     int lastoffset2;
 
-    std::memset(l->lmcache, 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
+    std::memset(l->lmcache.get(), 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
 
     // for each sample whose light we need to calculate
     for (int i = 0; i < l->lmcachewidth * l->lmcacheheight; i++)
@@ -3118,20 +3047,18 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
             if (l->translucent_b)
             {
                 const dplane_t *surfaceplane = getPlaneFromFaceNumber(surface);
-                Winding *surfacewinding = new Winding(g_dfaces[surface]);
+                Winding surfacewinding(g_dfaces[surface]);
 
                 VectorCopy(spot, spot2);
-                for (int x = 0; x < surfacewinding->m_NumPoints; x++)
+                for (int x = 0; x < surfacewinding.m_NumPoints; x++)
                 {
-                    VectorAdd(surfacewinding->m_Points[x], g_face_offset[surface], surfacewinding->m_Points[x]);
+                    VectorAdd(surfacewinding.m_Points[x], g_face_offset[surface], surfacewinding.m_Points[x]);
                 }
-                if (!point_in_winding_noedge(*surfacewinding, *surfaceplane, spot2, 0.2))
+                if (!point_in_winding_noedge(surfacewinding, *surfaceplane, spot2, 0.2))
                 {
-                    snap_to_winding_noedge(*surfacewinding, *surfaceplane, spot2, 0.2, 4 * 0.2);
+                    snap_to_winding_noedge(surfacewinding, *surfaceplane, spot2, 0.2, 4 * 0.2);
                 }
                 VectorMA(spot2, -(g_translucentdepth + 2 * DEFAULT_HUNT_OFFSET), surfaceplane->normal, spot2);
-
-                delete surfacewinding;
             }
             *wallflags_out = WALLFLAG_NONE;
             if (blocked)
@@ -3235,8 +3162,8 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
 void BuildFacelights(const int facenum)
 {
     unsigned char f_styles[ALLSTYLES];
-    sample_t *fl_samples[ALLSTYLES];
-    lightinfo_t l;
+    sample_t *fl_samples[ALLSTYLES]; // views into fl_storage
+    lightinfo_t l{};
     int j;
     sample_t *s;
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
@@ -3245,8 +3172,6 @@ void BuildFacelights(const int facenum)
     vec3_t spot2, normal2;
     byte pvs2[(MAX_MAP_LEAFS + 7) / 8];
     int thisoffset2 = -1, lastoffset2 = -1;
-
-    int *sample_wallflags;
 
     dface_t *f = &g_dfaces[facenum];
     // some surfaces don't need lightmaps
@@ -3270,8 +3195,6 @@ void BuildFacelights(const int facenum)
     {
         f_styles[1] = g_face_patches[facenum]->emitstyle;
     }
-
-    std::memset(&l, 0, sizeof(l));
 
     l.surfnum = facenum;
     l.face = f;
@@ -3297,17 +3220,32 @@ void BuildFacelights(const int facenum)
 
     facelight[facenum].numsamples = l.numsurfpt;
 
+    std::vector<sample_t> fl_storage(ALLSTYLES * (std::size_t)l.numsurfpt); // zeroed
     for (int k = 0; k < ALLSTYLES; k++)
     {
-        fl_samples[k] = (sample_t *)std::calloc(l.numsurfpt, sizeof(sample_t));
-        hlassume(fl_samples[k] != nullptr, assume_NoMemory);
+        fl_samples[k] = fl_storage.data() + (std::size_t)k * l.numsurfpt;
     }
+    // The patches' per-style arrays, only while this runs (patch_t holds plain pointers: see hlrad.h).
+    struct patchstyles_t
+    {
+        unsigned char totalstyle[ALLSTYLES];
+        vec3_t samplelight[ALLSTYLES];
+        vec3_t totallight[ALLSTYLES];
+        vec3_t directlight[ALLSTYLES];
+    };
+    std::vector<patchstyles_t> patchstyles;
     for (patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next)
     {
-        hlassume(patch->totalstyle_all = (unsigned char *)std::malloc(ALLSTYLES * sizeof(unsigned char)), assume_NoMemory);
-        hlassume(patch->samplelight_all = (vec3_t *)std::malloc(ALLSTYLES * sizeof(vec3_t)), assume_NoMemory);
-        hlassume(patch->totallight_all = (vec3_t *)std::malloc(ALLSTYLES * sizeof(vec3_t)), assume_NoMemory);
-        hlassume(patch->directlight_all = (vec3_t *)std::malloc(ALLSTYLES * sizeof(vec3_t)), assume_NoMemory);
+        patchstyles.emplace_back();
+    }
+    std::size_t patchindex = 0;
+    for (patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next, patchindex++)
+    {
+        patchstyles_t &styles = patchstyles[patchindex];
+        patch->totalstyle_all = styles.totalstyle;
+        patch->samplelight_all = styles.samplelight;
+        patch->totallight_all = styles.totallight;
+        patch->directlight_all = styles.directlight;
         for (j = 0; j < ALLSTYLES; j++)
         {
             patch->totalstyle_all[j] = 255;
@@ -3318,7 +3256,7 @@ void BuildFacelights(const int facenum)
         patch->totalstyle_all[0] = 0;
     }
 
-    sample_wallflags = (int *)std::malloc((2 * l.lmcache_side + 1) * (2 * l.lmcache_side + 1) * sizeof(int));
+    std::vector<int> sample_wallflags((2 * l.lmcache_side + 1) * (2 * l.lmcache_side + 1));
     vec_t *spot = l.surfpt[0];
     for (int i = 0; i < l.numsurfpt; i++, spot += 3)
     {
@@ -3450,7 +3388,6 @@ void BuildFacelights(const int facenum)
             }
         }
     } // end of i loop
-    std::free(sample_wallflags);
 
     // average up the direct light on each patch for radiosity
     AddSamplesToPatches((const sample_t **)fl_samples, f_styles, facenum, &l);
@@ -3692,14 +3629,13 @@ void BuildFacelights(const int facenum)
             {
                 maxlights[bestindex] = 0;
                 f->styles[k] = f_styles[bestindex];
-                fl->samples[k] = (sample_t *)std::malloc(fl->numsamples * sizeof(sample_t));
-                hlassume(fl->samples[k] != nullptr, assume_NoMemory);
-                std::memcpy(fl->samples[k], fl_samples[bestindex], fl->numsamples * sizeof(sample_t));
+                fl->samples[k] = std::make_unique_for_overwrite<sample_t[]>(fl->numsamples);
+                std::memcpy(fl->samples[k].get(), fl_samples[bestindex], fl->numsamples * sizeof(sample_t));
             }
             else
             {
                 f->styles[k] = 255;
-                fl->samples[k] = nullptr;
+                fl->samples[k].reset();
             }
         }
         for (j = 1; j < ALLSTYLES && f_styles[j] != 255; j++)
@@ -3714,10 +3650,6 @@ void BuildFacelights(const int facenum)
                 }
                 ThreadUnlock();
             }
-        }
-        for (j = 0; j < ALLSTYLES; j++)
-        {
-            std::free(fl_samples[j]);
         }
     }
     // patches
@@ -3818,20 +3750,11 @@ void BuildFacelights(const int facenum)
                 ThreadUnlock();
             }
         }
-        std::free(patch->totalstyle_all);
-        patch->totalstyle_all = nullptr;
-        std::free(patch->samplelight_all);
+        patch->totalstyle_all = nullptr; // patchstyles goes away with this function
         patch->samplelight_all = nullptr;
-        std::free(patch->totallight_all);
         patch->totallight_all = nullptr;
-        std::free(patch->directlight_all);
         patch->directlight_all = nullptr;
     }
-    std::free(l.lmcache);
-    std::free(l.lmcache_normal);
-    std::free(l.lmcache_wallflags);
-    std::free(l.surfpt_position);
-    std::free(l.surfpt_surface);
 }
 
 void PrecompLightmapOffsets()
@@ -3898,11 +3821,11 @@ void PrecompLightmapOffsets()
                 }
             }
             unsigned char oldstyles[MAXLIGHTMAPS];
-            sample_t *oldsamples[MAXLIGHTMAPS];
+            std::unique_ptr<sample_t[]> oldsamples[MAXLIGHTMAPS];
             for (int k = 0; k < MAXLIGHTMAPS; k++)
             {
                 oldstyles[k] = f->styles[k];
-                oldsamples[k] = fl->samples[k];
+                oldsamples[k] = std::move(fl->samples[k]);
             }
             for (int k = 0; k < MAXLIGHTMAPS; k++)
             {
@@ -3927,8 +3850,7 @@ void PrecompLightmapOffsets()
                 {
                     maxlights[beststyle] = 0;
                     f->styles[k] = beststyle;
-                    fl->samples[k] = (sample_t *)std::malloc(fl->numsamples * sizeof(sample_t));
-                    hlassume(fl->samples[k] != nullptr, assume_NoMemory);
+                    fl->samples[k] = std::make_unique_for_overwrite<sample_t[]>(fl->numsamples);
                     int i;
                     for (i = 0; i < MAXLIGHTMAPS && oldstyles[i] != 255; i++)
                     {
@@ -3939,11 +3861,11 @@ void PrecompLightmapOffsets()
                     }
                     if (i < MAXLIGHTMAPS && oldstyles[i] != 255)
                     {
-                        std::memcpy(fl->samples[k], oldsamples[i], fl->numsamples * sizeof(sample_t));
+                        std::memcpy(fl->samples[k].get(), oldsamples[i].get(), fl->numsamples * sizeof(sample_t));
                     }
                     else
                     {
-                        std::memcpy(fl->samples[k], oldsamples[0], fl->numsamples * sizeof(sample_t)); // copy 'sample.pos' from style 0 to the new style - because 'sample.pos' is actually the same for all styles! (why did we decide to store it in many places?)
+                        std::memcpy(fl->samples[k].get(), oldsamples[0].get(), fl->numsamples * sizeof(sample_t)); // copy 'sample.pos' from style 0 to the new style - because 'sample.pos' is actually the same for all styles! (why did we decide to store it in many places?)
                         for (int j = 0; j < fl->numsamples; j++)
                         {
                             VectorClear(fl->samples[k][j].light);
@@ -3953,7 +3875,6 @@ void PrecompLightmapOffsets()
                 else
                 {
                     f->styles[k] = 255;
-                    fl->samples[k] = nullptr;
                 }
             }
             for (int j = 1; j < ALLSTYLES; j++)
@@ -3963,10 +3884,6 @@ void PrecompLightmapOffsets()
                     g_maxdiscardedlight = maxlights[j];
                     VectorCopy(g_face_centroids[facenum], g_maxdiscardedpos);
                 }
-            }
-            for (int k = 0; k < MAXLIGHTMAPS && oldstyles[k] != 255; k++)
-            {
-                std::free(oldsamples[k]);
             }
         }
 
@@ -3991,9 +3908,7 @@ void PrecompLightmapOffsets()
 
 void ReduceLightmap()
 {
-    byte *oldlightdata = (byte *)std::malloc(g_lightdatasize);
-    hlassume(oldlightdata != nullptr, assume_NoMemory);
-    std::memcpy(oldlightdata, g_dlightdata, g_lightdatasize);
+    const std::vector<byte> oldlightdata(g_dlightdata, g_dlightdata + g_lightdatasize);
     g_lightdatasize = 0;
 
     for (int facenum = 0; facenum < g_numfaces; facenum++)
@@ -4034,7 +3949,7 @@ void ReduceLightmap()
             unsigned char maxb = 0;
             for (int i = 0; i < fl->numsamples; i++)
             {
-                unsigned char *v = &oldlightdata[oldofs + fl->numsamples * 3 * k + i * 3];
+                const unsigned char *v = &oldlightdata[oldofs + fl->numsamples * 3 * k + i * 3];
                 maxb = qmax(maxb, VectorMaximum(v));
             }
             if (maxb <= 0) // black
@@ -4048,7 +3963,6 @@ void ReduceLightmap()
         }
         g_lightdatasize += fl->numsamples * 3 * numstyles;
     }
-    std::free(oldlightdata);
 }
 
 // Change the sample light right under a mdl file entity's origin.
@@ -4293,22 +4207,13 @@ void MdlLightHack()
         Log("Adjust mdl light: modified %d samples for %d entities\n", countsample, countent);
 }
 
-typedef struct facelightlist_s
-{
-    int facenum;
-    facelightlist_s *next;
-} facelightlist_t;
-
-static facelightlist_t *g_dependentfacelights[MAX_MAP_FACES];
+// For each face, the faces that have samples on it, in the order found (used newest first, the order of
+// the linked lists these were).
+static std::vector<std::vector<int>> g_dependentfacelights;
 
 void CreateFacelightDependencyList()
 {
-    facelightlist_t *item;
-
-    for (int i = 0; i < MAX_MAP_FACES; i++)
-    {
-        g_dependentfacelights[i] = nullptr;
-    }
+    g_dependentfacelights.assign(g_numfaces, {});
 
     // for each face
     for (int facenum = 0; facenum < g_numfaces; facenum++)
@@ -4328,21 +4233,11 @@ void CreateFacelightDependencyList()
                 if (0 <= surface && surface < g_numfaces)
                 {
                     // insert this face into the dependency list of that surface
-                    for (item = g_dependentfacelights[surface]; item != nullptr; item = item->next)
+                    std::vector<int> &dependents = g_dependentfacelights[surface];
+                    if (std::find(dependents.begin(), dependents.end(), facenum) == dependents.end())
                     {
-                        if (item->facenum == facenum)
-                            break;
+                        dependents.push_back(facenum);
                     }
-                    if (item)
-                    {
-                        continue;
-                    }
-
-                    item = (facelightlist_t *)std::malloc(sizeof(facelightlist_t));
-                    hlassume(item != nullptr, assume_NoMemory);
-                    item->facenum = facenum;
-                    item->next = g_dependentfacelights[surface];
-                    g_dependentfacelights[surface] = item;
                 }
             }
         }
@@ -4351,16 +4246,7 @@ void CreateFacelightDependencyList()
 
 void FreeFacelightDependencyList()
 {
-
-    for (int i = 0; i < MAX_MAP_FACES; i++)
-    {
-        while (g_dependentfacelights[i])
-        {
-            facelightlist_t *item = g_dependentfacelights[i];
-            g_dependentfacelights[i] = item->next;
-            std::free(item);
-        }
-    }
+    g_dependentfacelights = std::vector<std::vector<int>>();
 }
 
 void ScaleDirectLights()
@@ -4398,10 +4284,11 @@ void AddPatchLights(int facenum)
         return;
     }
 
-    for (facelightlist_t *item = g_dependentfacelights[facenum]; item != nullptr; item = item->next)
+    const std::vector<int> &dependents = g_dependentfacelights[facenum];
+    for (auto item = dependents.rbegin(); item != dependents.rend(); ++item)
     {
-        dface_t *f_other = &g_dfaces[item->facenum];
-        facelight_t *fl_other = &facelight[item->facenum];
+        dface_t *f_other = &g_dfaces[*item];
+        facelight_t *fl_other = &facelight[*item];
         for (int k = 0; k < MAXLIGHTMAPS && f_other->styles[k] != 255; k++)
         {
             for (int i = 0; i < fl_other->numsamples; i++)
@@ -4454,7 +4341,6 @@ void FinalLightFace(const int facenum)
 {
     vec3_t lb;
     int lightstyles;
-    int (*final_basiclight)[3];
     int lbi[3];
 
     dface_t *f = &g_dfaces[facenum];
@@ -4481,13 +4367,11 @@ void FinalLightFace(const int facenum)
     // sample the triangulation
     float minlight = FloatForKey(g_face_entity[facenum], "_minlight") * 128;
 
-    vec3_t *original_basiclight = (vec3_t *)std::calloc(fl->numsamples, sizeof(vec3_t));
-    final_basiclight = (int (*)[3])std::calloc(fl->numsamples, sizeof(int[3]));
-    hlassume(original_basiclight != nullptr, assume_NoMemory);
-    hlassume(final_basiclight != nullptr, assume_NoMemory);
+    const auto original_basiclight = std::make_unique<vec3_t[]>(fl->numsamples);
+    std::vector<std::array<int, 3>> final_basiclight(fl->numsamples);
     for (int k = 0; k < lightstyles; k++)
     {
-        sample_t *samp = fl->samples[k];
+        const sample_t *samp = fl->samples[k].get();
         for (int j = 0; j < fl->numsamples; j++, samp++)
         {
             VectorCopy(samp->light, lb);
@@ -4559,11 +4443,11 @@ void FinalLightFace(const int facenum)
             }
             if (k == 0)
             {
-                VectorCopy(lbi, final_basiclight[j]);
+                VectorCopy(lbi, final_basiclight[j].data());
             }
             else
             {
-                VectorSubtract(lbi, final_basiclight[j], lbi);
+                VectorSubtract(lbi, final_basiclight[j].data(), lbi);
             }
             for (int i = 0; i < 3; ++i)
             {
@@ -4581,8 +4465,6 @@ void FinalLightFace(const int facenum)
             }
         }
     }
-    std::free(original_basiclight);
-    std::free(final_basiclight);
 }
 
 //LRC

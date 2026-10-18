@@ -2,7 +2,7 @@
 #include <cstring>
 
 #include "hlrad/hlrad.h"
-#include "common/blockmem.h"
+#include <memory>
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/log.h"
@@ -16,19 +16,20 @@ typedef struct
     unsigned values : 8;
 } sparse_row_t;
 
-typedef struct
+struct sparse_column_t
 {
-    sparse_row_t *row;
+    std::unique_ptr<sparse_row_t[]> row; // [count]
     int count;
-} sparse_column_t;
+};
+static_assert(sizeof(sparse_column_t) == 16); // DumpVismatrixInfo logs g_num_patches * sizeof(sparse_column_t)
 
-sparse_column_t *s_vismatrix;
+static std::unique_ptr<sparse_column_t[]> s_vismatrix; // [g_num_patches]
 
 // Vismatrix protected
 static unsigned IsVisbitInArray(const unsigned x, const unsigned y)
 {
     int y_byte = y / 8;
-    sparse_column_t *column = s_vismatrix + x;
+    sparse_column_t *column = s_vismatrix.get() + x;
 
     if (!column->count)
     {
@@ -43,7 +44,7 @@ static unsigned IsVisbitInArray(const unsigned x, const unsigned y)
     while (1)
     {
         int current = (first + last) / 2;
-        sparse_row_t *row = column->row + current;
+        sparse_row_t *row = column->row.get() + current;
         //        Warning("first %u, last %u, current %u, row %p, row->offset %u", first, last, current, row, row->offset);
         if ((row->offset) < y_byte)
         {
@@ -101,8 +102,7 @@ static void SetVisColumn(int patchnum, bool uncompressedcolumn[MAX_SPARSE_VISMAT
     {
         return;
     }
-    column->row = (sparse_row_t *)std::malloc(column->count * sizeof(sparse_row_t));
-    hlassume(column->row != nullptr, assume_NoMemory);
+    column->row = std::make_unique_for_overwrite<sparse_row_t[]>(column->count);
 
     int i = 0;
     for (int mbegin = 0; mbegin < g_num_patches; mbegin += 8)
@@ -270,8 +270,8 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pv
 static void BuildVisLeafs(int /*threadnum*/)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
-    bool *uncompressedcolumn = (bool *)std::malloc(MAX_SPARSE_VISMATRIX_PATCHES * sizeof(bool));
-    hlassume(uncompressedcolumn != nullptr, assume_NoMemory);
+    const auto uncompressedstorage = std::make_unique_for_overwrite<bool[]>(MAX_SPARSE_VISMATRIX_PATCHES);
+    bool *uncompressedcolumn = uncompressedstorage.get();
 
     while (1)
     {
@@ -321,47 +321,24 @@ static void BuildVisLeafs(int /*threadnum*/)
             }
         }
     }
-    std::free(uncompressedcolumn);
 }
 
 #pragma warning(pop)
 
 static void BuildVisMatrix()
 {
-    s_vismatrix = (sparse_column_t *)AllocBlock(g_num_patches * sizeof(sparse_column_t));
-
-    if (!s_vismatrix)
+    if (g_num_patches == 0)
     {
-        Log("Failed to allocate vismatrix");
-        hlassume(s_vismatrix != nullptr, assume_NoMemory);
+        Warning("Attempting to allocate 0 bytes"); // compat: AllocBlock's warning
     }
+    s_vismatrix = std::make_unique<sparse_column_t[]>(g_num_patches); // empty columns
 
     NamedRunThreadsOn(g_dmodels[0].visleafs, g_estimate, BuildVisLeafs);
 }
 
 static void FreeVisMatrix()
 {
-    if (s_vismatrix)
-    {
-        unsigned x;
-        sparse_column_t *item;
-
-        for (x = 0, item = s_vismatrix; x < g_num_patches; x++, item++)
-        {
-            if (item->row)
-            {
-                std::free(item->row);
-            }
-        }
-        if (FreeBlock(s_vismatrix))
-        {
-            s_vismatrix = nullptr;
-        }
-        else
-        {
-            Warning("Unable to free vismatrix");
-        }
-    }
+    s_vismatrix.reset();
 }
 
 static void DumpVismatrixInfo()
@@ -369,8 +346,8 @@ static void DumpVismatrixInfo()
     unsigned totals[8];
     std::size_t total_vismatrix_memory = sizeof(sparse_column_t) * g_num_patches;
 
-    sparse_column_t *column_end = s_vismatrix + g_num_patches;
-    sparse_column_t *column = s_vismatrix;
+    sparse_column_t *column_end = s_vismatrix.get() + g_num_patches;
+    sparse_column_t *column = s_vismatrix.get();
 
     std::memset(totals, 0, sizeof(totals));
 

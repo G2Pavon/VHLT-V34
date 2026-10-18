@@ -6,6 +6,10 @@
 #include "common/mathlib.h"
 #include "common/winding.h"
 
+#include <memory>
+#include <type_traits>
+#include <vector>
+
 #pragma warning(disable : 4142 4028)
 #pragma warning(default : 4142 4028)
 
@@ -52,9 +56,12 @@ typedef enum
 } emittype_t;
 
 struct patch_t;
-struct directlight_t
+struct directlight_t;
+// Everything about a direct light but its sun normals: copyable (a texture light on a '!' texture of a
+// brush entity is duplicated to the back of the face).
+struct directlight_fields_t
 {
-    directlight_t *next;
+    directlight_t *next; // in its leaf's list; the lights themselves are owned by CreateDirectLights' store
     emittype_t type;
     int style;
     vec3_t origin;
@@ -75,14 +82,17 @@ struct directlight_t
     vec3_t diffuse_intensity2;
     vec_t sunspreadangle;
     int numsunnormals;
-    vec3_t *sunnormals;
-    vec_t *sunnormalweights;
 
     vec_t patch_area;
     vec_t patch_emitter_range;
     patch_t *patch;
     vec_t texlightgap;
     bool topatch;
+};
+struct directlight_t : directlight_fields_t
+{
+    std::unique_ptr<vec3_t[]> sunnormals;     // [numsunnormals], sky lights only
+    std::unique_ptr<vec_t[]> sunnormalweights; // [numsunnormals]
 };
 
 struct transfer_index_t
@@ -114,16 +124,9 @@ struct patch_t
     vec_t exposure;
     vec_t emitter_range;  // Range from patch origin (cached info calculated from winding)
     int emitter_skylevel; // The "skylevel" used for sampling of normals, when the receiver patch is within the range of ACCURATEBOUNCE_THRESHOLD * this->radius. (cached info calculated from winding)
-    Winding *winding;     // Winding (patches are triangles, so its easy)
+    Winding *winding;     // Winding (patches are triangles, so its easy); owned by MakePatches' winding store
     vec_t scale;          // Texture scale for this face (blend of S and T scale)
     vec_t chop;           // Texture chop for this face factoring in S and T scale
-
-    unsigned iIndex;
-    unsigned iData;
-
-    transfer_index_t *tIndex;
-    transfer_data_t *tData;
-    rgb_transfer_data_t *tRGBData;
 
     int faceNumber;
     ePatchFlags flags;
@@ -149,15 +152,24 @@ struct patch_t
     vec3_t *directlight_all;       // NULL, or [ALLSTYLES] during BuildFacelights
     int leafnum;
 };
+// SortPatches moves patches with qsort (which must keep the oracle's order) and SubdividePatch copies
+// them with memcpy: patch_t holds no owning members.
+static_assert(std::is_trivially_copyable_v<patch_t>);
+
+// The transfers of one patch (MakeScales / MakeRGBScales): iIndex runs of patch numbers, and iData
+// compressed transfers (float_size or vector_size bytes each) plus unused_size bytes of slack.
+struct patch_transfers_t
+{
+    std::unique_ptr<transfer_index_t[]> index;
+    std::unique_ptr<unsigned char[]> data; // transfer_data_t, or rgb_transfer_data_t with -rgbtransfers
+    unsigned iIndex = 0;
+    unsigned iData = 0;
+};
+extern std::vector<patch_transfers_t> g_patch_transfers; // [g_num_patches] while the bounces run
 
 //LRC
 vec3_t *GetTotalLight(patch_t *patch, int style);
 
-struct facelist_t
-{
-    dface_t *face;
-    facelist_t *next;
-};
 struct edgeshare_t
 {
     dface_t *faces[2];
@@ -166,7 +178,7 @@ struct edgeshare_t
     vec_t cos_normals_angle; // HLRAD_GetPhongNormal_VL: this field must be set when smooth==true
     bool coplanar;
     bool smooth;
-    facelist_t *vertex_facelist[2]; //possible smooth faces, not include faces[0] and faces[1]
+    std::vector<dface_t *> vertex_faces[2]; //possible smooth faces, not include faces[0] and faces[1]; in the order found
     matrix_t textotex[2];           // how we translate texture coordinates from one face to the other face
 };
 
@@ -197,12 +209,12 @@ struct radtexture_t
 {
     char name[MAX_TEXTURE_NAME_LENGTH]; // not always same with the name in texdata
     int width, height;
-    byte *canvas; //[height][width]
+    std::unique_ptr<byte[]> canvas; //[height][width]
     byte palette[256][3];
     vec3_t reflectivity;
 };
 extern int g_numtextures;
-extern radtexture_t *g_textures;
+extern radtexture_t *g_textures; // [g_numtextures], a view of LoadTextures' storage
 void AddWadFolder(const char *path);
 void LoadTextures();
 void EmbedLightmapInTextures();

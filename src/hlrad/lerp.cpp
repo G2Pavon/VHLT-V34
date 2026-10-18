@@ -72,11 +72,11 @@ struct facetriangulation_t
     int facenum;
     std::vector<int> neighbors; // including the face itself
     std::vector<Wall> walls;
-    std::vector<localtriangulation_t *> localtriangulations;
+    std::vector<std::unique_ptr<localtriangulation_t>> localtriangulations; // one per patch, in patch order
     std::vector<int> usedpatches;
 };
 
-facetriangulation_t *g_facetriangulations[MAX_MAP_FACES];
+static std::unique_ptr<facetriangulation_t> g_facetriangulations[MAX_MAP_FACES];
 
 static bool CalcAdaptedSpot(const localtriangulation_t *lt, const vec3_t position, int surface, vec3_t spot)
 // If the surface formed by the face and its neighbor faces is not flat, the surface should be unfolded onto the face plane
@@ -725,7 +725,7 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
     try
     {
         std::vector<vec_t> localweights;
-        std::vector<interpolation_t *> localinterps;
+        std::vector<std::unique_ptr<interpolation_t>> localinterps;
 
         vec3_t spot;
         vec_t weight;
@@ -736,8 +736,9 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
         {
             Error("InterpolateSampleLight: internal error: surface number out of range.");
         }
-        const facetriangulation_t *ft = g_facetriangulations[surface];
-        interpolation_t *maininterp = new interpolation_t;
+        const facetriangulation_t *ft = g_facetriangulations[surface].get();
+        interpolation_t maininterpstorage;
+        interpolation_t *maininterp = &maininterpstorage;
         maininterp->points.reserve(64);
 
         // Calculate local interpolations and their weights
@@ -747,10 +748,10 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
         {
             for (int i = 0; i < (int)ft->neighbors.size(); i++) // for this face and each of its neighbors
             {
-                const facetriangulation_t *ft2 = g_facetriangulations[ft->neighbors[i]];
+                const facetriangulation_t *ft2 = g_facetriangulations[ft->neighbors[i]].get();
                 for (int j = 0; j < (int)ft2->localtriangulations.size(); j++) // for each patch on that face
                 {
-                    const localtriangulation_t *lt = ft2->localtriangulations[j];
+                    const localtriangulation_t *lt = ft2->localtriangulations[j].get();
                     if (!CalcAdaptedSpot(lt, position, surface, spot))
                     {
                         continue;
@@ -759,12 +760,12 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                     {
                         continue;
                     }
-                    interpolation_t *interp = new interpolation_t;
+                    auto interp = std::make_unique<interpolation_t>();
                     interp->points.reserve(4);
-                    CalcInterpolation(lt, spot, interp);
+                    CalcInterpolation(lt, spot, interp.get());
 
                     localweights.push_back(weight);
-                    localinterps.push_back(interp);
+                    localinterps.push_back(std::move(interp));
                 }
             }
         }
@@ -834,7 +835,7 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                 const localtriangulation_t *best = nullptr;
                 for (int i = 0; i < (int)ft->localtriangulations.size(); i++)
                 {
-                    const localtriangulation_t *lt = ft->localtriangulations[i];
+                    const localtriangulation_t *lt = ft->localtriangulations[i].get();
                     VectorCopy(position, v);
                     snap_to_winding(lt->winding, lt->plane, v);
                     VectorSubtract(v, position, v);
@@ -873,12 +874,6 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                     ApplyInterpolation(maininterp, numstyles, styles, outs);
                 }
             }
-        }
-        delete maininterp;
-
-        for (int i = 0; i < (int)localinterps.size(); i++)
-        {
-            delete localinterps[i];
         }
     }
     catch (std::bad_alloc)
@@ -1311,14 +1306,14 @@ static void FindSquares(localtriangulation_t *lt)
     }
 }
 
-static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t *facetrian, int patchnum)
+static std::unique_ptr<localtriangulation_t> CreateLocalTriangulation(const facetriangulation_t *facetrian, int patchnum)
 {
     vec3_t v;
     vec3_t normal;
 
     int facenum = facetrian->facenum;
     const patch_t *patch = &g_patches[patchnum];
-    localtriangulation_t *lt = new localtriangulation_t;
+    auto lt = std::make_unique<localtriangulation_t>();
 
     // Fill basic information for this local triangulation
     lt->plane = *getPlaneFromFaceNumber(facenum);
@@ -1336,10 +1331,10 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
     lt->neighborfaces = facetrian->neighbors;
 
     // Gather all patches from nearby faces
-    GatherPatches(lt, facetrian);
+    GatherPatches(lt.get(), facetrian);
 
     // Remove distant patches
-    PurgePatches(lt);
+    PurgePatches(lt.get());
 
     // Calculate wedge types
     vec_t total = 0.0;
@@ -1380,17 +1375,12 @@ static localtriangulation_t *CreateLocalTriangulation(const facetriangulation_t 
             GetDirection(normal, lt->normal, w->wedgenormal);
         }
     }
-    FindSquares(lt);
+    FindSquares(lt.get());
 
     // Calculate hull points
-    PlaceHullPoints(lt);
+    PlaceHullPoints(lt.get());
 
     return lt;
-}
-
-static void FreeLocalTriangulation(localtriangulation_t *lt)
-{
-    delete lt;
 }
 
 static void FindNeighbors(facetriangulation_t *facetrian)
@@ -1398,7 +1388,6 @@ static void FindNeighbors(facetriangulation_t *facetrian)
     int j;
     int e;
     const edgeshare_t *es;
-    const facelist_t *fl;
     int facenum2;
     const dface_t *f2;
     const dplane_t *dp2;
@@ -1449,9 +1438,10 @@ static void FindNeighbors(facetriangulation_t *facetrian)
         }
         for (int side = 0; side < 2; side++)
         {
-            for (fl = es->vertex_facelist[side]; fl; fl = fl->next)
+            // newest first: the order of the linked list this used to be
+            for (auto it = es->vertex_faces[side].rbegin(); it != es->vertex_faces[side].rend(); ++it)
             {
-                f2 = fl->face;
+                f2 = *it;
                 facenum2 = f2 - g_dfaces;
                 dp2 = getPlaneFromFace(f2);
                 if (DotProduct(dp->normal, dp2->normal) < -NORMAL_EPSILON)
@@ -1522,7 +1512,7 @@ static void CollectUsedPatches(facetriangulation_t *facetrian)
     facetrian->usedpatches.resize(0);
     for (int i = 0; i < (int)facetrian->localtriangulations.size(); i++)
     {
-        const localtriangulation_t *lt = facetrian->localtriangulations[i];
+        const localtriangulation_t *lt = facetrian->localtriangulations[i].get();
 
         int patchnum = lt->patchnum;
         for (k = 0; k < (int)facetrian->usedpatches.size(); k++)
@@ -1561,8 +1551,8 @@ void CreateTriangulations(int facenum)
 {
     try
     {
-        g_facetriangulations[facenum] = new facetriangulation_t;
-        facetriangulation_t *facetrian = g_facetriangulations[facenum];
+        g_facetriangulations[facenum] = std::make_unique<facetriangulation_t>();
+        facetriangulation_t *facetrian = g_facetriangulations[facenum].get();
 
         facetrian->facenum = facenum;
 
@@ -1577,8 +1567,7 @@ void CreateTriangulations(int facenum)
         for (const patch_t *patch = g_face_patches[facenum]; patch; patch = patch->next)
         {
             int patchnum = patch - g_patches;
-            localtriangulation_t *lt = CreateLocalTriangulation(facetrian, patchnum);
-            facetrian->localtriangulations.push_back(lt);
+            facetrian->localtriangulations.push_back(CreateLocalTriangulation(facetrian, patchnum));
         }
 
         // Collect used patches
@@ -1592,7 +1581,7 @@ void CreateTriangulations(int facenum)
 
 void GetTriangulationPatches(int facenum, int *numpatches, const int **patches)
 {
-    const facetriangulation_t *facetrian = g_facetriangulations[facenum];
+    const facetriangulation_t *facetrian = g_facetriangulations[facenum].get();
     *numpatches = (int)facetrian->usedpatches.size();
     *patches = facetrian->usedpatches.data();
 }
@@ -1603,15 +1592,7 @@ void FreeTriangulations()
     {
         for (int i = 0; i < g_numfaces; i++)
         {
-            facetriangulation_t *facetrian = g_facetriangulations[i];
-
-            for (int j = 0; j < (int)facetrian->localtriangulations.size(); j++)
-            {
-                FreeLocalTriangulation(facetrian->localtriangulations[j]);
-            }
-
-            delete facetrian;
-            g_facetriangulations[i] = NULL;
+            g_facetriangulations[i].reset();
         }
     }
     catch (std::bad_alloc)

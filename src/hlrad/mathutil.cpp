@@ -132,8 +132,8 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
 
     snap_to_winding(w, plane, point);
 
-    dplane_t *planes = (dplane_t *)std::malloc(w.m_NumPoints * sizeof(dplane_t));
-    hlassume(planes != nullptr, assume_NoMemory);
+    const auto planestorage = std::make_unique_for_overwrite<dplane_t[]>(w.m_NumPoints);
+    dplane_t *planes = planestorage.get();
     int numplanes = 0;
     for (int x = 0; x < w.m_NumPoints; x++)
     {
@@ -157,18 +157,18 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
 
         bool failed = true;
 
-        Winding *newwinding = new Winding(w);
-        for (int x = 0; x < numplanes && newwinding->m_NumPoints > 0; x++)
+        Winding newwinding(w);
+        for (int x = 0; x < numplanes && newwinding.m_NumPoints > 0; x++)
         {
             dplane_t clipplane = planes[x];
             clipplane.dist += newwidth;
-            newwinding->Clip(clipplane, false);
+            newwinding.Clip(clipplane, false);
         }
 
-        if (newwinding->m_NumPoints > 0)
+        if (newwinding.m_NumPoints > 0)
         {
             VectorCopy(point, newpoint);
-            snap_to_winding(*newwinding, plane, newpoint);
+            snap_to_winding(newwinding, plane, newpoint);
 
             VectorSubtract(newpoint, point, v);
             if (VectorLength(v) <= maxmove + ON_EPSILON)
@@ -176,8 +176,6 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
                 failed = false;
             }
         }
-
-        delete newwinding;
 
         if (!failed)
         {
@@ -194,8 +192,6 @@ vec_t snap_to_winding_noedge(const Winding &w, const dplane_t &plane, vec_t *con
             newwidth -= width * std::pow(0.5, pass + 1);
         }
     }
-
-    std::free(planes);
 
     VectorCopy(bestpoint, point);
     return bestwidth;
@@ -243,8 +239,8 @@ vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, 
     vec_t area = 0.0;
 
     int numedges = emitter_winding->m_NumPoints;
-    vec3_t *edges = (vec3_t *)std::malloc(numedges * sizeof(vec3_t));
-    hlassume(edges != nullptr, assume_NoMemory);
+    const auto edgestorage = std::make_unique_for_overwrite<vec3_t[]>(numedges);
+    vec3_t *edges = edgestorage.get();
     bool error = false;
     for (int x = 0; x < numedges; x++)
     {
@@ -288,7 +284,6 @@ vec_t CalcSightArea(const vec3_t receiver_origin, const vec3_t receiver_normal, 
         }
         area = area * 4 * Q_PI; // convert to absolute sphere area
     }
-    std::free(edges);
     area *= lighting_scale;
     return area;
 }
@@ -304,8 +299,8 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
     vec_t area = 0.0;
 
     int numedges = emitter_winding->m_NumPoints;
-    vec3_t *edges = (vec3_t *)std::malloc(numedges * sizeof(vec3_t));
-    hlassume(edges != nullptr, assume_NoMemory);
+    const auto edgestorage = std::make_unique_for_overwrite<vec3_t[]>(numedges);
+    vec3_t *edges = edgestorage.get();
     bool error = false;
     for (int x = 0; x < numedges; x++)
     {
@@ -358,7 +353,6 @@ vec_t CalcSightArea_SpotLight(const vec3_t receiver_origin, const vec3_t receive
         }
         area = area * 4 * Q_PI; // convert to absolute sphere area
     }
-    std::free(edges);
     area *= lighting_scale;
     return area;
 }
