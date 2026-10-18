@@ -1255,19 +1255,21 @@ CLI_CASES = {
         ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
     ],
+    "hlvis-empty": [["tiny"], ["-full", "tiny"]],
 }
-# hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map). The empty
-# worldspawn-only map's .bsp is rejected by the bounds-checked loader since Phase 2 (its dummy edge 0
-# refers to vertex 0 of 0) where the oracle got as far as the missing .prt: fixed in V1.
+# hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map).
+# "hlvis-empty" runs hlvis on the worldspawn-only map, whose .bsp has a dummy edge 0 referring to
+# vertex 0 of 0: the bounds-checked loader rejected it from Phase 2 to V1, where the oracle got as
+# far as the missing .prt. A case group "tool-suffix" runs that tool.
 CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview"}
 # Tools whose input comes from an earlier stage: the oracle's tools prepare it (same for both sides).
 CLI_PREPARE = {"hlbsp": ["hlcsg"], "hlvis": ["hlcsg", "hlbsp"]}
 
 
-def _cli_run(exe: Path, argv: list[str], cwd: Path) -> tuple:
+def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str) -> tuple:
     cwd.mkdir(parents=True)
-    if exe.name in CLI_MAP_FROM_CORPUS:
-        shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[exe.name]}.map", cwd / "tiny.map")
+    if group in CLI_MAP_FROM_CORPUS:
+        shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[group]}.map", cwd / "tiny.map")
     else:
         (cwd / "tiny.map").write_text(CLI_MAP)
     for tool in CLI_PREPARE.get(exe.name, []):
@@ -1284,8 +1286,9 @@ def cmd_cli(args) -> int:
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         for tool in args.tools:
             for i, argv in enumerate(CLI_CASES[tool]):
-                ref = _cli_run(oracle / tool, argv, Path(tmp) / f"{tool}-{i}-ref")
-                new = _cli_run(cand / tool, argv, Path(tmp) / f"{tool}-{i}-new")
+                exe = tool.split("-")[0]
+                ref = _cli_run(oracle / exe, argv, Path(tmp) / f"{tool}-{i}-ref", tool)
+                new = _cli_run(cand / exe, argv, Path(tmp) / f"{tool}-{i}-new", tool)
                 what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
                 if what:
                     failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")

@@ -244,6 +244,7 @@ static void ValidateReferences()
             Error("LoadBSPFile: face %d uses surfedges %d..%lld, but there are only %d", i, f.firstedge, static_cast<long long>(f.firstedge) + f.numedges - 1, g_numsurfedges);
         }
     }
+    bool edge0used = false;
     for (int i = 0; i < g_numsurfedges; i++)
     {
         const long long e = g_dsurfedges[i];
@@ -251,8 +252,11 @@ static void ValidateReferences()
         {
             Error("LoadBSPFile: surfedge %d refers to edge %lld, but there are only %d", i, e, g_numedges);
         }
+        edge0used = edge0used || e == 0;
     }
-    for (int i = 0; i < g_numedges; i++)
+    // Edge 0 is a dummy (a surfedge's sign gives the direction, so 0 is never used): a map without
+    // geometry has it with vertex 0 of 0 vertexes, which the oracle loaded. Checked only if used.
+    for (int i = edge0used ? 0 : 1; i < g_numedges; i++)
     {
         for (const int v : g_dedges[i].v)
         {

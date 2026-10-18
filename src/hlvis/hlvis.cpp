@@ -7,6 +7,7 @@
 
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
+#include "common/cmdline.h"
 #include "common/filelib.h"
 #include "common/log.h"
 #include "common/mathtypes.h"
@@ -113,6 +114,11 @@ static void PlaneFromWinding(winding_t *w, portalplane_t *plane)
     plane->dist = DotProduct(w->points[0], plane->normal);
 }
 
+bitword_t *AllocBitString()
+{
+    return new bitword_t[g_bitbytes / sizeof(bitword_t)]{};
+}
+
 static winding_t *NewWinding(const int points)
 {
     if (points > MAX_POINTS_ON_WINDING)
@@ -120,9 +126,9 @@ static winding_t *NewWinding(const int points)
         Error("NewWinding: %i points > MAX_POINTS_ON_WINDING", points);
     }
 
-    int size = (int)(intptr_t)((winding_t *)0)->points[points];
-    winding_t *w = (winding_t *)std::calloc(1, size);
-
+    // (the size was computed as &((winding_t *)0)->points[points]: a null pointer dereference)
+    winding_t *w = new winding_t{};
+    w->points = new vec3_t[points > 0 ? points : 1]{}; // portal windings own their points
     return w;
 }
 
@@ -206,7 +212,7 @@ static void LeafFlow(const int leafnum)
 
         {
             byte *dst = outbuffer;
-            byte *src = p->visbits;
+            const byte *src = BitBytes(p->visbits);
             for (unsigned j = 0; j < g_bitbytes; j++, dst++, src++)
             {
                 *dst |= *src;
@@ -404,12 +410,16 @@ static void LoadPortals(char *portal_image)
     {
         Error("LoadPortals: failed to read header: number of portals");
     }
+    if (g_numportals < 0) // was used as an allocation size
+    {
+        Error("LoadPortals: %i portals", g_numportals);
+    }
 
     Log("%4i portalleafs\n", g_portalleafs);
     Log("%4i numportals\n", g_numportals);
 
     g_bitbytes = ((g_portalleafs + 63) & ~63) >> 3;
-    g_bitlongs = g_bitbytes / sizeof(long);
+    g_bitlongs = g_bitbytes / sizeof(bitword_t); // g_bitbytes is a multiple of 8
 
     // each file portal is split into two memory portals
     g_portals = (portal_t *)std::calloc(2 * g_numportals, sizeof(portal_t));
@@ -490,7 +500,12 @@ static void LoadPortals(char *portal_image)
         {
             Error("LoadPortals: portal %i has too many points", i);
         }
-        if (((unsigned)leafnums[0] > g_portalleafs) || ((unsigned)leafnums[1] > g_portalleafs))
+        if (numpoints < 3) // PlaneFromWinding reads three points; a negative count was an allocation size
+        {
+            Error("LoadPortals: portal %i has %i points", i, numpoints);
+        }
+        // compat: the message; the check was `>`, letting leaf g_portalleafs index past g_leafs
+        if (((unsigned)leafnums[0] >= g_portalleafs) || ((unsigned)leafnums[1] >= g_portalleafs))
         {
             Error("LoadPortals: reading portal %i", i);
         }
@@ -620,6 +635,10 @@ static void Settings()
 
 static int VisLeafnumForPoint(const vec3_t point)
 {
+    if (g_numnodes == 0)
+    {
+        return -1; // no world nodes: the walk below never ended (node 0 is all zeros)
+    }
     int nodenum = 0;
     while (nodenum >= 0)
     {
@@ -692,7 +711,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //added "1" .--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_miptex) //--vluzacn
                 {
@@ -708,7 +727,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_lightdata) //--vluzacn
                 {
@@ -726,7 +745,8 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //added "1" .--vluzacn
             {
-                g_maxdistance = std::abs(std::atoi(argv[++i]));
+                // compat: abs of the int (std::abs(INT_MIN) was undefined; it gave 2^31 in practice)
+                g_maxdistance = static_cast<unsigned int>(std::llabs(std::atoi(argv[++i])));
             }
             else
             {

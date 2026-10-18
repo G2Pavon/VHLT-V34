@@ -214,7 +214,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 
 ```sh
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
-python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-b1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
+python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis]  # oracle vs candidate on option-parsing command lines: output, files, exit code
@@ -241,7 +241,7 @@ No ASan findings. UBSan reported four issues at oracle-base:
 | `common/bspfile.cpp:204` `vecs[0][j]` with `j < 8` in the no-op `SwapBSPFile` | all | fixed in Phase 1 (`SwapBSPFile` deleted) |
 | `hlcsg/hlcsg.cpp:298` `g_texinfo[-1]` | hlcsg | fixed in H2 |
 | `hlbsp/brink.cpp:1131` pointer arithmetic overflow | hlbsp | fixed in B1 |
-| `hlvis/hlvis.cpp:123` member access through a null `winding_t*` | hlvis | hlvis phase |
+| `hlvis/hlvis.cpp:123` member access through a null `winding_t*` | hlvis | fixed in V1 |
 
 Since H2 the baseline is `../vhlt-parity/sanitize/baseline-h2-quick.txt` (39-map corpus): hlcsg has
 no findings left (H2 fixed the `g_texinfo[-1]` pointer, the CreateHullBrush stack overflow, the
@@ -253,6 +253,14 @@ findings left on the quick tier or any bsp tier; only hlvis's remains. B1 also f
 behaviour no sanitizer reports: the leak trail of a second leaking hull written to closed FILEs
 (`regress leak-all-hulls`), and std::maps keyed by heap addresses in brink.cpp (now creation order;
 output unchanged on every tier).
+
+Since V1 the baseline is `../vhlt-parity/sanitize/baseline-v1-quick.txt`: no findings in any tool
+(hlvis computed a size through a null `winding_t*`). V1 also fixed what no sanitizer reported on the
+corpus: portal windings allocated shorter or longer than `winding_t` and indexed past its array,
+ChopWinding's wrap-around entry one past its arrays, an off-by-one leaf check, an unchecked 64 KB
+portal buffer, a one-byte-short leaf bit string, bit strings read through `long*`, and
+`-maxdistance` with INT_MIN. The bounds-checked BSP loader accepts again the dummy edge 0 of a map
+without geometry (rejected since Phase 2; `cli` group `hlvis-empty`).
 
 Leaks (`sanitize --leaks`, quick tier): hlcsg leaked 2.5 MB on 34 of 39 maps before H5 (hull
 faces and their windings dropped by MakeHullFaces and by clearing the hull-0 faces of

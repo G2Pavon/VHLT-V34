@@ -1,15 +1,35 @@
 #pragma once
 
+#include <cstdint>
+
 #include "common/bspfile.h"
 
 constexpr int MAX_POINTS_ON_FIXED_WINDING = 32;
 
+// A portal's winding (any size up to MAX_POINTS_ON_WINDING, points in its own array) or a winding
+// on the flow stack (points in storage). The portal windings used to be allocated shorter or longer
+// than the struct and indexed past points[MAX_POINTS_ON_FIXED_WINDING].
 struct winding_t
 {
     bool original; // don't free, it's part of the portal
     int numpoints;
-    vec3_t points[MAX_POINTS_ON_FIXED_WINDING];
+    vec3_t *points; // storage, or the portal's array
+    vec3_t storage[MAX_POINTS_ON_FIXED_WINDING];
 };
+
+// Visibility bit strings: g_bitbytes bytes, allocated as 64-bit words so that the flow can compare
+// them a word at a time; bits are read and set through a byte view (the code used to read byte
+// arrays through long*, which breaks the aliasing rules).
+using bitword_t = std::uint64_t;
+constexpr int MAX_BITBYTES = ((MAX_MAP_LEAFS + 63) & ~63) >> 3; // g_bitbytes for MAX_MAP_LEAFS leafs
+inline byte *BitBytes(bitword_t *words)
+{
+    return reinterpret_cast<byte *>(words);
+}
+inline const byte *BitBytes(const bitword_t *words)
+{
+    return reinterpret_cast<const byte *>(words);
+}
 
 struct portalplane_t
 {
@@ -30,8 +50,8 @@ struct portal_t
     int leaf;            // neighbor
     winding_t *winding;
     vstatus_t status;
-    byte *visbits;
-    byte *mightsee;
+    bitword_t *visbits;
+    bitword_t *mightsee;
     unsigned nummightsee;
     int numcansee;
 };
@@ -59,7 +79,7 @@ struct leaf_t
 
 struct pstack_t
 {
-    byte mightsee[MAX_MAP_LEAFS / 8]; // bit string
+    bitword_t mightsee[MAX_BITBYTES / sizeof(bitword_t)]; // bit string (was MAX_MAP_LEAFS / 8 bytes: one short)
     pstack_t *head;
 
     leaf_t *leaf;
@@ -78,7 +98,7 @@ struct pstack_t
 
 struct threaddata_t
 {
-    byte *leafvis; // bit string
+    bitword_t *leafvis; // bit string
     //      byte            fullportal[MAX_PORTALS/8];              // bit string
     portal_t *base;
     pstack_t pstack_head;
@@ -108,7 +128,10 @@ extern portal_t *g_portals;
 extern leaf_t *g_leafs;
 
 extern unsigned g_bitbytes;
-extern unsigned g_bitlongs;
+extern unsigned g_bitlongs; // g_bitbytes in bitword_t units
+
+// A zeroed bit string of g_bitbytes bytes.
+bitword_t *AllocBitString();
 
 void BasePortalVis(int /*threadnum*/);
 

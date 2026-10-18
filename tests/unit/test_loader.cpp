@@ -206,9 +206,9 @@ TEST_SUITE("loader")
 
         Image ed;
         ed.Set(LUMP_VERTEXES, sizeof(dvertex_t));
-        ed.Set(LUMP_EDGES, sizeof(dedge_t));
-        ed.At<dedge_t>(LUMP_EDGES, 0).v[1] = 1;
-        CheckRejected(ed, "edge.bsp", "LoadBSPFile: edge 0 refers to vertex 1, but there are only 1");
+        ed.Set(LUMP_EDGES, 2 * sizeof(dedge_t));
+        ed.At<dedge_t>(LUMP_EDGES, 1).v[1] = 1;
+        CheckRejected(ed, "edge.bsp", "LoadBSPFile: edge 1 refers to vertex 1, but there are only 1");
 
         Image nd;
         nd.Set(LUMP_PLANES, sizeof(dplane_t));
@@ -224,6 +224,20 @@ TEST_SUITE("loader")
         md.At<dmodel_t>(LUMP_MODELS, 0).headnode[0] = -1;
         md.At<dmodel_t>(LUMP_MODELS, 0).headnode[1] = 3;
         CheckRejected(md, "model.bsp", "LoadBSPFile: model 0 hull 1 refers to clipnode 3, but there are only 0");
+    }
+
+    TEST_CASE("the dummy edge 0 is only checked when a surfedge uses it")
+    {
+        Image img; // what hlbsp writes for a map without geometry: edge 0 = (0, 0), no vertexes
+        img.Set(LUMP_EDGES, sizeof(dedge_t));
+        const fs::path path = img.Write("dummy_edge.bsp");
+        const ProbeResult r = Probe(path);
+        CAPTURE(r.output);
+        CHECK(r.exit_code == 0);
+        fs::remove(path);
+
+        img.Set(LUMP_SURFEDGES, sizeof(int)); // surfedge 0 -> edge 0
+        CheckRejected(img, "used_edge0.bsp", "LoadBSPFile: edge 0 refers to vertex 0, but there are only 0");
     }
 
     TEST_CASE("garbage visofs is not a load error (only hlrad reads it)")

@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <algorithm>
+#include <vector>
 
 #include "hlvis/hlvis.h"
 #include "common/log.h"
@@ -9,8 +11,6 @@
 #include "common/threads.h"
 #include "common/winding.h"
 
-constexpr int MAX_PORTALS = 32768;
-constexpr int PORTALSEE_SIZE = (MAX_PORTALS * 2);
 
 static inline winding_t *AllocStackWinding(pstack_t *const stack)
 {
@@ -19,6 +19,7 @@ static inline winding_t *AllocStackWinding(pstack_t *const stack)
         if (stack->freewindings[i])
         {
             stack->freewindings[i] = 0;
+            stack->windings[i].points = stack->windings[i].storage;
             return &stack->windings[i];
         }
     }
@@ -42,12 +43,12 @@ static inline void FreeStackWinding(const winding_t *const w, pstack_t *const st
 
 static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack, const portalplane_t *const split)
 {
-    vec_t dists[128];
-    int sides[128];
+    vec_t dists[MAX_POINTS_ON_WINDING + 1]; // + 1: the first point is repeated after the last
+    int sides[MAX_POINTS_ON_WINDING + 1];
     int counts[3] = {0, 0, 0};
     int i;
 
-    if (in->numpoints > (sizeof(sides) / sizeof(*sides)))
+    if (in->numpoints > MAX_POINTS_ON_WINDING)
     {
         Error("Winding with too many sides!");
     }
@@ -345,9 +346,9 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
         const unsigned bit = (1 << (leafnum & 7));
 
         // mark the leaf as visible
-        if (!(thread->leafvis[offset] & bit))
+        if (!(BitBytes(thread->leafvis)[offset] & bit))
         {
-            thread->leafvis[offset] |= bit;
+            BitBytes(thread->leafvis)[offset] |= bit;
             thread->base->numcansee++;
         }
     }
@@ -369,11 +370,11 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
             const unsigned offset = p->leaf >> 3;
             const unsigned bit = 1 << (p->leaf & 7);
 
-            if (!(stack.head->mightsee[offset] & bit))
+            if (!(BitBytes(stack.head->mightsee)[offset] & bit))
             {
                 continue; // can't possibly see it
             }
-            if (!(prevstack->mightsee[offset] & bit))
+            if (!(BitBytes(prevstack->mightsee)[offset] & bit))
             {
                 continue; // can't possibly see it
             }
@@ -381,23 +382,23 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
 
         // if the portal can't see anything we haven't allready seen, skip it
         {
-            long *test;
+            const bitword_t *test;
 
             if (p->status == stat_done)
             {
-                test = (long *)p->visbits;
+                test = p->visbits;
             }
             else
             {
-                test = (long *)p->mightsee;
+                test = p->mightsee;
             }
 
             {
                 const int bitlongs = g_bitlongs;
 
                 {
-                    long *prevmight = (long *)prevstack->mightsee;
-                    long *might = (long *)stack.mightsee;
+                    const bitword_t *prevmight = prevstack->mightsee;
+                    bitword_t *might = stack.mightsee;
 
                     for (unsigned j = 0; j < bitlongs; j++, test++, might++, prevmight++)
                     {
@@ -406,8 +407,8 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
                 }
 
                 {
-                    long *might = (long *)stack.mightsee;
-                    long *vis = (long *)thread->leafvis;
+                    const bitword_t *might = stack.mightsee;
+                    const bitword_t *vis = thread->leafvis;
                     unsigned j;
                     for (j = 0; j < bitlongs; j++, might++, vis++)
                     {
@@ -512,7 +513,7 @@ void PortalFlow(portal_t *p)
     if (p->status != stat_working)
         Error("PortalFlow: reflowed");
 
-    p->visbits = (byte *)std::calloc(1, g_bitbytes);
+    p->visbits = AllocBitString();
 
     std::memset(&data, 0, sizeof(data));
     data.leafvis = p->visbits;
@@ -524,7 +525,7 @@ void PortalFlow(portal_t *p)
     data.pstack_head.portalplane = &p->plane;
     for (unsigned i = 0; i < g_bitlongs; i++)
     {
-        ((long *)data.pstack_head.mightsee)[i] = ((long *)p->mightsee)[i];
+        data.pstack_head.mightsee[i] = p->mightsee[i];
     }
     RecursiveLeafFlow(p->leaf, &data, &data.pstack_head);
 
@@ -534,7 +535,7 @@ void PortalFlow(portal_t *p)
 //      This is a rough first-order aproximation that is used to trivially reject some
 //      of the final calculations.
 
-static void SimpleFlood(byte *const srcmightsee, const int leafnum, byte *const portalsee, unsigned int *const c_leafsee)
+static void SimpleFlood(byte *const srcmightsee, const int leafnum, const byte *const portalsee, unsigned int *const c_leafsee)
 {
     {
         const unsigned offset = leafnum >> 3;
@@ -572,8 +573,8 @@ void BasePortalVis(int /*threadnum*/)
     int j, k;
     portal_t *tp;
     winding_t *w;
-    byte portalsee[PORTALSEE_SIZE];
     const int portalsize = (g_numportals * 2);
+    std::vector<byte> portalsee(portalsize); // was byte[PORTALSEE_SIZE], cleared with portalsize unchecked
 
     while (1)
     {
@@ -582,9 +583,9 @@ void BasePortalVis(int /*threadnum*/)
             break;
         portal_t *p = g_portals + i;
 
-        p->mightsee = (byte *)std::calloc(1, g_bitbytes);
+        p->mightsee = AllocBitString();
 
-        std::memset(portalsee, 0, portalsize);
+        std::fill(portalsee.begin(), portalsee.end(), 0);
 
         for (j = 0, tp = g_portals; j < portalsize; j++, tp++)
         {
@@ -624,7 +625,7 @@ void BasePortalVis(int /*threadnum*/)
             portalsee[j] = 1;
         }
 
-        SimpleFlood(p->mightsee, p->leaf, portalsee, &p->nummightsee);
+        SimpleFlood(BitBytes(p->mightsee), p->leaf, portalsee.data(), &p->nummightsee);
     }
 }
 
@@ -894,14 +895,14 @@ void MaxDistVis(int /*threadnum*/)
                 bool visible = false;
                 for (int k = 0; k < l->numportals; k++)
                 {
-                    if (l->portals[k]->visbits[offset_tl] & bit_tl)
+                    if (BitBytes(l->portals[k]->visbits)[offset_tl] & bit_tl)
                     {
                         visible = true;
                     }
                 }
                 for (int m = 0; m < tl->numportals; m++)
                 {
-                    if (tl->portals[m]->visbits[offset_l] & bit_l)
+                    if (BitBytes(tl->portals[m]->visbits)[offset_l] & bit_l)
                     {
                         visible = true;
                     }
@@ -996,11 +997,11 @@ void MaxDistVis(int /*threadnum*/)
             ThreadLock();
             for (int k = 0; k < l->numportals; k++)
             {
-                l->portals[k]->visbits[offset_tl] &= ~bit_tl;
+                BitBytes(l->portals[k]->visbits)[offset_tl] &= ~bit_tl;
             }
             for (int m = 0; m < tl->numportals; m++)
             {
-                tl->portals[m]->visbits[offset_l] &= ~bit_l;
+                BitBytes(tl->portals[m]->visbits)[offset_l] &= ~bit_l;
             }
             ThreadUnlock();
 
