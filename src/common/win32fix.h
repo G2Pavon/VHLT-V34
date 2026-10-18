@@ -53,17 +53,4 @@ static inline int sprintf_s(char (&d)[size], const char *f, ...) // hlrad
     return r;
 }
 
-static inline uint32_t GetModuleFileName(void *, char *f, uint32_t s) // hlbsp
-{
-    ssize_t len = readlink("/proc/self/exe", f, s - 1);
-    if (len != -1)
-    {
-        f[len] = '\0';
-        return (uint32_t)len;
-    }
-    if (s > 0)
-        f[0] = '\0';
-    return 0;
-}
-
 #endif

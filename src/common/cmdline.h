@@ -15,6 +15,12 @@ struct CommandLineOption
     const char *missingvalue = nullptr; // logged before usage() when the value is missing
 };
 
+// An option without a value that sets target to value.
+inline CommandLineOption CommandLineFlag(const char *name, bool &target, bool value)
+{
+    return CommandLineOption{name, [&target, value](const char *) { target = value; }};
+}
+
 // A size given in kilobytes, in bytes. compat: the old `atoi(value) * 1024` overflowed a signed int
 // (undefined) for values above 2 GB; this wraps the way it did in practice.
 inline int KilobytesToBytes(int kilobytes)

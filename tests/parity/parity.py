@@ -1178,7 +1178,22 @@ def regress_leak_all_hulls(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
-REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls}
+def regress_hlbsp_threads(bindir: Path, tmp: Path) -> list[str]:
+    """hlbsp parsed -threads into a local variable and dropped it (B4): the settings table showed the
+    machine's thread count whatever was asked for. It must show the requested count now."""
+    tmp.mkdir(parents=True)
+    (tmp / "tiny.map").write_text(CLI_MAP)
+    run([DATA / "builds" / "oracle" / "bin" / "hlcsg", "-threads", "1", "tiny"], cwd=tmp, capture_output=True, check=True)
+    proc = run([bindir / "hlbsp", "-threads", "3", "tiny"], cwd=tmp, capture_output=True)
+    if proc.returncode != 0:
+        return [f"hlbsp exit {proc.returncode}"]
+    if not re.search(rb"^threads +\[ +3 \]", proc.stdout, re.M):
+        return ["settings table does not show -threads 3"]
+    return []
+
+
+REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
+               "hlbsp-threads": regress_hlbsp_threads}
 
 
 def cmd_regress(args) -> int:

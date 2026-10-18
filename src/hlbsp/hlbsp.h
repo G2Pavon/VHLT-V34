@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <utility>
 
 #include "common/bspfile.h"
 #include "common/mathtypes.h"
@@ -20,7 +22,7 @@ struct plane_t
 };
 extern plane_t g_mapplanes[MAX_INTERNAL_MAP_PLANES];
 
-#define BOGUS_RANGE 144000
+constexpr int BOGUS_RANGE = 144000;
 
 // the exact bounding box of the brushes is expanded some for the headnode
 // volume.  is this still needed?
@@ -31,7 +33,7 @@ constexpr int SIDESPACE = 24;
 constexpr int DEFAULT_MAXNODE_SIZE = 1024;
 
 constexpr int MAXEDGES = 48;  // 32
-constexpr int MAXPOINTS = 28; // don't let a base face get past this \
+constexpr int MAXPOINTS = 28; // don't let a base face get past this,
                               // because it can be split more later
 
 typedef enum
@@ -123,6 +125,13 @@ struct node_t
 };
 
 constexpr int NUM_HULLS = 4; // engine constant
+
+// Merges identical clipnodes (writebsp.cpp, brink.cpp): planenum and children -> index.
+using clipnodemap_t = std::map<std::pair<int, std::pair<int, int>>, int>;
+inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c)
+{
+    return std::make_pair(c.planenum, std::make_pair(c.children[0], c.children[1]));
+}
 
 //=============================================================================
 // solidbsp.c

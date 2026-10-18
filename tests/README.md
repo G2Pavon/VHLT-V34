@@ -22,8 +22,8 @@ ctest --test-dir build --output-on-failure
 hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
 `common_tests_f64` and `common_tests_f32`.
 `test_cmdline.cpp` covers `ParseCommandLine` (common/cmdline.h), the table-driven option parser
-the tools move to as they are modernized (hlcsg since H6; `parity.py cli` checks its command
-lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
+the tools move to as they are modernized (hlcsg since H6, hlbsp since B5; `parity.py cli` checks
+their command lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
 `brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`).
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.
@@ -178,7 +178,8 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
   `check --tier csg-variants --threads 16` passes (`csg-default` is plain hlcsg). Measured after H6
   on the whole pipeline at 16 threads: the quick tier matches the `-threads 1` references entirely;
   in the full tier hlvis differs on 15 of 29 maps (hlrad only because of its input). hlbsp is
-  single-threaded (`-threads` is parsed and discarded), so it always matches.
+  single-threaded, so it always matches (until B4 `-threads` was parsed into a local and discarded;
+  now it sets the thread count shown in the settings table, checked by `regress hlbsp-threads`).
 - ThreadSanitizer (hlcsg, 16 threads; 0 warnings since H4, thousands at oracle-base):
 
   ```sh
@@ -203,7 +204,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-b1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios where the oracle's behaviour is undefined (texdata-growth, leak-all-hulls)
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads
 python3 $P cli --bin DIR [--tools hlcsg hlbsp]   # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]

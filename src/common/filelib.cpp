@@ -3,9 +3,12 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <system_error>
 
 #include "common/log.h"
 #include "common/messages.h"
+#include "common/win32fix.h" // GetModuleFileNameA (Windows)
 
 UniqueFile SafeOpen(const char *const filename, const char *const mode)
 {
@@ -76,4 +79,17 @@ int LoadFile(const char *const filename, char **bufferptr)
 
     *bufferptr = buffer;
     return static_cast<int>(data.size());
+}
+
+std::string ExecutablePath()
+{
+#if defined(_WIN32)
+    char buffer[_MAX_PATH];
+    const DWORD length = GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
+    return std::string(buffer, length);
+#else
+    std::error_code error;
+    const std::filesystem::path path = std::filesystem::read_symlink("/proc/self/exe", error);
+    return error ? std::string() : path.string();
+#endif
 }

@@ -116,7 +116,7 @@ typedef struct hashvert_s
     int numedges;
 } hashvert_t;
 
-#define POINT_EPSILON (ON_EPSILON / 2) //--vluzacn
+static constexpr vec_t POINT_EPSILON = ON_EPSILON / 2; //--vluzacn
 
 static hashvert_t hvertex[MAX_MAP_VERTS];
 static hashvert_t *hvert_p;

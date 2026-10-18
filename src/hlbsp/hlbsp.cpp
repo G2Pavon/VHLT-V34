@@ -13,13 +13,9 @@
 #include "common/log.h"
 #include "common/threads.h"
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
 
 static constexpr const char *ENTITIES_VOID = "entities.void";
-#define ENTITIES_VOID_EXT ".void"
+static constexpr const char *ENTITIES_VOID_EXT = ".void";
 static constexpr int MIN_SUBDIVIDE_SIZE = 64;
 static constexpr int MAX_SUBDIVIDE_SIZE = 512;
 
@@ -738,7 +734,7 @@ static facestyle_e SetFaceType(face_t *f)
 static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
 {
     int detaillevel;
-    int planenum, g_texinfo, contents, numpoints;
+    int planenum, texinfo, contents, numpoints;
     double v[3];
     int line = 0;
 
@@ -748,7 +744,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
         if (file == polyfiles[2] && g_nohull2)
             break;
         line++;
-        int r = std::fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &g_texinfo, &contents, &numpoints);
+        int r = std::fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &texinfo, &contents, &numpoints);
         if (r == 0 || r == -1)
         {
             return nullptr;
@@ -769,18 +765,18 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
         {
             Error("ReadSurfs (line %i): %i > g_numplanes\n", line, planenum);
         }
-        if (g_texinfo > g_numtexinfo)
+        if (texinfo > g_numtexinfo)
         {
-            Error("ReadSurfs (line %i): %i > g_numtexinfo", line, g_texinfo);
+            Error("ReadSurfs (line %i): %i > g_numtexinfo", line, texinfo);
         }
         // The checks above let these through (off by one, or negative): out-of-range indexes.
         if (planenum < 0 || planenum == g_numplanes)
         {
             Error("ReadSurfs (line %i): plane %i out of range (%i planes)", line, planenum, g_numplanes);
         }
-        if (g_texinfo < -1 || g_texinfo == g_numtexinfo) // -1: a face without texture
+        if (texinfo < -1 || texinfo == g_numtexinfo) // -1: a face without texture
         {
-            Error("ReadSurfs (line %i): texinfo %i out of range (%i texinfos)", line, g_texinfo, g_numtexinfo);
+            Error("ReadSurfs (line %i): texinfo %i out of range (%i texinfos)", line, texinfo, g_numtexinfo);
         }
         if (numpoints < 0)
         {
@@ -791,7 +787,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
             Error("ReadSurfs (line %i): detaillevel %i < 0", line, detaillevel);
         }
 
-        if (!strcasecmp(GetTextureByNumber(g_texinfo), "skip"))
+        if (!strcasecmp(GetTextureByNumber(texinfo), "skip"))
         {
             for (int i = 0; i < numpoints; i++)
             {
@@ -809,7 +805,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
         face_t *f = AllocFace();
         f->detaillevel = detaillevel;
         f->planenum = planenum;
-        f->texturenum = g_texinfo;
+        f->texturenum = texinfo;
         f->contents = contents;
         f->numpoints = numpoints;
         f->next = validfaces[planenum];
@@ -1294,7 +1290,7 @@ static void ProcessFile(const char *const filename)
 
 int main(const int argc, char **argv)
 {
-    const char *mapname_from_arg = NULL;
+    const char *mapname_from_arg = nullptr;
 
     g_Program = "hlbsp";
 
@@ -1302,136 +1298,58 @@ int main(const int argc, char **argv)
         Usage();
 
     // check command line args
-    for (int i = 1; i < argc; i++)
-    {
-        if (!strcasecmp(argv[i], "-threads"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int g_numthreads = std::atoi(argv[++i]);
-
-                if (g_numthreads < 1)
-                {
-                    Log("Expected value of at least 1 for '-threads'\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-estimate"))
-        {
-            g_estimate = true;
-        }
-        else if (!strcasecmp(argv[i], "-chart"))
-        {
-            g_chart = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-nohull2"))
-        {
-            g_nohull2 = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-subdivide"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_subdivide_size = std::atoi(argv[++i]);
-                if (g_subdivide_size > MAX_SUBDIVIDE_SIZE)
-                {
-                    Warning("Maximum value for subdivide size is %i, '-subdivide %i' ignored",
-                            MAX_SUBDIVIDE_SIZE, g_subdivide_size);
-                    g_subdivide_size = MAX_SUBDIVIDE_SIZE;
-                }
-                else if (g_subdivide_size < MIN_SUBDIVIDE_SIZE)
-                {
-                    Warning("Mininum value for subdivide size is %i, '-subdivide %i' ignored",
-                            MIN_SUBDIVIDE_SIZE, g_subdivide_size);
-                    g_subdivide_size = MIN_SUBDIVIDE_SIZE; //MAX_SUBDIVIDE_SIZE; //--vluzacn
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-maxnodesize"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_maxnode_size = std::atoi(argv[++i]);
-                if (g_maxnode_size > MAX_MAXNODE_SIZE)
-                {
-                    Warning("Maximum value for max node size is %i, '-maxnodesize %i' ignored",
-                            MAX_MAXNODE_SIZE, g_maxnode_size);
-                    g_maxnode_size = MAX_MAXNODE_SIZE;
-                }
-                else if (g_maxnode_size < MIN_MAXNODE_SIZE)
-                {
-                    Warning("Mininimum value for max node size is %i, '-maxnodesize %i' ignored",
-                            MIN_MAXNODE_SIZE, g_maxnode_size);
-                    g_maxnode_size = MIN_MAXNODE_SIZE; //MAX_MAXNODE_SIZE; //vluzacn
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-viewportal"))
-        {
-            g_viewportal = true;
-        }
-        else if (!strcasecmp(argv[i], "-texdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_miptex) //--vluzacn
-                {
-                    g_max_map_miptex = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-lightdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_lightdata) //--vluzacn
-                {
-                    g_max_map_lightdata = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (argv[i][0] == '-')
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-        else if (!mapname_from_arg)
-        {
-            mapname_from_arg = argv[i];
-        }
-        else
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-    }
+    const CommandLineOption options[] = {
+        {"-threads", [](const char *value) {
+             // B4: sets the thread count (it went into a local that shadowed it, and was dropped);
+             // hlbsp itself runs on one thread
+             g_numthreads = std::atoi(value);
+             if (g_numthreads < 1)
+             {
+                 Log("Expected value of at least 1 for '-threads'\n");
+                 Usage();
+             }
+         },
+         true},
+        CommandLineFlag("-estimate", g_estimate, true),
+        CommandLineFlag("-chart", g_chart, true),
+        CommandLineFlag("-nohull2", g_nohull2, true),
+        {"-subdivide", [](const char *value) {
+             g_subdivide_size = std::atoi(value);
+             if (g_subdivide_size > MAX_SUBDIVIDE_SIZE) // compat: the warnings say "ignored", the value is clamped
+             {
+                 Warning("Maximum value for subdivide size is %i, '-subdivide %i' ignored",
+                         MAX_SUBDIVIDE_SIZE, g_subdivide_size);
+                 g_subdivide_size = MAX_SUBDIVIDE_SIZE;
+             }
+             else if (g_subdivide_size < MIN_SUBDIVIDE_SIZE)
+             {
+                 Warning("Mininum value for subdivide size is %i, '-subdivide %i' ignored",
+                         MIN_SUBDIVIDE_SIZE, g_subdivide_size);
+                 g_subdivide_size = MIN_SUBDIVIDE_SIZE;
+             }
+         },
+         true},
+        {"-maxnodesize", [](const char *value) {
+             g_maxnode_size = std::atoi(value);
+             if (g_maxnode_size > MAX_MAXNODE_SIZE)
+             {
+                 Warning("Maximum value for max node size is %i, '-maxnodesize %i' ignored",
+                         MAX_MAXNODE_SIZE, g_maxnode_size);
+                 g_maxnode_size = MAX_MAXNODE_SIZE;
+             }
+             else if (g_maxnode_size < MIN_MAXNODE_SIZE)
+             {
+                 Warning("Mininimum value for max node size is %i, '-maxnodesize %i' ignored",
+                         MIN_MAXNODE_SIZE, g_maxnode_size);
+                 g_maxnode_size = MIN_MAXNODE_SIZE;
+             }
+         },
+         true},
+        CommandLineFlag("-viewportal", g_viewportal, true),
+        {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
+        {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
+    };
+    mapname_from_arg = ParseCommandLine(argc, argv, options, Usage);
 
     if (!mapname_from_arg)
     {
@@ -1480,16 +1398,13 @@ int main(const int argc, char **argv)
         safe_strncpy(strSystemEntitiesVoidFile, ENTITIES_VOID, _MAX_PATH);
         if (!q_exists(strSystemEntitiesVoidFile))
         {
-            char tmp[_MAX_PATH];
             // try looking in the directory we were run from
-
-            GetModuleFileName(NULL, tmp, _MAX_PATH);
-            ExtractFilePath(tmp, strSystemEntitiesVoidFile);
+            ExtractFilePath(ExecutablePath().c_str(), strSystemEntitiesVoidFile);
             safe_strncat(strSystemEntitiesVoidFile, ENTITIES_VOID, _MAX_PATH);
         }
 
         // Set the optional level specific lights filename
-        safe_snprintf(strMapEntitiesVoidFile, _MAX_PATH, "%s" ENTITIES_VOID_EXT, g_Mapname);
+        safe_snprintf(strMapEntitiesVoidFile, _MAX_PATH, "%s%s", g_Mapname, ENTITIES_VOID_EXT);
 
         LoadAllowableOutsideList(strSystemEntitiesVoidFile); // default entities.void
         if (*strMapEntitiesVoidFile)

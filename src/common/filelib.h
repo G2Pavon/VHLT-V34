@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <memory>
+#include <string>
 #include <vector>
 
 // Owning FILE handle: closed when it goes out of scope.
@@ -28,3 +29,6 @@ std::FILE *SafeOpenWrite(const char *const filename);
 std::FILE *SafeOpenRead(const char *const filename);
 // *bufferptr receives a malloc'd, NUL-terminated copy of the file (free it with std::free).
 int LoadFile(const char *const filename, char **bufferptr);
+
+// The path of the running executable, or "" if it cannot be found.
+std::string ExecutablePath();

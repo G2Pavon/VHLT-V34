@@ -1270,9 +1270,6 @@ int main(const int argc, char **argv)
     InitDefaultHulls();
 
     // detect argv
-    const auto flag = [](const char *name, bool &target, bool value) {
-        return CommandLineOption{name, [&target, value](const char *) { target = value; }};
-    };
     const CommandLineOption options[] = {
         {"-threads", [](const char *value) {
              g_numthreads = std::atoi(value);
@@ -1283,11 +1280,11 @@ int main(const int argc, char **argv)
              }
          },
          true},
-        flag("-estimate", g_estimate, true),
-        flag("-chart", g_chart, true),
-        flag("-noskyclip", g_skyclip, false),
-        flag("-onlyents", g_onlyents, true),
-        flag("-clipeconomy", g_bClipNazi, true),
+        CommandLineFlag("-estimate", g_estimate, true),
+        CommandLineFlag("-chart", g_chart, true),
+        CommandLineFlag("-noskyclip", g_skyclip, false),
+        CommandLineFlag("-onlyents", g_onlyents, true),
+        CommandLineFlag("-clipeconomy", g_bClipNazi, true),
         {"-cliptype", [](const char *value) {
              static constexpr std::pair<const char *, cliptype> types[] = {
                  {"smallest", clip_smallest}, {"normalized", clip_normalized}, {"simple", clip_simple},
@@ -1303,13 +1300,13 @@ int main(const int argc, char **argv)
              // compat: an unknown cliptype is ignored
          },
          true, "Error: -cliptype: incorrect usage of parameter\n"},
-        flag("-wadautodetect", g_bWadAutoDetect, true),
-        flag("-nowadtextures", g_wadtextures, false),
+        CommandLineFlag("-wadautodetect", g_bWadAutoDetect, true),
+        CommandLineFlag("-nowadtextures", g_wadtextures, false),
         {"-wadinclude", [](const char *value) { g_WadInclude.push_back(value); }, true},
         {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
         {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
-        flag("-nolightopt", g_nolightopt, true),
-        flag("-notextconvert", g_noutf8, true),
+        CommandLineFlag("-nolightopt", g_nolightopt, true),
+        CommandLineFlag("-notextconvert", g_noutf8, true),
     };
     mapname_from_arg = ParseCommandLine(argc, argv, options, Usage);
 

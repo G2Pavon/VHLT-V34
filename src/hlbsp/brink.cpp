@@ -28,7 +28,7 @@
 //                                     O-------X
 //
 
-#define BRINK_FLOOR_THRESHOLD 0.7
+static constexpr vec_t BRINK_FLOOR_THRESHOLD = 0.7;
 static constexpr int MAXCLIPNODES = (MAX_MAP_CLIPNODES * 8);
 static constexpr int MAXBRINKWEDGES = 64;
 
@@ -70,7 +70,7 @@ typedef struct bbrinknode_s
     bclipnode_t *clipnode{};
 } bbrinknode_t;
 
-typedef struct
+struct bbrink_t
 {
     vec3_t start{}, stop{};
     vec3_t direction{};
@@ -79,7 +79,7 @@ typedef struct
     std::vector<bbrinknode_t> nodes;
 
     struct btreeedge_s *edge = nullptr; // only for use in deciding brink type
-} bbrink_t;
+};
 
 static bbrink_t *CopyBrink(bbrink_t *other)
 {
@@ -117,7 +117,7 @@ bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 
 static void BrinkSplitClipnode(bbrink_t *b, const plane_t *plane, int planenum, bclipnode_t *prev, bclipnode_t *n0, bclipnode_t *n1)
 {
-    int found;
+    int found = -1; // numfound == 1 below
     int numfound = 0;
     for (int i = 0; i < b->numnodes; i++)
     {
@@ -168,7 +168,7 @@ static void BrinkSplitClipnode(bbrink_t *b, const plane_t *plane, int planenum, 
 
 static void BrinkReplaceClipnode(bbrink_t *b, bclipnode_t *prev, bclipnode_t *n)
 {
-    int found;
+    int found = -1; // numfound == 1 below
     int numfound = 0;
     for (int i = 0; i < b->numnodes; i++)
     {
@@ -1078,7 +1078,7 @@ static void BuildTreeCells_r(int &numobjects, bclipnode_t *c)
     BuildTreeCells_r(numobjects, c->children[1]);
 }
 
-typedef struct bbrinkinfo_s
+struct bbrinkinfo_t
 {
     int numclipnodes = 0;
     std::vector<bclipnode_t> clipnodes; // children point into it: never resized once built
@@ -1086,7 +1086,7 @@ typedef struct bbrinkinfo_s
     btreeleaf_t *leaf_outside = nullptr;
     int numbrinks = 0;
     std::vector<bbrink_t *> brinks; // not owned (each edge owns its brink)
-} bbrinkinfo_t;
+};
 
 static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnodes, const dclipnode_t *clipnodes, int headnode)
 {
@@ -1430,10 +1430,11 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
 
 static void AnalyzeBrinks(bbrinkinfo_t *info)
 {
-    int countgood = 0;
-    int countinvalid = 0;
-    int countskipped = 0;
-    int countfixed = 0;
+    // statistics, never printed
+    [[maybe_unused]] int countgood = 0;
+    [[maybe_unused]] int countinvalid = 0;
+    [[maybe_unused]] int countskipped = 0;
+    [[maybe_unused]] int countfixed = 0;
     for (int i = 0; i < info->numbrinks; i++)
     {
         bbrink_t *b = info->brinks[i];
@@ -1640,11 +1641,12 @@ static void DeleteClipnodes(bbrinkinfo_t *info)
 
 static void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes and compress clipnodes better if using HLBSP_MERGECLIPNODE
 {
-    int countfloorblocking = 0;
-    int countfloor = 0;
-    int countwallblocking = 0;
-    int countwall = 0;
-    int countany = 0;
+    // statistics, never printed
+    [[maybe_unused]] int countfloorblocking = 0;
+    [[maybe_unused]] int countfloor = 0;
+    [[maybe_unused]] int countwallblocking = 0;
+    [[maybe_unused]] int countwall = 0;
+    [[maybe_unused]] int countany = 0;
     for (int i = 0; i < info->numclipnodes; i++)
     {
         bclipnode_t *clipnode = &info->clipnodes[i];
@@ -1726,11 +1728,6 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     return info;
 }
 
-typedef std::map<std::pair<int, std::pair<int, int>>, int> clipnodemap_t;
-inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c) // duplicated in writebsp.cpp
-{
-    return std::make_pair(c.planenum, std::make_pair(c.children[0], c.children[1]));
-}
 
 static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bbrinklevel_e level, int &headnode_out, dclipnode_t *begin, int end, int &current, clipnodemap_t *outputmap)
 {

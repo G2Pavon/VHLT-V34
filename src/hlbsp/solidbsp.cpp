@@ -1273,7 +1273,7 @@ static bool CalcNodeBounds(node_t *node, vec3_t validmins, vec3_t validmaxs)
         }
         next_portal = p->next[side];
 
-        for (int i = 0; i < p->winding->m_NumPoints; i++)
+        for (unsigned int i = 0; i < p->winding->m_NumPoints; i++)
         {
             for (int j = 0; j < 3; j++)
             {

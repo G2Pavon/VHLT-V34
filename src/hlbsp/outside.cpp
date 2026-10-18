@@ -433,24 +433,27 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
                 // have a vlaid point
                 if (!std::strcmp(cl, "info_player_start"))
                 {
-                    int x, y;
-
-                    for (x = -16; x <= 16; x += 16)
-                    {
-                        for (y = -16; y <= 16; y += 16)
+                    const auto nudge = [&] {
+                        for (int x = -16; x <= 16; x += 16)
                         {
-                            origin[0] += x;
-                            origin[1] += y;
-                            if (PlaceOccupant(i, origin, node))
+                            for (int y = -16; y <= 16; y += 16)
                             {
-                                inside = true;
-                                goto gotit;
+                                origin[0] += x;
+                                origin[1] += y;
+                                if (PlaceOccupant(i, origin, node))
+                                {
+                                    return true;
+                                }
+                                origin[0] -= x;
+                                origin[1] -= y;
                             }
-                            origin[0] -= x;
-                            origin[1] -= y;
                         }
+                        return false;
+                    };
+                    if (nudge())
+                    {
+                        inside = true;
                     }
-                gotit:;
                 }
                 else
                 {

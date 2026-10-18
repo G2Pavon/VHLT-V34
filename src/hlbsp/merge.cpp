@@ -5,7 +5,7 @@
 #include "common/mathtypes.h"
 #include "common/mathlib.h"
 
-#define CONTINUOUS_EPSILON ON_EPSILON
+static constexpr vec_t CONTINUOUS_EPSILON = ON_EPSILON;
 
 //      If two polygons share a common edge and the edges that meet at the
 //      common points are both inside the other polygons, merge them
@@ -214,13 +214,8 @@ void MergePlaneFaces(surface_t *plane)
 
 void MergeAll(surface_t *surfhead)
 {
-    int mergefaces = 0;
     for (surface_t *surf = surfhead; surf; surf = surf->next)
     {
         MergePlaneFaces(surf);
-        for (face_t *f = surf->faces; f; f = f->next)
-        {
-            mergefaces++;
-        }
     }
 }

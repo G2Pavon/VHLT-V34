@@ -233,7 +233,7 @@ static wedge_t *FindEdge(const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
     return w;
 }
 
-#define T_EPSILON ON_EPSILON
+static constexpr vec_t T_EPSILON = ON_EPSILON;
 static void AddVert(const wedge_t *const w, const vec_t t)
 {
     wvert_t *v = w->head.next;
@@ -325,7 +325,8 @@ static void SplitFaceForTjunc(SuperFace &sf, face_t *original)
 
         tjuncfaces++;
 
-    restart:
+        for (;;) // rotate the winding until the first corner leaves room for a piece
+        {
         // find the last corner
         VectorSubtract(sf.pts[sf.face.numpoints - 1], sf.pts[0], dir);
         VectorNormalize(dir);
@@ -363,7 +364,9 @@ static void SplitFaceForTjunc(SuperFace &sf, face_t *original)
                 VectorCopy(sf.pts[i], sf.pts[i - 1]);
             }
             VectorCopy(test, sf.pts[sf.face.numpoints - 1]);
-            goto restart;
+            continue;
+        }
+        break;
         }
 
         // cut off as big a piece as possible, less than MAXPOINTS, and not
@@ -412,7 +415,9 @@ static void FixFaceEdges(face_t *f)
     superface.face = *f;
     std::memcpy(superface.pts, f->pts, sizeof(f->pts));
 
-restart:
+    for (bool inserted = true; inserted;) // until no edge needs a new vertex
+    {
+    inserted = false;
     for (int i = 0; i < superface.face.numpoints; i++)
     {
         int j = (i + 1) % superface.face.numpoints;
@@ -434,8 +439,10 @@ restart:
             VectorMA(w->origin, v->t, w->dir, superface.pts[j]);
             superface.face.numpoints++;
             hlassume(superface.face.numpoints < MAX_SUPERFACEEDGES, assume_MAX_SUPERFACEEDGES);
-            goto restart;
+            inserted = true; // start again from the first edge
+            break;
         }
+    }
     }
 
     if (superface.face.numpoints <= MAXPOINTS)
