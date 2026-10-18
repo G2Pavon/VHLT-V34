@@ -134,7 +134,7 @@ static inline winding_t *ChopWinding(winding_t *const in, pstack_t *const stack,
         // generate a split point
         {
             unsigned tmp = i + 1;
-            if (tmp >= in->numpoints)
+            if (tmp >= static_cast<unsigned>(in->numpoints))
             {
                 tmp = 0;
             }
@@ -215,7 +215,7 @@ static inline winding_t *ClipToSeperators(
     int counts[3];
     winding_t *target = a_target;
 
-    const unsigned int numpoints = source->numpoints;
+    const int numpoints = source->numpoints;
 
     // check all combinations
     for (i = 0, l = 1; i < numpoints; i++, l++)
@@ -408,7 +408,7 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
             }
 
             {
-                const int bitlongs = g_bitlongs;
+                const unsigned bitlongs = g_bitlongs;
 
                 {
                     const bitword_t *prevmight = prevstack->mightsee;
@@ -491,7 +491,7 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
 
         if (stack.clipPlaneCount > 0)
         {
-            for (unsigned j = 0; j < stack.clipPlaneCount && stack.pass != nullptr; j++)
+            for (int j = 0; j < stack.clipPlaneCount && stack.pass != nullptr; j++)
             {
                 stack.pass = ChopWinding(stack.pass, &stack, &(stack.clipPlane[j]));
             }
@@ -580,8 +580,6 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, const byte *
     }
 }
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 
 void BasePortalVis(int /*threadnum*/)
 {
@@ -646,7 +644,7 @@ void BasePortalVis(int /*threadnum*/)
 
 static bool BestNormalFromWinding(const vec3_t *points, int numpoints, vec3_t &normal_out)
 {
-    const vec3_t *pt1, *pt2, *pt3;
+    const vec3_t *pt1, *pt2 = nullptr, *pt3 = nullptr; // set below whenever the function gets past the checks
     vec3_t d, normal, edge;
     if (numpoints < 3)
     {
@@ -894,7 +892,7 @@ static void ClearBits(std::vector<bitword_t> &bits, unsigned offset, unsigned bi
 
 void MaxDistVis(int /*threadnum*/)
 {
-    int j;
+    unsigned j;
     leaf_t *tl;
 
     while (1)
@@ -914,121 +912,122 @@ void MaxDistVis(int /*threadnum*/)
             unsigned offset_tl = j >> 3;
             unsigned bit_tl = (1 << (j & 7));
 
-            {
-                bool visible = false;
-                for (int k = 0; k < l->numportals; k++)
+            // true: the leafs are farther apart than g_maxdistance, so they cannot see each other
+            const bool toofar = [&]() -> bool {
                 {
-                    if (LoadBits(l->portals[k]->visbits, offset_tl) & bit_tl)
+                    bool visible = false;
+                    for (unsigned k = 0; k < l->numportals; k++)
                     {
-                        visible = true;
-                    }
-                }
-                for (int m = 0; m < tl->numportals; m++)
-                {
-                    if (LoadBits(tl->portals[m]->visbits, offset_l) & bit_l)
-                    {
-                        visible = true;
-                    }
-                }
-                if (!visible)
-                {
-                    goto NoWork;
-                }
-            }
-
-            // rough check
-            {
-                vec3_t v;
-                vec_t dist;
-                const winding_t *w;
-                const leaf_t *leaf[2] = {l, tl};
-                vec3_t center[2];
-                vec_t radius[2];
-                int count[2];
-                for (int side = 0; side < 2; side++)
-                {
-                    count[side] = 0;
-                    VectorClear(center[side]);
-                    for (int a = 0; a < leaf[side]->numportals; a++)
-                    {
-                        w = leaf[side]->portals[a]->winding.get();
-                        for (int b = 0; b < w->numpoints; b++)
+                        if (LoadBits(l->portals[k]->visbits, offset_tl) & bit_tl)
                         {
-                            VectorAdd(w->points[b], center[side], center[side]);
-                            count[side]++;
+                            visible = true;
                         }
                     }
-                }
-                if (!count[0] && !count[1])
-                {
-                    goto Work;
-                }
-                for (int side = 0; side < 2; side++)
-                {
-                    VectorScale(center[side], 1.0 / (vec_t)count[side], center[side]);
-                    radius[side] = 0;
-                    for (int a = 0; a < leaf[side]->numportals; a++)
+                    for (unsigned m = 0; m < tl->numportals; m++)
                     {
-                        w = leaf[side]->portals[a]->winding.get();
-                        for (int b = 0; b < w->numpoints; b++)
+                        if (LoadBits(tl->portals[m]->visbits, offset_l) & bit_l)
                         {
-                            VectorSubtract(w->points[b], center[side], v);
-                            dist = DotProduct(v, v);
-                            radius[side] = qmax(radius[side], dist);
+                            visible = true;
                         }
                     }
-                    radius[side] = std::sqrt(radius[side]);
-                }
-                VectorSubtract(center[0], center[1], v);
-                dist = VectorLength(v);
-                if (qmax(dist - radius[0] - radius[1], 0) >= g_maxdistance - ON_EPSILON)
-                {
-                    goto Work;
-                }
-                if (dist + radius[0] + radius[1] < g_maxdistance - ON_EPSILON)
-                {
-                    goto NoWork;
-                }
-            }
-
-            // exact check
-            {
-                vec_t mindist = 9999999999;
-                vec_t dist;
-                for (int k = 0; k < l->numportals; k++)
-                {
-                    for (int m = 0; m < tl->numportals; m++)
+                    if (!visible)
                     {
-                        const winding_t *w[2];
-                        w[0] = l->portals[k]->winding.get();
-                        w[1] = tl->portals[m]->winding.get();
-                        dist = WindingDist(w);
-                        mindist = qmin(dist, mindist);
+                        return false;
                     }
                 }
-                if (mindist >= g_maxdistance - ON_EPSILON)
-                {
-                    goto Work;
-                }
-                else
-                {
-                    goto NoWork;
-                }
-            }
 
-        Work:
-            for (int k = 0; k < l->numportals; k++)
-            {
-                ClearBits(l->portals[k]->visbits, offset_tl, bit_tl);
-            }
-            for (int m = 0; m < tl->numportals; m++)
-            {
-                ClearBits(tl->portals[m]->visbits, offset_l, bit_l);
-            }
+                // rough check
+                {
+                    vec3_t v;
+                    vec_t dist;
+                    const winding_t *w;
+                    const leaf_t *leaf[2] = {l, tl};
+                    vec3_t center[2];
+                    vec_t radius[2];
+                    int count[2];
+                    for (int side = 0; side < 2; side++)
+                    {
+                        count[side] = 0;
+                        VectorClear(center[side]);
+                        for (unsigned a = 0; a < leaf[side]->numportals; a++)
+                        {
+                            w = leaf[side]->portals[a]->winding.get();
+                            for (int b = 0; b < w->numpoints; b++)
+                            {
+                                VectorAdd(w->points[b], center[side], center[side]);
+                                count[side]++;
+                            }
+                        }
+                    }
+                    if (!count[0] && !count[1])
+                    {
+                        return true;
+                    }
+                    for (int side = 0; side < 2; side++)
+                    {
+                        VectorScale(center[side], 1.0 / (vec_t)count[side], center[side]);
+                        radius[side] = 0;
+                        for (unsigned a = 0; a < leaf[side]->numportals; a++)
+                        {
+                            w = leaf[side]->portals[a]->winding.get();
+                            for (int b = 0; b < w->numpoints; b++)
+                            {
+                                VectorSubtract(w->points[b], center[side], v);
+                                dist = DotProduct(v, v);
+                                radius[side] = qmax(radius[side], dist);
+                            }
+                        }
+                        radius[side] = std::sqrt(radius[side]);
+                    }
+                    VectorSubtract(center[0], center[1], v);
+                    dist = VectorLength(v);
+                    if (qmax(dist - radius[0] - radius[1], 0) >= g_maxdistance - ON_EPSILON)
+                    {
+                        return true;
+                    }
+                    if (dist + radius[0] + radius[1] < g_maxdistance - ON_EPSILON)
+                    {
+                        return false;
+                    }
+                }
 
-        NoWork:
-            continue; // Hack to keep label from causing compile error
+                // exact check
+                {
+                    vec_t mindist = 9999999999;
+                    vec_t dist;
+                    for (unsigned k = 0; k < l->numportals; k++)
+                    {
+                        for (unsigned m = 0; m < tl->numportals; m++)
+                        {
+                            const winding_t *w[2];
+                            w[0] = l->portals[k]->winding.get();
+                            w[1] = tl->portals[m]->winding.get();
+                            dist = WindingDist(w);
+                            mindist = qmin(dist, mindist);
+                        }
+                    }
+                    if (mindist >= g_maxdistance - ON_EPSILON)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }();
+
+            if (toofar)
+            {
+                for (unsigned k = 0; k < l->numportals; k++)
+                {
+                    ClearBits(l->portals[k]->visbits, offset_tl, bit_tl);
+                }
+                for (unsigned m = 0; m < tl->numportals; m++)
+                {
+                    ClearBits(tl->portals[m]->visbits, offset_l, bit_l);
+                }
+            }
         }
     }
 }
-#pragma warning(pop)

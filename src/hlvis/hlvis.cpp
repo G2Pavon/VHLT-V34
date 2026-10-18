@@ -18,10 +18,6 @@
 #include "common/threads.h"
 #include "common/winding.h"
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
 
 static constexpr const char *PORTALFILE = "PRT1"; // .prt file header
 static constexpr bool DEFAULT_FASTVIS = false;
@@ -174,8 +170,6 @@ static portal_t *GetNextPortal()
     return p;
 }
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 static void LeafThread(int /*threadnum*/)
 {
     portal_t *p;
@@ -190,7 +184,6 @@ static void LeafThread(int /*threadnum*/)
         PortalFlow(p);
     }
 }
-#pragma warning(pop)
 
 // Builds the entire visibility list for a leaf
 static void LeafFlow(const int leafnum)
@@ -267,7 +260,7 @@ static void LeafFlow(const int leafnum)
     std::memset(buffer2, 0, diskbytes);
     for (unsigned i = 0; i < g_portalleafs; i++)
     {
-        for (unsigned j = 0; j < leafcounts[i]; j++)
+        for (int j = 0; j < leafcounts[i]; j++)
         {
             int srcofs = i >> 3;
             int srcbit = 1 << (i & 7);
@@ -289,7 +282,7 @@ static void LeafFlow(const int leafnum)
         Error("Vismap expansion overflow");
     }
 
-    for (unsigned j = 0; j < leafcounts[leafnum]; j++)
+    for (int j = 0; j < leafcounts[leafnum]; j++)
     {
         g_dleafs[leafstarts[leafnum] + j + 1].visofs = dest - vismap;
     }
@@ -387,7 +380,25 @@ static void CalcVis()
     //	}
 }
 
-static INLINE void FASTCALL CheckNullToken(const char *const token)
+// The next token of the .prt text (separators " ()\r\n\t", as strtok used them), or nullptr.
+static const char *NextToken(char *&cursor)
+{
+    static constexpr const char *separators = " ()\r\n\t";
+    cursor += std::strspn(cursor, separators);
+    if (!*cursor)
+    {
+        return nullptr;
+    }
+    char *token = cursor;
+    cursor += std::strcspn(cursor, separators);
+    if (*cursor)
+    {
+        *cursor++ = '\0';
+    }
+    return token;
+}
+
+static void CheckNullToken(const char *const token)
 {
     if (token == nullptr)
     {
@@ -397,16 +408,15 @@ static INLINE void FASTCALL CheckNullToken(const char *const token)
 
 static void LoadPortals(char *portal_image)
 {
-    const char *const seperators = " ()\r\n\t";
-
-    char *token = strtok(portal_image, seperators);
+    char *cursor = portal_image;
+    const char *token = NextToken(cursor);
     CheckNullToken(token);
     if (!std::sscanf(token, "%u", &g_portalleafs))
     {
         Error("LoadPortals: failed to read header: number of leafs");
     }
 
-    token = strtok(NULL, seperators);
+    token = NextToken(cursor);
     CheckNullToken(token);
     if (!std::sscanf(token, "%i", &g_numportals))
     {
@@ -440,15 +450,19 @@ static void LoadPortals(char *portal_image)
         Error("Too many portalleafs (g_portalleafs(%d) > MAX_MAP_LEAFS(%d)).", g_portalleafs, MAX_MAP_LEAFS);
     }
     leafcount_all = 0;
-    for (int i = 0; i < g_portalleafs; i++)
+    for (unsigned i = 0; i < g_portalleafs; i++)
     {
         unsigned rval = 0;
-        token = strtok(NULL, seperators);
+        token = NextToken(cursor);
         CheckNullToken(token);
         rval += std::sscanf(token, "%i", &leafcounts[i]);
         if (rval != 1)
         {
             Error("LoadPortals: read leaf %i failed", i);
+        }
+        if (leafcounts[i] < 0) // a negative count made LeafFlow loop over unsigned wrap-around
+        {
+            Error("LoadPortals: leaf %i has %i leafs", i, leafcounts[i]);
         }
         leafstarts[i] = leafcount_all;
         leafcount_all += leafcounts[i];
@@ -457,7 +471,7 @@ static void LoadPortals(char *portal_image)
     { // internal error (this should never happen)
         Error("Corrupted leaf mapping (leafcount_all(%d) != g_dmodels[0].visleafs(%d)).", leafcount_all, g_dmodels[0].visleafs);
     }
-    for (int i = 0; i < g_portalleafs; i++)
+    for (unsigned i = 0; i < g_portalleafs; i++)
     {
         for (int j = 0; j < overview_count; j++)
         {
@@ -484,13 +498,13 @@ static void LoadPortals(char *portal_image)
     {
         unsigned rval = 0;
 
-        token = strtok(NULL, seperators);
+        token = NextToken(cursor);
         CheckNullToken(token);
         rval += std::sscanf(token, "%i", &numpoints);
-        token = strtok(NULL, seperators);
+        token = NextToken(cursor);
         CheckNullToken(token);
         rval += std::sscanf(token, "%i", &leafnums[0]);
-        token = strtok(NULL, seperators);
+        token = NextToken(cursor);
         CheckNullToken(token);
         rval += std::sscanf(token, "%i", &leafnums[1]);
 
@@ -521,13 +535,13 @@ static void LoadPortals(char *portal_image)
             double v[3];
             unsigned rval = 0;
 
-            token = strtok(NULL, seperators);
+            token = NextToken(cursor);
             CheckNullToken(token);
             rval += std::sscanf(token, "%lf", &v[0]);
-            token = strtok(NULL, seperators);
+            token = NextToken(cursor);
             CheckNullToken(token);
             rval += std::sscanf(token, "%lf", &v[1]);
-            token = strtok(NULL, seperators);
+            token = NextToken(cursor);
             CheckNullToken(token);
             rval += std::sscanf(token, "%lf", &v[2]);
 
@@ -675,107 +689,34 @@ int main(const int argc, char **argv)
         Usage();
     }
 
-    for (int i = 1; i < argc; i++)
-    {
-        if (!strcasecmp(argv[i], "-threads"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_numthreads = std::atoi(argv[++i]);
-                if (g_numthreads < 1)
-                {
-                    Log("Expected value of at least 1 for '-threads'\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        else if (!strcasecmp(argv[i], "-estimate"))
-        {
-            g_estimate = true;
-        }
-        else if (!strcasecmp(argv[i], "-fast"))
-        {
-            Log("fastvis = true\n");
-            fastvis = true;
-        }
-        else if (!strcasecmp(argv[i], "-full"))
-        {
-            g_fullvis = true;
-        }
-        else if (!strcasecmp(argv[i], "-chart"))
-        {
-            g_chart = true;
-        }
-        else if (!strcasecmp(argv[i], "-fastthreads"))
-        {
-            g_fastthreads = true;
-        }
-        else if (!strcasecmp(argv[i], "-texdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_miptex) //--vluzacn
-                {
-                    g_max_map_miptex = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
-        {
-            if (i + 1 < argc) //--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_lightdata) //--vluzacn
-                {
-                    g_max_map_lightdata = x; //--vluzacn
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        // AJM: MVD
-        else if (!strcasecmp(argv[i], "-maxdistance"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                // compat: abs of the int (std::abs(INT_MIN) was undefined; it gave 2^31 in practice)
-                g_maxdistance = static_cast<unsigned int>(std::llabs(std::atoi(argv[++i])));
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (argv[i][0] == '-')
-        {
-            Log("Unknown option \"%s\"", argv[i]);
-            Usage();
-        }
-        else if (!mapname_from_arg)
-        {
-            mapname_from_arg = argv[i];
-        }
-        else
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-    }
+    const CommandLineOption options[] = {
+        {"-threads", [](const char *value) {
+             g_numthreads = std::atoi(value);
+             if (g_numthreads < 1)
+             {
+                 Log("Expected value of at least 1 for '-threads'\n");
+                 Usage();
+             }
+         },
+         true},
+        CommandLineFlag("-estimate", g_estimate, true),
+        {"-fast", [](const char *) {
+             Log("fastvis = true\n");
+             fastvis = true;
+         }},
+        CommandLineFlag("-full", g_fullvis, true),
+        CommandLineFlag("-chart", g_chart, true),
+        CommandLineFlag("-fastthreads", g_fastthreads, true),
+        {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
+        {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
+        {"-maxdistance", [](const char *value) {
+             // compat: abs of the int (std::abs(INT_MIN) was undefined; it gave 2^31 in practice)
+             g_maxdistance = static_cast<unsigned int>(std::llabs(std::atoi(value)));
+         },
+         true},
+    };
+    // compat: an unknown '-' option is logged without a newline (a second map name with one)
+    mapname_from_arg = ParseCommandLine(argc, argv, options, Usage, "Unknown option \"%s\"");
 
     if (!mapname_from_arg)
     {

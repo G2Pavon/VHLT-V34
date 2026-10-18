@@ -36,4 +36,6 @@ inline int KilobytesToBytes(const char *value)
 // name), or nullptr if there is none. Calls usage() (which is expected not to return) when an
 // option's value is missing, and after logging `Unknown option "..."` for an argument starting
 // with '-' that is not in the table or for a second non-option argument.
-const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineOption> options, void (*usage)());
+// unknownoption is the format for an unknown '-' argument (hlvis prints it without a newline).
+const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineOption> options, void (*usage)(),
+                             const char *unknownoption = "Unknown option \"%s\"\n");

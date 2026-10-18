@@ -40,12 +40,12 @@ struct portalplane_t
     float dist;
 };
 
-typedef enum
+enum vstatus_t
 {
     stat_none,
     stat_working,
     stat_done
-} vstatus_t;
+};
 
 struct portal_t
 {

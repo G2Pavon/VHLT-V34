@@ -22,8 +22,8 @@ ctest --test-dir build --output-on-failure
 hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
 `common_tests_f64` and `common_tests_f32`.
 `test_cmdline.cpp` covers `ParseCommandLine` (common/cmdline.h), the table-driven option parser
-the tools move to as they are modernized (hlcsg since H6, hlbsp since B5; `parity.py cli` checks
-their command lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
+the tools move to as they are modernized (hlcsg since H6, hlbsp since B5, hlvis since V4;
+`parity.py cli` checks their command lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
 `brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`).
 The BSP round-trip test reads every `.bsp` in `VHLT_TEST_BSP_DIR` (CMake cache variable,
 default `~/.steam/steam/steamapps/common/Half-Life/cstrike/maps`) and is skipped if there are none.

@@ -3,7 +3,8 @@
 #include "common/log.h"
 #include "common/win32fix.h"
 
-const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineOption> options, void (*usage)())
+const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineOption> options, void (*usage)(),
+                             const char *unknownoption)
 {
     const char *positional = nullptr;
     for (int i = 1; i < argc; i++)
@@ -37,7 +38,12 @@ const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineO
                 usage();
             }
         }
-        else if (argv[i][0] == '-' || positional)
+        else if (argv[i][0] == '-')
+        {
+            Log(unknownoption, argv[i]);
+            usage();
+        }
+        else if (positional)
         {
             Log("Unknown option \"%s\"\n", argv[i]);
             usage();

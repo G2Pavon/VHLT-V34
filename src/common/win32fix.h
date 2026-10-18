@@ -22,9 +22,7 @@
 #define FORMAT_PRINTF(A, B)
 
 // legacy shims (MSVC spellings are native here)
-#define FASTCALL __fastcall // hlvis
 #define CDECL __cdecl       // hlrad
-#define INLINE __inline     // hlvis
 #define FORCEINLINE __forceinline // hlrad
 
 #elif defined(__GNUC__) || defined(__clang__)
@@ -38,9 +36,7 @@
 #define FORMAT_PRINTF(A, B) __attribute__((format(printf, A, B)))
 
 // legacy shims: MSVC spellings used by the tools
-#define FASTCALL                                      // hlvis
 #define CDECL                                         // hlrad
-#define INLINE inline                                 // hlvis
 #define FORCEINLINE inline __attribute__((always_inline)) // hlrad
 
 template <size_t size>
