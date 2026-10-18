@@ -79,6 +79,22 @@ python3 $P check --bin ../vhlt-parity/builds/cand/bin --tier full
 All tools run with `-threads 1`. Multi-threaded hlcsg is not deterministic even between two runs
 of the same binary (plane numbering depends on scheduling), so it cannot be compared byte for byte.
 
+### Map sets
+
+Routine runs (`check`, `sanitize`, `bench`, `coverage`) use the core set, `CORE_MAPS` in
+`parity.py`: 25 maps (the feature maps, plants_soc_final, unnamed-compile, cs_assault, cs_estate,
+cs_militia, de_dust2). It was chosen from per-map line coverage of hlcsg, hlbsp and hlvis over the
+quick tier, every csg/bsp/vis tier and the full tier (greedy, cost-weighted), with the expensive
+tail replaced by `fm_clipeconomy`. It covers every line the whole corpus covers except three (a
+brink loop exit, the "world faces exceeded" warning, a tjunc split branch) at about 14% of the
+corpus' tool time. hlrad was not part of that measurement.
+
+- `--full` uses the whole corpus; `--archived` adds the archived maps (`ARCHIVED_MAPS`:
+  liminal_plaza, out of every routine run since 2026-10-18); `--maps` names maps explicitly.
+- `ref` always records the whole corpus (and the archived maps), so `--full` works at any time.
+- Cold gate on the core set (every tool changed, empty cache): quick 6 s, full 23 s, all csg tiers
+  8 s, bsp tiers 9 s, vis tiers 6 s; `--no-cache` quick 9 s; sanitize 60 s.
+
 ### Run cache
 
 `check` reuses tool runs it has already done (`tests/parity/stagecache.py`, data in
@@ -89,7 +105,10 @@ normalized content: the tools only append to the log and delete the .err, never 
 Comparisons with the oracle are cached too, keyed by both sides' contents, the exit codes, the
 padding mode and the harness source.
 
-So only tools whose binary or input changed run. While working on hlbsp, for example, hlcsg's
+So only tools whose binary or input changed run. `.bsp` inputs are keyed without their lump
+padding (the oracle leaves stale bytes there, the tools zero them; LoadBSPFile never reads them), and
+a run that another job is already doing is waited for (lock files in `$DATA/cache/locks`), so a
+map's chain and isolated runs never do the same work twice. While working on hlbsp, for example, hlcsg's
 runs are reused, and if hlbsp's output is unchanged, hlvis and hlrad are reused as well. Identical
 runs inside one check are also shared between modes; the oracle's hlcsg output equals the
 candidate's, so isolated and chain hlbsp often have the same key.

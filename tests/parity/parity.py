@@ -109,13 +109,34 @@ def expand_tiers(tier: str) -> list[str]:
     return TIER_GROUPS.get(tier, [tier])
 STAGE_TIMEOUT = 4 * 3600
 CACHE_ROOT = DATA / "cache"  # stagecache.py: tool runs and comparisons, content-addressed
-DEFAULT_JOBS = max(1, min(os.cpu_count() or 1, 8))
+DEFAULT_JOBS = max(1, os.cpu_count() or 1)  # tools run single-threaded; hlrad peaks at ~160 MB per map
 
 # Maps left out of the compile corpus (fnmatch patterns on the map name). dm_* (dm_stalkfire_f1)
 # cost about a third of the full tier's wall time without covering anything the other maps don't.
 # The stock dm_stalkfire_f1.bsp is still used by probe and the unit tests: it is the only BSP with
 # embedded lightmaps, and loading it takes well under a second.
 EXCLUDED_MAPS = ("dm_*",)
+# Maps kept in the corpus (with their oracle references) but left out of every routine run: they cost
+# far more than they cover. They run only with --archived, or when named in --maps (e.g. for a final
+# wrap-up). liminal_plaza (archived 2026-10-18): about 70% of all vis time and the slowest hlrad map.
+# The one path only it reached: hlbsp's "Exceeded MAX_MAP_VERTS" in bsp-clamped/bsp-subdivide64.
+ARCHIVED_MAPS = ("liminal_plaza",)
+INCLUDE_ARCHIVED = False  # set by --archived
+# The routine test set (default for check, sanitize, bench, coverage; --full selects the whole
+# corpus). Chosen 2026-10-18 by per-map line coverage of hlcsg/hlbsp/hlvis over quick, every csg,
+# bsp and vis tier and the full tier: a greedy cost-weighted cover, then the expensive tail replaced
+# (fm_clipeconomy covers what only deathrun_arctic reached). It covers every line the whole corpus
+# covers but three (a brink loop exit: as_forest/deathrun_arctic; the "world faces exceeded"
+# warning: cnd_kiwi_bhop; a tjunc split branch: de_vertigo and others) at ~14% of the corpus' tool
+# time. hlrad was not measured: revisit in its phase. `ref` always records the whole corpus.
+CORE_MAPS = (
+    "cs_assault", "cs_estate", "cs_militia", "de_dust2", "plants_soc_final", "unnamed-compile",
+    "fm_bsp_leak", "fm_bsp_models", "fm_clipeconomy", "fm_compileparams", "fm_gametext", "fm_hullshape",
+    "fm_lightstyles", "fm_specials", "fm_transform", "fm_usemodel", "fm_vis_overview",
+    "fm_err_coplanar", "fm_err_detail_water", "fm_err_entity_contents", "fm_err_hull_overflow",
+    "fm_err_mixed", "fm_err_noplane", "fm_err_origin_world", "fm_err_two_origins",
+)
+FULL_CORPUS = False  # set by --full (and always for ref)
 
 MISSING_TEXTURE_RE = re.compile(r"::FindTexture\(\) texture (\S+) not found!")
 
@@ -163,17 +184,29 @@ def is_excluded(name: str) -> bool:
     return any(fnmatch.fnmatchcase(name, pattern) for pattern in EXCLUDED_MAPS)
 
 
-def corpus_maps() -> list[str]:
+def corpus_maps(archived: bool | None = None) -> list[str]:
+    """The compile corpus; with archived False (default: unless --archived) without ARCHIVED_MAPS."""
     manifest = DATA / "corpus" / "manifest.json"
     if not manifest.exists():
         sys.exit(f"no corpus at {manifest.parent}; run 'parity.py corpus' first")
-    return sorted(m for m in read_json(manifest)["maps"] if not is_excluded(m))
+    if archived is None:
+        archived = INCLUDE_ARCHIVED
+    return sorted(m for m in read_json(manifest)["maps"]
+                  if not is_excluded(m) and (archived or m not in ARCHIVED_MAPS))
+
+
+def routine_maps() -> list[str]:
+    """What a check runs by default: CORE_MAPS, or the corpus with --full (plus --archived maps)."""
+    maps = corpus_maps()
+    if FULL_CORPUS:
+        return maps
+    return sorted(m for m in maps if m in CORE_MAPS or m in (ARCHIVED_MAPS if INCLUDE_ARCHIVED else ()))
 
 
 def select_maps(requested: list[str] | None) -> list[str]:
-    available = corpus_maps()
+    available = corpus_maps(archived=True)  # archived maps can always be named
     if not requested:
-        return available
+        return routine_maps()
     unknown = sorted(set(requested) - set(available))
     if unknown:
         sys.exit(f"unknown maps: {', '.join(unknown)}")
@@ -516,20 +549,26 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
         tool = STAGE_TOOL[stage]
         args = tool_args(tier, stage, threads)
         r = None
+        locked = False
         if cache:
             key = run_key(bindir, tool, args, name, state)
-            entry = None if audit else cache.get_run(key)
+            entry = None if audit else cache.run_or_wait(key)
+            locked = not audit and entry is None
             if entry:
                 r, state, on_disk = cached_result(entry), entry["outputs"], False
         if r is None:
-            if not on_disk:
-                cache.materialize(state, work)
-                on_disk = True
-            r = run_stage(bindir, tool, args, name, work, root / "console", stage)
-            if snapshots:
-                snapshot(work, root / stage)
-            if cache:
-                state = record_run(cache, key, r, work, root / "console", stage, audit)
+            try:
+                if not on_disk:
+                    cache.materialize(state, work)
+                    on_disk = True
+                r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+                if snapshots:
+                    snapshot(work, root / stage)
+                if cache:
+                    state = record_run(cache, key, r, work, root / "console", stage, audit)
+            finally:
+                if locked:
+                    cache.unlock(key)
         if cache:
             r["outputs"] = state
         results[stage] = r
@@ -552,22 +591,28 @@ def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path,
             continue
         args = tool_args(tier, stage, 1)
         r = None
+        locked = False
         if cache:
             key = run_key(bindir, tool, args, name, cache.manifest(prev))
-            entry = None if audit else cache.get_run(key)
+            entry = None if audit else cache.run_or_wait(key)
+            locked = not audit and entry is None
             if entry:
                 r = cached_result(entry)
                 r["outputs"] = entry["outputs"]
         if r is None:
-            work = root / f"{stage}.work"
-            if work.exists():
+            try:
+                work = root / f"{stage}.work"
+                if work.exists():
+                    shutil.rmtree(work)
+                shutil.copytree(prev, work)
+                r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+                snapshot(work, root / stage)
+                if cache:
+                    r["outputs"] = record_run(cache, key, r, work, root / "console", stage, audit)
                 shutil.rmtree(work)
-            shutil.copytree(prev, work)
-            r = run_stage(bindir, tool, args, name, work, root / "console", stage)
-            snapshot(work, root / stage)
-            if cache:
-                r["outputs"] = record_run(cache, key, r, work, root / "console", stage, audit)
-            shutil.rmtree(work)
+            finally:
+                if locked:
+                    cache.unlock(key)
         results[stage] = r
     return results
 
@@ -652,9 +697,9 @@ def compare_stage_cached(cache, ref_root: Path, ref_res: dict, cand_root: Path, 
     ref_dir = ref_root / stage
     key = stagecache.digest({
         "v": stagecache.VERSION, "harness": harness_digest(), "padding": padding, "stage": stage,
-        "ref": stagecache.manifest_digest(cache.manifest(ref_dir)) if ref_dir.exists() else None,
+        "ref": stagecache.compare_digest(cache.manifest(ref_dir)) if ref_dir.exists() else None,
         "ref_exit": ref_res.get(stage, {}).get("exit"),
-        "cand": stagecache.manifest_digest(cand.get("outputs")) if cand else None,
+        "cand": stagecache.compare_digest(cand.get("outputs")) if cand else None,
         "cand_exit": cand.get("exit") if cand else None})
     hit = cache.get_compare(key)
     if hit is not None:
@@ -829,7 +874,7 @@ def cmd_check(args) -> int:
     log("")
     log(report if failures else summary)
     log(f"report: {run_root / 'report.txt'}")
-    full_corpus = set(maps) == set(corpus_maps())
+    full_corpus = set(CORE_MAPS) & set(corpus_maps(archived=False)) <= set(maps)
     if not failures and last_stage == "rad" and tier_stages(args.tier)[-1] == "rad" and args.threads == 1 and args.mode in ("chain", "both") and full_corpus:
         # These downstream binaries are now known to match the oracle on this tier.
         write_json(full_pass_record(args.tier), {
@@ -1420,6 +1465,8 @@ def main() -> int:
                        help="csg-variants: every csg-only option tier")
         p.add_argument("--maps", nargs="+")
         p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
+        p.add_argument("--archived", action="store_true", help=f"also the archived maps ({', '.join(ARCHIVED_MAPS)})")
+        p.add_argument("--full", action="store_true", help="the whole corpus instead of the core set (CORE_MAPS)")
 
     p = sub.add_parser("ref", help="record oracle outputs for a tier")
     common(p, bin_required=False)
@@ -1485,9 +1532,14 @@ def main() -> int:
     p.add_argument("--maps", nargs="+")
     p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
     p.add_argument("--rebuild", action="store_true")
+    p.add_argument("--archived", action="store_true", help=f"also the archived maps ({', '.join(ARCHIVED_MAPS)})")
+    p.add_argument("--full", action="store_true", help="the whole corpus instead of the core set (CORE_MAPS)")
     p.set_defaults(func=cmd_coverage)
 
     args = ap.parse_args()
+    global INCLUDE_ARCHIVED, FULL_CORPUS
+    INCLUDE_ARCHIVED = getattr(args, "archived", False)
+    FULL_CORPUS = getattr(args, "full", False) or args.cmd == "ref"  # references cover the whole corpus
     DATA.mkdir(parents=True, exist_ok=True)
     return args.func(args)
 

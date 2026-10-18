@@ -436,6 +436,19 @@ def fm_bsp_geometry():
     return [world(*stairs, *crates, column, *slopes, *rotated, ball, ledge), *start_and_light()]
 
 
+def fm_clipeconomy():
+    """The brush entities hlcsg -clipeconomy drops clipnodes for with spawnflags 8 (func_door is in
+    fm_specials); without this map only the slow deathrun_arctic reached their checks."""
+    ents = []
+    for i, cls in enumerate(["func_water", "func_door_rotating", "func_pendulum", "func_train", "func_tracktrain"]):
+        x = -800 + 300 * i
+        brushes = [box((x, -100, -256), (x + 100, 0, -100), "!WATERBLUE" if cls == "func_water" else "CRATE01")]
+        if cls in ("func_door_rotating", "func_pendulum"):
+            brushes.append(origin_brush(x + 50, -50, -178))
+        ents.append(entity([("classname", cls), ("spawnflags", "8"), ("targetname", f"e{i}")], brushes))
+    return [world(), *ents, *start_and_light()]
+
+
 def fm_vis_overview():
     """Two staggered walls split the room into zones that cannot all see each other; an
     info_overview_point (seen from everywhere) and a reversed one (sees everything) sit in two of them."""
@@ -507,7 +520,7 @@ MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_
                                  fm_transform, fm_gametext, fm_err_coplanar, fm_err_mixed, fm_err_origin_world,
                                  fm_err_outside, fm_err_noplane, fm_err_two_origins, fm_err_detail_water,
                                  fm_err_entity_contents, fm_err_hull_overflow,
-                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview]}
+                                 fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview, fm_clipeconomy]}
 
 
 def main() -> int:
