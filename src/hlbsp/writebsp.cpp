@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <vector>
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <map>
@@ -71,7 +74,6 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
     {
         if (node->contents == CONTENTS_SOLID)
         {
-            std::free(node);
             return CONTENTS_SOLID;
         }
         else
@@ -90,8 +92,6 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
         {
             num = portalleaf->contents;
         }
-        std::free(node->markfaces);
-        std::free(node);
         return num;
     }
 
@@ -127,12 +127,11 @@ static int WriteClipNodes_r(node_t *node, const node_t *portalleaf, clipnodemap_
         c = output->second; // use existing clipnode
     }
 
-    std::free(node);
     return c;
 }
 
 //      Called after the clipping hull is completed.  Generates a disk format
-//      representation and frees the original memory.
+//      representation (the tree is freed by FreeTree).
 
 void WriteClipNodes(node_t *nodes)
 {
@@ -177,7 +176,7 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
 
     hlassume(node->markfaces != nullptr, assume_EmptySolid);
 
-    for (face_t **fp = node->markfaces; *fp; fp++)
+    for (face_t **fp = node->markfaces.get(); *fp; fp++)
     {
         // emit a marksurface
         face_t *f = *fp;
@@ -208,7 +207,6 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
             f = f->original; // grab tjunction split faces
         } while (f);
     }
-    std::free(node->markfaces);
 
     leaf_p->nummarksurfaces = g_nummarksurfaces - leaf_p->firstmarksurface;
     return leafnum;
@@ -268,7 +266,6 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
     {
         if (node->iscontentsdetail)
         {
-            std::free(node->markfaces);
             return -1;
         }
         else
@@ -322,26 +319,6 @@ static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
         n->children[i] = WriteDrawNodes_r(node->children[i], portalleaf);
     }
     return nodenum;
-}
-
-static void FreeDrawNodes_r(node_t *node)
-{
-    for (int i = 0; i < 2; i++)
-    {
-        if (node->children[i]->planenum != -1)
-        {
-            FreeDrawNodes_r(node->children[i]);
-        }
-    }
-    // free the faces on the node
-    face_t *next;
-    for (face_t *f = node->faces; f; f = next)
-    {
-        next = f->next;
-        FreeFace(f);
-    }
-
-    std::free(node);
 }
 
 //      Called after a drawing hull is completed
@@ -415,7 +392,7 @@ static void RemoveCoveredFaces_r(node_t *node)
         }
         else
         {
-            for (face_t **fp = node->markfaces; *fp; fp++)
+            for (face_t **fp = node->markfaces.get(); *fp; fp++)
             {
                 for (face_t *f = *fp; f; f = f->original) // for each tjunc subface
                 {
@@ -500,16 +477,14 @@ void FinishBSPFile()
     {
         dmiptexlump_t *l = (dmiptexlump_t *)g_dtexdata;
         int &g_nummiptex = l->nummiptex;
-        bool *Used = (bool *)std::calloc(g_nummiptex, sizeof(bool));
+        // (were malloc'ed: malloc(0) for a map without textures could fail the out-of-memory check)
+        std::vector<bool> Used(g_nummiptex);
         int Num = 0, Size = 0;
-        int *Map = (int *)std::malloc(g_nummiptex * sizeof(int));
-
-        hlassume(Used != nullptr && Map != nullptr, assume_NoMemory);
-        int *lumpsizes = (int *)std::malloc(g_nummiptex * sizeof(int));
+        std::vector<int> Map(g_nummiptex);
+        std::vector<int> lumpsizes(g_nummiptex);
         const int newdatasizemax = g_texdatasize - ((byte *)&l->dataofs[g_nummiptex] - (byte *)l);
-        byte *newdata = (byte *)std::malloc(newdatasizemax);
+        std::vector<byte> newdata(std::max(newdatasizemax, 0));
         int newdatasize = 0;
-        hlassume(lumpsizes != nullptr && newdata != nullptr, assume_NoMemory);
         int total = 0;
         for (int i = 0; i < g_nummiptex; i++)
         {
@@ -605,22 +580,18 @@ void FinishBSPFile()
                 }
                 else
                 {
-                    std::memcpy((byte *)newdata + newdatasize, (byte *)l + l->dataofs[i], lumpsizes[i]);
+                    std::memcpy(newdata.data() + newdatasize, (byte *)l + l->dataofs[i], lumpsizes[i]);
                     l->dataofs[Map[i]] = Size;
                     newdatasize += lumpsizes[i];
                     Size += lumpsizes[i];
                 }
             }
         }
-        std::memcpy(&l->dataofs[Num], newdata, newdatasize);
+        std::memcpy(&l->dataofs[Num], newdata.data(), newdatasize);
         Log("Reduced %d texdatas to %d (%d bytes to %d)\n", g_nummiptex, Num, g_texdatasize, Size);
         g_nummiptex = Num;
         g_texdatasize = Size;
     skipReduceTexdata:;
-        std::free(lumpsizes);
-        std::free(newdata);
-        std::free(Used);
-        std::free(Map);
     }
     Log("Reduced %d planes to %d\n", g_numplanes, gNumMappedPlanes);
 
@@ -633,14 +604,9 @@ void FinishBSPFile()
     {
         Log("FixBrinks:\n");
         int numclipnodes;
-        dclipnode_t *clipnodes = (dclipnode_t *)std::malloc(MAX_MAP_CLIPNODES * sizeof(dclipnode_t)); //[MAX_MAP_CLIPNODES]
-        hlassume(clipnodes != nullptr, assume_NoMemory);
-        void *(*brinkinfo)[NUM_HULLS]; //[MAX_MAP_MODELS]
-        int (*headnode)[NUM_HULLS];    //[MAX_MAP_MODELS]
-        brinkinfo = (void *(*)[NUM_HULLS])std::malloc(MAX_MAP_MODELS * sizeof(void *[NUM_HULLS]));
-        hlassume(brinkinfo != nullptr, assume_NoMemory);
-        headnode = (int (*)[NUM_HULLS])std::malloc(MAX_MAP_MODELS * sizeof(int[NUM_HULLS]));
-        hlassume(headnode != nullptr, assume_NoMemory);
+        std::vector<dclipnode_t> clipnodes(MAX_MAP_CLIPNODES);
+        std::vector<std::array<void *, NUM_HULLS>> brinkinfo(MAX_MAP_MODELS);
+        std::vector<std::array<int, NUM_HULLS>> headnode(MAX_MAP_MODELS);
 
         int i, j, level;
         for (i = 0; i < g_nummodels; i++)
@@ -659,7 +625,7 @@ void FinishBSPFile()
             {
                 for (j = 1; j < NUM_HULLS; j++)
                 {
-                    if (!FixBrinks(brinkinfo[i][j], (bbrinklevel_e)level, headnode[i][j], clipnodes, MAX_MAP_CLIPNODES, numclipnodes, numclipnodes))
+                    if (!FixBrinks(brinkinfo[i][j], (bbrinklevel_e)level, headnode[i][j], clipnodes.data(), MAX_MAP_CLIPNODES, numclipnodes, numclipnodes))
                     {
                         break;
                     }
@@ -693,7 +659,7 @@ void FinishBSPFile()
             }
             Log("Increased %d clipnodes to %d.\n", g_numclipnodes, numclipnodes);
             g_numclipnodes = numclipnodes;
-            std::memcpy(g_dclipnodes, clipnodes, numclipnodes * sizeof(dclipnode_t));
+            std::memcpy(g_dclipnodes, clipnodes.data(), numclipnodes * sizeof(dclipnode_t));
             for (i = 0; i < g_nummodels; i++)
             {
                 dmodel_t *m = &g_dmodels[i];
@@ -703,9 +669,7 @@ void FinishBSPFile()
                 }
             }
         }
-        std::free(brinkinfo);
-        std::free(headnode);
-        std::free(clipnodes);
+
     }
 
     WriteExtentFile(g_extentfilename);

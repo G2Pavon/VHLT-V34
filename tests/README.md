@@ -244,7 +244,10 @@ output unchanged on every tier).
 Leaks (`sanitize --leaks`, quick tier): hlcsg leaked 2.5 MB on 34 of 39 maps before H5 (hull
 faces and their windings dropped by MakeHullFaces and by clearing the hull-0 faces of
 ORIGIN/BOUNDINGBOX/cliphull brushes, plus the `.wa_` lump table); since H5 it leaks nothing.
-Still leaking: hlbsp about 29 MB over 29 maps, hlrad about 0.5 MB over 23 maps (their phases).
+hlbsp leaked 32 MB over all 32 compiling maps before B2 (every BSP tree, pruned subtrees, clip-hull
+faces, split fragments, portals on the split plane); since B2 it leaks nothing on the quick tier
+or any bsp tier that completes (an Error exit leaves the tree being written behind, by design).
+Still leaking: hlrad about 0.5 MB over 23 maps (its phase).
 
 ### Environment
 

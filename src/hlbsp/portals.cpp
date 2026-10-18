@@ -101,7 +101,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
             portals[n] = p;
 
             plane_t *pl = &bplanes[n];
-            std::memset(pl, 0, sizeof(*pl));
+            *pl = plane_t{};
             if (j)
             {
                 pl->normal[i] = -1;
@@ -113,7 +113,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
                 pl->dist = bounds[j][i];
             }
             p->plane = *pl;
-            p->winding = new Winding(*pl);
+            p->winding = std::make_unique<Winding>(*pl);
             AddPortalToNodes(p, node, &g_outside_node);
         }
     }
@@ -151,7 +151,7 @@ static void WritePortalFile_r(const node_t *const node)
 
     for (p = node->portals; p;)
     {
-        Winding *w = p->winding;
+        Winding *w = p->winding.get();
         if (w && p->nodes[0] == node)
         {
             if (p->nodes[0]->contents == p->nodes[1]->contents)
@@ -340,7 +340,11 @@ void FreePortals(node_t *node)
         FreePortals(node->children[1]);
         return;
     }
+    FreeNodePortals(node);
+}
 
+void FreeNodePortals(node_t *node)
+{
     portal_t *nextp;
     for (portal_t *p = node->portals; p; p = nextp)
     {
@@ -354,7 +358,6 @@ void FreePortals(node_t *node)
         }
         RemovePortalFromNode(p, p->nodes[0]);
         RemovePortalFromNode(p, p->nodes[1]);
-        delete p->winding;
         FreePortal(p);
     }
 }

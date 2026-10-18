@@ -1,5 +1,7 @@
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
+#include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -460,12 +462,9 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
 // Choose the plane that splits the least faces
 static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
 {
-    double (*tmpvalue)[2];
-
     double planecount = 0.0;
     double totalsplit = 0.0;
-    tmpvalue = (double (*)[2])std::malloc(g_numplanes * sizeof(double[2]));
-    hlassume(tmpvalue != nullptr || g_numplanes == 0, assume_NoMemory); // was unchecked
+    std::vector<std::array<double, 2>> tmpvalue(g_numplanes);
     surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;
@@ -567,7 +566,6 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
 
     if (!bestsurface)
         Error("ChoosePlaneFromList: no valid planes");
-    std::free(tmpvalue);
     DeleteSurfaceTree(surfacetree);
     return bestsurface;
 }
@@ -1130,8 +1128,8 @@ static void MakeLeaf(node_t *leafnode)
         markfaces[nummarkfaces] = nullptr; // end marker
         nummarkfaces++;
 
-        leafnode->markfaces = (face_t **)std::malloc(nummarkfaces * sizeof(*leafnode->markfaces));
-        std::memcpy(leafnode->markfaces, markfaces, nummarkfaces * sizeof(*leafnode->markfaces));
+        leafnode->markfaces.reset(new face_t *[nummarkfaces]);
+        std::copy(markfaces, markfaces + nummarkfaces, leafnode->markfaces.get());
     }
 
     FreeLeafSurfs(leafnode);
@@ -1174,12 +1172,13 @@ static void MakeNodePortal(node_t *node)
         w->Clip(clipplane, true);
         if (w->m_NumPoints == 0) // new portal was clipped away from node
         {
+            delete w; // was leaked
             FreePortal(new_portal);
             return;
         }
     }
 
-    new_portal->winding = w;
+    new_portal->winding.reset(w);
     AddPortalToNodes(new_portal, node->children[0], node->children[1]);
 }
 
@@ -1220,6 +1219,7 @@ static void SplitNodePortals(node_t *node)
 
         if (!frontwinding && !backwinding)
         {
+            FreePortal(p); // on the plane: unlinked above and dropped (was leaked)
             continue;
         }
         if (!frontwinding)
@@ -1249,10 +1249,15 @@ static void SplitNodePortals(node_t *node)
 
         // the winding is split
         portal_t *new_portal = AllocPortal();
-        *new_portal = *p;
-        new_portal->winding = backwinding;
-        delete p->winding;
-        p->winding = frontwinding;
+        new_portal->plane = p->plane; // a copy of p, but for the winding
+        new_portal->onnode = p->onnode;
+        for (int k = 0; k < 2; k++)
+        {
+            new_portal->nodes[k] = p->nodes[k];
+            new_portal->next[k] = p->next[k];
+        }
+        new_portal->winding.reset(backwinding);
+        p->winding.reset(frontwinding);
 
         if (side == 0)
         {
@@ -1439,6 +1444,7 @@ static void BuildBspTree_r(node_t *node)
     // split all the polysurfaces into front and back lists
     SplitNodeSurfaces(allsurfs, node);
     SplitNodeBrushes(node->detailbrushes, node);
+    node->detailbrushes = nullptr; // consumed: now split into the children's lists (was left dangling)
     if (node->boundsbrush)
     {
         for (int k = 0; k < 2; k++)

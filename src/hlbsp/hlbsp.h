@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "common/bspfile.h"
 #include "common/mathtypes.h"
 #include "common/winding.h"
@@ -41,82 +43,83 @@ typedef enum
     face_discardable, // contents must not differ between front and back
 } facestyle_e;
 
+// The defaults below are what the allocators' memset gave (AllocFace then set planenum to -1).
 struct face_t // This structure is layed out so 'pts' is on a quad-word boundary (and the pointers are as well)
 {
-    face_t *next;
-    int planenum;
-    int texturenum;
-    int contents;     // contents in front of face
-    int detaillevel;  // defined by hlcsg
-    int *outputedges; // used in WriteDrawNodes
+    face_t *next = nullptr;
+    int planenum = -1;
+    int texturenum = 0;
+    int contents = 0;            // contents in front of face
+    int detaillevel = 0;         // defined by hlcsg
+    int *outputedges = nullptr;  // used in WriteDrawNodes
 
-    face_t *original; // face on node
-    int outputnumber; // only valid for original faces after write surfaces
-    int numpoints;
-    facestyle_e facestyle;
-    int referenced; // only valid for original faces
+    face_t *original = nullptr; // face on node
+    int outputnumber = 0;       // only valid for original faces after write surfaces
+    int numpoints = 0;
+    facestyle_e facestyle = face_normal;
+    int referenced = 0; // only valid for original faces
 
     // vector quad word aligned
-    vec3_t pts[MAXEDGES]; // FIXME: change to use winding_t
+    vec3_t pts[MAXEDGES] = {}; // FIXME: change to use winding_t
 };
 
 struct node_t;
 struct surface_t
 {
-    surface_t *next;
-    int planenum;
-    vec3_t mins, maxs;
-    node_t *onnode; // true if surface has already been used
+    surface_t *next = nullptr;
+    int planenum = 0;
+    vec3_t mins = {}, maxs = {};
+    node_t *onnode = nullptr; // true if surface has already been used
     // as a splitting node
-    face_t *faces;   // links to all the faces on either side of the surf
-    int detaillevel; // minimum detail level of its faces
+    face_t *faces = nullptr; // links to all the faces on either side of the surf
+    int detaillevel = 0;     // minimum detail level of its faces
 };
 
 struct surfchain_t
 {
-    vec3_t mins, maxs;
-    surface_t *surfaces;
+    vec3_t mins = {}, maxs = {};
+    surface_t *surfaces = nullptr;
 };
 
 struct side_t
 {
-    side_t *next;
-    plane_t plane; // facing inside (reversed when loading brush file)
-    Winding *w;     // (also reversed)
+    side_t *next = nullptr;
+    plane_t plane = {};          // facing inside (reversed when loading brush file)
+    std::unique_ptr<Winding> w; // (also reversed)
 };
 
 struct brush_t
 {
-    brush_t *next;
-    side_t *sides;
+    brush_t *next = nullptr;
+    side_t *sides = nullptr; // owned (FreeBrush)
 };
 // there is a node_t structure for every node and leaf in the bsp tree
 struct portal_t;
 struct node_t
 {
-    surface_t *surfaces;
-    brush_t *detailbrushes;
-    brush_t *boundsbrush;
-    vec3_t loosemins, loosemaxs; // all leafs and nodes have this, while 'mins' and 'maxs' are only valid for nondetail leafs and nodes.
+    surface_t *surfaces = nullptr;
+    brush_t *detailbrushes = nullptr;
+    brush_t *boundsbrush = nullptr;
+    vec3_t loosemins = {}, loosemaxs = {}; // all leafs and nodes have this, while 'mins' and 'maxs' are only valid for nondetail leafs and nodes.
 
-    bool isdetail;         // is under a diskleaf
-    bool isportalleaf;     // not detail and children are detail; only visleafs have contents, portals, mins, maxs
-    bool iscontentsdetail; // inside a detail brush
-    vec3_t mins, maxs;     // bounding volume of portals;
+    bool isdetail = false;         // is under a diskleaf
+    bool isportalleaf = false;     // not detail and children are detail; only visleafs have contents, portals, mins, maxs
+    bool iscontentsdetail = false; // inside a detail brush
+    vec3_t mins = {}, maxs = {};   // bounding volume of portals;
 
     // information for decision nodes
-    int planenum;        // -1 = leaf node
-    node_t *children[2]; // only valid for decision nodes
-    face_t *faces;       // decision nodes only, list for both sides
+    int planenum = 0;                       // -1 = leaf node
+    node_t *children[2] = {nullptr, nullptr}; // only valid for decision nodes (FreeTree frees them)
+    face_t *faces = nullptr;                // decision nodes only, list for both sides (owned)
 
     // information for leafs
-    int contents;       // leaf nodes (0 for decision nodes)
-    face_t **markfaces; // leaf nodes only, point to node faces
-    portal_t *portals;
-    int visleafnum; // -1 = solid
-    int valid;      // for flood filling
-    int occupied;   // light number in leaf for outside filling
-    int empty;
+    int contents = 0;                       // leaf nodes (0 for decision nodes)
+    std::unique_ptr<face_t *[]> markfaces; // leaf nodes only, null-terminated, point to node faces; null for filled leafs
+    portal_t *portals = nullptr;
+    int visleafnum = 0; // -1 = solid
+    int valid = 0;      // for flood filling
+    int occupied = 0;   // light number in leaf for outside filling
+    int empty = 0;
 };
 
 constexpr int NUM_HULLS = 4; // engine constant
@@ -142,11 +145,11 @@ int GetEdge(const vec3_t p1, const vec3_t p2, face_t *f);
 // portals.c
 struct portal_t
 {
-    plane_t plane;
-    node_t *onnode;   // NULL = outside box
-    node_t *nodes[2]; // [0] = front side of plane
-    portal_t *next[2];
-    Winding *winding;
+    plane_t plane = {};
+    node_t *onnode = nullptr;                // NULL = outside box
+    node_t *nodes[2] = {nullptr, nullptr};   // [0] = front side of plane
+    portal_t *next[2] = {nullptr, nullptr};
+    std::unique_ptr<Winding> winding;
 };
 
 extern node_t g_outside_node; // portals outside the world face this
@@ -156,6 +159,14 @@ void RemovePortalFromNode(portal_t *portal, node_t *l);
 void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs);
 
 void FreePortals(node_t *node);
+// Frees every portal of one node (unlinking it from the node on its other side too).
+void FreeNodePortals(node_t *node);
+// Frees a whole tree once it is written: nodes, their faces (on hull 0, after tjunc, the list holds
+// the tjunction fragments too), leaf markfaces and any portals still attached. Null-safe.
+void FreeTree(node_t *node);
+// Subtrees outside.cpp cut out of the tree while it is still being processed; freed (FreeTree)
+// once the hull is written.
+void FreeDroppedNodes();
 void WritePortalfile(node_t *headnode);
 
 //=============================================================================
@@ -197,6 +208,7 @@ brush_t *BrushFromBox(const vec3_t mins, const vec3_t maxs);
 void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs);
 
 node_t *AllocNode();
+void FreeNode(node_t *node); // the node only (FreeTree frees what it owns)
 
 bool CheckFaceForHint(const face_t *const f);
 bool CheckFaceForSkip(const face_t *const f);

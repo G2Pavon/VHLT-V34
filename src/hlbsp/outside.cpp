@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <vector>
 
 #include "hlbsp/hlbsp.h"
 #include "common/bspfile.h"
@@ -101,15 +102,14 @@ static void FreeDetailNode_r(node_t *n)
     {
         if (!(n->isportalleaf && n->contents == CONTENTS_SOLID))
         {
-            std::free(n->markfaces);
-            n->markfaces = nullptr;
+            n->markfaces.reset();
         }
         return;
     }
     for (int i = 0; i < 2; i++)
     {
         FreeDetailNode_r(n->children[i]);
-        std::free(n->children[i]);
+        FreeNode(n->children[i]);
         n->children[i] = nullptr;
     }
     face_t *next;
@@ -193,7 +193,7 @@ static void MarkFacesInside_r(node_t *node)
 {
     if (node->planenum == -1)
     {
-        for (face_t **fp = node->markfaces; *fp; fp++)
+        for (face_t **fp = node->markfaces.get(); *fp; fp++)
         {
             (*fp)->outputnumber = 0;
         }
@@ -204,6 +204,17 @@ static void MarkFacesInside_r(node_t *node)
         MarkFacesInside_r(node->children[1]);
     }
 }
+static std::vector<node_t *> s_droppednodes; // subtrees ClearOutFaces_r cut out (used to leak)
+
+void FreeDroppedNodes()
+{
+    for (node_t *n : s_droppednodes)
+    {
+        FreeTree(n);
+    }
+    s_droppednodes.clear();
+}
+
 static node_t *ClearOutFaces_r(node_t *node)
 {
     face_t *f;
@@ -247,12 +258,15 @@ static node_t *ClearOutFaces_r(node_t *node)
 
         if (!node->valid)
         {
-            // Here leaks memory. --vluzacn
-            // this node does not touch any interior leafs
+            // this node does not touch any interior leafs; what is cut out is freed with the hull
+            // (FreeDroppedNodes), as other nodes' portals and markfaces may still refer to it
 
             // if both children are solid, just make this node solid
             if (node->children[0]->contents == CONTENTS_SOLID && node->children[1]->contents == CONTENTS_SOLID)
             {
+                s_droppednodes.push_back(node->children[0]);
+                s_droppednodes.push_back(node->children[1]);
+                node->children[0] = node->children[1] = nullptr;
                 node->contents = CONTENTS_SOLID;
                 node->planenum = -1;
                 node->isportalleaf = true;
@@ -260,13 +274,15 @@ static node_t *ClearOutFaces_r(node_t *node)
             }
 
             // if one child is solid, shortcut down the other side
-            if (node->children[0]->contents == CONTENTS_SOLID)
+            for (int side = 0; side < 2; side++)
             {
-                return node->children[1];
-            }
-            if (node->children[1]->contents == CONTENTS_SOLID)
-            {
-                return node->children[0];
+                if (node->children[side]->contents == CONTENTS_SOLID)
+                {
+                    node_t *kept = node->children[!side];
+                    node->children[!side] = nullptr;
+                    s_droppednodes.push_back(node);
+                    return kept;
+                }
             }
 
             c_falsenodes++;
@@ -324,6 +340,8 @@ static bool isClassnameAllowableOutside(const char *const classname)
     return false;
 }
 
+static std::vector<char *> s_voidfiledata; // the list's strings point into these (were leaked)
+
 void FreeAllowableOutsideList()
 {
     if (g_strAllowableOutsideList)
@@ -331,6 +349,11 @@ void FreeAllowableOutsideList()
         std::free(g_strAllowableOutsideList);
         g_strAllowableOutsideList = nullptr;
     }
+    for (char *data : s_voidfiledata)
+    {
+        std::free(data);
+    }
+    s_voidfiledata.clear();
 }
 
 void LoadAllowableOutsideList(const char *const filename)
@@ -356,6 +379,7 @@ void LoadAllowableOutsideList(const char *const filename)
     {
         if ((i = LoadFile(fname, &pData)))
         {
+            s_voidfiledata.push_back(pData);
             Log("Reading allowable void entities from file '%s'\n", fname);
             g_nAllowableOutside = 0;
             for (pszData = pData, y = 0, x = 0; x < i; x++)
@@ -381,6 +405,7 @@ void LoadAllowableOutsideList(const char *const filename)
             }
         }
     }
+    std::free(fname); // was leaked
 }
 
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)

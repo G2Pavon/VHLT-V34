@@ -284,6 +284,7 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
         delete wd;
         if (newf->numpoints == 0)
         {
+            FreeFace(newf); // was leaked
             *back = nullptr;
         }
     }
@@ -302,6 +303,7 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
         delete wd;
         if (new2->numpoints == 0)
         {
+            FreeFace(new2); // was leaked
             *front = nullptr;
         }
     }
@@ -311,8 +313,9 @@ void SplitFace(face_t *in, const plane_t *const split, face_t **front, face_t **
 {
     SplitFaceTmp(in, split, front, back);
 
-    // free the original face now that is is represented by the fragments
-    if (*front && *back)
+    // free the original face now that is is represented by the fragments (also when a fragment
+    // collapsed; it was only freed when both survived)
+    if (*front != in && *back != in)
     {
         FreeFace(in);
     }
@@ -320,90 +323,92 @@ void SplitFace(face_t *in, const plane_t *const split, face_t **front, face_t **
 
 face_t *AllocFace()
 {
-    face_t *f = (face_t *)std::malloc(sizeof(face_t));
-    std::memset(f, 0, sizeof(face_t));
+    return new face_t{};
+}
 
-    f->planenum = -1;
+void FreeTree(node_t *node)
+{
+    if (!node)
+    {
+        return;
+    }
+    if (node->planenum != -1)
+    {
+        FreeTree(node->children[0]);
+        FreeTree(node->children[1]);
+    }
+    FreeNodePortals(node);
+    face_t *next;
+    for (face_t *f = node->faces; f; f = next)
+    {
+        next = f->next;
+        FreeFace(f);
+    }
+    FreeNode(node);
+}
 
-    return f;
+void FreeNode(node_t *node)
+{
+    delete node;
 }
 
 void FreeFace(face_t *f)
 {
-    std::free(f);
+    delete f;
 }
 
 surface_t *AllocSurface()
 {
-    surface_t *s = (surface_t *)std::malloc(sizeof(surface_t));
-    std::memset(s, 0, sizeof(surface_t));
-
-    return s;
+    return new surface_t{};
 }
 
 void FreeSurface(surface_t *s)
 {
-    std::free(s);
+    delete s;
 }
 
 portal_t *AllocPortal()
 {
-    portal_t *p = (portal_t *)std::malloc(sizeof(portal_t));
-    std::memset(p, 0, sizeof(portal_t));
-
-    return p;
+    return new portal_t{};
 }
 
 void FreePortal(portal_t *p) // consider: inline
 {
-    std::free(p);
+    delete p;
 }
 
 static side_t *AllocSide()
 {
-    side_t *s = (side_t *)std::malloc(sizeof(side_t));
-    std::memset(s, 0, sizeof(side_t));
-    return s;
+    return new side_t{};
 }
 
 static void FreeSide(side_t *s)
 {
-    if (s->w)
-    {
-        delete s->w;
-    }
-    std::free(s);
-    return;
+    delete s;
 }
 
 static side_t *NewSideFromSide(const side_t *s)
 {
     side_t *news = AllocSide();
     news->plane = s->plane;
-    news->w = new Winding(*s->w);
+    news->w = std::make_unique<Winding>(*s->w);
     return news;
 }
 
 static brush_t *AllocBrush()
 {
-    brush_t *b = (brush_t *)std::malloc(sizeof(brush_t));
-    std::memset(b, 0, sizeof(brush_t));
-    return b;
+    return new brush_t{};
 }
 
 void FreeBrush(brush_t *b)
 {
-    if (b->sides)
+    side_t *next;
+    for (side_t *s = b->sides; s; s = next)
     {
-        side_t *next;
-        for (side_t *s = b->sides; s; s = next)
-        {
-            next = s->next;
-            FreeSide(s);
-        }
+        next = s->next;
+        FreeSide(s);
     }
-    std::free(b);
-    return;
+    delete b;
 }
 
 brush_t *NewBrushFromBrush(const brush_t *b)
@@ -455,7 +460,7 @@ static void ClipBrush(brush_t **b, const plane_t *split, vec_t epsilon)
     {
         s = AllocSide();
         s->plane = *split;
-        s->w = w;
+        s->w.reset(w);
         s->next = (*b)->sides;
         (*b)->sides = s;
     }
@@ -533,7 +538,7 @@ brush_t *BrushFromBox(const vec3_t mins, const vec3_t maxs)
     }
     b->sides = AllocSide();
     b->sides->plane = planes[0];
-    b->sides->w = new Winding(planes[0]);
+    b->sides->w = std::make_unique<Winding>(planes[0]);
     for (int k = 1; k < 6; k++)
     {
         ClipBrush(&b, &planes[k], NORMAL_EPSILON);
@@ -560,10 +565,7 @@ void CalcBrushBounds(const brush_t *b, vec3_t &mins, vec3_t &maxs)
 
 node_t *AllocNode()
 {
-    node_t *n = (node_t *)std::malloc(sizeof(node_t));
-    std::memset(n, 0, sizeof(node_t));
-
-    return n;
+    return new node_t{};
 }
 
 static void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs)
@@ -596,11 +598,11 @@ static void ClearBounds(vec3_t mins, vec3_t maxs)
     maxs[0] = maxs[1] = maxs[2] = -99999;
 }
 
-static surfchain_t *SurflistFromValidFaces()
+static std::unique_ptr<surfchain_t> SurflistFromValidFaces()
 {
     face_t *next;
 
-    surfchain_t *sc = (surfchain_t *)std::malloc(sizeof(*sc));
+    auto sc = std::make_unique<surfchain_t>();
     ClearBounds(sc->mins, sc->maxs);
     sc->surfaces = nullptr;
 
@@ -732,7 +734,8 @@ static facestyle_e SetFaceType(face_t *f)
     return f->facestyle;
 }
 
-static surfchain_t *ReadSurfs(std::FILE *file)
+// nullptr at the end of the file (all models done).
+static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
 {
     int detaillevel;
     int planenum, g_texinfo, contents, numpoints;
@@ -877,7 +880,7 @@ static brush_t *ReadBrushes(std::FILE *file)
             }
             side_t *s = AllocSide();
             s->plane = g_mapplanes[planenum ^ 1];
-            s->w = new Winding(numpoints);
+            s->w = std::make_unique<Winding>(numpoints);
             for (int x = 0; x < numpoints; x++)
             {
                 double v[3];
@@ -898,7 +901,7 @@ static brush_t *ReadBrushes(std::FILE *file)
 
 static bool ProcessModel()
 {
-    surfchain_t *surfs = ReadSurfs(polyfiles[0]);
+    std::unique_ptr<surfchain_t> surfs = ReadSurfs(polyfiles[0]);
 
     if (!surfs)
         return false; // all models are done
@@ -940,7 +943,7 @@ static bool ProcessModel()
     }
 
     // SolidBSP generates a node tree
-    node_t *nodes = SolidBSP(surfs,
+    node_t *nodes = SolidBSP(surfs.get(), // the surfaces now belong to the tree
                              detailbrushes,
                              modnum == 0);
 
@@ -979,7 +982,7 @@ static bool ProcessModel()
         nodes->children[0]->isportalleaf = true;
         nodes->children[0]->iscontentsdetail = false;
         nodes->children[0]->faces = nullptr;
-        nodes->children[0]->markfaces = (face_t **)std::calloc(1, sizeof(face_t *));
+        nodes->children[0]->markfaces = std::make_unique<face_t *[]>(1); // just the end marker
         VectorFill(nodes->children[0]->mins, 0);
         VectorFill(nodes->children[0]->maxs, 0);
         nodes->children[1] = AllocNode();
@@ -989,18 +992,20 @@ static bool ProcessModel()
         nodes->children[1]->isportalleaf = true;
         nodes->children[1]->iscontentsdetail = false;
         nodes->children[1]->faces = nullptr;
-        nodes->children[1]->markfaces = (face_t **)std::calloc(1, sizeof(face_t *));
+        nodes->children[1]->markfaces = std::make_unique<face_t *[]>(1); // just the end marker
         VectorFill(nodes->children[1]->mins, 0);
         VectorFill(nodes->children[1]->maxs, 0);
         nodes->contents = 0;
         nodes->isdetail = false;
         nodes->isportalleaf = false;
-        nodes->faces = nullptr;
-        nodes->markfaces = nullptr;
+        nodes->faces = nullptr; // no faces: novisiblebrushes
+        nodes->markfaces.reset(); // was overwritten (leaked)
         VectorFill(nodes->mins, 0);
         VectorFill(nodes->maxs, 0);
     }
     WriteDrawNodes(nodes);
+    FreeTree(nodes);
+    FreeDroppedNodes();
     model->numfaces = g_numfaces - model->firstface;
     model->visleafs = g_numleafs - startleafs;
 
@@ -1036,7 +1041,7 @@ static bool ProcessModel()
                 }
             }
         }
-        nodes = SolidBSP(surfs,
+        nodes = SolidBSP(surfs.get(),
                          detailbrushes,
                          modnum == 0);
         if (g_nummodels == 1) // assume non-world bmodels are simple
@@ -1059,6 +1064,8 @@ static bool ProcessModel()
             model->headnode[g_hullnum] = g_numclipnodes;
             WriteClipNodes(nodes);
         }
+        FreeTree(nodes);
+        FreeDroppedNodes();
     }
 
     {
