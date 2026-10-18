@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 #include "common/bspfile.h"
 
@@ -46,35 +48,22 @@ typedef enum
 
 struct portal_t
 {
-    portalplane_t plane; // normal pointing into neighbor
-    int leaf;            // neighbor
-    winding_t *winding;
-    vstatus_t status;
-    bitword_t *visbits;
-    bitword_t *mightsee;
-    unsigned nummightsee;
-    int numcansee;
-};
-
-struct sep_t
-{
-    sep_t *next;
-    portalplane_t plane; // from portal is on positive side
-};
-
-struct passage_t
-{
-    passage_t *next;
-    int from, to; // leaf numbers
-    sep_t *planes;
+    portalplane_t plane{}; // normal pointing into neighbor
+    int leaf = 0;          // neighbor
+    std::unique_ptr<winding_t> winding;
+    std::unique_ptr<vec3_t[]> windingpoints; // winding->points
+    vstatus_t status = stat_none;
+    std::vector<bitword_t> visbits;  // g_bitlongs words once computed
+    std::vector<bitword_t> mightsee; // g_bitlongs words once computed
+    unsigned nummightsee = 0;
+    int numcansee = 0;
 };
 
 constexpr int MAX_PORTALS_ON_LEAF = 256;
 struct leaf_t
 {
-    unsigned numportals;
-    passage_t *passages;
-    portal_t *portals[MAX_PORTALS_ON_LEAF];
+    unsigned numportals = 0;
+    portal_t *portals[MAX_PORTALS_ON_LEAF] = {}; // into g_portals
 };
 
 struct pstack_t
@@ -124,14 +113,14 @@ struct leafinfo_t
     bool isskyboxpoint;
 };
 
-extern portal_t *g_portals;
-extern leaf_t *g_leafs;
+extern std::vector<portal_t> g_portals; // 2 * g_numportals: each file portal, both directions
+extern std::vector<leaf_t> g_leafs;     // g_portalleafs
 
 extern unsigned g_bitbytes;
 extern unsigned g_bitlongs; // g_bitbytes in bitword_t units
 
 // A zeroed bit string of g_bitbytes bytes.
-bitword_t *AllocBitString();
+std::vector<bitword_t> NewBitString();
 
 void BasePortalVis(int /*threadnum*/);
 

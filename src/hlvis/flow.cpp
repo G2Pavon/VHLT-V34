@@ -2,6 +2,8 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include <array>
+#include <memory>
 #include <vector>
 
 #include "hlvis/hlvis.h"
@@ -386,11 +388,11 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
 
             if (p->status == stat_done)
             {
-                test = p->visbits;
+                test = p->visbits.data();
             }
             else
             {
-                test = p->mightsee;
+                test = p->mightsee.data();
             }
 
             {
@@ -442,7 +444,7 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
         stack.freewindings[1] = 1;
         stack.freewindings[2] = 1;
 
-        stack.pass = ChopWinding(p->winding, &stack, thread->pstack_head.portalplane);
+        stack.pass = ChopWinding(p->winding.get(), &stack, thread->pstack_head.portalplane);
         if (!stack.pass)
         {
             continue;
@@ -508,20 +510,19 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
 
 void PortalFlow(portal_t *p)
 {
-    threaddata_t data;
+    threaddata_t data{};
 
     if (p->status != stat_working)
         Error("PortalFlow: reflowed");
 
-    p->visbits = AllocBitString();
+    p->visbits = NewBitString();
 
-    std::memset(&data, 0, sizeof(data));
-    data.leafvis = p->visbits;
+    data.leafvis = p->visbits.data();
     data.base = p;
 
     data.pstack_head.head = &data.pstack_head;
     data.pstack_head.portal = p;
-    data.pstack_head.source = p->winding;
+    data.pstack_head.source = p->winding.get();
     data.pstack_head.portalplane = &p->plane;
     for (unsigned i = 0; i < g_bitlongs; i++)
     {
@@ -557,7 +558,7 @@ static void SimpleFlood(byte *const srcmightsee, const int leafnum, const byte *
     for (unsigned i = 0; i < leaf->numportals; i++)
     {
         portal_t *p = leaf->portals[i];
-        if (!portalsee[p - g_portals])
+        if (!portalsee[p - g_portals.data()])
         {
             continue;
         }
@@ -581,20 +582,20 @@ void BasePortalVis(int /*threadnum*/)
         int i = GetThreadWork();
         if (i == -1)
             break;
-        portal_t *p = g_portals + i;
+        portal_t *p = &g_portals[i];
 
-        p->mightsee = AllocBitString();
+        p->mightsee = NewBitString();
 
         std::fill(portalsee.begin(), portalsee.end(), 0);
 
-        for (j = 0, tp = g_portals; j < portalsize; j++, tp++)
+        for (j = 0, tp = g_portals.data(); j < portalsize; j++, tp++)
         {
             if (j == i)
             {
                 continue;
             }
 
-            w = tp->winding;
+            w = tp->winding.get();
             for (k = 0; k < w->numpoints; k++)
             {
                 float d = DotProduct(w->points[k], p->plane.normal) - p->plane.dist;
@@ -608,7 +609,7 @@ void BasePortalVis(int /*threadnum*/)
                 continue; // no points on front
             }
 
-            w = p->winding;
+            w = p->winding.get();
             for (k = 0; k < w->numpoints; k++)
             {
                 float d = DotProduct(w->points[k], tp->plane.normal) - tp->plane.dist;
@@ -625,7 +626,7 @@ void BasePortalVis(int /*threadnum*/)
             portalsee[j] = 1;
         }
 
-        SimpleFlood(BitBytes(p->mightsee), p->leaf, portalsee.data(), &p->nummightsee);
+        SimpleFlood(BitBytes(p->mightsee.data()), p->leaf, portalsee.data(), &p->nummightsee);
     }
 }
 
@@ -788,15 +789,13 @@ static vec_t WindingDist(const winding_t *w[2])
     for (int side = 0; side < 2; side++)
     {
         vec3_t planenormal;
-        vec3_t *boundnormals;
-        vec_t *bounddists;
+        auto boundnormals = std::make_unique<vec3_t[]>(w[!side]->numpoints); // were malloc'ed
+        std::vector<vec_t> bounddists(w[!side]->numpoints);
         if (!BestNormalFromWinding(w[!side]->points, w[!side]->numpoints, planenormal))
         {
             continue;
         }
         vec_t planedist = DotProduct(planenormal, w[!side]->points[0]);
-        hlassume(boundnormals = (vec3_t *)std::malloc(w[!side]->numpoints * sizeof(vec3_t)), assume_NoMemory);
-        hlassume(bounddists = (vec_t *)std::malloc(w[!side]->numpoints * sizeof(vec_t)), assume_NoMemory);
         // build boundaries
         for (b = 0; b < w[!side]->numpoints; b++)
         {
@@ -862,8 +861,6 @@ static vec_t WindingDist(const winding_t *w[2])
                 minsqrdist = 0;
             }
         }
-        std::free(boundnormals);
-        std::free(bounddists);
     }
     return (std::sqrt(minsqrdist));
 }
@@ -872,7 +869,6 @@ void MaxDistVis(int /*threadnum*/)
 {
     int j;
     leaf_t *tl;
-    portalplane_t *boundary = nullptr;
 
     while (1)
     {
@@ -882,7 +878,7 @@ void MaxDistVis(int /*threadnum*/)
 
         leaf_t *l = &g_leafs[i];
 
-        for (j = i + 1, tl = g_leafs + j; j < g_portalleafs; j++, tl++)
+        for (j = i + 1, tl = g_leafs.data() + j; j < g_portalleafs; j++, tl++)
         {
 
             unsigned offset_l = i >> 3;
@@ -895,14 +891,14 @@ void MaxDistVis(int /*threadnum*/)
                 bool visible = false;
                 for (int k = 0; k < l->numportals; k++)
                 {
-                    if (BitBytes(l->portals[k]->visbits)[offset_tl] & bit_tl)
+                    if (BitBytes(l->portals[k]->visbits.data())[offset_tl] & bit_tl)
                     {
                         visible = true;
                     }
                 }
                 for (int m = 0; m < tl->numportals; m++)
                 {
-                    if (BitBytes(tl->portals[m]->visbits)[offset_l] & bit_l)
+                    if (BitBytes(tl->portals[m]->visbits.data())[offset_l] & bit_l)
                     {
                         visible = true;
                     }
@@ -928,7 +924,7 @@ void MaxDistVis(int /*threadnum*/)
                     VectorClear(center[side]);
                     for (int a = 0; a < leaf[side]->numportals; a++)
                     {
-                        w = leaf[side]->portals[a]->winding;
+                        w = leaf[side]->portals[a]->winding.get();
                         for (int b = 0; b < w->numpoints; b++)
                         {
                             VectorAdd(w->points[b], center[side], center[side]);
@@ -946,7 +942,7 @@ void MaxDistVis(int /*threadnum*/)
                     radius[side] = 0;
                     for (int a = 0; a < leaf[side]->numportals; a++)
                     {
-                        w = leaf[side]->portals[a]->winding;
+                        w = leaf[side]->portals[a]->winding.get();
                         for (int b = 0; b < w->numpoints; b++)
                         {
                             VectorSubtract(w->points[b], center[side], v);
@@ -977,8 +973,8 @@ void MaxDistVis(int /*threadnum*/)
                     for (int m = 0; m < tl->numportals; m++)
                     {
                         const winding_t *w[2];
-                        w[0] = l->portals[k]->winding;
-                        w[1] = tl->portals[m]->winding;
+                        w[0] = l->portals[k]->winding.get();
+                        w[1] = tl->portals[m]->winding.get();
                         dist = WindingDist(w);
                         mindist = qmin(dist, mindist);
                     }
@@ -997,11 +993,11 @@ void MaxDistVis(int /*threadnum*/)
             ThreadLock();
             for (int k = 0; k < l->numportals; k++)
             {
-                BitBytes(l->portals[k]->visbits)[offset_tl] &= ~bit_tl;
+                BitBytes(l->portals[k]->visbits.data())[offset_tl] &= ~bit_tl;
             }
             for (int m = 0; m < tl->numportals; m++)
             {
-                BitBytes(tl->portals[m]->visbits)[offset_l] &= ~bit_l;
+                BitBytes(tl->portals[m]->visbits.data())[offset_l] &= ~bit_l;
             }
             ThreadUnlock();
 
@@ -1009,9 +1005,5 @@ void MaxDistVis(int /*threadnum*/)
             continue; // Hack to keep label from causing compile error
         }
     }
-
-    // Release potential memory
-    if (boundary)
-        delete[] boundary;
 }
 #pragma warning(pop)

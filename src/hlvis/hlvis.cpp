@@ -4,6 +4,8 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
+#include <memory>
+#include <vector>
 
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
@@ -30,21 +32,21 @@ static constexpr unsigned int DEFAULT_MAXDISTANCE_RANGE = 0;
 static bool fastvis = DEFAULT_FASTVIS;
 static const int overview_max = MAX_MAP_ENTITIES;
 static int overview_count = 0;
-static leafinfo_t *leafinfos = nullptr;
+static std::vector<leafinfo_t> leafinfos;
 static int totalvis = 0;
 
-static int *leafstarts;
-static int *leafcounts;
+static std::vector<int> leafstarts;
+static std::vector<int> leafcounts;
 static int leafcount_all;
 static byte *vismap;
 static byte *vismap_p;
 static byte *vismap_end; // past visfile
 static int originalvismapsize;
-static byte *uncompressed; // [bitbytes*portalleafs]
+static std::vector<byte> uncompressed; // [bitbytes*portalleafs]
 static overview_t overview[overview_max];
 
-portal_t *g_portals;
-leaf_t *g_leafs;
+std::vector<portal_t> g_portals;
+std::vector<leaf_t> g_leafs;
 unsigned g_bitbytes; // (portalleafs+63)>>3
 unsigned g_bitlongs;
 
@@ -114,22 +116,23 @@ static void PlaneFromWinding(winding_t *w, portalplane_t *plane)
     plane->dist = DotProduct(w->points[0], plane->normal);
 }
 
-bitword_t *AllocBitString()
+std::vector<bitword_t> NewBitString()
 {
-    return new bitword_t[g_bitbytes / sizeof(bitword_t)]{};
+    return std::vector<bitword_t>(g_bitlongs);
 }
 
-static winding_t *NewWinding(const int points)
+// Gives p a winding of `points` points, owned by p.
+// (the size was computed as &((winding_t *)0)->points[points]: a null pointer dereference)
+static winding_t *NewWinding(portal_t *p, const int points)
 {
     if (points > MAX_POINTS_ON_WINDING)
     {
         Error("NewWinding: %i points > MAX_POINTS_ON_WINDING", points);
     }
-
-    // (the size was computed as &((winding_t *)0)->points[points]: a null pointer dereference)
-    winding_t *w = new winding_t{};
-    w->points = new vec3_t[points > 0 ? points : 1]{}; // portal windings own their points
-    return w;
+    p->windingpoints = std::make_unique<vec3_t[]>(points > 0 ? points : 1);
+    p->winding = std::make_unique<winding_t>();
+    p->winding->points = p->windingpoints.get();
+    return p->winding.get();
 }
 
 //      Returns the next portal for a thread to work on
@@ -151,7 +154,7 @@ static portal_t *GetNextPortal()
         int min = 99999;
         portal_t *p = nullptr;
 
-        for (j = 0, tp = g_portals; j < g_numportals * 2; j++, tp++)
+        for (j = 0, tp = g_portals.data(); j < g_numportals * 2; j++, tp++)
         {
             if (tp->nummightsee < min && tp->status == stat_none)
             {
@@ -195,7 +198,7 @@ static void LeafFlow(const int leafnum)
     byte compressed[MAX_MAP_LEAFS / 8];
     // flow through all portals, collecting visible bits
     std::memset(compressed, 0, sizeof(compressed));
-    byte *outbuffer = uncompressed + leafnum * g_bitbytes;
+    byte *outbuffer = uncompressed.data() + leafnum * g_bitbytes;
     leaf_t *leaf = &g_leafs[leafnum];
     int tmp = 0;
 
@@ -212,7 +215,7 @@ static void LeafFlow(const int leafnum)
 
         {
             byte *dst = outbuffer;
-            const byte *src = BitBytes(p->visbits);
+            const byte *src = BitBytes(p->visbits.data());
             for (unsigned j = 0; j < g_bitbytes; j++, dst++, src++)
             {
                 *dst |= *src;
@@ -301,7 +304,7 @@ static void CalcPortalVis()
     {
         for (int i = 0; i < g_numportals * 2; i++)
         {
-            g_portals[i].visbits = g_portals[i].mightsee;
+            g_portals[i].visbits = std::move(g_portals[i].mightsee); // only visbits is used from here on
             g_portals[i].status = stat_done;
         }
         return;
@@ -311,7 +314,8 @@ static void CalcPortalVis()
 
 static void SaveVisData(const char *filename)
 {
-    std::FILE *fp = std::fopen(filename, "wb");
+    UniqueFile file(std::fopen(filename, "wb"));
+    std::FILE *fp = file.get();
 
     if (!fp)
         return;
@@ -324,8 +328,6 @@ static void SaveVisData(const char *filename)
     {
         SafeWrite(fp, &g_dleafs[i].visofs, sizeof(int));
     }
-
-    std::fclose(fp);
 }
 
 static void CalcVis()
@@ -364,8 +366,7 @@ static void CalcVis()
         SaveVisData(visdatafile);
 
         // We need to reset the uncompressed variable and portal visbits
-        std::free(uncompressed);
-        uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
+        uncompressed.assign(uncompressed.size(), 0);
 
         vismap_p = g_dvisdata;
 
@@ -422,11 +423,11 @@ static void LoadPortals(char *portal_image)
     g_bitlongs = g_bitbytes / sizeof(bitword_t); // g_bitbytes is a multiple of 8
 
     // each file portal is split into two memory portals
-    g_portals = (portal_t *)std::calloc(2 * g_numportals, sizeof(portal_t));
-    g_leafs = (leaf_t *)std::calloc(g_portalleafs, sizeof(leaf_t));
-    leafinfos = (leafinfo_t *)std::calloc(g_portalleafs, sizeof(leafinfo_t));
-    leafcounts = (int *)std::calloc(g_portalleafs, sizeof(int));
-    leafstarts = (int *)std::calloc(g_portalleafs, sizeof(int));
+    g_portals = std::vector<portal_t>(2 * static_cast<std::size_t>(g_numportals));
+    g_leafs.assign(g_portalleafs, leaf_t{});
+    leafinfos.assign(g_portalleafs, leafinfo_t{});
+    leafcounts.assign(g_portalleafs, 0);
+    leafstarts.assign(g_portalleafs, 0);
 
     originalvismapsize = g_portalleafs * ((g_portalleafs + 7) / 8);
 
@@ -478,7 +479,7 @@ static void LoadPortals(char *portal_image)
     portal_t *p;
     int numpoints;
     int leafnums[2];
-    for (i = 0, p = g_portals; i < g_numportals; i++)
+    for (i = 0, p = g_portals.data(); i < g_numportals; i++)
     {
         unsigned rval = 0;
 
@@ -510,7 +511,7 @@ static void LoadPortals(char *portal_image)
             Error("LoadPortals: reading portal %i", i);
         }
 
-        winding_t *w = p->winding = NewWinding(numpoints);
+        winding_t *w = NewWinding(p, numpoints);
         w->original = true;
         w->numpoints = numpoints;
 
@@ -551,7 +552,6 @@ static void LoadPortals(char *portal_image)
         l->portals[l->numportals] = p;
         l->numportals++;
 
-        p->winding = w;
         VectorSubtract(vec3_origin, plane.normal, p->plane.normal);
         p->plane.dist = -plane.dist;
         p->leaf = leafnums[1];
@@ -563,7 +563,7 @@ static void LoadPortals(char *portal_image)
         l->portals[l->numportals] = p;
         l->numportals++;
 
-        p->winding = NewWinding(w->numpoints);
+        NewWinding(p, w->numpoints);
         p->winding->numpoints = w->numpoints;
         for (int j = 0; j < w->numpoints; j++)
         {
@@ -578,15 +578,13 @@ static void LoadPortals(char *portal_image)
 
 static void LoadPortalsByFilename(const char *const filename)
 {
-    char *file_image;
-
     if (!q_exists(filename))
     {
         Error("Portal file '%s' does not exist, cannot vis the map\n", filename);
     }
-    LoadFile(filename, &file_image);
-    LoadPortals(file_image);
-    std::free(file_image);
+    std::vector<char> file_image = ReadFile(filename);
+    file_image.push_back('\0'); // LoadPortals tokenizes it in place, as a C string
+    LoadPortals(file_image.data());
 }
 
 static void Usage()
@@ -836,7 +834,7 @@ int main(const int argc, char **argv)
     LoadPortalsByFilename(portalfile);
 
     Settings();
-    uncompressed = (byte *)std::calloc(g_portalleafs, g_bitbytes);
+    uncompressed.assign(static_cast<std::size_t>(g_portalleafs) * g_bitbytes, 0);
 
     CalcVis();
     g_visdatasize = vismap_p - g_dvisdata;
@@ -852,7 +850,6 @@ int main(const int argc, char **argv)
     double end = I_FloatTime();
     LogTimeElapsed(end - start);
 
-    std::free(uncompressed);
     // END VIS
 
     return 0;
