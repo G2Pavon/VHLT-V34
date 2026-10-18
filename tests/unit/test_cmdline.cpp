@@ -82,4 +82,13 @@ TEST_SUITE("cmdline")
         CHECK(Parse(seen, {"-value", "-flag"}) == "(none)");
         CHECK(seen.events == std::vector<std::string>{"value=-flag"});
     }
+
+    TEST_CASE("compat: KilobytesToBytes is atoi * 1024, wrapping above 2 GB as the int multiply did")
+    {
+        CHECK(KilobytesToBytes("16") == 16 * 1024);
+        CHECK(KilobytesToBytes("x") == 0);
+        CHECK(KilobytesToBytes("-2") == -2048);
+        CHECK(KilobytesToBytes(2097152) == static_cast<int>(0x80000000u)); // 2 GB: wraps to INT_MIN
+        CHECK(KilobytesToBytes(4194304) == 0);
+    }
 }

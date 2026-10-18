@@ -388,6 +388,14 @@ def fm_bsp_leak():
             entity([("classname", "func_wall")], [box((600, 600, -256), (700, 700, -100), "CRATE01")])]
 
 
+def leak_all_hulls():
+    """Not in the corpus (see fm_bsp_leak): a 64-unit gap, which every hull leaks through. Used by
+    parity.py regress."""
+    worldspawn = entity([("classname", "worldspawn"), ("mapversion", "220")],
+                        [*leaky_room(64), box((-200, -200, -256), (200, 200, -100), "CRATE01")])
+    return [worldspawn, *start_and_light()]
+
+
 def fm_bsp_models():
     """Brush models hlbsp special-cases: no visible faces (the head node becomes a leaf and is split
     on an arbitrary plane), no faces at all ("Empty solid entity"), and empty clip hulls."""

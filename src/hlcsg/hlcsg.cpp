@@ -81,7 +81,7 @@ void GetParamsFromEnt(entity_t *mapent)
     }
     Log("%30s [ %-9s ]\n", "Estimate Compile Times", g_estimate ? "on" : "off");
 
-    int iTmp = IntForKey(mapent, "texdata") * 1024;
+    int iTmp = KilobytesToBytes(IntForKey(mapent, "texdata"));
     if (iTmp > g_max_map_miptex)
     {
         g_max_map_miptex = iTmp;
@@ -1306,8 +1306,8 @@ int main(const int argc, char **argv)
         flag("-wadautodetect", g_bWadAutoDetect, true),
         flag("-nowadtextures", g_wadtextures, false),
         {"-wadinclude", [](const char *value) { g_WadInclude.push_back(value); }, true},
-        {"-texdata", [](const char *value) { g_max_map_miptex = std::atoi(value) * 1024; }, true},
-        {"-lightdata", [](const char *value) { g_max_map_lightdata = std::atoi(value) * 1024; }, true},
+        {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
+        {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
         flag("-nolightopt", g_nolightopt, true),
         flag("-notextconvert", g_noutf8, true),
     };

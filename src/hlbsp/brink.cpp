@@ -84,7 +84,7 @@ typedef struct
 static bbrink_t *CopyBrink(bbrink_t *other)
 {
     bbrink_t *b;
-    hlassume(b = (bbrink_t *)std::malloc(sizeof(bbrink_t)), assume_NoMemory);
+    hlassume(b = (bbrink_t *)std::calloc(1, sizeof(bbrink_t)), assume_NoMemory); // zeroed: not every field is set
     VectorCopy(other->direction, b->direction);
     VectorCopy(other->start, b->start);
     VectorCopy(other->stop, b->stop);
@@ -102,7 +102,7 @@ void DeleteBrink(bbrink_t *b)
 bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 {
     bbrink_t *b;
-    hlassume(b = (bbrink_t *)std::malloc(sizeof(bbrink_t)), assume_NoMemory);
+    hlassume(b = (bbrink_t *)std::calloc(1, sizeof(bbrink_t)), assume_NoMemory); // zeroed: not every field is set
 
     VectorCopy(start, b->start);
     VectorCopy(stop, b->stop);
@@ -110,7 +110,7 @@ bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 
     b->numnodes = 1;
     b->nodes = new std::vector<bbrinknode_t>;
-    bbrinknode_t newnode;
+    bbrinknode_t newnode{}; // the copy below read uninitialized fields
     newnode.isleaf = true;
     newnode.clipnode = nullptr;
     b->nodes->push_back(newnode);
@@ -238,6 +238,7 @@ typedef struct btreepoint_s
 {
     vec3_t v;
     bool infinite;
+    unsigned serial; // creation order: orders the maps that used to be keyed by address
 
     btreeedge_l *edges; // this is a reversed reference
 
@@ -250,6 +251,7 @@ typedef struct btreeedge_s
 {
     btreepoint_r points[2]; // pointing from points[1] to points[0]
     bool infinite;          // both points are infinite (i.e. this edge lies on the bounding box)
+    unsigned serial;        // creation order (see btreepoint_s)
 
     btreeface_l *faces; // this is a reversed reference
 
@@ -283,20 +285,33 @@ typedef struct btreeleaf_s
     bclipnode_t *clipnode; // not defined for infinite leaf
 } btreeleaf_t;
 
+// Order of creation for tree points and edges. SplitTreeLeaf iterated std::maps keyed by the objects'
+// addresses, so which vertices it paired and the order it attached edges depended on the allocator.
+static unsigned s_treeserial = 0;
+struct BySerial
+{
+    template <typename T>
+    bool operator()(const T *a, const T *b) const
+    {
+        return a->serial < b->serial;
+    }
+};
+
 static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreepoint_t *tp = (btreepoint_t *)std::malloc(sizeof(btreepoint_t));
+    btreepoint_t *tp = (btreepoint_t *)std::calloc(1, sizeof(btreepoint_t)); // zeroed: not every field is set
     hlassume(tp != nullptr, assume_NoMemory);
     tp->edges = new btreeedge_l();
     tp->infinite = infinite;
+    tp->serial = s_treeserial++;
     return tp;
 }
 
 static btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeedge_t *te = (btreeedge_t *)std::malloc(sizeof(btreeedge_t));
+    btreeedge_t *te = (btreeedge_t *)std::calloc(1, sizeof(btreeedge_t)); // zeroed: not every field is set
     hlassume(te != nullptr, assume_NoMemory);
     te->points[0].p = nullptr;
     te->points[0].side = false;
@@ -304,6 +319,7 @@ static btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
     te->points[1].side = true;
     te->faces = new btreeface_l();
     te->infinite = infinite;
+    te->serial = s_treeserial++;
     // should be followed by SetEdgePoints
     return te;
 }
@@ -337,7 +353,7 @@ static void SetEdgePoints(btreeedge_t *te, btreepoint_t *tp0, btreepoint_t *tp1)
 static btreeface_t *AllocTreeface(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeface_t *tf = (btreeface_t *)std::malloc(sizeof(btreeface_t));
+    btreeface_t *tf = (btreeface_t *)std::calloc(1, sizeof(btreeface_t)); // zeroed: not every field is set
     hlassume(tf != nullptr, assume_NoMemory);
     tf->edges = new btreeedge_l();
     tf->leafs[0].l = nullptr;
@@ -395,7 +411,7 @@ static void SetFaceLeafs(btreeface_t *tf, btreeleaf_t *tl0, btreeleaf_t *tl1)
 static btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeleaf_t *tl = (btreeleaf_t *)std::malloc(sizeof(btreeleaf_t));
+    btreeleaf_t *tl = (btreeleaf_t *)std::calloc(1, sizeof(btreeleaf_t)); // zeroed: not every field is set
     hlassume(tl != nullptr, assume_NoMemory);
     tl->faces = new btreeface_l();
     tl->infinite = infinite;
@@ -815,8 +831,8 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
             backface->tmp_tested = true;
             backface->tmp_side = SIDE_BACK;
 
-            std::map<btreepoint_t *, int> vertexes;
-            std::map<btreepoint_t *, int>::iterator vertex, vertex2;
+            std::map<btreepoint_t *, int, BySerial> vertexes;
+            std::map<btreepoint_t *, int, BySerial>::iterator vertex, vertex2;
             for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
             {
                 if (ei->e->tmp_side != SIDE_BACK)
@@ -927,8 +943,8 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
             }
         }
 
-        std::map<btreeedge_t *, int> edges;
-        std::map<btreeedge_t *, int>::iterator edge;
+        std::map<btreeedge_t *, int, BySerial> edges;
+        std::map<btreeedge_t *, int, BySerial>::iterator edge;
 
         while ((fi = tl->faces->begin()) != tl->faces->end())
         {
@@ -1101,6 +1117,7 @@ static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnode
         c->isleaf = true;
         c->content = headnode;
         c->partitions = nullptr;
+        c->children[0] = c->children[1] = nullptr; // were left uninitialized
     }
     else
     {
@@ -1126,6 +1143,10 @@ static void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, in
     std::memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
     for (int i = 0; i < info->numclipnodes; i++)
     {
+        if (info->clipnodes[i].isleaf)
+        {
+            continue; // leaves have no children (the remap used to compute pointers from garbage)
+        }
         for (int k = 0; k < 2; k++)
         {
             info->clipnodes[i].children[k] = info->clipnodes + (bclipnodes[i].children[k] - bclipnodes);
@@ -1702,7 +1723,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     bbrinkinfo_t *info;
     try
     {
-        hlassume(info = (bbrinkinfo_t *)std::malloc(sizeof(bbrinkinfo_t)), assume_NoMemory);
+        hlassume(info = (bbrinkinfo_t *)std::calloc(1, sizeof(bbrinkinfo_t)), assume_NoMemory);
         ExpandClipnodes(info, clipnodes, headnode);
         BuildTreeCells(info);
         CollectBrinks(info);
@@ -1711,7 +1732,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
         DeleteTreeCells(info);
         SortPartitions(info);
     }
-    catch (std::bad_alloc)
+    catch (const std::bad_alloc &)
     {
         hlassume(false, assume_NoMemory);
     }
@@ -1724,7 +1745,7 @@ inline clipnodemap_t::key_type MakeKey(const dclipnode_t &c) // duplicated in wr
     return std::make_pair(c.planenum, std::make_pair(c.children[0], c.children[1]));
 }
 
-static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bbrinklevel_e level, int &headnode_out, dclipnode_t *begin, dclipnode_t *end, dclipnode_t *&current, clipnodemap_t *outputmap)
+static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bbrinklevel_e level, int &headnode_out, dclipnode_t *begin, int end, int &current, clipnodemap_t *outputmap)
 {
     while (p && p->type > level)
     {
@@ -1737,7 +1758,7 @@ static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bb
     }
     dclipnode_t tmpclipnode;
     dclipnode_t *cn = &tmpclipnode;
-    dclipnode_t *c = current;
+    int c = current; // an index: the pointer this was could run past the end before the check below
     current++;
     cn->planenum = p->planenum;
     cn->children[p->planeside] = p->content;
@@ -1754,9 +1775,9 @@ static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bb
         {
             return false;
         }
-        *c = *cn;
-        (*outputmap)[MakeKey(*cn)] = c - begin;
-        headnode_out = c - begin;
+        begin[c] = *cn;
+        (*outputmap)[MakeKey(*cn)] = c;
+        headnode_out = c;
     }
     else
     {
@@ -1771,7 +1792,7 @@ static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bb
     return true;
 }
 
-static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &headnode_out, dclipnode_t *begin, dclipnode_t *end, dclipnode_t *&current, clipnodemap_t *outputmap)
+static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &headnode_out, dclipnode_t *begin, int end, int &current, clipnodemap_t *outputmap)
 {
     if (clipnode->isleaf)
     {
@@ -1781,7 +1802,7 @@ static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &h
     {
         dclipnode_t tmpclipnode;
         dclipnode_t *cn = &tmpclipnode;
-        dclipnode_t *c = current;
+        int c = current; // an index: the pointer this was could run past the end before the check below
         current++;
         cn->planenum = clipnode->planenum;
         for (int k = 0; k < 2; k++)
@@ -1800,9 +1821,9 @@ static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &h
             {
                 return false;
             }
-            *c = *cn;
-            (*outputmap)[MakeKey(*cn)] = c - begin;
-            headnode_out = c - begin;
+            begin[c] = *cn;
+            (*outputmap)[MakeKey(*cn)] = c;
+            headnode_out = c;
         }
         else
         {
@@ -1822,8 +1843,8 @@ bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dc
 {
     const bbrinkinfo_t *info = (const bbrinkinfo_t *)brinkinfo;
     dclipnode_t *begin = clipnodes_out;
-    dclipnode_t *end = &clipnodes_out[maxsize];
-    dclipnode_t *current = &clipnodes_out[size];
+    int end = maxsize;
+    int current = size;
     clipnodemap_t outputmap;
     int r;
     if (!FixBrinks_r(&info->clipnodes[0], level, r, begin, end, current, &outputmap))
@@ -1831,7 +1852,7 @@ bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dc
         return false;
     }
     headnode_out = r;
-    size_out = current - begin;
+    size_out = current;
     return true;
 }
 

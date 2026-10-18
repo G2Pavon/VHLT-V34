@@ -18,7 +18,7 @@ static int c_falsenodes;
 static int c_free_faces;
 static int c_keep_faces;
 static portal_t *prevleaknode;
-static std::FILE *pointfile;
+static std::FILE *pointfile; // open only while FillOutside traces a leak with leakfile set
 static std::FILE *linefile;
 static int hit_occupied;
 static int backdraw;
@@ -63,6 +63,12 @@ static void MarkLeakTrail(portal_t *n2)
     prevleaknode = n2;
 
     if (!n1)
+    {
+        return;
+    }
+    // A leak in a later hull, after the first leak's files were written: the oracle wrote this
+    // trail to the closed FILEs (use after free; random crashes). Nothing reached the files.
+    if (!pointfile || !linefile)
     {
         return;
     }
@@ -305,7 +311,7 @@ static bool isClassnameAllowableOutside(const char *const classname)
 
         for (unsigned x = 0; x < g_nAllowableOutside; x++, list++)
         {
-            if (list)
+            if (list) // compat: tests the pointer into the array (never null), not the entry
             {
                 if (!strcasecmp(classname, *list))
                 {
@@ -363,8 +369,8 @@ void LoadAllowableOutsideList(const char *const filename)
                         {
                             g_maxAllowableOutside += MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE;
                             g_strAllowableOutsideList =
-
                                 (char **)realloc(g_strAllowableOutsideList, sizeof(char *) * g_maxAllowableOutside);
+                            hlassume(g_strAllowableOutsideList != nullptr, assume_NoMemory); // was unchecked
                         }
 
                         g_strAllowableOutsideList[y++] = pszData;
@@ -471,6 +477,8 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     {
         std::fclose(pointfile);
         std::fclose(linefile);
+        pointfile = nullptr;
+        linefile = nullptr;
     }
 
     if (ret)

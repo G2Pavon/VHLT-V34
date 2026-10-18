@@ -284,12 +284,26 @@ static void AddFaceEdges(const face_t *const f)
 
 //============================================================================
 
-static byte superfacebuf[1024 * 16];
-static face_t *superface = (face_t *)superfacebuf;
-static int MAX_SUPERFACEEDGES = (sizeof(superfacebuf) - sizeof(face_t) + sizeof(superface->pts)) / sizeof(vec3_t);
+// The face FixFaceEdges works on, with room for the points it inserts. It used to be a 16 KB byte
+// buffer cast to face_t whose pts[] was indexed past MAXEDGES (misaligned, out of bounds).
+// compat: the same capacity, so MAX_SUPERFACEEDGES is reached at the same point.
+constexpr int MAX_SUPERFACEEDGES = static_cast<int>((1024 * 16 - sizeof(face_t) + sizeof(face_t::pts)) / sizeof(vec3_t));
+struct SuperFace
+{
+    face_t face; // everything but the points: face.numpoints counts pts below
+    vec3_t pts[MAX_SUPERFACEEDGES];
+};
+static SuperFace superface;
+
+// The face's fields and its first MAXEDGES points (all a face_t holds), as `*dst = *src` did.
+static void CopyFace(face_t *dst, const SuperFace &src)
+{
+    *dst = src.face;
+    std::memcpy(dst->pts, src.pts, sizeof(dst->pts));
+}
 static face_t *newlist;
 
-static void SplitFaceForTjunc(face_t *f, face_t *original)
+static void SplitFaceForTjunc(SuperFace &sf, face_t *original)
 {
     vec3_t dir, test;
     int firstcorner, lastcorner;
@@ -297,12 +311,12 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
     face_t *chain = nullptr;
     do
     {
-        hlassume(f->original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
+        hlassume(sf.face.original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: sf.face.original"
 
-        if (f->numpoints <= MAXPOINTS)
+        if (sf.face.numpoints <= MAXPOINTS)
         { // the face is now small enough without more cutting
             // so copy it back to the original
-            *original = *f;
+            CopyFace(original, sf);
             original->original = chain;
             original->next = newlist;
             newlist = original;
@@ -313,11 +327,11 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
 
     restart:
         // find the last corner
-        VectorSubtract(f->pts[f->numpoints - 1], f->pts[0], dir);
+        VectorSubtract(sf.pts[sf.face.numpoints - 1], sf.pts[0], dir);
         VectorNormalize(dir);
-        for (lastcorner = f->numpoints - 1; lastcorner > 0; lastcorner--)
+        for (lastcorner = sf.face.numpoints - 1; lastcorner > 0; lastcorner--)
         {
-            VectorSubtract(f->pts[lastcorner - 1], f->pts[lastcorner], test);
+            VectorSubtract(sf.pts[lastcorner - 1], sf.pts[lastcorner], test);
             VectorNormalize(test);
             vec_t v = DotProduct(test, dir);
             if (v < 1.0 - ON_EPSILON || v > 1.0 + ON_EPSILON)
@@ -327,11 +341,11 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
         }
 
         // find the first corner
-        VectorSubtract(f->pts[1], f->pts[0], dir);
+        VectorSubtract(sf.pts[1], sf.pts[0], dir);
         VectorNormalize(dir);
-        for (firstcorner = 1; firstcorner < f->numpoints - 1; firstcorner++)
+        for (firstcorner = 1; firstcorner < sf.face.numpoints - 1; firstcorner++)
         {
-            VectorSubtract(f->pts[firstcorner + 1], f->pts[firstcorner], test);
+            VectorSubtract(sf.pts[firstcorner + 1], sf.pts[firstcorner], test);
             VectorNormalize(test);
             vec_t v = DotProduct(test, dir);
             if (v < 1.0 - ON_EPSILON || v > 1.0 + ON_EPSILON)
@@ -343,31 +357,31 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
         if (firstcorner + 2 >= MAXPOINTS)
         {
             // rotate the point winding
-            VectorCopy(f->pts[0], test);
-            for (int i = 1; i < f->numpoints; i++)
+            VectorCopy(sf.pts[0], test);
+            for (int i = 1; i < sf.face.numpoints; i++)
             {
-                VectorCopy(f->pts[i], f->pts[i - 1]);
+                VectorCopy(sf.pts[i], sf.pts[i - 1]);
             }
-            VectorCopy(test, f->pts[f->numpoints - 1]);
+            VectorCopy(test, sf.pts[sf.face.numpoints - 1]);
             goto restart;
         }
 
         // cut off as big a piece as possible, less than MAXPOINTS, and not
         // past lastcorner
 
-        face_t *newface = NewFaceFromFace(f);
+        face_t *newface = NewFaceFromFace(&sf.face);
 
-        hlassume(f->original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: f->original"
+        hlassume(sf.face.original == nullptr, assume_ValidPointer); // "SplitFaceForTjunc: sf.face.original"
 
         newface->original = chain;
         chain = newface;
         newface->next = newlist;
         newlist = newface;
-        if (f->numpoints - firstcorner <= MAXPOINTS)
+        if (sf.face.numpoints - firstcorner <= MAXPOINTS)
         {
             newface->numpoints = firstcorner + 2;
         }
-        else if (lastcorner + 2 < MAXPOINTS && f->numpoints - lastcorner <= MAXPOINTS)
+        else if (lastcorner + 2 < MAXPOINTS && sf.face.numpoints - lastcorner <= MAXPOINTS)
         {
             newface->numpoints = lastcorner + 2;
         }
@@ -378,14 +392,14 @@ static void SplitFaceForTjunc(face_t *f, face_t *original)
 
         for (int i = 0; i < newface->numpoints; i++)
         {
-            VectorCopy(f->pts[i], newface->pts[i]);
+            VectorCopy(sf.pts[i], newface->pts[i]);
         }
 
-        for (int i = newface->numpoints - 1; i < f->numpoints; i++)
+        for (int i = newface->numpoints - 1; i < sf.face.numpoints; i++)
         {
-            VectorCopy(f->pts[i], f->pts[i - (newface->numpoints - 2)]);
+            VectorCopy(sf.pts[i], sf.pts[i - (newface->numpoints - 2)]);
         }
-        f->numpoints -= (newface->numpoints - 2);
+        sf.face.numpoints -= (newface->numpoints - 2);
     } while (1);
 }
 
@@ -395,14 +409,15 @@ static void FixFaceEdges(face_t *f)
     vec_t t1;
     vec_t t2;
 
-    *superface = *f;
+    superface.face = *f;
+    std::memcpy(superface.pts, f->pts, sizeof(f->pts));
 
 restart:
-    for (int i = 0; i < superface->numpoints; i++)
+    for (int i = 0; i < superface.face.numpoints; i++)
     {
-        int j = (i + 1) % superface->numpoints;
+        int j = (i + 1) % superface.face.numpoints;
 
-        wedge_t *w = FindEdge(superface->pts[i], superface->pts[j], &t1, &t2);
+        wedge_t *w = FindEdge(superface.pts[i], superface.pts[j], &t1, &t2);
 
         for (v = w->head.next; v->t < t1 + T_EPSILON; v = v->next)
         {
@@ -412,20 +427,20 @@ restart:
         {
             tjuncs++;
             // insert a new vertex here
-            for (int k = superface->numpoints; k > j; k--)
+            for (int k = superface.face.numpoints; k > j; k--)
             {
-                VectorCopy(superface->pts[k - 1], superface->pts[k]);
+                VectorCopy(superface.pts[k - 1], superface.pts[k]);
             }
-            VectorMA(w->origin, v->t, w->dir, superface->pts[j]);
-            superface->numpoints++;
-            hlassume(superface->numpoints < MAX_SUPERFACEEDGES, assume_MAX_SUPERFACEEDGES);
+            VectorMA(w->origin, v->t, w->dir, superface.pts[j]);
+            superface.face.numpoints++;
+            hlassume(superface.face.numpoints < MAX_SUPERFACEEDGES, assume_MAX_SUPERFACEEDGES);
             goto restart;
         }
     }
 
-    if (superface->numpoints <= MAXPOINTS)
+    if (superface.face.numpoints <= MAXPOINTS)
     {
-        *f = *superface;
+        CopyFace(f, superface);
         f->next = newlist;
         newlist = f;
         return;

@@ -45,8 +45,6 @@ static void UpdateStatus(void)
 static int FaceSide(face_t *in, const plane_t *const split, double *epsilonsplit = nullptr)
 {
     const vec_t epsilonmin = 0.002, epsilonmax = 0.2;
-    int i;
-    vec_t *p;
 
     vec_t d_front = 0.0;
     vec_t d_back = 0.0;
@@ -54,9 +52,9 @@ static int FaceSide(face_t *in, const plane_t *const split, double *epsilonsplit
     // axial planes are fast
     if (split->type <= last_axial)
     {
-        for (i = 0, p = in->pts[0] + split->type; i < in->numpoints; i++, p += 3)
+        for (int i = 0; i < in->numpoints; i++) // was one pointer walked across pts[][] (out of bounds)
         {
-            vec_t dot = *p - split->dist;
+            vec_t dot = in->pts[i][split->type] - split->dist;
             if (dot > d_front)
                 d_front = dot;
             if (dot < d_back)
@@ -66,9 +64,9 @@ static int FaceSide(face_t *in, const plane_t *const split, double *epsilonsplit
     else
     {
         // sloping planes take longer
-        for (i = 0, p = in->pts[0]; i < in->numpoints; i++, p += 3)
+        for (int i = 0; i < in->numpoints; i++)
         {
-            vec_t dot = DotProduct(p, split->normal);
+            vec_t dot = DotProduct(in->pts[i], split->normal);
             dot -= split->dist;
             if (dot > d_front)
                 d_front = dot;
@@ -467,6 +465,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
     double planecount = 0.0;
     double totalsplit = 0.0;
     tmpvalue = (double (*)[2])std::malloc(g_numplanes * sizeof(double[2]));
+    hlassume(tmpvalue != nullptr || g_numplanes == 0, assume_NoMemory); // was unchecked
     surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;

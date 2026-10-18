@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "common/cmdlib.h"
+#include "common/cmdline.h"
 #include "common/filelib.h"
 #include "common/planefile.h"
 #include "common/log.h"
@@ -99,6 +100,19 @@ face_t *NewFaceFromFace(const face_t *const in)
     newf->detaillevel = in->detaillevel;
 
     return newf;
+}
+
+// Appends a point to a face being built by SplitFaceTmp. The loop there checked the count once per
+// input point, after up to two appends, so a face could get pts[MAXEDGES] (and the next) written
+// before the error; the oracle always stopped with this same error right after.
+static void AddSplitPoint(face_t *f, const vec_t *p)
+{
+    if (f->numpoints >= MAXEDGES)
+    {
+        Error("SplitFace: numpoints > MAXEDGES");
+    }
+    VectorCopy(p, f->pts[f->numpoints]);
+    f->numpoints++;
 }
 
 static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front, face_t **back)
@@ -208,22 +222,18 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
 
         if (sides[i] == SIDE_ON)
         {
-            VectorCopy(p1, newf->pts[newf->numpoints]);
-            newf->numpoints++;
-            VectorCopy(p1, new2->pts[new2->numpoints]);
-            new2->numpoints++;
+            AddSplitPoint(newf, p1);
+            AddSplitPoint(new2, p1);
             continue;
         }
 
         if (sides[i] == SIDE_FRONT)
         {
-            VectorCopy(p1, new2->pts[new2->numpoints]);
-            new2->numpoints++;
+            AddSplitPoint(new2, p1);
         }
         else
         {
-            VectorCopy(p1, newf->pts[newf->numpoints]);
-            newf->numpoints++;
+            AddSplitPoint(newf, p1);
         }
 
         if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
@@ -251,10 +261,8 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
             }
         }
 
-        VectorCopy(mid, newf->pts[newf->numpoints]);
-        newf->numpoints++;
-        VectorCopy(mid, new2->pts[new2->numpoints]);
-        new2->numpoints++;
+        AddSplitPoint(newf, mid);
+        AddSplitPoint(new2, mid);
     }
 
     if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
@@ -742,7 +750,7 @@ static surfchain_t *ReadSurfs(std::FILE *file)
         {
             return nullptr;
         }
-        if (planenum == -1) // end of model
+        if (r >= 2 && planenum == -1) // end of model (planenum was read uninitialized when r == 1)
         {
             break;
         }
@@ -761,6 +769,19 @@ static surfchain_t *ReadSurfs(std::FILE *file)
         if (g_texinfo > g_numtexinfo)
         {
             Error("ReadSurfs (line %i): %i > g_numtexinfo", line, g_texinfo);
+        }
+        // The checks above let these through (off by one, or negative): out-of-range indexes.
+        if (planenum < 0 || planenum == g_numplanes)
+        {
+            Error("ReadSurfs (line %i): plane %i out of range (%i planes)", line, planenum, g_numplanes);
+        }
+        if (g_texinfo < -1 || g_texinfo == g_numtexinfo) // -1: a face without texture
+        {
+            Error("ReadSurfs (line %i): texinfo %i out of range (%i texinfos)", line, g_texinfo, g_numtexinfo);
+        }
+        if (numpoints < 0)
+        {
+            Error("ReadSurfs (line %i): %i points", line, numpoints);
         }
         if (detaillevel < 0)
         {
@@ -841,7 +862,7 @@ static brush_t *ReadBrushes(std::FILE *file)
         {
             int planenum;
             int numpoints;
-            r = std::fscanf(file, "%i %u\n", &planenum, &numpoints);
+            r = std::fscanf(file, "%i %i\n", &planenum, &numpoints); // was %u into an int
             if (r != 2)
             {
                 Error("ReadBrushes: get side failed");
@@ -849,6 +870,10 @@ static brush_t *ReadBrushes(std::FILE *file)
             if (planenum == -1)
             {
                 break;
+            }
+            if (planenum < 0 || (planenum ^ 1) >= g_numplanes || numpoints < 0)
+            {
+                Error("ReadBrushes: bad side (plane %i of %i, %i points)", planenum, g_numplanes, numpoints);
             }
             side_t *s = AllocSide();
             s->plane = g_mapplanes[planenum ^ 1];
@@ -942,7 +967,7 @@ static bool ProcessModel()
     if (nodes->planenum == -1)
     {
         novisiblebrushes = true;
-        if (nodes->markfaces[0] != nullptr)
+        if (nodes->markfaces && nodes->markfaces[0] != nullptr) // markfaces is null for a filled leaf
             hlassume(false, assume_EmptySolid);
         if (g_numplanes == 0)
             Error("No valid planes.\n");
@@ -983,6 +1008,10 @@ static bool ProcessModel()
     for (g_hullnum = 1; g_hullnum < NUM_HULLS; g_hullnum++)
     {
         surfs = ReadSurfs(polyfiles[g_hullnum]);
+        if (!surfs) // was dereferenced below
+        {
+            Error("ReadSurfs: hull %i file ended before the hull 0 file", g_hullnum);
+        }
         detailbrushes = ReadBrushes(brushfiles[g_hullnum]);
         {
             int hullnum = g_hullnum;
@@ -1147,12 +1176,12 @@ static void ProcessFile(const char *const filename)
     for (int i = 0; i < NUM_HULLS; i++)
     {
         //mapname.p[0-3]
-        std::sprintf(name, "%s.p%i", filename, i);
+        safe_snprintf(name, sizeof(name), "%s.p%i", filename, i);
         polyfiles[i] = std::fopen(name, "r");
 
         if (!polyfiles[i])
             Error("Can't open %s", name);
-        std::sprintf(name, "%s.b%i", filename, i);
+        safe_snprintf(name, sizeof(name), "%s.b%i", filename, i);
         brushfiles[i] = std::fopen(name, "r");
         if (!brushfiles[i])
             Error("Can't open %s", name);
@@ -1241,11 +1270,11 @@ static void ProcessFile(const char *const filename)
     // Because the bsp file has been updated, these polyfiles are no longer valid.
     for (int i = 0; i < NUM_HULLS; i++)
     {
-        std::sprintf(name, "%s.p%i", filename, i);
+        safe_snprintf(name, sizeof(name), "%s.p%i", filename, i);
         std::fclose(polyfiles[i]);
         polyfiles[i] = nullptr;
         unlink(name);
-        std::sprintf(name, "%s.b%i", filename, i);
+        safe_snprintf(name, sizeof(name), "%s.b%i", filename, i);
         std::fclose(brushfiles[i]);
         brushfiles[i] = nullptr;
         unlink(name);
@@ -1353,7 +1382,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //added "1" .--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_miptex) //--vluzacn
                 {
@@ -1369,7 +1398,7 @@ int main(const int argc, char **argv)
         {
             if (i + 1 < argc) //added "1" .--vluzacn
             {
-                int x = std::atoi(argv[++i]) * 1024;
+                int x = KilobytesToBytes(argv[++i]);
 
                 //if (x > g_max_map_lightdata) //--vluzacn
                 {

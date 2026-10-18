@@ -2,6 +2,7 @@
 
 // Table-driven command-line parsing for the tools.
 
+#include <cstdlib>
 #include <functional>
 #include <span>
 
@@ -13,6 +14,17 @@ struct CommandLineOption
     bool takesvalue = false;
     const char *missingvalue = nullptr; // logged before usage() when the value is missing
 };
+
+// A size given in kilobytes, in bytes. compat: the old `atoi(value) * 1024` overflowed a signed int
+// (undefined) for values above 2 GB; this wraps the way it did in practice.
+inline int KilobytesToBytes(int kilobytes)
+{
+    return static_cast<int>(static_cast<unsigned>(kilobytes) * 1024u);
+}
+inline int KilobytesToBytes(const char *value)
+{
+    return KilobytesToBytes(std::atoi(value));
+}
 
 // Applies argv[1..argc-1] in order and returns the one argument that is not an option (the map
 // name), or nullptr if there is none. Calls usage() (which is expected not to return) when an

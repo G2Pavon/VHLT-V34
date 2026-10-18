@@ -202,8 +202,8 @@ static int WriteDrawLeaf(node_t *node, const node_t *portalleaf)
                 f = f->original;
                 continue;
             }
+            hlassume(g_nummarksurfaces < MAX_MAP_MARKSURFACES, assume_MAX_MAP_MARKSURFACES); // was after the write
             g_dmarksurfaces[g_nummarksurfaces] = f->outputnumber;
-            hlassume(g_nummarksurfaces < MAX_MAP_MARKSURFACES, assume_MAX_MAP_MARKSURFACES);
             g_nummarksurfaces++;
             f = f->original; // grab tjunction split faces
         } while (f);

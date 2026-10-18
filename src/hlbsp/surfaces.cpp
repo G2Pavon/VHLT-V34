@@ -96,6 +96,10 @@ void SubdivideFace(face_t *f, face_t **prevptr)
                 f = back;
             }
             *prevptr = f;
+            if (!f)
+            {
+                return; // both fragments collapsed and no face followed: was a null dereference
+            }
         }
     }
 }
@@ -260,6 +264,9 @@ static int GetVertex(const vec3_t in, const int planenum)
             }
         }
 
+    // Checked before the entry is written (was after): hvertex[MAX_MAP_VERTS] was written first.
+    // Same condition: there is one hash entry per vertex emitted for this model.
+    hlassume(g_numvertexes != MAX_MAP_VERTS && hvert_p < hvertex + MAX_MAP_VERTS, assume_MAX_MAP_VERTS);
     hv = hvert_p;
     hv->numedges = 1;
     hv->numplanes = 1;

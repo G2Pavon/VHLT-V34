@@ -1129,7 +1129,56 @@ def regress_texdata_growth(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
-REGRESSIONS = {"texdata-growth": regress_texdata_growth}
+def _leak_pipeline(bindir: Path, mapfile: Path, work: Path) -> tuple[int, bytes]:
+    """hlcsg + hlbsp on mapfile in a fresh work; the hlbsp exit code and output."""
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    shutil.copy2(mapfile, work / mapfile.name)
+    name = mapfile.stem
+    run([bindir / "hlcsg", "-threads", "1", name], cwd=work, capture_output=True, env=env_for(bindir), check=True)
+    proc = run([bindir / "hlbsp", "-threads", "1", name], cwd=work, capture_output=True, env=env_for(bindir))
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+def regress_leak_all_hulls(bindir: Path, tmp: Path) -> list[str]:
+    """A map that leaks in every hull: after the first leak the oracle wrote each later hull's trail to
+    the point/line files it had already closed, so it crashes in some runs and not others. The
+    candidate must exit 0 every time and write what the oracle writes in a run that survives."""
+    sys.path.insert(0, str(FEATURE_MAP_DIR.parent))
+    import make_feature_maps
+    tmp.mkdir(parents=True)
+    mapfile = tmp / "leak_all_hulls.map"
+    make_feature_maps.write_map(mapfile, make_feature_maps.leak_all_hulls())
+    canon = read_json(DATA / "corpus" / "manifest.json")["canonical_wads"]
+    text = mapfile.read_text(encoding="latin-1")
+    mapfile.write_text(set_wad_key(text, [str(DATA / "corpus" / w) for w in canon]), encoding="latin-1")
+
+    problems = []
+    oracle = DATA / "builds" / "oracle" / "bin"
+    survived = None
+    for attempt in range(40):
+        code, _ = _leak_pipeline(oracle, mapfile, tmp / "oracle")
+        if code == 0:
+            survived = tmp / "oracle"
+            break
+    for i in range(3):
+        work = tmp / f"cand{i}"
+        code, out = _leak_pipeline(bindir, mapfile, work)
+        if code != 0:
+            problems.append(f"run {i}: hlbsp exit {code}")
+        if b"ERROR: AddressSanitizer" in out or b"runtime error:" in out:
+            problems.append(f"run {i}: sanitizer error")
+        if b"LEAK in hull 1" not in out:
+            problems.append(f"run {i}: no leak reported in hull 1 (the scenario no longer leaks there)")
+        if survived is None:
+            problems.append("the oracle crashed in all 40 runs: nothing to compare with")
+        else:
+            problems += [f"run {i}: {p}" for p in compare_dirs(survived, work, "zero")]
+    return problems
+
+
+REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls}
 
 
 def cmd_regress(args) -> int:
