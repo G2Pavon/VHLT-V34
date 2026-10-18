@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -53,6 +54,8 @@ struct portal_t
     std::unique_ptr<winding_t> winding;
     std::unique_ptr<vec3_t[]> windingpoints; // winding->points
     vstatus_t status = stat_none;
+    int order = 0;                // position in the processing order (SortPortals)
+    std::atomic<bool> done{false}; // visbits final; set (release) after status = stat_done
     std::vector<bitword_t> visbits;  // g_bitlongs words once computed
     std::vector<bitword_t> mightsee; // g_bitlongs words once computed
     unsigned nummightsee = 0;
@@ -94,6 +97,10 @@ struct threaddata_t
 };
 
 extern bool g_fullvis;
+// -fastthreads: a flow uses every portal finished at that moment (faster with many threads, output
+// can differ from run to run). Default: only the portals before it in the processing order, which
+// is what a single thread does, so the output is the same for any thread count.
+extern bool g_fastthreads;
 
 extern int g_numportals;
 extern unsigned g_portalleafs;

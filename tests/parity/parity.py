@@ -1247,8 +1247,31 @@ def regress_hlbsp_threads(bindir: Path, tmp: Path) -> list[str]:
     return []
 
 
+def regress_hlvis_fastthreads(bindir: Path, tmp: Path) -> list[str]:
+    """-fastthreads (V3, opt-in): with one thread it must give the default output; with several it
+    must run (its output may differ from run to run, so it is not compared)."""
+    oracle = DATA / "builds" / "oracle" / "bin"
+    problems = []
+    outputs = {}
+    for label, args in (("default", []), ("fast1", ["-fastthreads", "-threads", "1"]), ("fast8", ["-fastthreads", "-threads", "8"])):
+        work = tmp / label
+        work.mkdir(parents=True)
+        shutil.copy2(DATA / "corpus" / "maps" / "cs_assault.map", work / "cs_assault.map")
+        for tool in ("hlcsg", "hlbsp"):
+            run([oracle / tool, "-threads", "1", "cs_assault"], cwd=work, capture_output=True, check=True)
+        proc = run([bindir / "hlvis", *(args or ["-threads", "1"]), "cs_assault"], cwd=work, capture_output=True)
+        if proc.returncode != 0:
+            problems.append(f"{label}: hlvis exit {proc.returncode}")
+        outputs[label] = (work / "cs_assault.bsp").read_bytes(), proc.stdout
+    if outputs["fast1"][0] != outputs["default"][0]:
+        problems.append("-fastthreads -threads 1 differs from the default output")
+    if b"fast threads        [      on ]" not in outputs["fast8"][1]:
+        problems.append("settings table does not show fast threads")
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
-               "hlbsp-threads": regress_hlbsp_threads}
+               "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads}
 
 
 def cmd_regress(args) -> int:
@@ -1307,11 +1330,21 @@ CLI_CASES = {
 # vertex 0 of 0: the bounds-checked loader rejected it from Phase 2 to V1, where the oracle got as
 # far as the missing .prt. A case group "tool-suffix" runs that tool.
 CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview"}
+# Usage lines the candidate adds on purpose (new options): removed from its output before comparing.
+CLI_ADDED_LINES = {
+    "hlvis": [b"    -fastthreads    : Faster with many threads, but the result can differ from run to run\n"],  # V3
+}
 # Tools whose input comes from an earlier stage: the oracle's tools prepare it (same for both sides).
 CLI_PREPARE = {"hlbsp": ["hlcsg"], "hlvis": ["hlcsg", "hlbsp"]}
 
 
-def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str) -> tuple:
+def _drop_lines(data: bytes, lines: list[bytes]) -> bytes:
+    for line in lines:
+        data = data.replace(line, b"")
+    return data
+
+
+def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str, added: list[bytes] = ()) -> tuple:
     cwd.mkdir(parents=True)
     if group in CLI_MAP_FROM_CORPUS:
         shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[group]}.map", cwd / "tiny.map")
@@ -1320,8 +1353,9 @@ def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str) -> tuple:
     for tool in CLI_PREPARE.get(exe.name, []):
         run([DATA / "builds" / "oracle" / "bin" / tool, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, check=True)
     proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
-    files = {f.name: normalize_log(f.read_bytes()) for f in sorted(cwd.iterdir())}
-    return proc.returncode, normalize_log(proc.stdout), normalize_log(proc.stderr), files
+    files = {f.name: _drop_lines(normalize_log(f.read_bytes()), added) for f in sorted(cwd.iterdir())}
+    return (proc.returncode, _drop_lines(normalize_log(proc.stdout), added),
+            _drop_lines(normalize_log(proc.stderr), added), files)
 
 
 def cmd_cli(args) -> int:
@@ -1333,7 +1367,7 @@ def cmd_cli(args) -> int:
             for i, argv in enumerate(CLI_CASES[tool]):
                 exe = tool.split("-")[0]
                 ref = _cli_run(oracle / exe, argv, Path(tmp) / f"{tool}-{i}-ref", tool)
-                new = _cli_run(cand / exe, argv, Path(tmp) / f"{tool}-{i}-new", tool)
+                new = _cli_run(cand / exe, argv, Path(tmp) / f"{tool}-{i}-new", tool, CLI_ADDED_LINES.get(exe, []))
                 what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
                 if what:
                     failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")

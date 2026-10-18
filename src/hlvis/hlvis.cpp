@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -53,6 +54,7 @@ unsigned g_bitlongs;
 int g_numportals = 0;
 unsigned g_portalleafs = 0;
 bool g_fullvis = DEFAULT_FULLVIS;
+bool g_fastthreads = false;
 bool g_estimate = DEFAULT_ESTIMATE;
 bool g_chart = DEFAULT_CHART;
 unsigned int g_maxdistance = DEFAULT_MAXDISTANCE_RANGE;
@@ -138,40 +140,38 @@ static winding_t *NewWinding(portal_t *p, const int points)
 //      Returns the next portal for a thread to work on
 //      Returns the portals from the least complex, so the later ones can reuse the earlier information.
 
+static std::vector<portal_t *> s_order; // processing order: smallest nummightsee first, then index
+
+// The order the portals were picked in: each pick took the unprocessed portal with the smallest
+// nummightsee, the lowest index among equals (nummightsee is fixed once BasePortalVis has run).
+// compat: the pick only considered nummightsee < 99999, which every portal has (<= MAX_MAP_LEAFS).
+static void SortPortals()
+{
+    s_order.clear();
+    for (portal_t &p : g_portals)
+    {
+        s_order.push_back(&p);
+    }
+    std::stable_sort(s_order.begin(), s_order.end(),
+                     [](const portal_t *a, const portal_t *b) { return a->nummightsee < b->nummightsee; });
+    for (std::size_t k = 0; k < s_order.size(); k++)
+    {
+        s_order[k]->order = static_cast<int>(k);
+    }
+}
+
+// The next portal in s_order (GetThreadWork hands out 0, 1, 2, ... one at a time). This used to scan
+// every portal under the lock for the smallest nummightsee still unprocessed: the same sequence.
 static portal_t *GetNextPortal()
 {
-    int j;
-    portal_t *tp;
-
+    const int k = GetThreadWork();
+    if (k == -1)
     {
-        if (GetThreadWork() == -1)
-        {
-            return nullptr;
-        }
-
-        ThreadLock();
-
-        int min = 99999;
-        portal_t *p = nullptr;
-
-        for (j = 0, tp = g_portals.data(); j < g_numportals * 2; j++, tp++)
-        {
-            if (tp->nummightsee < min && tp->status == stat_none)
-            {
-                min = tp->nummightsee;
-                p = tp;
-            }
-        }
-
-        if (p)
-        {
-            p->status = stat_working;
-        }
-
-        ThreadUnlock();
-
-        return p;
+        return nullptr;
     }
+    portal_t *p = s_order[k];
+    p->status = stat_working;
+    return p;
 }
 
 #pragma warning(push)
@@ -309,6 +309,7 @@ static void CalcPortalVis()
         }
         return;
     }
+    SortPortals();
     NamedRunThreadsOn(g_numportals * 2, g_estimate, LeafThread);
 }
 
@@ -601,6 +602,7 @@ static void Usage()
     Log("    -threads #      : manually specify the number of threads to run\n");
     Log("    -estimate       : display estimated time during compile\n");
     Log("    -maxdistance #  : Alter the maximum distance for visibility\n");
+    Log("    -fastthreads    : Faster with many threads, but the result can differ from run to run\n");
     Log("    mapfile         : The mapfile to compile\n\n");
     std::exit(1);
 }
@@ -628,6 +630,10 @@ static void Settings()
     Log("max vis distance    [ %7d ] [ %7d ]\n", g_maxdistance, DEFAULT_MAXDISTANCE_RANGE);
     Log("fast vis            [ %7s ] [ %7s ]\n", fastvis ? "on" : "off", DEFAULT_FASTVIS ? "on" : "off");
     Log("full vis            [ %7s ] [ %7s ]\n", g_fullvis ? "on" : "off", DEFAULT_FULLVIS ? "on" : "off");
+    if (g_fastthreads) // only shown when set: the default settings table is unchanged
+    {
+        Log("fast threads        [ %7s ] [ %7s ]\n", "on", "off");
+    }
     Log("\n\n");
 }
 
@@ -704,6 +710,10 @@ int main(const int argc, char **argv)
         else if (!strcasecmp(argv[i], "-chart"))
         {
             g_chart = true;
+        }
+        else if (!strcasecmp(argv[i], "-fastthreads"))
+        {
+            g_fastthreads = true;
         }
         else if (!strcasecmp(argv[i], "-texdata"))
         {

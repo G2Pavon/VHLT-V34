@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <memory>
 #include <vector>
@@ -386,8 +387,19 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
         {
             const bitword_t *test;
 
-            if (p->status == stat_done)
+            // Single-threaded, the portals before the base portal in the processing order are done
+            // and nothing else is. By default a thread uses exactly those (waiting for one still in
+            // progress), so any thread count gives the -threads 1 result; -fastthreads uses
+            // whatever is done at the moment. (Both read `done` instead of the old unsynchronized
+            // status/visbits.)
+            const bool usevisbits = g_fastthreads ? p->done.load(std::memory_order_acquire)
+                                                  : p->order < thread->base->order;
+            if (usevisbits)
             {
+                while (!p->done.load(std::memory_order_acquire))
+                {
+                    p->done.wait(false, std::memory_order_acquire);
+                }
                 test = p->visbits.data();
             }
             else
@@ -531,6 +543,8 @@ void PortalFlow(portal_t *p)
     RecursiveLeafFlow(p->leaf, &data, &data.pstack_head);
 
     p->status = stat_done;
+    p->done.store(true, std::memory_order_release);
+    p->done.notify_all();
 }
 
 //      This is a rough first-order aproximation that is used to trivially reject some
@@ -865,6 +879,19 @@ static vec_t WindingDist(const winding_t *w[2])
     return (std::sqrt(minsqrdist));
 }
 
+// MaxDistVis threads clear bits in bytes other threads read (each bit belongs to one leaf pair, so
+// the result does not depend on the order); the accesses are atomic (they were unsynchronized
+// reads next to locked writes).
+static byte LoadBits(std::vector<bitword_t> &bits, unsigned offset)
+{
+    return std::atomic_ref<byte>(BitBytes(bits.data())[offset]).load(std::memory_order_relaxed);
+}
+
+static void ClearBits(std::vector<bitword_t> &bits, unsigned offset, unsigned bit)
+{
+    std::atomic_ref<byte>(BitBytes(bits.data())[offset]).fetch_and(static_cast<byte>(~bit), std::memory_order_relaxed);
+}
+
 void MaxDistVis(int /*threadnum*/)
 {
     int j;
@@ -891,14 +918,14 @@ void MaxDistVis(int /*threadnum*/)
                 bool visible = false;
                 for (int k = 0; k < l->numportals; k++)
                 {
-                    if (BitBytes(l->portals[k]->visbits.data())[offset_tl] & bit_tl)
+                    if (LoadBits(l->portals[k]->visbits, offset_tl) & bit_tl)
                     {
                         visible = true;
                     }
                 }
                 for (int m = 0; m < tl->numportals; m++)
                 {
-                    if (BitBytes(tl->portals[m]->visbits.data())[offset_l] & bit_l)
+                    if (LoadBits(tl->portals[m]->visbits, offset_l) & bit_l)
                     {
                         visible = true;
                     }
@@ -990,16 +1017,14 @@ void MaxDistVis(int /*threadnum*/)
             }
 
         Work:
-            ThreadLock();
             for (int k = 0; k < l->numportals; k++)
             {
-                BitBytes(l->portals[k]->visbits.data())[offset_tl] &= ~bit_tl;
+                ClearBits(l->portals[k]->visbits, offset_tl, bit_tl);
             }
             for (int m = 0; m < tl->numportals; m++)
             {
-                BitBytes(tl->portals[m]->visbits.data())[offset_l] &= ~bit_l;
+                ClearBits(tl->portals[m]->visbits, offset_l, bit_l);
             }
-            ThreadUnlock();
 
         NoWork:
             continue; // Hack to keep label from causing compile error

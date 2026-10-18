@@ -208,7 +208,13 @@ python3 $P check --bin DIR --threads 16          # run every tool multi-threaded
   Since H4, hlcsg with any thread count writes exactly what the oracle's `-threads 1` writes:
   `check --tier csg-variants --threads 16` passes (`csg-default` is plain hlcsg). Measured after H6
   on the whole pipeline at 16 threads: the quick tier matches the `-threads 1` references entirely;
-  in the full tier hlvis differs on 15 of 29 maps (hlrad only because of its input). hlbsp is
+  in the full tier hlvis differed on 15 of 29 maps (hlrad only because of its input). Since V3 hlvis
+  writes the `-threads 1` result with any thread count (portals are processed in the single-thread
+  order, and a flow waits for the earlier portals it uses): `check --tier full --threads 16` and
+  `--tier vis-variants --threads 16` pass, also on the 14 maps that used to differ. `-fastthreads`
+  keeps the old faster behaviour (output can vary); `regress hlvis-fastthreads` covers it, and
+  `cli` ignores its usage line (`CLI_ADDED_LINES`). ThreadSanitizer, hlvis at 16 threads: 0 warnings
+  in either mode (oracle: 186 on cs_assault, 398 on de_dust2). hlbsp is
   single-threaded, so it always matches (until B4 `-threads` was parsed into a local and discarded;
   now it sets the thread count shown in the settings table, checked by `regress hlbsp-threads`).
 - ThreadSanitizer (hlcsg, 16 threads; 0 warnings since H4, thousands at oracle-base):
@@ -235,7 +241,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis]  # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
