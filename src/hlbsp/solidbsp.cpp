@@ -1,5 +1,6 @@
 //  Each node or leaf will have a set of portals that completely enclose
 //  the volume of the node and pass into an adjacent node.
+#include <memory>
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -104,37 +105,37 @@ static int FaceSide(face_t *in, const plane_t *const split, double *epsilonsplit
 
 // organize all surfaces into a tree structure to accelerate intersection test
 // can reduce more than 90% compile time for very complicated maps
-typedef struct surfacetreenode_s
+struct surfacetreenode_t
 {
-    int size; // can be zero, which invalidates mins and maxs
-    int size_discardable;
-    vec3_t mins;
-    vec3_t maxs;
-    bool isleaf;
+    int size = 0; // can be zero, which invalidates mins and maxs
+    int size_discardable = 0;
+    vec3_t mins{};
+    vec3_t maxs{};
+    bool isleaf = false;
     // node
-    surfacetreenode_s *children[2];
-    std::vector<face_t *> *nodefaces;
-    int nodefaces_discardablesize;
+    std::unique_ptr<surfacetreenode_t> children[2];
+    std::vector<face_t *> nodefaces;
+    int nodefaces_discardablesize = 0;
     // leaf
-    std::vector<face_t *> *leaffaces;
-} surfacetreenode_t;
+    std::vector<face_t *> leaffaces;
+};
 
-typedef struct
+struct surfacetree_t
 {
-    bool dontbuild;
-    vec_t epsilon; // if a face is not epsilon far from the splitting plane, put it in result.middle
-    surfacetreenode_t *headnode;
+    bool dontbuild = false;
+    vec_t epsilon = 0; // if a face is not epsilon far from the splitting plane, put it in result.middle
+    surfacetreenode_t headnode;
     struct
     {
-        int frontsize;
-        int backsize;
-        std::vector<face_t *> *middle; // may contains coplanar faces and discardable(SOLIDHINT) faces
-    } result;                          // "public"
-} surfacetree_t;
+        int frontsize = 0;
+        int backsize = 0;
+        std::vector<face_t *> middle; // may contains coplanar faces and discardable(SOLIDHINT) faces
+    } result;                         // "public"
+};
 
 static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
 {
-    node->size = node->leaffaces->size();
+    node->size = node->leaffaces.size();
     node->size_discardable = 0;
     if (node->size == 0)
     {
@@ -144,7 +145,7 @@ static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
 
     VectorFill(node->mins, BOGUS_RANGE);
     VectorFill(node->maxs, -BOGUS_RANGE);
-    for (std::vector<face_t *>::iterator i = node->leaffaces->begin(); i != node->leaffaces->end(); ++i)
+    for (auto i = node->leaffaces.begin(); i != node->leaffaces.end(); ++i)
     {
         face_t *f = *i;
         for (int x = 0; x < f->numpoints; x++)
@@ -182,13 +183,10 @@ static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
     vec_t dist2 = (node->mins[bestaxis] + 3 * node->maxs[bestaxis]) / 4;
     // Each child node is at most 3/4 the size of the parent node.
     // Most faces should be passed to a child node, faces left in the parent node are the ones whose dimensions are large enough to be comparable to the dimension of the parent node.
-    node->nodefaces = new std::vector<face_t *>;
     node->nodefaces_discardablesize = 0;
-    node->children[0] = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
-    node->children[0]->leaffaces = new std::vector<face_t *>;
-    node->children[1] = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
-    node->children[1]->leaffaces = new std::vector<face_t *>;
-    for (std::vector<face_t *>::iterator i = node->leaffaces->begin(); i != node->leaffaces->end(); ++i)
+    node->children[0] = std::make_unique<surfacetreenode_t>();
+    node->children[1] = std::make_unique<surfacetreenode_t>();
+    for (auto i = node->leaffaces.begin(); i != node->leaffaces.end(); ++i)
     {
         face_t *f = *i;
         vec_t low = BOGUS_RANGE;
@@ -200,7 +198,7 @@ static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
         }
         if (low < dist1 + ON_EPSILON && high > dist2 - ON_EPSILON)
         {
-            node->nodefaces->push_back(f);
+            node->nodefaces.push_back(f);
             if (f->facestyle == face_discardable)
             {
                 node->nodefaces_discardablesize++;
@@ -210,45 +208,40 @@ static void BuildSurfaceTree_r(surfacetree_t *tree, surfacetreenode_t *node)
         {
             if ((low + high) / 2 > dist)
             {
-                node->children[0]->leaffaces->push_back(f);
+                node->children[0]->leaffaces.push_back(f);
             }
             else
             {
-                node->children[1]->leaffaces->push_back(f);
+                node->children[1]->leaffaces.push_back(f);
             }
         }
         else if (low >= dist1)
         {
-            node->children[0]->leaffaces->push_back(f);
+            node->children[0]->leaffaces.push_back(f);
         }
         else if (high <= dist2)
         {
-            node->children[1]->leaffaces->push_back(f);
+            node->children[1]->leaffaces.push_back(f);
         }
     }
-    if (node->children[0]->leaffaces->size() == node->leaffaces->size() || node->children[1]->leaffaces->size() == node->leaffaces->size())
+    if (node->children[0]->leaffaces.size() == node->leaffaces.size() || node->children[1]->leaffaces.size() == node->leaffaces.size())
     {
         Warning("BuildSurfaceTree_r: didn't split node with bound (%f,%f,%f)-(%f,%f,%f)", node->mins[0], node->mins[1], node->mins[2], node->maxs[0], node->maxs[1], node->maxs[2]);
-        delete node->children[0]->leaffaces;
-        delete node->children[1]->leaffaces;
-        std::free(node->children[0]);
-        std::free(node->children[1]);
-        delete node->nodefaces;
+        node->children[0].reset();
+        node->children[1].reset();
+        node->nodefaces.clear();
         node->isleaf = true;
         return;
     }
-    delete node->leaffaces;
-    BuildSurfaceTree_r(tree, node->children[0]);
-    BuildSurfaceTree_r(tree, node->children[1]);
+    std::vector<face_t *>().swap(node->leaffaces); // a decision node keeps nodefaces only
+    BuildSurfaceTree_r(tree, node->children[0].get());
+    BuildSurfaceTree_r(tree, node->children[1].get());
 }
 
-static surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
+static std::unique_ptr<surfacetree_t> BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
 {
-    surfacetree_t *tree = (surfacetree_t *)std::malloc(sizeof(surfacetree_t));
+    auto tree = std::make_unique<surfacetree_t>();
     tree->epsilon = epsilon;
-    tree->result.middle = new std::vector<face_t *>;
-    tree->headnode = (surfacetreenode_t *)std::malloc(sizeof(surfacetreenode_t));
-    tree->headnode->leaffaces = new std::vector<face_t *>;
     {
         for (surface_t *p2 = surfaces; p2; p2 = p2->next)
         {
@@ -258,15 +251,15 @@ static surfacetree_t *BuildSurfaceTree(surface_t *surfaces, vec_t epsilon)
             }
             for (face_t *f = p2->faces; f; f = f->next)
             {
-                tree->headnode->leaffaces->push_back(f);
+                tree->headnode.leaffaces.push_back(f);
             }
         }
     }
-    tree->dontbuild = tree->headnode->leaffaces->size() < 20;
-    BuildSurfaceTree_r(tree, tree->headnode);
+    tree->dontbuild = tree->headnode.leaffaces.size() < 20;
+    BuildSurfaceTree_r(tree.get(), &tree->headnode);
     if (tree->dontbuild)
     {
-        *tree->result.middle = *tree->headnode->leaffaces;
+        tree->result.middle = tree->headnode.leaffaces;
         tree->result.backsize = 0;
         tree->result.frontsize = 0;
     }
@@ -309,19 +302,19 @@ static void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node
     }
     if (node->isleaf)
     {
-        for (std::vector<face_t *>::iterator i = node->leaffaces->begin(); i != node->leaffaces->end(); ++i)
+        for (auto i = node->leaffaces.begin(); i != node->leaffaces.end(); ++i)
         {
-            tree->result.middle->push_back(*i);
+            tree->result.middle.push_back(*i);
         }
     }
     else
     {
-        for (std::vector<face_t *>::iterator i = node->nodefaces->begin(); i != node->nodefaces->end(); ++i)
+        for (auto i = node->nodefaces.begin(); i != node->nodefaces.end(); ++i)
         {
-            tree->result.middle->push_back(*i);
+            tree->result.middle.push_back(*i);
         }
-        TestSurfaceTree_r(tree, node->children[0], split);
-        TestSurfaceTree_r(tree, node->children[1], split);
+        TestSurfaceTree_r(tree, node->children[0].get(), split);
+        TestSurfaceTree_r(tree, node->children[1].get(), split);
     }
 }
 
@@ -331,34 +324,10 @@ static void TestSurfaceTree(surfacetree_t *tree, const plane_t *split)
     {
         return;
     }
-    tree->result.middle->clear();
+    tree->result.middle.clear();
     tree->result.backsize = 0;
     tree->result.frontsize = 0;
-    TestSurfaceTree_r(tree, tree->headnode, split);
-}
-
-static void DeleteSurfaceTree_r(surfacetreenode_t *node)
-{
-    if (node->isleaf)
-    {
-        delete node->leaffaces;
-    }
-    else
-    {
-        DeleteSurfaceTree_r(node->children[0]);
-        std::free(node->children[0]);
-        DeleteSurfaceTree_r(node->children[1]);
-        std::free(node->children[1]);
-        delete node->nodefaces;
-    }
-}
-
-static void DeleteSurfaceTree(surfacetree_t *tree)
-{
-    DeleteSurfaceTree_r(tree->headnode);
-    std::free(tree->headnode);
-    delete tree->result.middle;
-    std::free(tree);
+    TestSurfaceTree_r(tree, &tree->headnode, split);
 }
 
 //      When there are a huge number of planes, just choose one closest
@@ -366,7 +335,7 @@ static void DeleteSurfaceTree(surfacetree_t *tree)
 
 static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins, const vec3_t maxs, int detaillevel)
 {
-    surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
+    std::unique_ptr<surfacetree_t> surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;
     surface_t *bestsurface = NULL;
@@ -403,11 +372,11 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         double backcount = 0;
         double coplanarcount = 0;
 
-        TestSurfaceTree(surfacetree, plane);
+        TestSurfaceTree(surfacetree.get(), plane);
         frontcount += surfacetree->result.frontsize;
         backcount += surfacetree->result.backsize;
         for (
-            std::vector<face_t *>::iterator it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
+            std::vector<face_t *>::iterator it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
         {
             face_t *f = *it;
             if (f->facestyle == face_discardable)
@@ -450,7 +419,6 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         bestsurface = p;
     }
 
-    DeleteSurfaceTree(surfacetree);
     if (!bestsurface)
     {
         return nullptr;
@@ -465,7 +433,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
     double planecount = 0.0;
     double totalsplit = 0.0;
     std::vector<std::array<double, 2>> tmpvalue(g_numplanes);
-    surfacetree_t *surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
+    std::unique_ptr<surfacetree_t> surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;
     surface_t *bestsurface = NULL;
@@ -498,11 +466,11 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
             }
             coplanarcount++;
         }
-        TestSurfaceTree(surfacetree, plane);
+        TestSurfaceTree(surfacetree.get(), plane);
         {
             frontcount += surfacetree->result.frontsize;
             backcount += surfacetree->result.backsize;
-            for (std::vector<face_t *>::iterator it = surfacetree->result.middle->begin(); it != surfacetree->result.middle->end(); ++it)
+            for (std::vector<face_t *>::iterator it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
             {
                 face_t *f = *it;
                 if (f->planenum == p->planenum || f->planenum == (p->planenum ^ 1))
@@ -566,7 +534,6 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
 
     if (!bestsurface)
         Error("ChoosePlaneFromList: no valid planes");
-    DeleteSurfaceTree(surfacetree);
     return bestsurface;
 }
 

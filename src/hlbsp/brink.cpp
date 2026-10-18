@@ -36,84 +36,80 @@ extern int count_mergedclipnodes;
 
 typedef struct bpartition_s
 {
-    int planenum;
-    bool planeside;
-    int content;
-    bbrinklevel_e type;
+    int planenum{};
+    bool planeside{};
+    int content{};
+    bbrinklevel_e type{};
 
-    bpartition_s *next;
+    bpartition_s *next{};
 } bpartition_t;
 
 typedef struct bclipnode_s
 {
-    bool isleaf;
+    bool isleaf{};
 
-    int planenum;
-    const plane_t *plane;
-    bclipnode_s *children[2]; // children[0] is the front side of the plane (SIDE_FRONT = 0)
+    int planenum{};
+    const plane_t *plane{};
+    bclipnode_s *children[2]{}; // children[0] is the front side of the plane (SIDE_FRONT = 0)
 
-    int content;
-    bpartition_t *partitions;
+    int content{};
+    bpartition_t *partitions{};
 
-    struct btreeleaf_s *treeleaf;
+    struct btreeleaf_s *treeleaf{};
 } bclipnode_t;
 
 typedef struct bbrinknode_s
 { // we will only focus on the bsp shape which encircles a brink, so we extract the clipnodes that meets with the brink and store them here
-    bool isleaf;
+    bool isleaf{};
 
-    int planenum;
-    const plane_t *plane;
-    int children[2];
+    int planenum{};
+    const plane_t *plane{};
+    int children[2]{};
 
-    int content;
-    bclipnode_t *clipnode;
+    int content{};
+    bclipnode_t *clipnode{};
 } bbrinknode_t;
 
 typedef struct
 {
-    vec3_t start, stop;
-    vec3_t direction;
+    vec3_t start{}, stop{};
+    vec3_t direction{};
 
-    int numnodes; // including both nodes and leafs
-    std::vector<bbrinknode_t> *nodes;
+    int numnodes = 0; // including both nodes and leafs
+    std::vector<bbrinknode_t> nodes;
 
-    struct btreeedge_s *edge; // only for use in deciding brink type
+    struct btreeedge_s *edge = nullptr; // only for use in deciding brink type
 } bbrink_t;
 
 static bbrink_t *CopyBrink(bbrink_t *other)
 {
-    bbrink_t *b;
-    hlassume(b = (bbrink_t *)std::calloc(1, sizeof(bbrink_t)), assume_NoMemory); // zeroed: not every field is set
+    bbrink_t *b = new bbrink_t{};
     VectorCopy(other->direction, b->direction);
     VectorCopy(other->start, b->start);
     VectorCopy(other->stop, b->stop);
     b->numnodes = other->numnodes;
-    b->nodes = new std::vector<bbrinknode_t>(*other->nodes);
+    b->nodes = other->nodes;
     return b;
 }
 
 void DeleteBrink(bbrink_t *b)
 {
-    delete b->nodes;
-    std::free(b);
+    delete b;
 }
 
 bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 {
-    bbrink_t *b;
-    hlassume(b = (bbrink_t *)std::calloc(1, sizeof(bbrink_t)), assume_NoMemory); // zeroed: not every field is set
+    bbrink_t *b = new bbrink_t{};
 
     VectorCopy(start, b->start);
     VectorCopy(stop, b->stop);
     VectorSubtract(stop, start, b->direction);
 
     b->numnodes = 1;
-    b->nodes = new std::vector<bbrinknode_t>;
     bbrinknode_t newnode{}; // the copy below read uninitialized fields
     newnode.isleaf = true;
     newnode.clipnode = nullptr;
-    b->nodes->push_back(newnode);
+    b->nodes.push_back(newnode);
 
     // CreateBrink must be followed by BrinkSplitClipnode
     return b;
@@ -125,7 +121,7 @@ static void BrinkSplitClipnode(bbrink_t *b, const plane_t *plane, int planenum, 
     int numfound = 0;
     for (int i = 0; i < b->numnodes; i++)
     {
-        bbrinknode_t *node = &(*b->nodes)[i];
+        bbrinknode_t *node = &b->nodes[i];
         if (node->isleaf && node->clipnode == prev)
         {
             found = i;
@@ -147,10 +143,10 @@ static void BrinkSplitClipnode(bbrink_t *b, const plane_t *plane, int planenum, 
         PrintOnce("BrinkSplitClipnode: internal error: n0 == n1");
         hlassume(false, assume_first);
     }
-    b->nodes->resize(b->numnodes + 2);
-    bbrinknode_t *node = &(*b->nodes)[found];
-    bbrinknode_t *front = &(*b->nodes)[b->numnodes];
-    bbrinknode_t *back = &(*b->nodes)[b->numnodes + 1];
+    b->nodes.resize(b->numnodes + 2);
+    bbrinknode_t *node = &b->nodes[found];
+    bbrinknode_t *front = &b->nodes[b->numnodes];
+    bbrinknode_t *back = &b->nodes[b->numnodes + 1];
 
     node->clipnode = nullptr;
     node->isleaf = false;
@@ -176,7 +172,7 @@ static void BrinkReplaceClipnode(bbrink_t *b, bclipnode_t *prev, bclipnode_t *n)
     int numfound = 0;
     for (int i = 0; i < b->numnodes; i++)
     {
-        bbrinknode_t *node = &(*b->nodes)[i];
+        bbrinknode_t *node = &b->nodes[i];
         if (node->isleaf && node->clipnode == prev)
         {
             found = i;
@@ -193,7 +189,7 @@ static void BrinkReplaceClipnode(bbrink_t *b, bclipnode_t *prev, bclipnode_t *n)
         PrintOnce("BrinkSplitClipnode: internal error: found more than one clipnode");
         hlassume(false, assume_first);
     }
-    bbrinknode_t *node = &(*b->nodes)[found];
+    bbrinknode_t *node = &b->nodes[found];
     node->clipnode = n;
     node->content = n->content;
 }
@@ -236,53 +232,53 @@ typedef std::list<btreeleaf_r> btreeleaf_l;
 
 typedef struct btreepoint_s
 {
-    vec3_t v;
-    bool infinite;
-    unsigned serial; // creation order: orders the maps that used to be keyed by address
+    vec3_t v{};
+    bool infinite{};
+    unsigned serial{}; // creation order: orders the maps that used to be keyed by address
 
-    btreeedge_l *edges; // this is a reversed reference
+    btreeedge_l edges; // this is a reversed reference
 
-    bool tmp_tested;
-    vec_t tmp_dist;
-    int tmp_side;
+    bool tmp_tested{};
+    vec_t tmp_dist{};
+    int tmp_side{};
 } btreepoint_t;
 
 typedef struct btreeedge_s
 {
-    btreepoint_r points[2]; // pointing from points[1] to points[0]
-    bool infinite;          // both points are infinite (i.e. this edge lies on the bounding box)
-    unsigned serial;        // creation order (see btreepoint_s)
+    btreepoint_r points[2]{}; // pointing from points[1] to points[0]
+    bool infinite{};          // both points are infinite (i.e. this edge lies on the bounding box)
+    unsigned serial{};        // creation order (see btreepoint_s)
 
-    btreeface_l *faces; // this is a reversed reference
+    btreeface_l faces; // this is a reversed reference
 
-    bbrink_t *brink; // not defined for infinite edges
+    bbrink_t *brink{}; // not defined for infinite edges
 
-    bool tmp_tested;
-    int tmp_side;
-    bool tmp_onleaf[2];
+    bool tmp_tested{};
+    int tmp_side{};
+    bool tmp_onleaf[2]{};
 } btreeedge_t;
 
 typedef struct btreeface_s
 {
-    btreeedge_l *edges; // empty faces are allowed (in order to preserve topological correctness)
-    bool infinite;      // when the face is infinite, all its edges must also be infinite
+    btreeedge_l edges; // empty faces are allowed (in order to preserve topological correctness)
+    bool infinite{};      // when the face is infinite, all its edges must also be infinite
 
-    btreeleaf_r leafs[2]; // pointing from leafs[0] to leafs[1] // this is a reversed reference
+    btreeleaf_r leafs[2]{}; // pointing from leafs[0] to leafs[1] // this is a reversed reference
 
-    const plane_t *plane; // not defined for infinite face
-    int planenum;
-    bool planeside; // if ture, this face is pointing at -plane->normal
+    const plane_t *plane{}; // not defined for infinite face
+    int planenum{};
+    bool planeside{}; // if ture, this face is pointing at -plane->normal
 
-    bool tmp_tested;
-    int tmp_side;
+    bool tmp_tested{};
+    int tmp_side{};
 } btreeface_t;
 
 typedef struct btreeleaf_s
 {
-    btreeface_l *faces;
-    bool infinite; // note: the infinite leaf is not convex
+    btreeface_l faces;
+    bool infinite{}; // note: the infinite leaf is not convex
 
-    bclipnode_t *clipnode; // not defined for infinite leaf
+    bclipnode_t *clipnode{}; // not defined for infinite leaf
 } btreeleaf_t;
 
 // Order of creation for tree points and edges. SplitTreeLeaf iterated std::maps keyed by the objects'
@@ -300,9 +296,7 @@ struct BySerial
 static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreepoint_t *tp = (btreepoint_t *)std::calloc(1, sizeof(btreepoint_t)); // zeroed: not every field is set
-    hlassume(tp != nullptr, assume_NoMemory);
-    tp->edges = new btreeedge_l();
+    btreepoint_t *tp = new btreepoint_t{};
     tp->infinite = infinite;
     tp->serial = s_treeserial++;
     return tp;
@@ -311,13 +305,11 @@ static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 static btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeedge_t *te = (btreeedge_t *)std::calloc(1, sizeof(btreeedge_t)); // zeroed: not every field is set
-    hlassume(te != nullptr, assume_NoMemory);
+    btreeedge_t *te = new btreeedge_t{};
     te->points[0].p = nullptr;
     te->points[0].side = false;
     te->points[1].p = nullptr;
     te->points[1].side = true;
-    te->faces = new btreeface_l();
     te->infinite = infinite;
     te->serial = s_treeserial++;
     // should be followed by SetEdgePoints
@@ -341,7 +333,7 @@ static void AttachPointToEdge(btreeedge_t *te, btreepoint_t *tp, bool side)
     btreeedge_r er;
     er.e = te;
     er.side = side;
-    tp->edges->push_back(er);
+    tp->edges.push_back(er);
 }
 
 static void SetEdgePoints(btreeedge_t *te, btreepoint_t *tp0, btreepoint_t *tp1)
@@ -353,9 +345,7 @@ static void SetEdgePoints(btreeedge_t *te, btreepoint_t *tp0, btreepoint_t *tp1)
 static btreeface_t *AllocTreeface(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeface_t *tf = (btreeface_t *)std::calloc(1, sizeof(btreeface_t)); // zeroed: not every field is set
-    hlassume(tf != nullptr, assume_NoMemory);
-    tf->edges = new btreeedge_l();
+    btreeface_t *tf = new btreeface_t{};
     tf->leafs[0].l = nullptr;
     tf->leafs[0].side = false;
     tf->leafs[1].l = nullptr;
@@ -374,12 +364,12 @@ static void AttachEdgeToFace(btreeface_t *tf, btreeedge_t *te, int side)
     btreeedge_r er;
     er.e = te;
     er.side = side;
-    tf->edges->push_back(er);
+    tf->edges.push_back(er);
 
     btreeface_r fr;
     fr.f = tf;
     fr.side = side;
-    te->faces->push_back(fr);
+    te->faces.push_back(fr);
 }
 
 static void AttachFaceToLeaf(btreeleaf_t *tl, btreeface_t *tf, int side)
@@ -392,7 +382,7 @@ static void AttachFaceToLeaf(btreeleaf_t *tl, btreeface_t *tf, int side)
     btreeface_r fr;
     fr.f = tf;
     fr.side = side;
-    tl->faces->push_back(fr);
+    tl->faces.push_back(fr);
 
     if (tf->leafs[side].l)
     {
@@ -411,9 +401,7 @@ static void SetFaceLeafs(btreeface_t *tf, btreeleaf_t *tl0, btreeleaf_t *tl1)
 static btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeleaf_t *tl = (btreeleaf_t *)std::calloc(1, sizeof(btreeleaf_t)); // zeroed: not every field is set
-    hlassume(tl != nullptr, assume_NoMemory);
-    tl->faces = new btreeface_l();
+    btreeleaf_t *tl = new btreeleaf_t{};
     tl->infinite = infinite;
     return tl;
 }
@@ -510,13 +498,13 @@ static btreepoint_t *GetPointFromEdge(btreeedge_t *te, bool side)
     return te->points[side].p;
 }
 
-static void RemoveEdgeFromList(btreeedge_l *el, btreeedge_t *te, bool side)
+static void RemoveEdgeFromList(btreeedge_l &el, btreeedge_t *te, bool side)
 {
-    for (btreeedge_l::iterator ei = el->begin(); ei != el->end(); ei++)
+    for (btreeedge_l::iterator ei = el.begin(); ei != el.end(); ei++)
     {
         if (ei->e == te && ei->side == side)
         {
-            el->erase(ei);
+            el.erase(ei);
             return; // only remove one copy if there are many (in order to preserve topological correctness)
         }
     }
@@ -538,23 +526,22 @@ static void RemovePointFromEdge(btreeedge_t *te, btreepoint_t *tp, bool side) //
 
 static void DeletePoint(int &numobjects, btreepoint_t *tp)
 {
-    if (!tp->edges->empty())
+    if (!tp->edges.empty())
     {
         PrintOnce("DeletePoint: internal error: point used by edge.");
         hlassume(false, assume_first);
     }
-    delete tp->edges;
-    std::free(tp);
+    delete tp;
     numobjects--;
 }
 
-static void RemoveFaceFromList(btreeface_l *fl, btreeface_t *tf, bool side)
+static void RemoveFaceFromList(btreeface_l &fl, btreeface_t *tf, bool side)
 {
-    for (btreeface_l::iterator fi = fl->begin(); fi != fl->end(); fi++)
+    for (btreeface_l::iterator fi = fl.begin(); fi != fl.end(); fi++)
     {
         if (fi->f == tf && fi->side == side)
         {
-            fl->erase(fi);
+            fl.erase(fi);
             return;
         }
     }
@@ -570,7 +557,7 @@ static void RemoveEdgeFromFace(btreeface_t *tf, btreeedge_t *te, bool side)
 
 static void DeleteEdge(int &numobjects, btreeedge_t *te) // warning: points in this edge could be freed if not reference by any other edges
 {
-    if (!te->faces->empty())
+    if (!te->faces.empty())
     {
         PrintOnce("DeleteEdge: internal error: edge used by face.");
         hlassume(false, assume_first);
@@ -583,13 +570,12 @@ static void DeleteEdge(int &numobjects, btreeedge_t *te) // warning: points in t
     {
         btreepoint_t *tp = GetPointFromEdge(te, side);
         RemovePointFromEdge(te, tp, side);
-        if (tp->edges->empty())
+        if (tp->edges.empty())
         {
             DeletePoint(numobjects, tp);
         }
     }
-    delete te->faces;
-    std::free(te);
+    delete te;
     numobjects--;
 }
 
@@ -618,12 +604,12 @@ static void RemoveFaceFromLeaf(btreeleaf_t *tl, btreeface_t *tf, bool side)
 static void DeleteFace(int &numobjects, btreeface_t *tf) // warning: edges in this face could be freed if not reference by any other faces
 {
     btreeedge_l::iterator ei;
-    while ((ei = tf->edges->begin()) != tf->edges->end())
+    while ((ei = tf->edges.begin()) != tf->edges.end())
     {
         btreeedge_t *te = ei->e;
         RemoveFaceFromList(te->faces, tf, ei->side);
-        tf->edges->erase(ei);
-        if (te->faces->empty())
+        tf->edges.erase(ei);
+        if (te->faces.empty())
         {
             DeleteEdge(numobjects, te);
         }
@@ -636,15 +622,14 @@ static void DeleteFace(int &numobjects, btreeface_t *tf) // warning: edges in th
             hlassume(false, assume_first);
         }
     }
-    delete tf->edges;
-    std::free(tf);
+    delete tf;
     numobjects--;
 }
 
 static void DeleteLeaf(int &numobjects, btreeleaf_t *tl)
 {
     btreeface_l::iterator fi;
-    while ((fi = tl->faces->begin()) != tl->faces->end())
+    while ((fi = tl->faces.begin()) != tl->faces.end())
     {
         btreeface_t *tf = fi->f;
         RemoveFaceFromLeaf(tl, tf, fi->side);
@@ -653,8 +638,7 @@ static void DeleteLeaf(int &numobjects, btreeleaf_t *tl)
             DeleteFace(numobjects, tf);
         }
     }
-    delete tl->faces;
-    std::free(tl);
+    delete tl;
     numobjects--;
 }
 
@@ -665,11 +649,11 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
     bool restart = false;
 
     // clear all the flags
-    for (fi = tl->faces->begin(); fi != tl->faces->end(); fi++)
+    for (fi = tl->faces.begin(); fi != tl->faces.end(); fi++)
     {
         btreeface_t *tf = fi->f;
         tf->tmp_tested = false;
-        for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
+        for (ei = tf->edges.begin(); ei != tf->edges.end(); ei++)
         {
             btreeedge_t *te = ei->e;
             te->tmp_tested = false;
@@ -682,10 +666,10 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
     }
 
     // split each point
-    for (fi = tl->faces->begin(); fi != tl->faces->end(); fi++)
+    for (fi = tl->faces.begin(); fi != tl->faces.end(); fi++)
     {
         btreeface_t *tf = fi->f;
-        for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
+        for (ei = tf->edges.begin(); ei != tf->edges.end(); ei++)
         {
             btreeedge_t *te = ei->e;
             for (int side = 0; side < 2; side++)
@@ -715,10 +699,10 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
     }
 
     // split each edge
-    for (fi = tl->faces->begin(); fi != tl->faces->end(); fi++)
+    for (fi = tl->faces.begin(); fi != tl->faces.end(); fi++)
     {
         btreeface_t *tf = fi->f;
-        for (ei = tf->edges->begin(); ei != tf->edges->end(); restart ? restart = false, ei = tf->edges->begin() : ei++)
+        for (ei = tf->edges.begin(); ei != tf->edges.end(); restart ? restart = false, ei = tf->edges.begin() : ei++)
         {
             btreeedge_t *te = ei->e;
             if (te->tmp_tested) // splitted
@@ -775,7 +759,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
                     VectorCopy(tpmid->v, te1->brink->stop);
                 }
                 btreeface_l::iterator fj;
-                while ((fj = te->faces->begin()) != te->faces->end())
+                while ((fj = te->faces.begin()) != te->faces.end())
                 {
                     AttachEdgeToFace(fj->f, te0, fj->side);
                     AttachEdgeToFace(fj->f, te1, fj->side);
@@ -788,7 +772,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
     }
 
     // split each face
-    for (fi = tl->faces->begin(); fi != tl->faces->end(); restart ? restart = false, fi = tl->faces->begin() : fi++)
+    for (fi = tl->faces.begin(); fi != tl->faces.end(); restart ? restart = false, fi = tl->faces.begin() : fi++)
     {
         btreeface_t *tf = fi->f;
         if (tf->tmp_tested)
@@ -797,7 +781,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         }
         tf->tmp_tested = true;
         tf->tmp_side = SIDE_ON;
-        for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
+        for (ei = tf->edges.begin(); ei != tf->edges.end(); ei++)
         {
             if (tf->tmp_side == SIDE_ON)
             {
@@ -833,7 +817,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
 
             std::map<btreepoint_t *, int, BySerial> vertexes;
             std::map<btreepoint_t *, int, BySerial>::iterator vertex, vertex2;
-            for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
+            for (ei = tf->edges.begin(); ei != tf->edges.end(); ei++)
             {
                 if (ei->e->tmp_side != SIDE_BACK)
                 {
@@ -931,7 +915,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         back->clipnode = c1;
 
         int tmp_side = SIDE_ON;
-        for (fi = tl->faces->begin(); fi != tl->faces->end(); fi++)
+        for (fi = tl->faces.begin(); fi != tl->faces.end(); fi++)
         {
             if (tmp_side == SIDE_ON)
             {
@@ -946,7 +930,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         std::map<btreeedge_t *, int, BySerial> edges;
         std::map<btreeedge_t *, int, BySerial>::iterator edge;
 
-        while ((fi = tl->faces->begin()) != tl->faces->end())
+        while ((fi = tl->faces.begin()) != tl->faces.end())
         {
             btreeface_t *tf = fi->f;
             int side = fi->side;
@@ -963,7 +947,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
 
                 if (tmp_side == SIDE_CROSS)
                 {
-                    for (ei = tf->edges->begin(); ei != tf->edges->end(); ei++)
+                    for (ei = tf->edges.begin(); ei != tf->edges.end(); ei++)
                     {
                         edges[ei->e] += (ei->side == (bool)side ? 1 : -1);
                         edge = edges.find(ei->e);
@@ -1011,9 +995,9 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         btreeleaf_t *frontback[2] = {front, back};
         for (int side = 0; side < 2; side++)
         {
-            for (fi = frontback[side]->faces->begin(); fi != frontback[side]->faces->end(); fi++)
+            for (fi = frontback[side]->faces.begin(); fi != frontback[side]->faces.end(); fi++)
             {
-                for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+                for (ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
                 {
                     ei->e->tmp_onleaf[0] = ei->e->tmp_onleaf[1] = false;
                     ei->e->tmp_tested = false;
@@ -1022,9 +1006,9 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         }
         for (int side = 0; side < 2; side++)
         {
-            for (fi = frontback[side]->faces->begin(); fi != frontback[side]->faces->end(); fi++)
+            for (fi = frontback[side]->faces.begin(); fi != frontback[side]->faces.end(); fi++)
             {
-                for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+                for (ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
                 {
                     ei->e->tmp_onleaf[side] = true;
                 }
@@ -1032,9 +1016,9 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         }
         for (int side = 0; side < 2; side++)
         {
-            for (fi = frontback[side]->faces->begin(); fi != frontback[side]->faces->end(); fi++)
+            for (fi = frontback[side]->faces.begin(); fi != frontback[side]->faces.end(); fi++)
             {
-                for (ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+                for (ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
                 {
                     if (ei->e->tmp_tested)
                     {
@@ -1096,12 +1080,12 @@ static void BuildTreeCells_r(int &numobjects, bclipnode_t *c)
 
 typedef struct bbrinkinfo_s
 {
-    int numclipnodes;
-    bclipnode_t *clipnodes;
-    int numobjects;
-    btreeleaf_t *leaf_outside;
-    int numbrinks;
-    bbrink_t **brinks;
+    int numclipnodes = 0;
+    std::vector<bclipnode_t> clipnodes; // children point into it: never resized once built
+    int numobjects = 0;
+    btreeleaf_t *leaf_outside = nullptr;
+    int numbrinks = 0;
+    std::vector<bbrink_t *> brinks; // not owned (each edge owns its brink)
 } bbrinkinfo_t;
 
 static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnodes, const dclipnode_t *clipnodes, int headnode)
@@ -1132,27 +1116,31 @@ static bclipnode_t *ExpandClipnodes_r(bclipnode_t *bclipnodes, int &numbclipnode
     return c;
 }
 
-static void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headnode)
+// How many clipnodes ExpandClipnodes_r makes (with its limit check at the same point). The tree
+// used to be expanded into a MAXCLIPNODES scratch array (14.7 MB per model and hull), then copied.
+static void CountExpandedClipnodes_r(int &count, const dclipnode_t *clipnodes, int headnode)
 {
-    bclipnode_t *bclipnodes = (bclipnode_t *)std::malloc(MAXCLIPNODES * sizeof(bclipnode_t)); // 262144 * 30byte = 7.5MB
-    hlassume(bclipnodes != nullptr, assume_NoMemory);
-    info->numclipnodes = 0;
-    ExpandClipnodes_r(bclipnodes, info->numclipnodes, clipnodes, headnode);
-    info->clipnodes = (bclipnode_t *)std::malloc(info->numclipnodes * sizeof(bclipnode_t));
-    hlassume(info->clipnodes != nullptr, assume_NoMemory);
-    std::memcpy(info->clipnodes, bclipnodes, info->numclipnodes * sizeof(bclipnode_t));
-    for (int i = 0; i < info->numclipnodes; i++)
+    if (count >= MAXCLIPNODES)
     {
-        if (info->clipnodes[i].isleaf)
-        {
-            continue; // leaves have no children (the remap used to compute pointers from garbage)
-        }
+        Error("ExpandClipnodes_r: exceeded MAXCLIPNODES");
+    }
+    count++;
+    if (headnode >= 0)
+    {
         for (int k = 0; k < 2; k++)
         {
-            info->clipnodes[i].children[k] = info->clipnodes + (bclipnodes[i].children[k] - bclipnodes);
+            CountExpandedClipnodes_r(count, clipnodes, clipnodes[headnode].children[k]);
         }
     }
-    std::free(bclipnodes);
+}
+
+static void ExpandClipnodes(bbrinkinfo_t *info, const dclipnode_t *clipnodes, int headnode)
+{
+    int count = 0;
+    CountExpandedClipnodes_r(count, clipnodes, headnode);
+    info->clipnodes.resize(count); // value-initialized: fields a node kind doesn't use are zero
+    info->numclipnodes = 0;
+    ExpandClipnodes_r(info->clipnodes.data(), info->numclipnodes, clipnodes, headnode);
 }
 
 static void BuildTreeCells(bbrinkinfo_t *info)
@@ -1193,9 +1181,9 @@ static void ClearMarks_r(bclipnode_t *node)
 {
     if (node->isleaf)
     {
-        for (btreeface_l::iterator fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
+        for (btreeface_l::iterator fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
         {
-            for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+            for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
             {
                 ei->e->tmp_tested = false;
             }
@@ -1212,9 +1200,9 @@ static void CollectBrinks_r(bclipnode_t *node, int &numbrinks, bbrink_t **brinks
 {
     if (node->isleaf)
     {
-        for (btreeface_l::iterator fi = node->treeleaf->faces->begin(); fi != node->treeleaf->faces->end(); fi++)
+        for (btreeface_l::iterator fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
         {
-            for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+            for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
             {
                 if (ei->e->tmp_tested)
                 {
@@ -1229,7 +1217,7 @@ static void CollectBrinks_r(bclipnode_t *node, int &numbrinks, bbrink_t **brinks
                         brinks[numbrinks]->edge = ei->e;
                         for (int i = 0; i < brinks[numbrinks]->numnodes; i++)
                         {
-                            bbrinknode_t *node = &(*brinks[numbrinks]->nodes)[i];
+                            bbrinknode_t *node = &brinks[numbrinks]->nodes[i];
                             if (node->isleaf && !node->clipnode->isleaf)
                             {
                                 PrintOnce("CollectBrinks_r: internal error: not leaf");
@@ -1254,15 +1242,15 @@ static void CollectBrinks(bbrinkinfo_t *info)
     info->numbrinks = 0;
     ClearMarks_r(&info->clipnodes[0]);
     CollectBrinks_r(&info->clipnodes[0], info->numbrinks, nullptr);
-    hlassume(info->brinks = (bbrink_t **)std::malloc(info->numbrinks * sizeof(bbrink_t *)), assume_NoMemory);
+    info->brinks.assign(info->numbrinks, nullptr);
     info->numbrinks = 0;
     ClearMarks_r(&info->clipnodes[0]);
-    CollectBrinks_r(&info->clipnodes[0], info->numbrinks, info->brinks);
+    CollectBrinks_r(&info->clipnodes[0], info->numbrinks, info->brinks.data());
 }
 
 static void FreeBrinks(bbrinkinfo_t *info)
 {
-    std::free(info->brinks);
+    info->brinks.clear();
 }
 
 struct bwedge_s;
@@ -1301,7 +1289,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
     {
         return false;
     }
-    VectorCopy((*b->nodes)[0].plane->normal, c->basenormal);
+    VectorCopy(b->nodes[0].plane->normal, c->basenormal);
 
     for (int side = 0; side < 2; side++)
     {
@@ -1315,7 +1303,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
 
         // sort the wedges
         c->numwedges[side] = 1;
-        c->wedges[side][0].nodenum = (*b->nodes)[0].children[side];
+        c->wedges[side][0].nodenum = b->nodes[0].children[side];
         c->surfaces[side][0].nodenum = 0;
         c->surfaces[side][0].nodeside = !side;
         while (1)
@@ -1324,7 +1312,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
             for (i = 0; i < c->numwedges[side]; i++)
             {
                 int nodenum = c->wedges[side][i].nodenum;
-                bbrinknode_t *node = &(*b->nodes)[nodenum];
+                bbrinknode_t *node = &b->nodes[nodenum];
                 if (!node->isleaf)
                 {
                     std::memmove(&c->wedges[side][i + 1], &c->wedges[side][i], (c->numwedges[side] - i) * sizeof(bwedge_t));
@@ -1356,7 +1344,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
         for (int i = 0; i < c->numwedges[side]; i++)
         {
             bwedge_t *w = &c->wedges[side][i];
-            bbrinknode_t *node = &(*b->nodes)[w->nodenum];
+            bbrinknode_t *node = &b->nodes[w->nodenum];
             if (!node->clipnode->isleaf)
             {
                 PrintOnce("CalculateCircle: internal error: not leaf");
@@ -1371,7 +1359,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
         for (int i = 0; i < c->numwedges[side]; i++)
         {
             bsurface_t *s = &c->surfaces[side][i];
-            bbrinknode_t *node = &(*b->nodes)[s->nodenum];
+            bbrinknode_t *node = &b->nodes[s->nodenum];
             VectorScale(node->plane->normal, s->nodeside ? -1 : 1, s->normal);
         }
     }
@@ -1406,9 +1394,9 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
         return false;
     }
     bool onback = false;
-    for (btreeface_l::iterator fi = clipnode->treeleaf->faces->begin(); fi != clipnode->treeleaf->faces->end(); fi++)
+    for (btreeface_l::iterator fi = clipnode->treeleaf->faces.begin(); fi != clipnode->treeleaf->faces.end(); fi++)
     {
-        for (btreeedge_l::iterator ei = fi->f->edges->begin(); ei != fi->f->edges->end(); ei++)
+        for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
         {
             for (int side = 0; side < 2; side++)
             {
@@ -1430,8 +1418,7 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
     {
         return false; // the whole leaf is on the plane, or the leaf doesn't consist of any vertex
     }
-    bpartition_t *p = (bpartition_t *)std::malloc(sizeof(bpartition_t));
-    hlassume(p != nullptr, assume_NoMemory);
+    bpartition_t *p = new bpartition_t{};
     p->next = clipnode->partitions;
     p->planenum = planenum;
     p->planeside = planeside;
@@ -1549,9 +1536,9 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 {
                     continue;
                 }
-                for (btreeedge_l::iterator ei = tp->edges->begin(); ei != tp->edges->end(); ei++)
+                for (btreeedge_l::iterator ei = tp->edges.begin(); ei != tp->edges.end(); ei++)
                 {
-                    for (btreeface_l::iterator fi = ei->e->faces->begin(); fi != ei->e->faces->end(); fi++)
+                    for (btreeface_l::iterator fi = ei->e->faces.begin(); fi != ei->e->faces.end(); fi++)
                     {
                         if (fi->f->infinite || GetLeafFromFace(fi->f, false)->infinite || GetLeafFromFace(fi->f, true)->infinite)
                         {
@@ -1606,8 +1593,8 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                         blocking = true;
                     }
                 }
-                bclipnode_t *clipnode = (*b->nodes)[w->nodenum].clipnode;
-                int planenum = (*b->nodes)[smovement->nodenum].planenum;
+                bclipnode_t *clipnode = b->nodes[w->nodenum].clipnode;
+                int planenum = b->nodes[smovement->nodenum].planenum;
                 bool planeside = transitionside[!side] ? smovement->nodeside : !smovement->nodeside;
 
                 bbrinklevel_e brinktype = isfloor ? (blocking ? BrinkFloorBlocking : BrinkFloor) : onfloor ? (blocking ? BrinkWallBlocking : BrinkWall)
@@ -1645,10 +1632,10 @@ static void DeleteClipnodes(bbrinkinfo_t *info)
         while ((p = info->clipnodes[i].partitions) != nullptr)
         {
             info->clipnodes[i].partitions = p->next;
-            std::free(p);
+            delete p;
         }
     }
-    std::free(info->clipnodes);
+    info->clipnodes.clear();
 }
 
 static void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes and compress clipnodes better if using HLBSP_MERGECLIPNODE
@@ -1687,7 +1674,7 @@ static void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes
             if (*pp && (*pp)->planenum == current->planenum && (*pp)->planeside == current->planeside)
             {
                 (*pp)->type = qmin((*pp)->type, current->type); // pick the lowest (most important) level from the existing partition and the current partition
-                std::free(current);
+                delete current;
                 continue;
             }
             switch (current->type)
@@ -1723,7 +1710,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     bbrinkinfo_t *info;
     try
     {
-        hlassume(info = (bbrinkinfo_t *)std::calloc(1, sizeof(bbrinkinfo_t)), assume_NoMemory);
+        info = new bbrinkinfo_t{};
         ExpandClipnodes(info, clipnodes, headnode);
         BuildTreeCells(info);
         CollectBrinks(info);
@@ -1860,5 +1847,5 @@ void DeleteBrinkinfo(void *brinkinfo)
 {
     bbrinkinfo_t *info = (bbrinkinfo_t *)brinkinfo;
     DeleteClipnodes(info);
-    std::free(info);
+    delete info;
 }
