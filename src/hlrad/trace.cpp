@@ -204,12 +204,13 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
 
     Winding *w = f->winding.get();
     const Winding *w2 = f2->winding.get();
-    const vec_t *pA, *pB, *pD, *p2A, *p2B, *p2D;
-    int i, i2;
+    // set by the search below whenever it finds the shared edge
+    const vec_t *pA = nullptr, *pB = nullptr, *pD = nullptr, *p2A = nullptr, *p2B = nullptr, *p2D = nullptr;
+    int i, i2 = 0;
 
-    for (i = 0; i < w->m_NumPoints; i++)
+    for (i = 0; i < (int)w->m_NumPoints; i++)
     {
-        for (i2 = 0; i2 < w2->m_NumPoints; i2++)
+        for (i2 = 0; i2 < (int)w2->m_NumPoints; i2++)
         {
             pA = w->m_Points[(i + w->m_NumPoints - 1) % w->m_NumPoints];
             pB = w->m_Points[i];
@@ -225,13 +226,13 @@ static bool TryMerge(opaqueface_t *f, const opaqueface_t *f2)
             }
             break;
         }
-        if (i2 == w2->m_NumPoints)
+        if (i2 == (int)w2->m_NumPoints)
         {
             continue;
         }
         break;
     }
-    if (i == w->m_NumPoints)
+    if (i == (int)w->m_NumPoints)
     {
         return false;
     }
@@ -338,7 +339,7 @@ static void BuildFaceEdges(opaqueface_t *f)
     f->edges = std::make_unique<dplane_t[]>(f->numedges);
     const vec_t *n = f->plane.normal;
     vec3_t e;
-    for (int x = 0; x < f->winding->m_NumPoints; x++)
+    for (int x = 0; x < (int)f->winding->m_NumPoints; x++)
     {
         const vec_t *p1 = f->winding->m_Points[x];
         const vec_t *p2 = f->winding->m_Points[(x + 1) % f->winding->m_NumPoints];

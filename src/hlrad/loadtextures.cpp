@@ -46,7 +46,7 @@ struct wadfile_t
 static std::vector<std::unique_ptr<wadfile_t>> g_wadfiles; // in the order they are searched
 bool g_wadfiles_opened;
 
-static int CDECL lump_sorter_by_name(const void *lump1, const void *lump2)
+static int lump_sorter_by_name(const void *lump1, const void *lump2)
 {
     lumpinfo_t *plump1 = (lumpinfo_t *)lump1;
     lumpinfo_t *plump2 = (lumpinfo_t *)lump2;
@@ -70,7 +70,8 @@ static void OpenWadFile(const char *name, bool fullpath = false)
     {
         for (const std::string &dir : g_waddirs)
         {
-            safe_snprintf(wad->path, _MAX_PATH, "%s\\%s", dir.c_str(), name);
+            // the system's separator (this used to be a backslash on every system: -waddir never found a wad off Windows)
+            safe_snprintf(wad->path, _MAX_PATH, "%s" SYSTEM_SLASH_STR "%s", dir.c_str(), name);
             wad->file.reset(std::fopen(wad->path, "rb"));
             if (wad->file.get())
             {
@@ -151,7 +152,8 @@ static void TryOpenWadFiles()
             }
             const char *value = ValueForKey(&g_entities[0], "wad");
             char path[MAX_VAL];
-            int i, j;
+            std::size_t i;
+            int j;
             for (i = 0, j = 0; i < std::strlen(value) + 1; i++)
             {
                 if (value[i] == ';' || value[i] == '\0')

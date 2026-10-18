@@ -10,8 +10,6 @@
 #include <type_traits>
 #include <vector>
 
-#pragma warning(disable : 4142 4028)
-#pragma warning(default : 4142 4028)
 
 constexpr bool DEFAULT_SKY_LIGHTING_FIX = true;
 
@@ -307,7 +305,7 @@ int CountOpaqueFaces(int modelnum);
 void DeleteOpaqueNodes();
 
 int TestPointOpaque_r(int nodenum, bool solid, const vec3_t point);
-FORCEINLINE int TestPointOpaque(int modelnum, const vec3_t modelorigin, bool solid, const vec3_t point) // use "forceinline" because "inline" does nothing here
+inline int TestPointOpaque(int modelnum, const vec3_t modelorigin, bool solid, const vec3_t point)
 {
     opaquemodel_t *thismodel = &opaquemodels[modelnum];
     vec3_t newpoint;

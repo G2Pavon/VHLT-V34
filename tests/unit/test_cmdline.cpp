@@ -1,5 +1,7 @@
 #include "doctest/doctest.h"
 
+#include <cstdlib>
+
 #include <string>
 #include <vector>
 
@@ -81,6 +83,36 @@ TEST_SUITE("cmdline")
         Seen seen;
         CHECK(Parse(seen, {"-value", "-flag"}) == "(none)");
         CHECK(seen.events == std::vector<std::string>{"value=-flag"});
+    }
+
+    TEST_CASE("an option with several values takes them all, or calls missing() when fewer follow")
+    {
+        float rgb[3] = {0, 0, 0};
+        int missing = 0;
+        bool on = false;
+        const CommandLineOption options[] = {
+            {"-rgb", nullptr, false, nullptr, 3,
+             [&rgb](char *const *values) {
+                 for (int k = 0; k < 3; k++)
+                 {
+                     rgb[k] = (float)std::atof(values[k]);
+                 }
+             },
+             [&missing]() {
+                 missing++;
+                 ThrowUsage(); // like usage(), missing() does not return
+             }},
+            CommandLineFlag("-on", on, true),
+        };
+        Args a({"-rgb", "0.5", "1", "2", "-on", "map"});
+        CHECK(std::string(ParseCommandLine(a.argc(), a.argv.data(), options, ThrowUsage)) == "map");
+        CHECK(rgb[0] == 0.5f);
+        CHECK(rgb[2] == 2.0f);
+        CHECK(on);
+        CHECK(missing == 0);
+        Args b({"map", "-rgb", "1", "2"});
+        CHECK_THROWS_AS(ParseCommandLine(b.argc(), b.argv.data(), options, ThrowUsage), UsageCalled);
+        CHECK(missing == 1);
     }
 
     TEST_CASE("compat: KilobytesToBytes is atoi * 1024, wrapping above 2 GB as the int multiply did")

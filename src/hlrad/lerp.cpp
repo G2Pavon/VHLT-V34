@@ -876,7 +876,7 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
             }
         }
     }
-    catch (std::bad_alloc)
+    catch (const std::bad_alloc &)
     {
         hlassume(false, assume_NoMemory);
     }
@@ -924,7 +924,7 @@ static bool TestFarPatch(const localtriangulation_t *lt, const vec3_t p2, const 
     vec3_t v;
 
     vec_t size1 = 0;
-    for (int i = 0; i < lt->winding.m_NumPoints; i++)
+    for (int i = 0; i < (int)lt->winding.m_NumPoints; i++)
     {
         VectorSubtract(lt->winding.m_Points[i], lt->center, v);
         vec_t dist = VectorLength(v);
@@ -935,7 +935,7 @@ static bool TestFarPatch(const localtriangulation_t *lt, const vec3_t p2, const 
     }
 
     vec_t size2 = 0;
-    for (int i = 0; i < p2winding.m_NumPoints; i++)
+    for (int i = 0; i < (int)p2winding.m_NumPoints; i++)
     {
         VectorSubtract(p2winding.m_Points[i], p2, v);
         vec_t dist = VectorLength(v);
@@ -1337,7 +1337,6 @@ static std::unique_ptr<localtriangulation_t> CreateLocalTriangulation(const face
     PurgePatches(lt.get());
 
     // Calculate wedge types
-    vec_t total = 0.0;
     for (int i = 0; i < (int)lt->sortedwedges.size(); i++)
     {
         localtriangulation_t::Wedge *w = &lt->sortedwedges[i];
@@ -1349,7 +1348,6 @@ static std::unique_ptr<localtriangulation_t> CreateLocalTriangulation(const face
         {
             angle = 2 * Q_PI;
         }
-        total += angle;
 
         if (angle <= Q_PI + NORMAL_EPSILON)
         {
@@ -1573,7 +1571,7 @@ void CreateTriangulations(int facenum)
         // Collect used patches
         CollectUsedPatches(facetrian);
     }
-    catch (std::bad_alloc)
+    catch (const std::bad_alloc &)
     {
         hlassume(false, assume_NoMemory);
     }
@@ -1595,7 +1593,7 @@ void FreeTriangulations()
             g_facetriangulations[i].reset();
         }
     }
-    catch (std::bad_alloc)
+    catch (const std::bad_alloc &)
     {
         hlassume(false, assume_NoMemory);
     }

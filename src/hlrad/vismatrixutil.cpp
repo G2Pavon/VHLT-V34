@@ -88,8 +88,6 @@ static std::unique_ptr<transfer_index_t[]> CompressTransferIndicies(transfer_raw
 //This is the primary time sink.
 //It can be run multi threaded.
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 
 void MakeScales(int /*threadnum*/)
 {
@@ -144,11 +142,11 @@ void MakeScales(int /*threadnum*/)
             vec3_t transparency = {1.0, 1.0, 1.0};
             bool useback = false;
 
-            if (!g_CheckVisBit(i, j, transparency, fastfind_index) || (i == j))
+            if (!g_CheckVisBit(i, j, transparency, fastfind_index) || ((unsigned)i == j))
             {
                 if (patch->translucent_b)
                 {
-                    if ((i == j) ||
+                    if (((unsigned)i == j) ||
                         !CheckVisBitBackwards(i, j, backorigin, backnormal, transparency))
                     {
                         continue;
@@ -290,7 +288,6 @@ void MakeScales(int /*threadnum*/)
     g_total_transfer += count;
     ThreadUnlock();
 }
-#pragma warning(pop)
 
 /*
  * =============
@@ -303,8 +300,6 @@ void MakeScales(int /*threadnum*/)
  * =============
  */
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 
 void MakeRGBScales(int /*threadnum*/)
 {
@@ -360,11 +355,11 @@ void MakeRGBScales(int /*threadnum*/)
             vec3_t transparency = {1.0, 1.0, 1.0};
             bool useback = false;
 
-            if (!g_CheckVisBit(i, j, transparency, fastfind_index) || (i == j))
+            if (!g_CheckVisBit(i, j, transparency, fastfind_index) || ((unsigned)i == j))
             {
                 if (patch->translucent_b)
                 {
-                    if (!CheckVisBitBackwards(i, j, backorigin, backnormal, transparency) || (i == j))
+                    if (!CheckVisBitBackwards(i, j, backorigin, backnormal, transparency) || ((unsigned)i == j))
                     {
                         continue;
                     }
@@ -515,7 +510,6 @@ void MakeRGBScales(int /*threadnum*/)
     ThreadUnlock();
 }
 
-#pragma warning(pop)
 
 //More human readable numbers
 void DumpTransfersMemoryUsage()

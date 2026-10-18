@@ -33,7 +33,7 @@ static bool TestFaceIntersect(const intersecttest_t &t, int facenum)
 {
     dface_t *f2 = &g_dfaces[facenum];
     Winding w(*f2);
-    for (int k = 0; k < w.m_NumPoints; k++)
+    for (int k = 0; k < (int)w.m_NumPoints; k++)
     {
         VectorAdd(w.m_Points[k], g_face_offset[facenum], w.m_Points[k]);
     }
@@ -101,7 +101,7 @@ static int AddFaceForVertexNormal(const int edgeabs, int &edgeabsnext, const int
 {
     VectorCopy(getPlaneFromFace(f)->normal, normal);
     int vnum = g_dedges[edgeabs].v[edgeend];
-    int edge, edgenext;
+    int edge = 0, edgenext = 0; // used only when exactly one of each is found
     int i, count1, count2;
     for (count1 = count2 = 0, i = 0; i < f->numedges; i++)
     {
@@ -574,7 +574,7 @@ static void CalcFaceExtents(lightinfo_t *l)
         )
         {
             ThreadLock();
-            PrintOnce("\nfor Face %d (texture %s) at ", s - g_dfaces, TextureNameFromFace(s));
+            PrintOnce("\nfor Face %d (texture %s) at ", (int)(s - g_dfaces), TextureNameFromFace(s));
 
             for (int i = 0; i < s->numedges; i++)
             {
@@ -805,7 +805,7 @@ static void ChopFrag(samplefrag_t *frag)
 
     TranslateWorldToTex(frag->facenum, worldtotex);
     frag->mywinding = std::make_unique<Winding>(facewinding.m_NumPoints);
-    for (int x = 0; x < facewinding.m_NumPoints; x++)
+    for (int x = 0; x < (int)facewinding.m_NumPoints; x++)
     {
         ApplyMatrix(worldtotex, facewinding.m_Points[x], frag->mywinding->m_Points[x]);
         frag->mywinding->m_Points[x][2] = 0.0;
@@ -824,7 +824,7 @@ static void ChopFrag(samplefrag_t *frag)
     }
 
     frag->winding = std::make_unique<Winding>(frag->mywinding->m_NumPoints);
-    for (int x = 0; x < frag->mywinding->m_NumPoints; x++)
+    for (int x = 0; x < (int)frag->mywinding->m_NumPoints; x++)
     {
         ApplyMatrix(frag->mycoordtocoord, frag->mywinding->m_Points[x], frag->winding->m_Points[x]);
     }
@@ -1001,7 +1001,7 @@ static std::unique_ptr<samplefrag_t> GrowSingleFrag(const samplefraginfo_t *info
     bool overlap = false;
     std::vector<dplane_t> clipplanes(frag->winding->m_NumPoints);
     int numclipplanes = 0;
-    for (int x = 0; x < frag->winding->m_NumPoints; x++)
+    for (int x = 0; x < (int)frag->winding->m_NumPoints; x++)
     {
         vec3_t v;
         VectorSubtract(frag->winding->m_Points[(x + 1) % frag->winding->m_NumPoints], frag->winding->m_Points[x], v);
@@ -1148,8 +1148,8 @@ static samplefraginfo_t CreateSampleFrag(int facenum, vec_t s, vec_t t,
 
     while (info->size < info->maxsize)
     {
-        samplefrag_t *bestfrag;
-        samplefragedge_t *bestedge;
+        samplefrag_t *bestfrag = nullptr; // set when FindBestEdge returns true
+        samplefragedge_t *bestedge = nullptr;
 
         if (!FindBestEdge(info, bestfrag, bestedge))
         {
@@ -1276,7 +1276,7 @@ static light_flag_t SetSampleFromST(vec_t *const point,
             ThreadLock();
             Log("Malformed face (%d) normal @ \n", facenum);
             Winding w(g_dfaces[facenum]);
-            for (int x = 0; x < w.m_NumPoints; x++)
+            for (int x = 0; x < (int)w.m_NumPoints; x++)
             {
                 VectorAdd(w.m_Points[x], g_face_offset[facenum], w.m_Points[x]);
             }
@@ -1462,7 +1462,7 @@ void CreateDirectLights()
     patch_t *p;
     for (i = 0, p = g_patches; i < g_num_patches; i++, p++)
     {
-        if (p->emitstyle >= 0 && p->emitstyle < ALLSTYLES)
+        if (p->emitstyle < ALLSTYLES) // unsigned char: never negative
         {
             if (styleused[p->emitstyle] == false)
             {
@@ -1554,7 +1554,7 @@ void CreateDirectLights()
         //LRC        VectorClear(p->totallight[0]);
     }
     // entities
-    for (int i = 0; i < (unsigned)g_numentities; i++)
+    for (int i = 0; i < g_numentities; i++)
     {
 
         entity_t *e = &g_entities[i];
@@ -2463,7 +2463,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                             dist = 1.0;
                         }
 
-                        vec3_t add;
+                        vec3_t add = {0, 0, 0}; // set by every type that reaches here
                         switch (l->type)
                         {
                         case emit_point:
@@ -2706,7 +2706,7 @@ static void AddSamplesToPatches(const sample_t **samples, const unsigned char *s
     for (j = 0, patch = g_face_patches[facenum]; j < numtexwindings; j++, patch = patch->next)
     {
         Winding &w = texwindings.emplace_back(patch->winding->m_NumPoints);
-        for (int x = 0; x < w.m_NumPoints; x++)
+        for (int x = 0; x < (int)w.m_NumPoints; x++)
         {
             vec_t s, t;
             SetSTFromSurf(l, patch->winding->m_Points[x], s, t);
@@ -2944,9 +2944,9 @@ static const vec3_t s_circuscolors[] = {
 static void CalcLightmap(lightinfo_t *l, byte *styles)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
-    int lastoffset;
+    int lastoffset = -1; // set at i == 0
     byte pvs2[(MAX_MAP_LEAFS + 7) / 8];
-    int lastoffset2;
+    int lastoffset2 = -1; // set at i == 0
 
     std::memset(l->lmcache.get(), 0, l->lmcachewidth * l->lmcacheheight * sizeof(vec3_t[ALLSTYLES]));
 
@@ -3050,7 +3050,7 @@ static void CalcLightmap(lightinfo_t *l, byte *styles)
                 Winding surfacewinding(g_dfaces[surface]);
 
                 VectorCopy(spot, spot2);
-                for (int x = 0; x < surfacewinding.m_NumPoints; x++)
+                for (int x = 0; x < (int)surfacewinding.m_NumPoints; x++)
                 {
                     VectorAdd(surfacewinding.m_Points[x], g_face_offset[surface], surfacewinding.m_Points[x]);
                 }

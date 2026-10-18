@@ -112,8 +112,6 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, const un
 }
 
 // This is run by multiple threads
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 
 static void BuildVisLeafs(int /*threadnum*/)
 {
@@ -162,7 +160,6 @@ static void BuildVisLeafs(int /*threadnum*/)
         }
     }
 }
-#pragma warning(pop)
 
 static void BuildVisMatrix()
 {

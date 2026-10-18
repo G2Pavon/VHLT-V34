@@ -1367,9 +1367,35 @@ def regress_lightdata_growth(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_waddir(bindir: Path, tmp: Path) -> list[str]:
+    """Without the .wa_, hlrad finds the textures through -waddir (R4: the path was dir\\name on every
+    system, so off Windows no wad was ever found and the run stopped). With the corpus wad
+    directories, fm_rad_texlights must light exactly as the oracle's run with the .wa_ (refs/full)."""
+    name = "fm_rad_texlights"
+    tmp.mkdir(parents=True)
+    for f in (DATA / "refs" / "full" / name / "vis").iterdir():
+        if f.is_file() and f.suffix != ".wa_":
+            shutil.copy2(f, tmp / f.name)
+    dirs = [a for d in ("zhlt", "valve", "cstrike") for a in ("-waddir", str(DATA / "corpus" / "wads" / d))]
+    proc = run([bindir / "hlrad", "-threads", "1", *dirs, name], cwd=tmp, capture_output=True, env=env_for(bindir))
+    out = proc.stdout + proc.stderr
+    problems = []
+    if proc.returncode != 0:
+        problems.append(f"exit {proc.returncode}")
+    if f"Using Wadfile: {DATA / 'corpus' / 'wads' / 'valve' / 'halflife.wad'}".encode() not in out:
+        problems.append("halflife.wad not opened from its -waddir")
+    if b"texture is not found" in out:
+        problems.append("textures not found")
+    expected = (DATA / "refs" / "full" / name / "rad" / f"{name}.bsp").read_bytes()
+    bsp = tmp / f"{name}.bsp"
+    if not bsp.exists() or stagecache.bsp_canonical(bsp.read_bytes()) != stagecache.bsp_canonical(expected):
+        problems.append(".bsp differs from the oracle's run with the .wa_")
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
                "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
-               "lightdata-growth": regress_lightdata_growth}
+               "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir}
 
 
 def cmd_regress(args) -> int:
@@ -1433,6 +1459,13 @@ CLI_CASES = {
         ["-dscale", "2", "tiny"], ["-scale", "3", "tiny"], ["-nosubdivide", "tiny"], ["-texlightgap", "3", "tiny"],
         ["-limiter", "-1", "tiny"], ["-gamma", "1", "tiny"], ["-softsky", "0", "tiny"], ["-extra", "-fast", "tiny"],
         ["-waddir", "/nonexistent", "tiny"], ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+        # R4 (table-driven command line): the forms not covered above
+        ["-colourscale", "1", "2", "3", "tiny"], ["tiny", "-colourscale", "1", "2"], ["tiny", "-ambient"],
+        ["-circus", "-noskyfix", "-nospread", "-customshadowwithbounce", "-rgbtransfers", "-notexscale", "-chart",
+         "-estimate", "-notextures", "tiny"],
+        ["-dlight", "5", "-sky", "0.5", "-smooth2", "20", "-coring", "0.1", "-depth", "4", "-blockopaque", "0",
+         "-texreflectgamma", "1.5", "-texreflectscale", "0.9", "-rgbcompress", "1", "-texdata", "8192", "tiny"],
+        ["tiny", "-scale"], ["tiny", "-vismatrix"], ["-FAST", "-Extra", "tiny"],
     ],
 }
 # hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map).

@@ -13,6 +13,11 @@ struct CommandLineOption
     std::function<void(const char *value)> apply;
     bool takesvalue = false;
     const char *missingvalue = nullptr; // logged before usage() when the value is missing
+    // An option with several values (numvalues > 1, takesvalue unused): applymany gets them; when
+    // fewer follow, missing() is called instead of usage() (and is not expected to return either).
+    int numvalues = 1;
+    std::function<void(char *const *values)> applymany = nullptr;
+    std::function<void()> missing = nullptr;
 };
 
 // An option without a value that sets target to value.

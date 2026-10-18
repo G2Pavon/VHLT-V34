@@ -22,7 +22,8 @@ ctest --test-dir build --output-on-failure
 hlbsp) and `common_f32` (used by hlvis and hlrad), and the tests are built against each:
 `common_tests_f64` and `common_tests_f32`.
 `test_cmdline.cpp` covers `ParseCommandLine` (common/cmdline.h), the table-driven option parser
-the tools move to as they are modernized (hlcsg since H6, hlbsp since B5, hlvis since V4;
+the tools move to as they are modernized (hlcsg since H6, hlbsp since B5, hlvis since V4, hlrad since R4, whose three-value options use
+`numvalues`/`applymany`;
 `parity.py cli` checks their command lines against the oracle). `common_tests_f64` also holds the hlcsg pieces that build on their own (`test_hlcsg.cpp`:
 `brushhull_t` copy/move ownership, `ANSItoUTF8`; `test_planeindex.cpp`). `common_tests_f32` also holds
 hlrad's transfer compression (`test_compress.cpp`): every float/vector type, packed and unpacked at
@@ -314,7 +315,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad]  # oracle vs candidate on option-parsing command lines: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
@@ -398,6 +399,13 @@ sets the summation order; and logged sizes keep their old arithmetic (the transp
 arrays' 1.41x capacity, `sizeof(sparse_column_t)`, AllocBlock's zero-size warning). hlrad time
 unchanged (full tier, one job: cs_estate 11.25 s, cs_assault 14.69 s, de_dust2 15.75 s; R1 11.25,
 14.96, 15.87 s).
+
+R4 (hlrad command line and cleanup): the options are a `ParseCommandLine` table (`cli`: 48 hlrad
+command lines, 8 added for forms the old loop handled separately); `-waddir` joins the directory
+and the wad name with the system's separator (it used a backslash everywhere, so off Windows no
+wad was ever found through it: `regress waddir` lights fm_rad_texlights without its `.wa_` and
+must equal the oracle's run with it; the oracle exits 1). hlrad builds without warnings; the
+`#pragma warning` lines and the last win32fix shims (`CDECL`, `FORCEINLINE`, `sprintf_s`) are gone.
 
 ### Environment
 

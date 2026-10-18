@@ -74,12 +74,12 @@ static void SetVisColumn(int patchnum, bool uncompressedcolumn[MAX_SPARSE_VISMAT
         Error("SetVisColumn: column has been set");
     }
 
-    for (int mbegin = 0; mbegin < g_num_patches; mbegin += 8)
+    for (int mbegin = 0; mbegin < (int)g_num_patches; mbegin += 8)
     {
         unsigned int bits = 0;
         for (int m = mbegin; m < mbegin + 8; m++)
         {
-            if (m >= g_num_patches)
+            if (m >= (int)g_num_patches)
             {
                 break;
             }
@@ -105,12 +105,12 @@ static void SetVisColumn(int patchnum, bool uncompressedcolumn[MAX_SPARSE_VISMAT
     column->row = std::make_unique_for_overwrite<sparse_row_t[]>(column->count);
 
     int i = 0;
-    for (int mbegin = 0; mbegin < g_num_patches; mbegin += 8)
+    for (int mbegin = 0; mbegin < (int)g_num_patches; mbegin += 8)
     {
         unsigned int bits = 0;
         for (int m = mbegin; m < mbegin + 8; m++)
         {
-            if (m >= g_num_patches)
+            if (m >= (int)g_num_patches)
             {
                 break;
             }
@@ -265,8 +265,6 @@ static void TestPatchToFace(const unsigned patchnum, const int facenum, byte *pv
 }
 
 // This is run by multiple threads
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 static void BuildVisLeafs(int /*threadnum*/)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
@@ -311,7 +309,7 @@ static void BuildVisLeafs(int /*threadnum*/)
                 if (patch->leafnum != i)
                     continue;
                 unsigned patchnum = patch - g_patches;
-                for (int m = 0; m < g_num_patches; m++)
+                for (int m = 0; m < (int)g_num_patches; m++)
                 {
                     uncompressedcolumn[m] = false;
                 }
@@ -323,7 +321,6 @@ static void BuildVisLeafs(int /*threadnum*/)
     }
 }
 
-#pragma warning(pop)
 
 static void BuildVisMatrix()
 {

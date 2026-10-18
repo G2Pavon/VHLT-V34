@@ -21,7 +21,19 @@ const char *ParseCommandLine(int argc, char **argv, std::span<const CommandLineO
 
         if (option)
         {
-            if (!option->takesvalue)
+            if (option->numvalues > 1)
+            {
+                if (i + option->numvalues < argc)
+                {
+                    option->applymany(&argv[i + 1]);
+                    i += option->numvalues;
+                }
+                else
+                {
+                    option->missing();
+                }
+            }
+            else if (!option->takesvalue)
             {
                 option->apply(nullptr);
             }

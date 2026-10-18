@@ -14,10 +14,6 @@
 #include "common/tokenizer.h"
 #include "common/threads.h"
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
 
 #define DEFAULT_METHOD eMethodSparseVismatrix
 static constexpr bool DEFAULT_FASTMODE = false;
@@ -183,7 +179,7 @@ void GetParamsFromEnt(entity_t *mapent)
     if (iTmp > g_max_map_lightdata)                   //--vluzacn
     {
         g_max_map_lightdata = iTmp;
-        sprintf_s(szTmp, "%i", g_max_map_lightdata);
+        safe_snprintf(szTmp, sizeof(szTmp), "%i", g_max_map_lightdata);
         Log("%30s [ %-9s ]\n", "Lighting Data Memory", szTmp);
     }
 
@@ -387,8 +383,10 @@ static void BaseLightForFace(const dface_t *const f, vec3_t light)
         case -1:
         case 0:
             r = 0.0;
+            [[fallthrough]];
         case 1:
             g = b = r;
+            [[fallthrough]];
         case 3:
             break;
         case 4:
@@ -427,7 +425,7 @@ static bool PlacePatchInside(patch_t *patch)
     vec_t pointsfound = 0;
     vec_t pointstested = 0;
     vec3_t center;
-    vec3_t bestpoint;
+    vec3_t bestpoint = {0, 0, 0}; // set when found
     vec_t bestdist = -1.0;
     vec3_t point;
     vec3_t v;
@@ -451,7 +449,7 @@ static bool PlacePatchInside(patch_t *patch)
         }
     }
     {
-        for (int i = 0; i < patch->winding->m_NumPoints; i++)
+        for (int i = 0; i < (int)patch->winding->m_NumPoints; i++)
         {
             const vec_t *p1 = patch->winding->m_Points[i];
             const vec_t *p2 = patch->winding->m_Points[(i + 1) % patch->winding->m_NumPoints];
@@ -499,7 +497,7 @@ static void UpdateEmitterInfo(patch_t *patch)
     const vec_t *origin = patch->origin;
     const Winding *winding = patch->winding;
     vec_t radius = ON_EPSILON;
-    for (int x = 0; x < winding->m_NumPoints; x++)
+    for (int x = 0; x < (int)winding->m_NumPoints; x++)
     {
         vec3_t delta;
         VectorSubtract(winding->m_Points[x], origin, delta);
@@ -562,7 +560,7 @@ static std::vector<std::unique_ptr<Winding>> cutWindingWithGrid(const patch_t *p
         vec_t minB = BOGUS_RANGE;
         vec_t maxB = -BOGUS_RANGE;
 
-        for (int x = 0; x < winding->m_NumPoints; x++)
+        for (int x = 0; x < (int)winding->m_NumPoints; x++)
         {
             vec_t *point = winding->m_Points[x];
             vec_t dotA = DotProduct(point, plA->normal);
@@ -1054,7 +1052,7 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
             else
             {
                 int x;
-                for (x = 0; x < g_opaque_face_count; x++)
+                for (x = 0; x < (int)g_opaque_face_count; x++)
                 {
                     opaqueList_t *op = &g_opaque_face_list[x];
                     if (op->entitynum == g_face_entity[fn] - g_entities)
@@ -1076,7 +1074,7 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
                         break;
                     }
                 }
-                if (x == g_opaque_face_count)
+                if (x == (int)g_opaque_face_count)
                 { // not opaque
                     if (bouncestyle != -1)
                     {                  // with light_bounce
@@ -1294,7 +1292,7 @@ static void LoadOpaqueEntities()
         Log("%i opaque models\n", g_opaque_face_count);
         int i;
         int facecount;
-        for (facecount = 0, i = 0; i < g_opaque_face_count; i++)
+        for (facecount = 0, i = 0; i < (int)g_opaque_face_count; i++)
         {
             facecount += CountOpaqueFaces(g_opaque_face_list[i].modelnum);
         }
@@ -1499,7 +1497,7 @@ static void MakePatches()
     Log("%i square feet [%.2f square inches]\n", (int)(totalarea / 144), totalarea);
 }
 
-static int CDECL patch_sorter(const void *p1, const void *p2)
+static int patch_sorter(const void *p1, const void *p2)
 {
     patch_t *patch1 = (patch_t *)p1;
     patch_t *patch2 = (patch_t *)p2;
@@ -1603,12 +1601,10 @@ static void CollectLight()
 //      Get light from other g_patches
 //      Run multi-threaded
 
-#pragma warning(push)
-#pragma warning(disable : 4100) // unreferenced formal parameter
 
 static void GatherLight(int /*threadnum*/)
 {
-    float f;
+    float f = 0; // set by float_decompress for every transfer
     vec3_t adds[ALLSTYLES];
     unsigned int fastfind_index;
 
@@ -1745,8 +1741,7 @@ static void GatherLight(int /*threadnum*/)
 // RGB Transfer version
 static void GatherRGBLight(int /*threadnum*/)
 {
-
-    float f[3];
+    float f[3] = {0, 0, 0}; // set by vector_decompress for every transfer
     vec3_t adds[ALLSTYLES];
     unsigned int fastfind_index;
 
@@ -1878,7 +1873,6 @@ static void GatherRGBLight(int /*threadnum*/)
         }
     }
 }
-#pragma warning(pop)
 
 static void BounceLight()
 {
@@ -2168,8 +2162,15 @@ static void Settings()
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_smoothing_value);
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_SMOOTHING_VALUE);
     Log("smoothing threshold  [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), g_smoothing_value_2 < 0 ? "no change" : "%3.3f", g_smoothing_value_2);
-    safe_snprintf(buf2, sizeof(buf2), DEFAULT_SMOOTHING2_VALUE < 0 ? "no change" : "%3.3f", DEFAULT_SMOOTHING2_VALUE);
+    const auto smoothing2 = [](char *buf, std::size_t size, float value)
+    {
+        if (value < 0)
+            safe_snprintf(buf, size, "no change");
+        else
+            safe_snprintf(buf, size, "%3.3f", value);
+    };
+    smoothing2(buf1, sizeof(buf1), g_smoothing_value_2);
+    smoothing2(buf2, sizeof(buf2), DEFAULT_SMOOTHING2_VALUE);
     Log("smoothing threshold 2[ %17s ] [ %17s ]\n", buf1, buf2);
     safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_dlight_threshold);
     safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_DLIGHT_THRESHOLD);
@@ -2255,7 +2256,6 @@ static void Settings()
 // try and parse texlight info from the info_texlights entity
 static void ReadInfoTexlights()
 {
-    int numtexlights = 0;
     float r, g, b, i;
     texlight_t texlight;
 
@@ -2297,7 +2297,6 @@ static void ReadInfoTexlights()
             texlight.value[2] = b;
             texlight.filename = "info_texlights";
             s_texlights.push_back(texlight);
-            numtexlights++;
         }
     }
 }
@@ -2312,516 +2311,153 @@ int main(const int argc, char **argv)
     if (argc == 1)
         Usage();
 
-    for (int i = 1; i < argc; i++)
-    {
-        if (!strcasecmp(argv[i], "-bounce"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_numbounce = std::atoi(argv[++i]);
-                if (g_numbounce > 1000)
-                {
-                    Log("Unexpectedly large value (>1000) for '-bounce'\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-threads"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_numthreads = std::atoi(argv[++i]);
-                if (g_numthreads < 1)
-                {
-                    Log("Expected value of at least 1 for '-threads'\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-estimate"))
-        {
-            g_estimate = true;
-        }
-        else if (!strcasecmp(argv[i], "-fast"))
-        {
-            g_fastmode = true;
-        }
-        else if (!strcasecmp(argv[i], "-chop"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_chop = std::atof(argv[++i]);
-                if (g_chop < 1)
-                {
-                    Log("expected value greater than 1 for '-chop'\n");
-                    Usage();
-                }
-                if (g_chop < 32)
-                {
-                    Log("Warning: Chop values below 32 are not recommended.");
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-texchop"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_texchop = std::atof(argv[++i]);
-                if (g_texchop < 1)
-                {
-                    Log("expected value greater than 1 for '-texchop'\n");
-                    Usage();
-                }
-                if (g_texchop < 32)
-                {
-                    Log("Warning: texchop values below 16 are not recommended.");
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-notexscale"))
-        {
-            g_texscale = false;
-        }
-        else if (!strcasecmp(argv[i], "-nosubdivide"))
-        {
-            if (i < argc)
-            {
-                g_subdivide = false;
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-scale"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                // ------------------------------------------------------------------------
-                // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-                // Munge monochrome lightscale into colour one
-                i++;
-                g_colour_lightscale[0] = (float)std::atof(argv[i]);
-                g_colour_lightscale[1] = (float)std::atof(argv[i]);
-                g_colour_lightscale[2] = (float)std::atof(argv[i]);
-                // ------------------------------------------------------------------------
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-fade"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_fade = (float)std::atof(argv[++i]);
-                if (g_fade < 0.0)
-                {
-                    Log("-fade must be a positive number\n");
-                    Usage();
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-ambient"))
-        {
-            if (i + 3 < argc)
-            {
-                g_ambient[0] = (float)std::atof(argv[++i]) * 128;
-                g_ambient[1] = (float)std::atof(argv[++i]) * 128;
-                g_ambient[2] = (float)std::atof(argv[++i]) * 128;
-            }
-            else
-            {
-                Error("expected three color values after '-ambient'\n");
-            }
-        }
-        else if (!strcasecmp(argv[i], "-limiter"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_limitthreshold = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-circus"))
-        {
-            g_circus = true;
-        }
-        else if (!strcasecmp(argv[i], "-noskyfix"))
-        {
-            g_sky_lighting_fix = false;
-        }
-        else if (!strcasecmp(argv[i], "-chart"))
-        {
-            g_chart = true;
-        }
-        else if (!strcasecmp(argv[i], "-gamma"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                // ------------------------------------------------------------------------
-                // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-                // Munge values from original, monochrome gamma into colour gamma
-                i++;
-                g_colour_qgamma[0] = (float)std::atof(argv[i]);
-                g_colour_qgamma[1] = (float)std::atof(argv[i]);
-                g_colour_qgamma[2] = (float)std::atof(argv[i]);
-                // ------------------------------------------------------------------------
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-dlight"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_dlight_threshold = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-extra"))
-        {
-            g_extra = true;
-        }
-        else if (!strcasecmp(argv[i], "-sky"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_indirect_sun = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-smooth"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_smoothing_value = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-smooth2"))
-        {
-            if (i + 1 < argc)
-            {
-                g_smoothing_value_2 = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-coring"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_coring = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-texdata"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_miptex) //--vluzacn
-                {
-                    g_max_map_miptex = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-lightdata")) //lightdata
-        {
-            if (i + 1 < argc) //--vluzacn
-            {
-                int x = KilobytesToBytes(argv[++i]);
-
-                //if (x > g_max_map_lightdata) //--vluzacn
-                {
-                    g_max_map_lightdata = x;
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-vismatrix"))
-        {
-            if (i + 1 < argc)
-            {
-                const char *value = argv[++i];
-                if (!strcasecmp(value, "normal"))
-                {
-                    g_method = eMethodVismatrix;
-                }
-                else if (!strcasecmp(value, "sparse"))
-                {
-                    g_method = eMethodSparseVismatrix;
-                }
-                else if (!strcasecmp(value, "off"))
-                {
-                    g_method = eMethodNoVismatrix;
-                }
-                else
-                {
-                    Error("Unknown vismatrix type: '%s'", value);
-                }
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-nospread"))
-        {
-            g_allow_spread = false;
-        }
-        else if (!strcasecmp(argv[i], "-dscale"))
-        {
-            if (i + 1 < argc) //added "1" .--vluzacn
-            {
-                g_direct_scale = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        // ------------------------------------------------------------------------
+    // stops with an Error() when fewer than three values follow
+    const auto colour = [](const char *name, vec3_t &target, float scale) {
+        return CommandLineOption{name, nullptr, false, nullptr, 3,
+                                 [&target, scale](char *const *values) {
+                                     for (int k = 0; k < 3; k++)
+                                     {
+                                         target[k] = (float)std::atof(values[k]) * scale;
+                                     }
+                                 },
+                                 [name]() { Error("expected three color values after '%s'\n", name); }};
+    };
+    const auto number = [](const char *name, auto &target) {
+        return CommandLineOption{name, [&target](const char *value) { target = std::atof(value); }, true};
+    };
+    const CommandLineOption options[] = {
+        {"-bounce", [](const char *value) {
+             g_numbounce = std::atoi(value);
+             if (g_numbounce > 1000)
+             {
+                 Log("Unexpectedly large value (>1000) for '-bounce'\n");
+                 Usage();
+             }
+         },
+         true},
+        {"-threads", [](const char *value) {
+             g_numthreads = std::atoi(value);
+             if (g_numthreads < 1)
+             {
+                 Log("Expected value of at least 1 for '-threads'\n");
+                 Usage();
+             }
+         },
+         true},
+        CommandLineFlag("-estimate", g_estimate, true),
+        CommandLineFlag("-fast", g_fastmode, true),
+        {"-chop", [](const char *value) {
+             g_chop = std::atof(value);
+             if (g_chop < 1)
+             {
+                 Log("expected value greater than 1 for '-chop'\n");
+                 Usage();
+             }
+             if (g_chop < 32)
+             {
+                 Log("Warning: Chop values below 32 are not recommended."); // compat: no newline
+             }
+         },
+         true},
+        {"-texchop", [](const char *value) {
+             g_texchop = std::atof(value);
+             if (g_texchop < 1)
+             {
+                 Log("expected value greater than 1 for '-texchop'\n");
+                 Usage();
+             }
+             if (g_texchop < 32)
+             {
+                 Log("Warning: texchop values below 16 are not recommended."); // compat: no newline, and 16 for 32
+             }
+         },
+         true},
+        CommandLineFlag("-notexscale", g_texscale, false),
+        CommandLineFlag("-nosubdivide", g_subdivide, false),
+        {"-scale", [](const char *value) {
+             // Changes by Adam Foster - afoster@compsoc.man.ac.uk: munge monochrome lightscale into colour one
+             VectorFill(g_colour_lightscale, (float)std::atof(value));
+         },
+         true},
+        {"-fade", [](const char *value) {
+             g_fade = (float)std::atof(value);
+             if (g_fade < 0.0)
+             {
+                 Log("-fade must be a positive number\n");
+                 Usage();
+             }
+         },
+         true},
+        colour("-ambient", g_ambient, 128),
+        number("-limiter", g_limitthreshold),
+        CommandLineFlag("-circus", g_circus, true),
+        CommandLineFlag("-noskyfix", g_sky_lighting_fix, false),
+        CommandLineFlag("-chart", g_chart, true),
+        {"-gamma", [](const char *value) {
+             // Changes by Adam Foster - afoster@compsoc.man.ac.uk: munge monochrome gamma into colour gamma
+             VectorFill(g_colour_qgamma, (float)std::atof(value));
+         },
+         true},
+        number("-dlight", g_dlight_threshold),
+        CommandLineFlag("-extra", g_extra, true),
+        number("-sky", g_indirect_sun),
+        number("-smooth", g_smoothing_value),
+        number("-smooth2", g_smoothing_value_2),
+        number("-coring", g_coring),
+        {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
+        {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
+        {"-vismatrix", [](const char *value) {
+             if (!strcasecmp(value, "normal"))
+             {
+                 g_method = eMethodVismatrix;
+             }
+             else if (!strcasecmp(value, "sparse"))
+             {
+                 g_method = eMethodSparseVismatrix;
+             }
+             else if (!strcasecmp(value, "off"))
+             {
+                 g_method = eMethodNoVismatrix;
+             }
+             else
+             {
+                 Error("Unknown vismatrix type: '%s'", value);
+             }
+         },
+         true},
+        CommandLineFlag("-nospread", g_allow_spread, false),
+        number("-dscale", g_direct_scale),
         // Changes by Adam Foster - afoster@compsoc.man.ac.uk
-        else if (!strcasecmp(argv[i], "-colourgamma"))
-        {
-            if (i + 3 < argc)
-            {
-                g_colour_qgamma[0] = (float)std::atof(argv[++i]);
-                g_colour_qgamma[1] = (float)std::atof(argv[++i]);
-                g_colour_qgamma[2] = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Error("expected three color values after '-colourgamma'\n");
-            }
-        }
-        else if (!strcasecmp(argv[i], "-colourscale"))
-        {
-            if (i + 3 < argc)
-            {
-                g_colour_lightscale[0] = (float)std::atof(argv[++i]);
-                g_colour_lightscale[1] = (float)std::atof(argv[++i]);
-                g_colour_lightscale[2] = (float)std::atof(argv[++i]);
-            }
-            else
-            {
-                Error("expected three color values after '-colourscale'\n");
-            }
-        }
-
-        // ------------------------------------------------------------------------
-
-        else if (!strcasecmp(argv[i], "-customshadowwithbounce"))
-        {
-            g_customshadow_with_bouncelight = true;
-        }
-        else if (!strcasecmp(argv[i], "-rgbtransfers"))
-        {
-            g_rgb_transfers = true;
-        }
-
-        else if (!strcasecmp(argv[i], "-minlight"))
-        {
-            if (i + 1 < argc)
-            {
-                int v = std::atoi(argv[++i]);
-                v = qmax(0, qmin(v, 255));
-                g_minlight = (unsigned char)v;
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        else if (!strcasecmp(argv[i], "-softsky"))
-        {
-            if (i + 1 < argc)
-            {
-                g_softsky = (bool)std::atoi(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        else if (!strcasecmp(argv[i], "-compress"))
-        {
-            if (i + 1 < argc)
-            {
-                const int type = std::atoi(argv[++i]); // checked before the cast: an enum cannot hold any int
-                if (type < 0 || type >= float_type_count)
-                    Usage();
-                g_transfer_compress_type = (float_type)type;
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-rgbcompress"))
-        {
-            if (i + 1 < argc)
-            {
-                const int type = std::atoi(argv[++i]);
-                if (type < 0 || type >= vector_type_count)
-                    Usage();
-                g_rgbtransfer_compress_type = (vector_type)type;
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-depth"))
-        {
-            if (i + 1 < argc)
-            {
-                g_translucentdepth = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-blockopaque"))
-        {
-            if (i + 1 < argc)
-            {
-                g_blockopaque = std::atoi(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-waddir"))
-        {
-            if (i + 1 < argc)
-            {
-                AddWadFolder(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-notextures"))
-        {
-            g_notextures = true;
-        }
-        else if (!strcasecmp(argv[i], "-texreflectgamma"))
-        {
-            if (i + 1 < argc)
-            {
-                g_texreflectgamma = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-texreflectscale"))
-        {
-            if (i + 1 < argc)
-            {
-                g_texreflectscale = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-blur"))
-        {
-            if (i + 1 < argc)
-            {
-                g_blur = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-        else if (!strcasecmp(argv[i], "-texlightgap"))
-        {
-            if (i + 1 < argc)
-            {
-                g_texlightgap = std::atof(argv[++i]);
-            }
-            else
-            {
-                Usage();
-            }
-        }
-
-        else if (argv[i][0] == '-')
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-        else if (!mapname_from_arg)
-        {
-            mapname_from_arg = argv[i];
-        }
-        else
-        {
-            Log("Unknown option \"%s\"\n", argv[i]);
-            Usage();
-        }
-    }
+        colour("-colourgamma", g_colour_qgamma, 1),
+        colour("-colourscale", g_colour_lightscale, 1),
+        CommandLineFlag("-customshadowwithbounce", g_customshadow_with_bouncelight, true),
+        CommandLineFlag("-rgbtransfers", g_rgb_transfers, true),
+        {"-minlight", [](const char *value) { g_minlight = (unsigned char)qmax(0, qmin(std::atoi(value), 255)); }, true},
+        {"-softsky", [](const char *value) { g_softsky = (bool)std::atoi(value); }, true},
+        {"-compress", [](const char *value) {
+             const int type = std::atoi(value); // checked before the cast: an enum cannot hold any int
+             if (type < 0 || type >= float_type_count)
+                 Usage();
+             g_transfer_compress_type = (float_type)type;
+         },
+         true},
+        {"-rgbcompress", [](const char *value) {
+             const int type = std::atoi(value);
+             if (type < 0 || type >= vector_type_count)
+                 Usage();
+             g_rgbtransfer_compress_type = (vector_type)type;
+         },
+         true},
+        number("-depth", g_translucentdepth),
+        {"-blockopaque", [](const char *value) { g_blockopaque = std::atoi(value); }, true},
+        {"-waddir", [](const char *value) { AddWadFolder(value); }, true},
+        CommandLineFlag("-notextures", g_notextures, true),
+        number("-texreflectgamma", g_texreflectgamma),
+        number("-texreflectscale", g_texreflectscale),
+        number("-blur", g_blur),
+        number("-texlightgap", g_texlightgap),
+    };
+    mapname_from_arg = ParseCommandLine(argc, argv, options, Usage);
 
     if (!mapname_from_arg)
     {
