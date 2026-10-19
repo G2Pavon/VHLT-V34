@@ -657,6 +657,46 @@ static void FixDetaillevelForDiscardable(node_t *node, int detaillevel)
     }
 }
 
+// Hands the face lists of a divided surface back as surfaces: in is reused for one side, and a
+// copy of it is made only when both sides have faces. If nothing actually got split, in just moves.
+static void MakeDividedSurfaces(surface_t *in, face_t *frontlist, face_t *backlist, surface_t **front, surface_t **back)
+{
+    if (frontlist == nullptr && backlist == nullptr)
+    {
+        *front = nullptr;
+        *back = nullptr;
+        return;
+    }
+    if (frontlist == nullptr)
+    {
+        *front = nullptr;
+        *back = in;
+        in->faces = backlist;
+        return;
+    }
+
+    if (backlist == nullptr)
+    {
+        *front = in;
+        *back = nullptr;
+        in->faces = frontlist;
+        return;
+    }
+
+    // stuff got split, so allocate one new surface and reuse in
+    surface_t *news = AllocSurface();
+    *news = *in;
+    news->faces = backlist;
+    *back = news;
+
+    in->faces = frontlist;
+    *front = in;
+
+    // recalc bboxes and flags
+    CalcSurfaceInfo(news);
+    CalcSurfaceInfo(in);
+}
+
 static void DivideSurface(surface_t *in, const plane_t *const split, surface_t **front, surface_t **back)
 {
     face_t *next;
@@ -699,7 +739,7 @@ static void DivideSurface(surface_t *in, const plane_t *const split, surface_t *
                     frontlist = facet;
                 }
             }
-            goto makesurfs;
+            MakeDividedSurfaces(in, frontlist, backlist, front, back);
         }
         return;
     }
@@ -725,42 +765,7 @@ static void DivideSurface(surface_t *in, const plane_t *const split, surface_t *
         }
     }
 
-    // if nothing actually got split, just move the in plane
-makesurfs:
-    if (frontlist == nullptr && backlist == nullptr)
-    {
-        *front = nullptr;
-        *back = nullptr;
-        return;
-    }
-    if (frontlist == nullptr)
-    {
-        *front = nullptr;
-        *back = in;
-        in->faces = backlist;
-        return;
-    }
-
-    if (backlist == nullptr)
-    {
-        *front = in;
-        *back = nullptr;
-        in->faces = frontlist;
-        return;
-    }
-
-    // stuff got split, so allocate one new surface and reuse in
-    surface_t *news = AllocSurface();
-    *news = *in;
-    news->faces = backlist;
-    *back = news;
-
-    in->faces = frontlist;
-    *front = in;
-
-    // recalc bboxes and flags
-    CalcSurfaceInfo(news);
-    CalcSurfaceInfo(in);
+    MakeDividedSurfaces(in, frontlist, backlist, front, back);
 }
 
 static void SplitNodeSurfaces(surface_t *surfaces, const node_t *const node)

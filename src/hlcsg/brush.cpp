@@ -761,52 +761,57 @@ static void MakeHullFaces(const brush_t *const b, brushhull_t *h)
     // this will decrease AllocBlock amount
     SortSides(h);
 
-restart:
-    h->bounds.reset();
-
-    // for each face in this brushes hull
-    for (bface_t *f = h->faces; f; f = f->next)
+    // Repeats from the first face whenever a degenerate face is removed.
+    for (bool restart = true; restart;)
     {
-        auto w = std::make_unique<Winding>(f->plane->normal, f->plane->dist);
-        for (f2 = h->faces; f2; f2 = f2->next)
+        restart = false;
+        h->bounds.reset();
+
+        // for each face in this brushes hull
+        for (bface_t *f = h->faces; f; f = f->next)
         {
-            if (f == f2)
+            auto w = std::make_unique<Winding>(f->plane->normal, f->plane->dist);
+            for (f2 = h->faces; f2; f2 = f2->next)
             {
-                continue;
+                if (f == f2)
+                {
+                    continue;
+                }
+                const faceplane_t *p = MapPlane(f2->planenum ^ 1);
+                if (!w->Chop(p->normal, p->dist, NORMAL_EPSILON // fix "invalid brush" in ExpandBrush
+                             ))                                 // Nothing left to chop (getArea will return 0 for us in this case for below)
+                {
+                    break;
+                }
             }
-            const faceplane_t *p = MapPlane(f2->planenum ^ 1);
-            if (!w->Chop(p->normal, p->dist, NORMAL_EPSILON // fix "invalid brush" in ExpandBrush
-                         ))                                 // Nothing left to chop (getArea will return 0 for us in this case for below)
+            w->RemoveColinearPoints(ON_EPSILON);
+            if (w->getArea() < 0.1)
             {
+                if (h->faces == f)
+                {
+                    h->faces = f->next;
+                }
+                else
+                {
+                    for (f2 = h->faces; f2->next != f; f2 = f2->next)
+                    {
+                        ;
+                    }
+                    f2->next = f->next;
+                }
+                FreeFace(f);
+                restart = true; // the remaining faces are rebuilt from scratch
                 break;
-            }
-        }
-        w->RemoveColinearPoints(ON_EPSILON);
-        if (w->getArea() < 0.1)
-        {
-            if (h->faces == f)
-            {
-                h->faces = f->next;
             }
             else
             {
-                for (f2 = h->faces; f2->next != f; f2 = f2->next)
+                for (unsigned int i = 0; i < w->m_NumPoints; i++)
                 {
-                    ;
+                    h->bounds.add(w->m_Points[i]);
                 }
-                f2->next = f->next;
+                f->w = std::move(w); // after a restart, replaces the winding of the previous pass
+                f->contents = CONTENTS_EMPTY;
             }
-            FreeFace(f);
-            goto restart;
-        }
-        else
-        {
-            for (unsigned int i = 0; i < w->m_NumPoints; i++)
-            {
-                h->bounds.add(w->m_Points[i]);
-            }
-            f->w = std::move(w); // after a restart, replaces the winding of the previous pass
-            f->contents = CONTENTS_EMPTY;
         }
     }
 
