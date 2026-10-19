@@ -1421,7 +1421,7 @@ void dtexdata_free()
 
 MiptexLumpView TextureLump()
 {
-    return MiptexLumpView(g_dtexdata, g_texdatasize, s_texdata_capacity);
+    return {g_dtexdata, g_texdatasize, s_texdata_capacity};
 }
 
 // Returns "" where the texture name would lie outside the texture buffer (missing or
