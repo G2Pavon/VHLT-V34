@@ -1,6 +1,5 @@
 #include "doctest/doctest.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -15,7 +14,7 @@ namespace fs = std::filesystem;
 
 TEST_SUITE("filelib")
 {
-    TEST_CASE("ReadFile, LoadFile, q_filelength and q_exists")
+    TEST_CASE("ReadFile, q_filelength and q_exists")
     {
         const fs::path dir = fs::temp_directory_path() / ("vhlt_filelib_tests_" + std::to_string(getpid()));
         fs::create_directories(dir);
@@ -25,13 +24,6 @@ TEST_SUITE("filelib")
 
         const std::vector<char> data = ReadFile(path.string().c_str());
         CHECK(std::string(data.begin(), data.end()) == content);
-
-        char *buffer = nullptr;
-        CHECK(LoadFile(path.string().c_str(), &buffer) == 8);
-        REQUIRE(buffer != nullptr);
-        CHECK(std::memcmp(buffer, content.data(), 8) == 0);
-        CHECK(buffer[8] == '\0'); // NUL-terminated copy
-        std::free(buffer);
 
         {
             UniqueFile f = SafeOpen(path.string().c_str(), "rb");
@@ -46,9 +38,6 @@ TEST_SUITE("filelib")
         const fs::path empty = dir / "empty.bin";
         std::ofstream(empty, std::ios::binary).flush();
         CHECK(ReadFile(empty.string().c_str()).empty());
-        CHECK(LoadFile(empty.string().c_str(), &buffer) == 0);
-        CHECK(buffer[0] == '\0');
-        std::free(buffer);
 
         fs::remove_all(dir);
     }

@@ -24,11 +24,9 @@ bool q_exists(const char *const filename);
 void SafeRead(std::FILE *f, void *buffer, int count);
 void SafeWrite(std::FILE *f, const void *const buffer, int count);
 
-// Raw-pointer versions for the tools that still manage FILE* and malloc'd buffers themselves.
+// Raw-pointer versions for the tools that still manage FILE* themselves.
 std::FILE *SafeOpenWrite(const char *const filename);
 std::FILE *SafeOpenRead(const char *const filename);
-// *bufferptr receives a malloc'd, NUL-terminated copy of the file (free it with std::free).
-int LoadFile(const char *const filename, char **bufferptr);
 
 // The path of the running executable, or "" if it cannot be found.
 std::string ExecutablePath();

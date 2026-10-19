@@ -1,7 +1,6 @@
 #include "common/filelib.h"
 
 #include <cerrno>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <system_error>
@@ -65,20 +64,6 @@ std::FILE *SafeOpenWrite(const char *const filename)
 std::FILE *SafeOpenRead(const char *const filename)
 {
     return SafeOpen(filename, "rb").release();
-}
-
-int LoadFile(const char *const filename, char **bufferptr)
-{
-    const std::vector<char> data = ReadFile(filename);
-    char *buffer = static_cast<char *>(std::calloc(1, data.size() + 1));
-    hlassume(buffer != nullptr, assume_NoMemory);
-    if (!data.empty())
-    {
-        std::memcpy(buffer, data.data(), data.size());
-    }
-
-    *bufferptr = buffer;
-    return static_cast<int>(data.size());
 }
 
 std::string ExecutablePath()

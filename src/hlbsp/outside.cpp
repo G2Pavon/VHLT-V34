@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "hlbsp/hlbsp.h"
@@ -21,10 +23,9 @@ static std::FILE *linefile;
 static int hit_occupied;
 static int backdraw;
 
-constexpr int MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE = 64;
-unsigned g_nAllowableOutside = 0;
-unsigned g_maxAllowableOutside = 0;
-char **g_strAllowableOutsideList;
+// Classnames from the .void files that may lie outside the world. compat: a later file with content
+// replaces the list (mapname.void replaces entities.void), and a last line without a line break is ignored.
+static std::vector<std::string> s_allowableoutside;
 
 static node_t *PointInLeaf(node_t *node, const vec3_t point)
 {
@@ -318,91 +319,49 @@ static node_t *ClearOutFaces_r(node_t *node)
 
 static bool isClassnameAllowableOutside(const char *const classname)
 {
-    if (g_strAllowableOutsideList)
+    for (const std::string &allowed : s_allowableoutside)
     {
-        char **list = g_strAllowableOutsideList;
-
-        for (unsigned x = 0; x < g_nAllowableOutside; x++, list++)
+        if (!strcasecmp(classname, allowed.c_str()))
         {
-            if (list) // compat: tests the pointer into the array (never null), not the entry
-            {
-                if (!strcasecmp(classname, *list))
-                {
-                    return true;
-                }
-            }
+            return true;
         }
     }
-
     return false;
 }
 
-static std::vector<char *> s_voidfiledata; // the list's strings point into these (were leaked)
-
 void FreeAllowableOutsideList()
 {
-    if (g_strAllowableOutsideList)
-    {
-        std::free(g_strAllowableOutsideList);
-        g_strAllowableOutsideList = nullptr;
-    }
-    for (char *data : s_voidfiledata)
-    {
-        std::free(data);
-    }
-    s_voidfiledata.clear();
+    s_allowableoutside = {};
 }
 
 void LoadAllowableOutsideList(const char *const filename)
 {
-    char *fname;
-    int i, x, y;
-    char *pData;
-    char *pszData;
-
-    if (!filename)
+    if (!filename || !q_exists(filename))
     {
         return;
     }
-    else
+    const std::vector<char> data = ReadFile(filename);
+    if (data.empty()) // compat: an empty file keeps the previous list
     {
-        unsigned len = std::strlen(filename) + 5;
-
-        fname = (char *)std::calloc(1, len);
-        safe_snprintf(fname, len, "%s", filename);
+        return;
     }
-
-    if (q_exists(fname))
+    Log("Reading allowable void entities from file '%s'\n", filename);
+    s_allowableoutside.clear();
+    const std::string_view text(data.data(), data.size());
+    std::size_t start = 0;
+    for (std::size_t x = 0; x < text.size(); x++)
     {
-        if ((i = LoadFile(fname, &pData)))
+        if (text[x] == '\n' || text[x] == '\r')
         {
-            s_voidfiledata.push_back(pData);
-            Log("Reading allowable void entities from file '%s'\n", fname);
-            g_nAllowableOutside = 0;
-            for (pszData = pData, y = 0, x = 0; x < i; x++)
+            std::string_view line = text.substr(start, x - start);
+            line = line.substr(0, line.find('\0')); // compat: a line was a C string
+            if (!line.empty())
             {
-                if ((pData[x] == '\n') || (pData[x] == '\r'))
-                {
-                    pData[x] = 0;
-                    if (std::strlen(pszData))
-                    {
-                        if (g_nAllowableOutside == g_maxAllowableOutside)
-                        {
-                            g_maxAllowableOutside += MAX_ALLOWABLE_OUTSIDE_GROWTH_SIZE;
-                            g_strAllowableOutsideList =
-                                (char **)realloc(g_strAllowableOutsideList, sizeof(char *) * g_maxAllowableOutside);
-                            hlassume(g_strAllowableOutsideList != nullptr, assume_NoMemory); // was unchecked
-                        }
-
-                        g_strAllowableOutsideList[y++] = pszData;
-                        g_nAllowableOutside++;
-                    }
-                    pszData = pData + x + 1;
-                }
+                s_allowableoutside.emplace_back(line);
             }
+            start = x + 1;
         }
     }
-    std::free(fname); // was leaked
 }
 
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
