@@ -1104,7 +1104,7 @@ static bool ProcessModel()
     return true;
 }
 
-static void Usage()
+[[noreturn]] static void Usage()
 {
     Banner();
 

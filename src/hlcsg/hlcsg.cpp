@@ -1170,7 +1170,7 @@ static void BoundWorld()
     }
 }
 
-static void Usage()
+[[noreturn]] static void Usage()
 {
     Banner(); // TODO: Call banner from main CSG process?
 

@@ -362,16 +362,13 @@ void LogEnd()
     Log("\n-----   END   %s -----\n\n\n\n", g_Program);
 }
 
-void hlassume(bool exp, assume_msgs msgid)
+void HlassumeFailed(assume_msgs msgid)
 {
-    if (!exp)
-    {
-        char message[MAX_MESSAGE];
-        const MessageTable_t *msg = GetAssume(msgid);
+    char message[MAX_MESSAGE];
+    const MessageTable_t *msg = GetAssume(msgid);
 
-        safe_snprintf(message, MAX_MESSAGE, "%s\n%s%s\n%s%s\n", msg->title, "Description: ", msg->text, "Howto Fix: ", msg->howto);
-        Error(message);
-    }
+    safe_snprintf(message, MAX_MESSAGE, "%s\n%s%s\n%s%s\n", msg->title, "Description: ", msg->text, "Howto Fix: ", msg->howto);
+    Error(message);
 }
 
 static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned &hours, unsigned &minutes, unsigned &seconds)

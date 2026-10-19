@@ -2055,7 +2055,7 @@ static void RadWorld()
     ExtendLightmapBuffer(); // expand the size of lightdata array (for a few KB) to ensure that game engine reads within its valid range
 }
 
-static void Usage()
+[[noreturn]] static void Usage()
 {
     Banner();
 

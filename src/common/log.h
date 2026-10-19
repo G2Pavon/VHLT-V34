@@ -32,7 +32,16 @@ void FORMAT_PRINTF(1, 2) Log(const char *const message, ...);
 void Banner();
 void LogStart(const int argc, char **argv);
 void LogEnd();
-void hlassume(bool exp, assume_msgs msgid); // Should be in hlassert.h, but well so what
+[[noreturn]] void HlassumeFailed(assume_msgs msgid);
+// Should be in hlassert.h, but well so what. Inline so callers (and static analysis) see that a
+// false exp never returns.
+inline void hlassume(bool exp, assume_msgs msgid)
+{
+    if (!exp) [[unlikely]]
+    {
+        HlassumeFailed(msgid);
+    }
+}
 void LogTimeElapsed(float elapsed_time);
 
 void FORMAT_PRINTF(1, 2) PrintConsole(const char *const message, ...);

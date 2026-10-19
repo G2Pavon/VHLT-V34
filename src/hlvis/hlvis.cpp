@@ -603,7 +603,7 @@ static void LoadPortalsByFilename(const char *const filename)
     LoadPortals(file_image.data());
 }
 
-static void Usage()
+[[noreturn]] static void Usage()
 {
     Banner();
 
