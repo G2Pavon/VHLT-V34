@@ -1249,7 +1249,7 @@ int main(const int argc, char **argv)
     // Hard coded list of -wadinclude files, used for HINT texture brushes so lazy
     // mapmakers wont cause beta testers (or possibly end users) to get a wad
     // error on zhlt.wad etc
-    g_WadInclude.push_back("zhlt.wad");
+    g_WadInclude.emplace_back("zhlt.wad");
 
     InitDefaultHulls();
 
@@ -1286,7 +1286,7 @@ int main(const int argc, char **argv)
          true, "Error: -cliptype: incorrect usage of parameter\n"},
         CommandLineFlag("-wadautodetect", g_bWadAutoDetect, true),
         CommandLineFlag("-nowadtextures", g_wadtextures, false),
-        {"-wadinclude", [](const char *value) { g_WadInclude.push_back(value); }, true},
+        {"-wadinclude", [](const char *value) { g_WadInclude.emplace_back(value); }, true},
         {"-texdata", [](const char *value) { g_max_map_miptex = KilobytesToBytes(value); }, true},
         {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
         CommandLineFlag("-nolightopt", g_nolightopt, true),
