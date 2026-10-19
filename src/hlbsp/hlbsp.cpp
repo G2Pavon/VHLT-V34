@@ -266,18 +266,17 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
         Error("SplitFace: numpoints > MAXEDGES");
     }
     {
-        Winding *wd = new Winding(newf->numpoints);
+        Winding wd(newf->numpoints);
         for (int x = 0; x < newf->numpoints; x++)
         {
-            VectorCopy(newf->pts[x], wd->m_Points[x]);
+            VectorCopy(newf->pts[x], wd.m_Points[x]);
         }
-        wd->RemoveColinearPoints();
-        newf->numpoints = wd->m_NumPoints;
+        wd.RemoveColinearPoints();
+        newf->numpoints = wd.m_NumPoints;
         for (int x = 0; x < newf->numpoints; x++)
         {
-            VectorCopy(wd->m_Points[x], newf->pts[x]);
+            VectorCopy(wd.m_Points[x], newf->pts[x]);
         }
-        delete wd;
         if (newf->numpoints == 0)
         {
             FreeFace(newf); // was leaked
@@ -285,18 +284,17 @@ static void SplitFaceTmp(face_t *in, const plane_t *const split, face_t **front,
         }
     }
     {
-        Winding *wd = new Winding(new2->numpoints);
+        Winding wd(new2->numpoints);
         for (int x = 0; x < new2->numpoints; x++)
         {
-            VectorCopy(new2->pts[x], wd->m_Points[x]);
+            VectorCopy(new2->pts[x], wd.m_Points[x]);
         }
-        wd->RemoveColinearPoints();
-        new2->numpoints = wd->m_NumPoints;
+        wd.RemoveColinearPoints();
+        new2->numpoints = wd.m_NumPoints;
         for (int x = 0; x < new2->numpoints; x++)
         {
-            VectorCopy(wd->m_Points[x], new2->pts[x]);
+            VectorCopy(wd.m_Points[x], new2->pts[x]);
         }
-        delete wd;
         if (new2->numpoints == 0)
         {
             FreeFace(new2); // was leaked
@@ -421,7 +419,6 @@ brush_t *NewBrushFromBrush(const brush_t *b)
 static void ClipBrush(brush_t **b, const plane_t *split, vec_t epsilon)
 {
     side_t *s, **pnext;
-    Winding *w;
     for (pnext = &(*b)->sides, s = *pnext; s; s = *pnext)
     {
         if (s->w->Clip(*split, false, epsilon))
@@ -440,7 +437,7 @@ static void ClipBrush(brush_t **b, const plane_t *split, vec_t epsilon)
         *b = nullptr;
         return;
     }
-    w = new Winding(*split);
+    auto w = std::make_unique<Winding>(*split);
     for (s = (*b)->sides; s; s = s->next)
     {
         if (!w->Clip(s->plane, false, epsilon))
@@ -448,15 +445,11 @@ static void ClipBrush(brush_t **b, const plane_t *split, vec_t epsilon)
             break;
         }
     }
-    if (w->m_NumPoints == 0)
-    {
-        delete w;
-    }
-    else
+    if (w->m_NumPoints != 0)
     {
         s = AllocSide();
         s->plane = *split;
-        s->w.reset(w);
+        s->w = std::move(w);
         s->next = (*b)->sides;
         (*b)->sides = s;
     }

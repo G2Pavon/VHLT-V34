@@ -1095,7 +1095,7 @@ static void MakeLeaf(node_t *leafnode)
         markfaces[nummarkfaces] = nullptr; // end marker
         nummarkfaces++;
 
-        leafnode->markfaces.reset(new face_t *[nummarkfaces]);
+        leafnode->markfaces = std::make_unique_for_overwrite<face_t *[]>(nummarkfaces);
         std::copy(markfaces, markfaces + nummarkfaces, leafnode->markfaces.get());
     }
 
@@ -1112,7 +1112,7 @@ static void MakeNodePortal(node_t *node)
     int side = 0;
 
     plane_t *plane = &g_mapplanes[node->planenum];
-    Winding *w = new Winding(*plane);
+    auto w = std::make_unique<Winding>(*plane);
 
     portal_t *new_portal = AllocPortal();
     new_portal->plane = *plane;
@@ -1139,13 +1139,12 @@ static void MakeNodePortal(node_t *node)
         w->Clip(clipplane, true);
         if (w->m_NumPoints == 0) // new portal was clipped away from node
         {
-            delete w; // was leaked
             FreePortal(new_portal);
             return;
         }
     }
 
-    new_portal->winding.reset(w);
+    new_portal->winding = std::move(w);
     AddPortalToNodes(new_portal, node->children[0], node->children[1]);
 }
 

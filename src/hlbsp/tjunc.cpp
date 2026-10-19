@@ -286,8 +286,10 @@ static void AddFaceEdges(const face_t *const f)
 
 // The face FixFaceEdges works on, with room for the points it inserts. It used to be a 16 KB byte
 // buffer cast to face_t whose pts[] was indexed past MAXEDGES (misaligned, out of bounds).
-// compat: the same capacity, so MAX_SUPERFACEEDGES is reached at the same point.
-constexpr int MAX_SUPERFACEEDGES = static_cast<int>((1024 * 16 - sizeof(face_t) + sizeof(face_t::pts)) / sizeof(vec3_t));
+// compat: the same capacity, so MAX_SUPERFACEEDGES is reached at the same point: (16 KB - sizeof(face_t)
+// + sizeof(pts)) / sizeof(vec3_t) with the oracle's face_t (1208 bytes; outputedges was an int*).
+constexpr int MAX_SUPERFACEEDGES = 680;
+static_assert(sizeof(face_t::pts) == 1152 && (1024 * 16 - 1208 + sizeof(face_t::pts)) / sizeof(vec3_t) == MAX_SUPERFACEEDGES);
 struct SuperFace
 {
     face_t face; // everything but the points: face.numpoints counts pts below

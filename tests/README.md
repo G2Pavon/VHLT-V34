@@ -407,6 +407,16 @@ wad was ever found through it: `regress waddir` lights fm_rad_texlights without 
 must equal the oracle's run with it; the oracle exits 1). hlrad builds without warnings; the
 `#pragma warning` lines and the last win32fix shims (`CDECL`, `FORCEINLINE`, `sprintf_s`) are gone.
 
+Phase C (ownership in common/, hlcsg, hlbsp): blockmem (unused since the tools stopped calling
+it) is gone; `Winding::Copy()` returns a `unique_ptr`; winding temporaries are values or
+`unique_ptr`; `bface_t` nodes are made and freed only in hlcsg/faces.cpp (`NewFace`/`FreeFace`;
+`brushhull_t` owns its list); hlbsp's `outputedges` is a vector and the brink analysis a typed
+owning handle (`Brinkinfo`). hlbsp's graph nodes (tree, portals that two nodes share, surfaces,
+brushes) and the brink tree stay behind their single Alloc/Free functions by design (LeakSanitizer
+0 bytes). `MAX_SUPERFACEEDGES` (tjunc.cpp) is pinned at 680, the value the oracle's 1208-byte
+`face_t` gave, now that `face_t` is larger. The MSVC `#pragma warning` lines of the common headers
+are `/wd` options in CMakeLists.txt. All four tools and common/ build without warnings (GCC).
+
 ### Environment
 
 | Variable | Default |

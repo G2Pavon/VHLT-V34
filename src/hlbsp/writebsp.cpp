@@ -239,8 +239,7 @@ static void WriteFace(face_t *f)
         g_dsurfedges[g_numsurfedges] = e;
         g_numsurfedges++;
     }
-    std::free(f->outputedges);
-    f->outputedges = nullptr;
+    f->outputedges = std::vector<int>();
 }
 
 static int WriteDrawNodes_r(node_t *node, const node_t *portalleaf)
@@ -327,8 +326,7 @@ static void OutputEdges_face(face_t *f)
     {
         return;
     }
-    f->outputedges = (int *)std::malloc(f->numpoints * sizeof(int));
-    hlassume(f->outputedges != nullptr, assume_NoMemory);
+    f->outputedges.resize(f->numpoints);
     for (int i = 0; i < f->numpoints; i++)
     {
         int e = GetEdge(f->pts[i], f->pts[(i + 1) % f->numpoints], f);
@@ -603,7 +601,7 @@ void FinishBSPFile()
         Log("FixBrinks:\n");
         int numclipnodes;
         std::vector<dclipnode_t> clipnodes(MAX_MAP_CLIPNODES);
-        std::vector<std::array<void *, NUM_HULLS>> brinkinfo(MAX_MAP_MODELS);
+        std::vector<std::array<Brinkinfo, NUM_HULLS>> brinkinfo(MAX_MAP_MODELS);
         std::vector<std::array<int, NUM_HULLS>> headnode(MAX_MAP_MODELS);
 
         int i, j, level;
@@ -623,7 +621,7 @@ void FinishBSPFile()
             {
                 for (j = 1; j < NUM_HULLS; j++)
                 {
-                    if (!FixBrinks(brinkinfo[i][j], (bbrinklevel_e)level, headnode[i][j], clipnodes.data(), MAX_MAP_CLIPNODES, numclipnodes, numclipnodes))
+                    if (!FixBrinks(brinkinfo[i][j].get(), (bbrinklevel_e)level, headnode[i][j], clipnodes.data(), MAX_MAP_CLIPNODES, numclipnodes, numclipnodes))
                     {
                         break;
                     }
@@ -642,7 +640,7 @@ void FinishBSPFile()
         {
             for (j = 1; j < NUM_HULLS; j++)
             {
-                DeleteBrinkinfo(brinkinfo[i][j]);
+                brinkinfo[i][j].reset();
             }
         }
         if (level == BrinkNone)

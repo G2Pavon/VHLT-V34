@@ -53,7 +53,7 @@ struct face_t // This structure is layed out so 'pts' is on a quad-word boundary
     int texturenum = 0;
     int contents = 0;            // contents in front of face
     int detaillevel = 0;         // defined by hlcsg
-    int *outputedges = nullptr;  // used in WriteDrawNodes
+    std::vector<int> outputedges; // used in WriteDrawNodes
 
     face_t *original = nullptr; // face on node
     int outputnumber = 0;       // only valid for original faces after write surfaces
@@ -233,9 +233,15 @@ typedef enum
     BrinkWall,
     BrinkAny,
 } bbrinklevel_e;
-void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode);
-bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out);
-void DeleteBrinkinfo(void *brinkinfo);
+// The brink analysis of one hull's clipnode tree (brink.cpp); its tree nodes are freed with it.
+struct bbrinkinfo_t;
+struct BrinkinfoDeleter
+{
+    void operator()(bbrinkinfo_t *info) const;
+};
+using Brinkinfo = std::unique_ptr<bbrinkinfo_t, BrinkinfoDeleter>;
+Brinkinfo CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode);
+bool FixBrinks(const bbrinkinfo_t *info, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out);
 
 // Cpt_Andrew - UTSky Check
 bool CheckFaceForEnv_Sky(const face_t *const f);

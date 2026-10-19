@@ -1707,12 +1707,13 @@ static void SortPartitions(bbrinkinfo_t *info) // to merge same partition planes
     }
 }
 
-void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
+Brinkinfo CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
 {
-    bbrinkinfo_t *info;
+    Brinkinfo owner;
     try
     {
-        info = new bbrinkinfo_t{};
+        owner.reset(new bbrinkinfo_t{});
+        bbrinkinfo_t *info = owner.get();
         ExpandClipnodes(info, clipnodes, headnode);
         BuildTreeCells(info);
         CollectBrinks(info);
@@ -1725,7 +1726,7 @@ void *CreateBrinkinfo(const dclipnode_t *clipnodes, int headnode)
     {
         hlassume(false, assume_NoMemory);
     }
-    return info;
+    return owner;
 }
 
 
@@ -1823,9 +1824,8 @@ static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &h
     }
 }
 
-bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out)
+bool FixBrinks(const bbrinkinfo_t *info, bbrinklevel_e level, int &headnode_out, dclipnode_t *clipnodes_out, int maxsize, int size, int &size_out)
 {
-    const bbrinkinfo_t *info = (const bbrinkinfo_t *)brinkinfo;
     dclipnode_t *begin = clipnodes_out;
     int end = maxsize;
     int current = size;
@@ -1840,9 +1840,8 @@ bool FixBrinks(const void *brinkinfo, bbrinklevel_e level, int &headnode_out, dc
     return true;
 }
 
-void DeleteBrinkinfo(void *brinkinfo)
+void BrinkinfoDeleter::operator()(bbrinkinfo_t *info) const
 {
-    bbrinkinfo_t *info = (bbrinkinfo_t *)brinkinfo;
     DeleteClipnodes(info);
     delete info;
 }
