@@ -22,6 +22,7 @@ import datetime
 import fnmatch
 import functools
 import hashlib
+import itertools
 import json
 import os
 import re
@@ -891,8 +892,15 @@ def cmd_check(args) -> int:
         else:
             log(f"running the full pipeline instead of csg only: {why}")
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_root = DATA / "runs" / f"{stamp}-{args.label or bindir.parent.name}-{args.tier}"
-    run_root.mkdir(parents=True)
+    run_name = f"{stamp}-{args.label or bindir.parent.name}-{args.tier}"
+    # Fully cached checks finish within a second, so back-to-back runs can share a stamp.
+    for attempt in itertools.count():
+        run_root = DATA / "runs" / (run_name if attempt == 0 else f"{run_name}-{attempt}")
+        try:
+            run_root.mkdir(parents=True)
+            break
+        except FileExistsError:
+            pass
 
     # The cache relies on single-threaded determinism; multi-threaded runs are what checks it.
     cache_root = CACHE_ROOT if args.threads == 1 else None
