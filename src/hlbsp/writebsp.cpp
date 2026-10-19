@@ -448,29 +448,42 @@ void BeginBSPFile()
 // Drops textures no texinfo uses and renumbers the rest (part of FinishBSPFile).
 static void ReduceTexdata()
 {
-    auto *l = (dmiptexlump_t *)g_dtexdata;
-    int &g_nummiptex = l->nummiptex;
+    MiptexLumpView lump = TextureLump();
+    const int nummiptex = lump.count();
+    const long long headersize = MiptexLumpView::DataofsPosition(nummiptex);
+    if (nummiptex < 0 || headersize > g_texdatasize)
+    {
+        Warning("Bad texdata structure.\n");
+        return;
+    }
+    // The offset table, copied out of the lump: it was indexed through dmiptexlump_t, whose
+    // dataofs is declared [4]. Every slot lies inside the header checked above.
+    std::vector<int> dataofs(nummiptex);
+    for (int i = 0; i < nummiptex; i++)
+    {
+        dataofs[i] = *lump.dataofs(i);
+    }
     // (were malloc'ed: malloc(0) for a map without textures could fail the out-of-memory check)
-    std::vector<bool> Used(g_nummiptex);
+    std::vector<bool> Used(nummiptex);
     int Num = 0, Size = 0;
-    std::vector<int> Map(g_nummiptex);
-    std::vector<int> lumpsizes(g_nummiptex);
-    const int newdatasizemax = g_texdatasize - ((byte *)&l->dataofs[g_nummiptex] - (byte *)l);
+    std::vector<int> Map(nummiptex);
+    std::vector<int> lumpsizes(nummiptex);
+    const int newdatasizemax = static_cast<int>(g_texdatasize - headersize);
     std::vector<byte> newdata(std::max(newdatasizemax, 0));
     int newdatasize = 0;
     int total = 0;
-    for (int i = 0; i < g_nummiptex; i++)
+    for (int i = 0; i < nummiptex; i++)
     {
-        if (l->dataofs[i] == -1)
+        if (dataofs[i] == -1)
         {
             lumpsizes[i] = -1;
             continue;
         }
-        lumpsizes[i] = g_texdatasize - l->dataofs[i];
-        for (int j = 0; j < g_nummiptex; j++)
+        lumpsizes[i] = g_texdatasize - dataofs[i];
+        for (int j = 0; j < nummiptex; j++)
         {
-            int lumpsize = l->dataofs[j] - l->dataofs[i];
-            if (l->dataofs[j] == -1 ||
+            int lumpsize = dataofs[j] - dataofs[i];
+            if (dataofs[j] == -1 ||
                 lumpsize < 0 ||
                 (lumpsize == 0 && j <= i))
                 continue;
@@ -487,23 +500,23 @@ static void ReduceTexdata()
     for (int i = 0; i < g_numtexinfo; i++)
     {
         texinfo_t *t = &g_texinfo[i];
-        if (t->miptex < 0 || t->miptex >= g_nummiptex)
+        if (t->miptex < 0 || t->miptex >= nummiptex)
         {
             Warning("Bad miptex number %d.\n", t->miptex);
             return;
         }
         Used[t->miptex] = true;
     }
-    for (int i = 0; i < g_nummiptex; i++)
+    for (int i = 0; i < nummiptex; i++)
     {
         char name[MAX_TEXTURE_NAME_LENGTH];
 
-        if (l->dataofs[i] < 0)
+        if (dataofs[i] < 0)
             continue;
         if (Used[i] == true)
         {
-            auto *m = (miptex_t *)((byte *)l + l->dataofs[i]);
-            if (m->name[0] != '+' && m->name[0] != '-')
+            const std::optional<miptex_t> m = lump.miptex_at(dataofs[i]);
+            if (!m || (m->name[0] != '+' && m->name[0] != '-'))
                 continue;
             safe_strncpy(name, m->name, MAX_TEXTURE_NAME_LENGTH);
             if (name[1] == '\0')
@@ -514,18 +527,18 @@ static void ReduceTexdata()
                     name[1] = '0' + j;
                 else
                     name[1] = 'A' + j - 10;
-                for (int k = 0; k < g_nummiptex; k++)
+                for (int k = 0; k < nummiptex; k++)
                 {
-                    if (l->dataofs[k] < 0)
+                    if (dataofs[k] < 0)
                         continue;
-                    auto *m2 = (miptex_t *)((byte *)l + l->dataofs[k]);
-                    if (!strcasecmp(name, m2->name))
+                    const std::optional<miptex_t> m2 = lump.miptex_at(dataofs[k]);
+                    if (m2 && !strcasecmp(name, m2->name))
                         Used[k] = true;
                 }
             }
         }
     }
-    for (int i = 0; i < g_nummiptex; i++)
+    for (int i = 0; i < nummiptex; i++)
     {
         if (Used[i])
         {
@@ -542,27 +555,27 @@ static void ReduceTexdata()
         texinfo_t *t = &g_texinfo[i];
         t->miptex = Map[t->miptex];
     }
-    Size += (byte *)&l->dataofs[Num] - (byte *)l;
-    for (int i = 0; i < g_nummiptex; i++)
+    Size += static_cast<int>(MiptexLumpView::DataofsPosition(Num));
+    for (int i = 0; i < nummiptex; i++)
     {
         if (Used[i])
         {
             if (lumpsizes[i] == -1)
             {
-                l->dataofs[Map[i]] = -1;
+                lump.set_dataofs(Map[i], -1);
             }
             else
             {
-                std::memcpy(newdata.data() + newdatasize, (byte *)l + l->dataofs[i], lumpsizes[i]);
-                l->dataofs[Map[i]] = Size;
+                std::memcpy(newdata.data() + newdatasize, g_dtexdata + dataofs[i], lumpsizes[i]);
+                lump.set_dataofs(Map[i], Size);
                 newdatasize += lumpsizes[i];
                 Size += lumpsizes[i];
             }
         }
     }
-    std::memcpy(&l->dataofs[Num], newdata.data(), newdatasize);
-    Log("Reduced %d texdatas to %d (%d bytes to %d)\n", g_nummiptex, Num, g_texdatasize, Size);
-    g_nummiptex = Num;
+    std::memcpy(g_dtexdata + MiptexLumpView::DataofsPosition(Num), newdata.data(), newdatasize);
+    Log("Reduced %d texdatas to %d (%d bytes to %d)\n", nummiptex, Num, g_texdatasize, Size);
+    lump.set_count(Num);
     g_texdatasize = Size;
 }
 

@@ -823,8 +823,7 @@ static std::vector<std::vector<byte>> g_newtextures; // miptex records, at most 
 
 static int NewTextures_GetCurrentMiptexIndex()
 {
-    auto *texdata = (dmiptexlump_t *)g_dtexdata;
-    return texdata->nummiptex + (int)g_newtextures.size();
+    return TextureLump().count() + (int)g_newtextures.size();
 }
 
 static void NewTextures_PushTexture(int size, void *data)
@@ -845,33 +844,36 @@ static void NewTextures_Write()
         return;
     }
 
-    auto *texdata = (dmiptexlump_t *)g_dtexdata;
-
-    byte *dataaddr = (byte *)&texdata->dataofs[texdata->nummiptex];
-    int datasize = (g_dtexdata + g_texdatasize) - dataaddr;
-    byte *newdataaddr = (byte *)&texdata->dataofs[texdata->nummiptex + g_newtextures_num];
-    hlassume(g_texdatasize + (newdataaddr - dataaddr) <= g_max_map_miptex, assume_MAX_MAP_MIPTEX);
-    std::memmove(newdataaddr, dataaddr, datasize);
-    g_texdatasize += newdataaddr - dataaddr;
-    for (int i = 0; i < texdata->nummiptex; i++)
+    // Through MiptexLumpView: indexing dmiptexlump_t::dataofs (declared [4]) past 4 was out of bounds.
+    MiptexLumpView lump = TextureLump();
+    const int nummiptex = lump.count();
+    const long long oldheader = MiptexLumpView::DataofsPosition(nummiptex);
+    const long long newheader = MiptexLumpView::DataofsPosition(nummiptex + g_newtextures_num);
+    const int shift = static_cast<int>(newheader - oldheader);
+    const int datasize = static_cast<int>(g_texdatasize - oldheader);
+    hlassume(g_texdatasize + shift <= g_max_map_miptex, assume_MAX_MAP_MIPTEX);
+    std::memmove(g_dtexdata + newheader, g_dtexdata + oldheader, datasize);
+    g_texdatasize += shift;
+    for (int i = 0; i < nummiptex; i++)
     {
-        if (texdata->dataofs[i] < 0) // bad texture
+        const int ofs = *lump.dataofs(i); // inside the old header
+        if (ofs < 0) // bad texture
         {
             continue;
         }
-        texdata->dataofs[i] += newdataaddr - dataaddr;
+        lump.set_dataofs(i, ofs + shift);
     }
 
-    hlassume(texdata->nummiptex + g_newtextures_num < MAX_MAP_TEXTURES, assume_MAX_MAP_TEXTURES);
+    hlassume(nummiptex + g_newtextures_num < MAX_MAP_TEXTURES, assume_MAX_MAP_TEXTURES);
     for (int i = 0; i < g_newtextures_num; i++)
     {
         const int size = (int)g_newtextures[i].size();
         hlassume(g_texdatasize + size <= g_max_map_miptex, assume_MAX_MAP_MIPTEX);
         std::memcpy(g_dtexdata + g_texdatasize, g_newtextures[i].data(), size);
-        texdata->dataofs[texdata->nummiptex + i] = g_texdatasize;
+        lump.set_dataofs(nummiptex + i, g_texdatasize);
         g_texdatasize += size;
     }
-    texdata->nummiptex += g_newtextures_num;
+    lump.set_count(nummiptex + g_newtextures_num);
 
     g_newtextures.clear();
 }
@@ -1318,7 +1320,8 @@ void EmbedLightmapInTextures()
         }
         miptexsize += 2 + 256 * 3 + 2;
         std::vector<byte> miptexstorage(miptexsize);
-        auto *miptex = (miptex_t *)miptexstorage.data();
+        // Fresh, aligned storage that implicitly holds a miptex_t (C++20 implicit object creation).
+        auto *miptex = reinterpret_cast<miptex_t *>(miptexstorage.data());
 
         std::memset(miptex, 0, sizeof(miptex_t));
         miptex->width = texturesize[0];

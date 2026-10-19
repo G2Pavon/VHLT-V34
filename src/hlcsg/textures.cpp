@@ -479,12 +479,12 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
         {
             // Just read the miptex header and zero out the data offsets.
             // We will load the entire texture from the WAD at engine runtime
-            auto *miptex = (miptex_t *)dest;
             hlassume((int)sizeof(miptex_t) <= dest_maxsize, assume_MAX_MAP_MIPTEX);
             SafeRead(texfile, dest, sizeof(miptex_t));
 
-            for (auto &offset : miptex->offsets)
-                offset = 0;
+            // In place, not through a miptex_t *: dest is a position in the texture lump with no
+            // alignment guarantee.
+            std::memset(dest + offsetof(miptex_t, offsets), 0, sizeof(miptex_t::offsets));
             if (std::fseek(texfile, source->filepos, SEEK_SET))
                 Error("File read failure");
             writewad_data.emplace(source->disksize); // compat: also for disksize 0 (an empty lump)
