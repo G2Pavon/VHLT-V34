@@ -1037,7 +1037,7 @@ static void LinkLeafFaces(surface_t *planelist, node_t *leafnode)
         {
             ent = nullptr;
         }
-        Warning("Ambiguous leafnode content ( %s and %s ) at (%.0f,%.0f,%.0f)-(%.0f,%.0f,%.0f) in hull %d of model %d (entity: classname \"%s\", origin \"%s\", targetname \"%s\")",
+        Warning(R"(Ambiguous leafnode content ( %s and %s ) at (%.0f,%.0f,%.0f)-(%.0f,%.0f,%.0f) in hull %d of model %d (entity: classname "%s", origin "%s", targetname "%s"))",
                 ContentsToString(ContentsForRank(r)), ContentsToString(ContentsForRank(rank)),
                 leafnode->mins[0], leafnode->mins[1], leafnode->mins[2], leafnode->maxs[0], leafnode->maxs[1], leafnode->maxs[2],
                 g_hullnum, g_nummodels - 1,
