@@ -1,6 +1,7 @@
 #include "hlcsg/wadpath.h"
 
 #include <cstring>
+#include <string>
 
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
@@ -22,7 +23,6 @@ void PushWadPath(const char *const path, bool inuse)
 // parse the "wad" keyvalue into wadpath_t structs
 void GetUsedWads()
 {
-    char szTmp[_MAX_PATH];
     int j;
 
     const char *pszWadPaths = ValueForKey(&g_entities[0], "wad");
@@ -38,15 +38,15 @@ void GetUsedWads()
         }
         if (j - i > 0)
         {
-            int count = qmin(j - i, _MAX_PATH - 1);
-            std::memcpy(szTmp, &pszWadPaths[i], count);
-            szTmp[count] = '\0';
+            // compat: each entry is cut at _MAX_PATH - 1 bytes (it was copied into a char[_MAX_PATH]);
+            // the cut name is what lands in the BSP's "wad" key
+            const std::string entry(&pszWadPaths[i], qmin(j - i, _MAX_PATH - 1));
 
             if (g_WadPaths.size() >= MAX_WADPATHS)
             {
                 Error("Too many wad files");
             }
-            PushWadPath(szTmp, true);
+            PushWadPath(entry.c_str(), true);
         }
         if (pszWadPaths[j] == '\0')
         {

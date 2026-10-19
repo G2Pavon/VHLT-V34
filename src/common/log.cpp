@@ -46,10 +46,13 @@ ScopedLogCapture::~ScopedLogCapture()
     t_capture = m_previous;
 }
 
-// compat: formatted messages are cut at this many bytes, as they always were.
-constexpr int MAX_ERROR = 2048;
-constexpr int MAX_WARNING = 2048;
-constexpr int MAX_MESSAGE = 2048;
+// Messages have no length limit. The oracle cut them at 2047 bytes; that only ever affected log,
+// .err and console text, never the BSP.
+static std::string AssumeMessage(assume_msgs msgid)
+{
+    const MessageTable_t *msg = GetAssume(msgid);
+    return std::string(msg->title) + "\nDescription: " + msg->text + "\nHowto Fix: " + msg->howto + "\n";
+}
 
 static void DeleteMapFile(const char *const extension)
 {
@@ -186,17 +189,13 @@ void CheckFatal()
 
 void FORMAT_PRINTF(1, 2) Error(const char *const error, ...)
 {
-    char message[MAX_ERROR];
-    char message2[MAX_ERROR];
     va_list argptr;
-
     va_start(argptr, error);
-    std::vsnprintf(message, MAX_ERROR, error, argptr);
+    const std::string message = "Error: " + StringVPrintf(error, argptr) + "\n";
     va_end(argptr);
 
-    safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Error: ", message);
-    WriteLog(message2);
-    LogError(message2);
+    WriteLog(message.c_str());
+    LogError(message.c_str());
 
     if (t_capture)
     {
@@ -243,43 +242,28 @@ void LogCapture::Replay() const
 
 void FORMAT_PRINTF(2, 3) Fatal(assume_msgs msgid, const char *const warning, ...)
 {
-    char message[MAX_WARNING];
-    char message2[MAX_WARNING];
-
     va_list argptr;
-
     va_start(argptr, warning);
-    std::vsnprintf(message, MAX_WARNING, warning, argptr);
+    const std::string message = "Error: " + StringVPrintf(warning, argptr) + "\n";
     va_end(argptr);
 
-    safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Error: ", message);
-    WriteLog(message2);
-    LogError(message2);
+    WriteLog(message.c_str());
+    LogError(message.c_str());
 
-    {
-        char message[MAX_MESSAGE];
-        const MessageTable_t *msg = GetAssume(msgid);
-
-        safe_snprintf(message, MAX_MESSAGE, "%s\n%s%s\n%s%s\n", msg->title, "Description: ", msg->text, "Howto Fix: ", msg->howto);
-        PrintOnce(message);
-    }
+    PrintOnce("%s", AssumeMessage(msgid).c_str());
 
     fatal = true;
 }
 
 void FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
 {
-    char message[MAX_WARNING];
-    char message2[MAX_WARNING];
     va_list argptr;
-
     va_start(argptr, warning);
-    std::vsnprintf(message, MAX_WARNING, warning, argptr);
+    std::string message = "Error: " + StringVPrintf(warning, argptr) + "\n";
     va_end(argptr);
 
-    safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Error: ", message);
     // which call is the first is decided in work order (see LogInOrder)
-    LogInOrder([text = std::string(message2)]()
+    LogInOrder([text = std::move(message)]()
                {
                    static std::atomic<bool> printed{false};
                    if (printed.exchange(true)) // make sure it only gets called once
@@ -292,30 +276,22 @@ void FORMAT_PRINTF(1, 2) PrintOnce(const char *const warning, ...)
 
 void FORMAT_PRINTF(1, 2) Warning(const char *const warning, ...)
 {
-    char message[MAX_WARNING];
-    char message2[MAX_WARNING];
-
     va_list argptr;
-
     va_start(argptr, warning);
-    std::vsnprintf(message, MAX_WARNING, warning, argptr);
+    const std::string message = "Warning: " + StringVPrintf(warning, argptr) + "\n";
     va_end(argptr);
 
-    safe_snprintf(message2, MAX_MESSAGE, "%s%s\n", "Warning: ", message);
-    WriteLog(message2);
+    WriteLog(message.c_str());
 }
 
 void FORMAT_PRINTF(1, 2) Log(const char *const warning, ...)
 {
-    char message[MAX_MESSAGE];
-
     va_list argptr;
-
     va_start(argptr, warning);
-    std::vsnprintf(message, MAX_MESSAGE, warning, argptr);
+    const std::string message = StringVPrintf(warning, argptr);
     va_end(argptr);
 
-    WriteLog(message);
+    WriteLog(message.c_str());
 }
 
 static void LogArgs(int argc, char **argv)
@@ -361,11 +337,7 @@ void LogEnd()
 
 void HlassumeFailed(assume_msgs msgid)
 {
-    char message[MAX_MESSAGE];
-    const MessageTable_t *msg = GetAssume(msgid);
-
-    safe_snprintf(message, MAX_MESSAGE, "%s\n%s%s\n%s%s\n", msg->title, "Description: ", msg->text, "Howto Fix: ", msg->howto);
-    Error(message);
+    Error("%s", AssumeMessage(msgid).c_str());
 }
 
 static void seconds_to_hhmm(unsigned int elapsed_time, unsigned &days, unsigned &hours, unsigned &minutes, unsigned &seconds)
@@ -411,14 +383,10 @@ void LogTimeElapsed(float elapsed_time)
 
 void FORMAT_PRINTF(1, 2) PrintConsole(const char *const warning, ...)
 {
-    char message[MAX_MESSAGE];
-
     va_list argptr;
-
     va_start(argptr, warning);
-
-    std::vsnprintf(message, MAX_MESSAGE, warning, argptr);
+    const std::string message = StringVPrintf(warning, argptr);
     va_end(argptr);
 
-    std::fprintf(stdout, "%s", message);
+    std::fprintf(stdout, "%s", message.c_str());
 }

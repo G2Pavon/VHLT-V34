@@ -1,7 +1,12 @@
 #include "doctest/doctest.h"
 
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
+
+#include <unistd.h>
 
 #include "common/cmdlib.h"
 #include "common/log.h"
@@ -221,5 +226,40 @@ TEST_SUITE("cmdlib")
         CHECK(GetAssume(assume_last) == GetAssume(assume_first));
         CHECK(GetAssume(static_cast<assume_msgs>(-1)) == GetAssume(assume_first));
         CHECK(std::string(GetAssume(assume_NO_EXTENT_FILE)->title) == "Couldn't open extent file");
+    }
+
+    TEST_CASE("StringPrintf has no length limit")
+    {
+        CHECK(StringPrintf("%i %i %i", 1, -2, 3) == "1 -2 3");
+        CHECK(StringPrintf("%s", "") == "");
+        CHECK(StringPrintf("*%i", 511) == "*511");
+        const std::string big(5000, 'x');
+        const std::string out = StringPrintf("<%s>%d", big.c_str(), 7);
+        CHECK(out.size() == 5003);
+        CHECK(out == "<" + big + ">7");
+    }
+
+    TEST_CASE("Log and Warning write messages longer than 2047 bytes in full")
+    {
+        namespace fs = std::filesystem;
+        const fs::path dir = fs::temp_directory_path() / ("vhlt_log_tests_" + std::to_string(getpid()));
+        fs::create_directories(dir);
+        const std::string saved = g_Mapname;
+        g_Mapname = (dir / "map").string();
+
+        const std::string big(3000, 'y');
+        OpenLog();
+        Log("[%s]\n", big.c_str());
+        Warning("%s", big.c_str());
+        CloseLog();
+
+        std::ifstream in(g_Mapname + ".log", std::ios::binary);
+        std::stringstream text;
+        text << in.rdbuf();
+        CHECK(text.str().find("[" + big + "]\r\n") != std::string::npos);
+        CHECK(text.str().find("Warning: " + big + "\r\n") != std::string::npos);
+
+        g_Mapname = saved;
+        fs::remove_all(dir);
     }
 }

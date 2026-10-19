@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdarg>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -61,6 +62,10 @@ void ExtractFile(const char *const path, char (&dest)[N])
 {
     CopyPathResult(PathFile(path), dest, N, "ExtractFile");
 }
+
+// printf-style formatting into a std::string, without a length limit.
+std::string FORMAT_PRINTF(1, 2) StringPrintf(const char *const format, ...);
+std::string StringVPrintf(const char *const format, va_list args);
 
 // Bounded string functions: count is the size of dest. dest is always NUL-terminated; the
 // result is false if the text had to be cut.

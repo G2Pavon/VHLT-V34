@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 
+// compat: the oracle parsed into char[MAXTOKEN]; a longer token is still a fatal error.
 constexpr int MAXTOKEN = 4096;
 
 // Splits .map and entity-lump text into tokens: quoted strings, or runs of non-blank characters

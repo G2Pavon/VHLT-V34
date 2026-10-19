@@ -69,9 +69,21 @@ std::FILE *SafeOpenRead(const char *const filename)
 std::string ExecutablePath()
 {
 #if defined(_WIN32)
-    char buffer[_MAX_PATH];
-    const DWORD length = GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
-    return std::string(buffer, length);
+    std::string buffer(_MAX_PATH, '\0');
+    for (;;)
+    {
+        const DWORD length = GetModuleFileNameA(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+        if (length == 0)
+        {
+            return {};
+        }
+        if (length < buffer.size()) // a result that fills the buffer was cut: retry with more room
+        {
+            buffer.resize(length);
+            return buffer;
+        }
+        buffer.resize(buffer.size() * 2);
+    }
 #else
     std::error_code error;
     const std::filesystem::path path = std::filesystem::read_symlink("/proc/self/exe", error);

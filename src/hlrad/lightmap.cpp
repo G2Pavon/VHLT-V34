@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "hlrad/hlrad.h"
+#include "common/cmdlib.h"
 #include "common/filelib.h"
 #include "common/threads.h"
 #include "common/hlassert.h"
@@ -2667,9 +2668,7 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
 
             if (style_index == ALLSTYLES) // shouldn't happen
             {
-                char message[128];
-                std::snprintf(message, sizeof(message), "Too many direct light styles on a face(%f,%f,%f)", pos[0], pos[1], pos[2]);
-                WarnTooManyStyles(message);
+                WarnTooManyStyles(StringPrintf("Too many direct light styles on a face(%f,%f,%f)", pos[0], pos[1], pos[2]));
                 return;
             }
 

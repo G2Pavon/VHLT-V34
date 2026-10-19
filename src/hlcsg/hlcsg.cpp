@@ -65,8 +65,6 @@ static const char *GetClipTypeString(cliptype ct)
 // parses entity keyvalues for setting information
 void GetParamsFromEnt(entity_t *mapent)
 {
-    char szTmp[256];
-
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
@@ -85,8 +83,7 @@ void GetParamsFromEnt(entity_t *mapent)
     {
         g_max_map_miptex = iTmp;
     }
-    std::snprintf(szTmp, sizeof(szTmp), "%i", g_max_map_miptex);
-    Log("%30s [ %-9s ]\n", "Texture Data Memory", szTmp);
+    Log("%30s [ %-9s ]\n", "Texture Data Memory", std::to_string(g_max_map_miptex).c_str());
 
     if (!std::strcmp(ValueForKey(mapent, "wadautodetect"), "1"))
     {
@@ -761,16 +758,13 @@ static void EmitPlanes()
 
 static void SetModelNumbers()
 {
-    char value[10];
-
     int models = 1;
     for (int i = 1; i < g_numentities; i++)
     {
         if (g_entities[i].numbrushes)
         {
-            safe_snprintf(value, sizeof(value), "*%i", models);
+            SetKeyValue(&g_entities[i], "model", ("*" + std::to_string(models)).c_str());
             models++;
-            SetKeyValue(&g_entities[i], "model", value);
         }
     }
 }
@@ -822,9 +816,10 @@ constexpr int MAX_LIGHTTARGETS_NAME = 64;
 static void SetLightStyles()
 {
     int j;
-    char value[10];
     // Zero-initialized: switchable texlights take a style number without storing a name, and the
     // search below used to strcmp those slots while they were still uninitialized.
+    // compat: names are stored cut at 63 bytes but looked up in full, so lights sharing a longer
+    // targetname each get their own style; that numbering reaches the BSP, so it stays.
     char lighttargets[MAX_SWITCHED_LIGHTS][MAX_LIGHTTARGETS_NAME] = {};
 
     // any light that is controlled (has a targetname)
@@ -846,13 +841,11 @@ static void SetLightStyles()
             case 0: // not a light, no style, generally pretty boring
                 continue;
             case -1: // normal switchable texlight
-                safe_snprintf(value, sizeof(value), "%i", 32 + stylenum);
-                SetKeyValue(e, "style", value);
+                SetKeyValue(e, "style", std::to_string(32 + stylenum).c_str());
                 stylenum++;
                 continue;
             case -2: // backwards switchable texlight
-                safe_snprintf(value, sizeof(value), "%i", -(32 + stylenum));
-                SetKeyValue(e, "style", value);
+                SetKeyValue(e, "style", std::to_string(-(32 + stylenum)).c_str());
                 stylenum++;
                 continue;
             case -3:                          // (HACK) a piggyback texlight: switched on and off by triggering a real light that has the same name
@@ -889,8 +882,7 @@ static void SetLightStyles()
             safe_strncpy(lighttargets[j], t, MAX_LIGHTTARGETS_NAME);
             stylenum++;
         }
-        safe_snprintf(value, sizeof(value), "%i", 32 + j);
-        SetKeyValue(e, "style", value);
+        SetKeyValue(e, "style", std::to_string(32 + j).c_str());
     }
 }
 
@@ -1090,7 +1082,6 @@ static void ProcessModels()
 
 static void SetModelCenters(int entitynum)
 {
-    char string[MAXTOKEN];
     entity_t *e = &g_entities[entitynum];
     BoundingBox bounds;
     vec3_t center;
@@ -1112,8 +1103,7 @@ static void SetModelCenters(int entitynum)
     VectorAdd(bounds.m_Mins, bounds.m_Maxs, center);
     VectorScale(center, 0.5, center);
 
-    safe_snprintf(string, MAXTOKEN, "%i %i %i", (int)center[0], (int)center[1], (int)center[2]);
-    SetKeyValue(e, "model_center", string);
+    SetKeyValue(e, "model_center", StringPrintf("%i %i %i", (int)center[0], (int)center[1], (int)center[2]).c_str());
 }
 
 static void ConvertGameTextToUTF8()

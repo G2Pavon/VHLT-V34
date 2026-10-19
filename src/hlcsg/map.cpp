@@ -167,9 +167,8 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
     }
     for (int h = 0; h < NUM_HULLS; h++)
     {
-        char key[16];
-        std::sprintf(key, "zhlt_hull%d", h);
-        const char *value = ValueForKey(mapent, key);
+        const std::string key = "zhlt_hull" + std::to_string(h);
+        const char *value = ValueForKey(mapent, key.c_str());
         b->hullshapes[h] = value;
     }
 
@@ -383,7 +382,6 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
             Error("Entity %i, Brush %i: Only one ORIGIN brush allowed.",
                   b->originalentitynum, b->originalbrushnum);
         }
-        char string[MAXTOKEN];
         vec3_t origin;
 
         b->contents = CONTENTS_SOLID;
@@ -400,8 +398,8 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
             VectorAdd(b->hulls[0].bounds.m_Mins, b->hulls[0].bounds.m_Maxs, origin);
             VectorScale(origin, 0.5, origin);
 
-            safe_snprintf(string, MAXTOKEN, "%i %i %i", (int)origin[0], (int)origin[1], (int)origin[2]);
-            SetKeyValue(&g_entities[b->entitynum], "origin", string);
+            SetKeyValue(&g_entities[b->entitynum], "origin",
+                        StringPrintf("%i %i %i", (int)origin[0], (int)origin[1], (int)origin[2]).c_str());
         }
     }
     if (*ValueForKey(&g_entities[b->entitynum], "zhlt_usemodel"))
@@ -425,7 +423,6 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
             Error("Entity %i, Brush %i: Only one BoundingBox brush allowed.",
                   b->originalentitynum, b->originalbrushnum);
         }
-        char string[MAXTOKEN];
         vec3_t mins, maxs;
         std::optional<std::string> origin;
         if (*ValueForKey(mapent, "origin"))
@@ -448,8 +445,8 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
             VectorCopy(b->hulls[0].bounds.m_Mins, mins);
             VectorCopy(b->hulls[0].bounds.m_Maxs, maxs);
 
-            safe_snprintf(string, MAXTOKEN, "%.0f %.0f %.0f %.0f %.0f %.0f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]);
-            SetKeyValue(&g_entities[b->entitynum], "zhlt_minsmaxs", string);
+            SetKeyValue(&g_entities[b->entitynum], "zhlt_minsmaxs",
+                        StringPrintf("%.0f %.0f %.0f %.0f %.0f %.0f", mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]).c_str());
         }
 
         if (origin)
@@ -707,13 +704,11 @@ static bool ParseMapEntity(Tokenizer &tokens)
                 {
                     double v[3];
                     int origin[3];
-                    char string[MAXTOKEN];
                     GetVectorForKey(mapent, "origin", v);
                     VectorScale(v, ent_gscale, v);
                     for (int i = 0; i < 3; ++i)
                         origin[i] = (int)(v[i] >= 0 ? v[i] + 0.5 : v[i] - 0.5);
-                    safe_snprintf(string, MAXTOKEN, "%d %d %d", origin[0], origin[1], origin[2]);
-                    SetKeyValue(mapent, "origin", string);
+                    SetKeyValue(mapent, "origin", StringPrintf("%d %d %d", origin[0], origin[1], origin[2]).c_str());
                 }
             }
             {
@@ -737,9 +732,8 @@ static bool ParseMapEntity(Tokenizer &tokens)
                             VectorScale(point, ent_gscale, point);
                         }
                     }
-                    char string[MAXTOKEN];
-                    safe_snprintf(string, MAXTOKEN, "%.0f %.0f %.0f %.0f %.0f %.0f", b[0][0], b[0][1], b[0][2], b[1][0], b[1][1], b[1][2]);
-                    SetKeyValue(mapent, "zhlt_minsmaxs", string);
+                    SetKeyValue(mapent, "zhlt_minsmaxs",
+                                StringPrintf("%.0f %.0f %.0f %.0f %.0f %.0f", b[0][0], b[0][1], b[0][2], b[1][0], b[1][1], b[1][2]).c_str());
                 }
             }
         }
@@ -749,9 +743,7 @@ static bool ParseMapEntity(Tokenizer &tokens)
     if (this_entity == 0)
     {
         // Let the map tell which version of the compiler it comes from, to help tracing compiler bugs.
-        char versionstring[128];
-        std::snprintf(versionstring, sizeof(versionstring), "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (%s)", VHLT_BUILD_DATE);
-        SetKeyValue(mapent, "compiler", versionstring);
+        SetKeyValue(mapent, "compiler", "ZHLT " ZHLT_VERSIONSTRING " " HACK_VERSIONSTRING " (" VHLT_BUILD_DATE ")");
     }
 
     if (!std::strcmp(ValueForKey(mapent, "classname"), "info_compile_parameters"))

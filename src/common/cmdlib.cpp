@@ -126,6 +126,30 @@ void CopyPathResult(const std::string &value, char *dest, std::size_t size, cons
     std::memcpy(dest, value.c_str(), value.size() + 1);
 }
 
+std::string StringVPrintf(const char *const format, va_list args)
+{
+    va_list measure;
+    va_copy(measure, args);
+    const int length = std::vsnprintf(nullptr, 0, format, measure);
+    va_end(measure);
+    if (length <= 0)
+    {
+        return {};
+    }
+    std::string text(length, '\0');
+    std::vsnprintf(text.data(), text.size() + 1, format, args); // the +1 is the string's own terminator
+    return text;
+}
+
+std::string StringPrintf(const char *const format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    std::string text = StringVPrintf(format, args);
+    va_end(args);
+    return text;
+}
+
 bool safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...)
 {
     if (count == 0)

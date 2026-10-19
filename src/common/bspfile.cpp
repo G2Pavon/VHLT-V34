@@ -1209,9 +1209,7 @@ void UnparseEntities(bool optimize_named_lights)
                     }
                 }
             }
-            char stmp[1024];
-            safe_snprintf(stmp, 1024, "%g %g %g", vec[0], vec[1], vec[2]);
-            SetKeyValue(mapent, "angles", stmp);
+            SetKeyValue(mapent, "angles", StringPrintf("%g %g %g", vec[0], vec[1], vec[2]).c_str());
             DeleteKey(mapent, "pitch");
 
             if (!std::strcmp(ValueForKey(mapent, "classname"), "info_sunlight"))

@@ -170,8 +170,6 @@ static float totalarea = 0;
 
 void GetParamsFromEnt(entity_t *mapent)
 {
-    char szTmp[256]; //lightdata
-
     Log("\nCompile Settings detected from info_compile_parameters entity\n");
     Log("%30s [ %-9s ]\n", "Compile Option", "setting");
 
@@ -179,8 +177,7 @@ void GetParamsFromEnt(entity_t *mapent)
     if (iTmp > g_max_map_lightdata)                   //--vluzacn
     {
         g_max_map_lightdata = iTmp;
-        safe_snprintf(szTmp, sizeof(szTmp), "%i", g_max_map_lightdata);
-        Log("%30s [ %-9s ]\n", "Lighting Data Memory", szTmp);
+        Log("%30s [ %-9s ]\n", "Lighting Data Memory", std::to_string(g_max_map_lightdata).c_str());
     }
 
     if (IntForKey(mapent, "estimate"))
@@ -1188,12 +1185,11 @@ static void LoadOpaqueEntities()
 {
     for (int modelnum = 0; modelnum < g_nummodels; modelnum++)
     {
-        char stringmodel[16];
-        std::sprintf(stringmodel, "*%i", modelnum);
+        const std::string stringmodel = "*" + std::to_string(modelnum);
         for (int entnum = 0; entnum < g_numentities; entnum++)
         {
             entity_t *ent = &g_entities[entnum];
-            if (std::strcmp(ValueForKey(ent, "model"), stringmodel))
+            if (std::strcmp(ValueForKey(ent, "model"), stringmodel.c_str()))
                 continue;
             vec3_t origin;
             {
@@ -2116,8 +2112,8 @@ static void RadWorld()
 
 static void Settings()
 {
-    char buf1[1024];
-    char buf2[1024];
+    std::string buf1;
+    std::string buf2;
 
     Log("\n-= Current %s Settings =-\n", g_Program);
     Log("Name                | Setting             | Default\n"
@@ -2148,73 +2144,70 @@ static void Settings()
     Log("oversampling (-extra)[ %17s ] [ %17s ]\n", g_extra ? "on" : "off", DEFAULT_EXTRA ? "on" : "off");
     Log("bounces              [ %17d ] [ %17d ]\n", g_numbounce, DEFAULT_BOUNCE);
 
-    safe_snprintf(buf1, sizeof(buf1), "%1.3f %1.3f %1.3f", g_ambient[0], g_ambient[1], g_ambient[2]);
-    safe_snprintf(buf2, sizeof(buf2), "%1.3f %1.3f %1.3f", DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE);
-    Log("ambient light        [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_limitthreshold);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_LIMITTHRESHOLD);
-    Log("light limit threshold[ %17s ] [ %17s ]\n", g_limitthreshold >= 0 ? buf1 : "None", buf2);
+    buf1 = StringPrintf("%1.3f %1.3f %1.3f", g_ambient[0], g_ambient[1], g_ambient[2]);
+    buf2 = StringPrintf("%1.3f %1.3f %1.3f", DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE);
+    Log("ambient light        [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_limitthreshold);
+    buf2 = StringPrintf("%3.3f", DEFAULT_LIMITTHRESHOLD);
+    Log("light limit threshold[ %17s ] [ %17s ]\n", g_limitthreshold >= 0 ? buf1.c_str() : "None", buf2.c_str());
     Log("circus mode          [ %17s ] [ %17s ]\n", g_circus ? "on" : "off", DEFAULT_CIRCUS ? "on" : "off");
 
     Log("\n");
 
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_smoothing_value);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_SMOOTHING_VALUE);
-    Log("smoothing threshold  [ %17s ] [ %17s ]\n", buf1, buf2);
-    const auto smoothing2 = [](char *buf, std::size_t size, float value)
+    buf1 = StringPrintf("%3.3f", g_smoothing_value);
+    buf2 = StringPrintf("%3.3f", DEFAULT_SMOOTHING_VALUE);
+    Log("smoothing threshold  [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    const auto smoothing2 = [](float value)
     {
-        if (value < 0)
-            safe_snprintf(buf, size, "no change");
-        else
-            safe_snprintf(buf, size, "%3.3f", value);
+        return value < 0 ? std::string("no change") : StringPrintf("%3.3f", value);
     };
-    smoothing2(buf1, sizeof(buf1), g_smoothing_value_2);
-    smoothing2(buf2, sizeof(buf2), DEFAULT_SMOOTHING2_VALUE);
-    Log("smoothing threshold 2[ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_dlight_threshold);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_DLIGHT_THRESHOLD);
-    Log("direct threshold     [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_direct_scale);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_DLIGHT_SCALE);
-    Log("direct light scale   [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_coring);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_CORING);
-    Log("coring threshold     [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = smoothing2(g_smoothing_value_2);
+    buf2 = smoothing2(DEFAULT_SMOOTHING2_VALUE);
+    Log("smoothing threshold 2[ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_dlight_threshold);
+    buf2 = StringPrintf("%3.3f", DEFAULT_DLIGHT_THRESHOLD);
+    Log("direct threshold     [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_direct_scale);
+    buf2 = StringPrintf("%3.3f", DEFAULT_DLIGHT_SCALE);
+    Log("direct light scale   [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_coring);
+    buf2 = StringPrintf("%3.3f", DEFAULT_CORING);
+    Log("coring threshold     [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
     Log("\n");
 
     Log("texscale             [ %17s ] [ %17s ]\n", g_texscale ? "on" : "off", DEFAULT_TEXSCALE ? "on" : "off");
     Log("patch subdividing    [ %17s ] [ %17s ]\n", g_subdivide ? "on" : "off", DEFAULT_SUBDIVIDE ? "on" : "off");
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_chop);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_CHOP);
-    Log("chop value           [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_texchop);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TEXCHOP);
-    Log("texchop value        [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_chop);
+    buf2 = StringPrintf("%3.3f", DEFAULT_CHOP);
+    Log("chop value           [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_texchop);
+    buf2 = StringPrintf("%3.3f", DEFAULT_TEXCHOP);
+    Log("texchop value        [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
     Log("\n");
 
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_fade);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_FADE);
-    Log("global fade          [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_texlightgap);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TEXLIGHTGAP);
-    Log("global texlight gap  [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_fade);
+    buf2 = StringPrintf("%3.3f", DEFAULT_FADE);
+    Log("global fade          [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_texlightgap);
+    buf2 = StringPrintf("%3.3f", DEFAULT_TEXLIGHTGAP);
+    Log("global texlight gap  [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
-    safe_snprintf(buf1, sizeof(buf1), "%1.3f %1.3f %1.3f", g_colour_lightscale[0], g_colour_lightscale[1], g_colour_lightscale[2]);
-    safe_snprintf(buf2, sizeof(buf2), "%1.3f %1.3f %1.3f", DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE);
-    Log("global light scale   [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%1.3f %1.3f %1.3f", g_colour_lightscale[0], g_colour_lightscale[1], g_colour_lightscale[2]);
+    buf2 = StringPrintf("%1.3f %1.3f %1.3f", DEFAULT_COLOUR_LIGHTSCALE_RED, DEFAULT_COLOUR_LIGHTSCALE_GREEN, DEFAULT_COLOUR_LIGHTSCALE_BLUE);
+    Log("global light scale   [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
-    safe_snprintf(buf1, sizeof(buf1), "%1.3f %1.3f %1.3f", g_colour_qgamma[0], g_colour_qgamma[1], g_colour_qgamma[2]);
-    safe_snprintf(buf2, sizeof(buf2), "%1.3f %1.3f %1.3f", DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE);
-    Log("global gamma         [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%1.3f %1.3f %1.3f", g_colour_qgamma[0], g_colour_qgamma[1], g_colour_qgamma[2]);
+    buf2 = StringPrintf("%1.3f %1.3f %1.3f", DEFAULT_COLOUR_GAMMA_RED, DEFAULT_COLOUR_GAMMA_GREEN, DEFAULT_COLOUR_GAMMA_BLUE);
+    Log("global gamma         [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_lightscale);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_LIGHTSCALE);
-    Log("global light scale   [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_lightscale);
+    buf2 = StringPrintf("%3.3f", DEFAULT_LIGHTSCALE);
+    Log("global light scale   [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_indirect_sun);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_INDIRECT_SUN);
-    Log("global sky diffusion [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_indirect_sun);
+    buf2 = StringPrintf("%3.3f", DEFAULT_INDIRECT_SUN);
+    Log("global sky diffusion [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
     Log("\n");
     Log("spread angles        [ %17s ] [ %17s ]\n", g_allow_spread ? "on" : "off", DEFAULT_ALLOW_SPREAD ? "on" : "off");
@@ -2227,27 +2220,27 @@ static void Settings()
     Log("rgb transfers        [ %17s ] [ %17s ]\n", g_rgb_transfers ? "on" : "off", DEFAULT_RGB_TRANSFERS ? "on" : "off");
 
     Log("minimum final light  [ %17d ] [ %17d ]\n", (int)g_minlight, (int)DEFAULT_MINLIGHT);
-    std::sprintf(buf1, "%d (%s)", g_transfer_compress_type, float_type_string[g_transfer_compress_type]);
-    std::sprintf(buf2, "%d (%s)", DEFAULT_TRANSFER_COMPRESS_TYPE, float_type_string[DEFAULT_TRANSFER_COMPRESS_TYPE]);
-    Log("size of transfer     [ %17s ] [ %17s ]\n", buf1, buf2);
-    std::sprintf(buf1, "%d (%s)", g_rgbtransfer_compress_type, vector_type_string[g_rgbtransfer_compress_type]);
-    std::sprintf(buf2, "%d (%s)", DEFAULT_RGBTRANSFER_COMPRESS_TYPE, vector_type_string[DEFAULT_RGBTRANSFER_COMPRESS_TYPE]);
-    Log("size of rgbtransfer  [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%d (%s)", g_transfer_compress_type, float_type_string[g_transfer_compress_type]);
+    buf2 = StringPrintf("%d (%s)", DEFAULT_TRANSFER_COMPRESS_TYPE, float_type_string[DEFAULT_TRANSFER_COMPRESS_TYPE]);
+    Log("size of transfer     [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%d (%s)", g_rgbtransfer_compress_type, vector_type_string[g_rgbtransfer_compress_type]);
+    buf2 = StringPrintf("%d (%s)", DEFAULT_RGBTRANSFER_COMPRESS_TYPE, vector_type_string[DEFAULT_RGBTRANSFER_COMPRESS_TYPE]);
+    Log("size of rgbtransfer  [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
     Log("soft sky             [ %17s ] [ %17s ]\n", g_softsky ? "on" : "off", DEFAULT_SOFTSKY ? "on" : "off");
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_translucentdepth);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TRANSLUCENTDEPTH);
-    Log("translucent depth    [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_translucentdepth);
+    buf2 = StringPrintf("%3.3f", DEFAULT_TRANSLUCENTDEPTH);
+    Log("translucent depth    [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
     Log("block opaque         [ %17s ] [ %17s ]\n", g_blockopaque ? "on" : "off", DEFAULT_BLOCKOPAQUE ? "on" : "off");
     Log("ignore textures      [ %17s ] [ %17s ]\n", g_notextures ? "on" : "off", DEFAULT_NOTEXTURES ? "on" : "off");
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_texreflectgamma);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TEXREFLECTGAMMA);
-    Log("reflectivity gamma   [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_texreflectscale);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_TEXREFLECTSCALE);
-    Log("reflectivity scale   [ %17s ] [ %17s ]\n", buf1, buf2);
-    safe_snprintf(buf1, sizeof(buf1), "%3.3f", g_blur);
-    safe_snprintf(buf2, sizeof(buf2), "%3.3f", DEFAULT_BLUR);
-    Log("blur size            [ %17s ] [ %17s ]\n", buf1, buf2);
+    buf1 = StringPrintf("%3.3f", g_texreflectgamma);
+    buf2 = StringPrintf("%3.3f", DEFAULT_TEXREFLECTGAMMA);
+    Log("reflectivity gamma   [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_texreflectscale);
+    buf2 = StringPrintf("%3.3f", DEFAULT_TEXREFLECTSCALE);
+    Log("reflectivity scale   [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
+    buf1 = StringPrintf("%3.3f", g_blur);
+    buf2 = StringPrintf("%3.3f", DEFAULT_BLUR);
+    Log("blur size            [ %17s ] [ %17s ]\n", buf1.c_str(), buf2.c_str());
 
     Log("\n\n");
 }
