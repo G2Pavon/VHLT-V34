@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <cmath>
 #include <cerrno>
 #include <optional>
@@ -824,9 +825,6 @@ static std::optional<std::string> FindWadValue()
     return std::nullopt;
 }
 
-#define ENTRIES(a) (sizeof(a) / sizeof(*(a)))
-#define ENTRYSIZE(a) (sizeof(*(a)))
-
 static int ArrayUsage(const char *const szItem, const int items, const int maxitems, const int itemsize)
 {
     float percentage = maxitems ? items * 100.0 / maxitems : 0.0;
@@ -860,19 +858,19 @@ void PrintBSPFileSizes()
     Log("Object names  Objects/Maxobjs  Memory / Maxmem  Fullness\n");
     Log("------------  ---------------  ---------------  --------\n");
 
-    totalmemory += ArrayUsage("models", g_nummodels, ENTRIES(g_dmodels), ENTRYSIZE(g_dmodels));
-    totalmemory += ArrayUsage("planes", g_numplanes, MAX_MAP_PLANES, ENTRYSIZE(g_dplanes));
-    totalmemory += ArrayUsage("vertexes", g_numvertexes, ENTRIES(g_dvertexes), ENTRYSIZE(g_dvertexes));
-    totalmemory += ArrayUsage("nodes", g_numnodes, ENTRIES(g_dnodes), ENTRYSIZE(g_dnodes));
-    totalmemory += ArrayUsage("texinfos", g_numtexinfo, MAX_MAP_TEXINFO, ENTRYSIZE(g_texinfo));
-    totalmemory += ArrayUsage("faces", g_numfaces, ENTRIES(g_dfaces), ENTRYSIZE(g_dfaces));
+    totalmemory += ArrayUsage("models", g_nummodels, std::size(g_dmodels), sizeof(g_dmodels[0]));
+    totalmemory += ArrayUsage("planes", g_numplanes, MAX_MAP_PLANES, sizeof(g_dplanes[0]));
+    totalmemory += ArrayUsage("vertexes", g_numvertexes, std::size(g_dvertexes), sizeof(g_dvertexes[0]));
+    totalmemory += ArrayUsage("nodes", g_numnodes, std::size(g_dnodes), sizeof(g_dnodes[0]));
+    totalmemory += ArrayUsage("texinfos", g_numtexinfo, MAX_MAP_TEXINFO, sizeof(g_texinfo[0]));
+    totalmemory += ArrayUsage("faces", g_numfaces, std::size(g_dfaces), sizeof(g_dfaces[0]));
     totalmemory += ArrayUsage("* worldfaces", (g_nummodels > 0 ? g_dmodels[0].numfaces : 0), MAX_MAP_WORLDFACES, 0);
-    totalmemory += ArrayUsage("clipnodes", g_numclipnodes, ENTRIES(g_dclipnodes), ENTRYSIZE(g_dclipnodes));
-    totalmemory += ArrayUsage("leaves", g_numleafs, MAX_MAP_LEAFS, ENTRYSIZE(g_dleafs));
+    totalmemory += ArrayUsage("clipnodes", g_numclipnodes, std::size(g_dclipnodes), sizeof(g_dclipnodes[0]));
+    totalmemory += ArrayUsage("leaves", g_numleafs, MAX_MAP_LEAFS, sizeof(g_dleafs[0]));
     totalmemory += ArrayUsage("* worldleaves", (g_nummodels > 0 ? g_dmodels[0].visleafs : 0), MAX_MAP_LEAFS_ENGINE, 0);
-    totalmemory += ArrayUsage("marksurfaces", g_nummarksurfaces, ENTRIES(g_dmarksurfaces), ENTRYSIZE(g_dmarksurfaces));
-    totalmemory += ArrayUsage("surfedges", g_numsurfedges, ENTRIES(g_dsurfedges), ENTRYSIZE(g_dsurfedges));
-    totalmemory += ArrayUsage("edges", g_numedges, ENTRIES(g_dedges), ENTRYSIZE(g_dedges));
+    totalmemory += ArrayUsage("marksurfaces", g_nummarksurfaces, std::size(g_dmarksurfaces), sizeof(g_dmarksurfaces[0]));
+    totalmemory += ArrayUsage("surfedges", g_numsurfedges, std::size(g_dsurfedges), sizeof(g_dsurfedges[0]));
+    totalmemory += ArrayUsage("edges", g_numedges, std::size(g_dedges), sizeof(g_dedges[0]));
 
     totalmemory += GlobUsage("texdata", g_texdatasize, g_max_map_miptex);
     totalmemory += GlobUsage("lightdata", g_lightdatasize, g_max_map_lightdata);

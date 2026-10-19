@@ -17,9 +17,6 @@
 #error you must add -dDOUBLEVEC_T to the project!
 #endif
 
-// AJM: added in
-#define UNLESS(a) if (!(a))
-
 #define BOGUS_RANGE 65534
 
 constexpr int MAX_HULLSHAPES = 128; // arbitrary
@@ -218,7 +215,6 @@ extern bool g_onlyents;
 extern bool g_wadtextures;
 extern bool g_skyclip;
 
-#define EnumPrint(a) #a
 typedef enum
 {
     clip_smallest,
