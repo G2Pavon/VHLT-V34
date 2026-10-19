@@ -657,7 +657,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
             unsigned char (*right)[CQ_DIM];
             left = &bestnode->refpoints[0];
             right = &bestnode->refpoints[bestnode->numpoints - 1];
-            while (1)
+            while (true)
             {
                 while ((*left)[splitaxis] < splitdist)
                 {
@@ -717,7 +717,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
 
     numcolors_out = 0;
     n = &nodes[0];
-    while (1)
+    while (true)
     {
         while (!n->isleafnode)
         {

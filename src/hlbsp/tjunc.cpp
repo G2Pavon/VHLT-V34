@@ -248,7 +248,7 @@ static void AddVert(const wedge_t *const w, const vec_t t)
             break;
         }
         v = v->next;
-    } while (1);
+    } while (true);
 
     // insert a new wvert before v
     hlassume(numwverts < MAX_WVERTS, assume_MAX_WVERTS);
@@ -405,7 +405,7 @@ static void SplitFaceForTjunc(SuperFace &sf, face_t *original)
             VectorCopy(sf.pts[i], sf.pts[i - (newface->numpoints - 2)]);
         }
         sf.face.numpoints -= (newface->numpoints - 2);
-    } while (1);
+    } while (true);
 }
 
 static void FixFaceEdges(face_t *f)

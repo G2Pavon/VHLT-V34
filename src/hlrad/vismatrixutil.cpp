@@ -103,7 +103,7 @@ void MakeScales(int /*threadnum*/)
 
     int count = 0;
 
-    while (1)
+    while (true)
     {
         int i = GetThreadWork();
         if (i == -1)
@@ -316,7 +316,7 @@ void MakeRGBScales(int /*threadnum*/)
 
     int count = 0;
 
-    while (1)
+    while (true)
     {
         int i = GetThreadWork();
         if (i == -1)

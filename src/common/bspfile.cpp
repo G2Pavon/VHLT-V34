@@ -1048,7 +1048,7 @@ EntityKeyValue ParseEpair(Tokenizer &tokens)
 
 void ParseEntityKeys(Tokenizer &tokens, entity_t *mapent)
 {
-    while (1)
+    while (true)
     {
         if (!tokens.Next(true))
         {

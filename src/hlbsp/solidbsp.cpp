@@ -1326,7 +1326,7 @@ static void CopyFacesToNode(node_t *node, surface_t *surf)
 
     // subdivide large faces
     face_t **prevptr = &surf->faces;
-    while (1)
+    while (true)
     {
         face_t *f = *prevptr;
         if (!f)

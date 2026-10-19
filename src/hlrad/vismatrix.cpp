@@ -117,7 +117,7 @@ static void BuildVisLeafs(int /*threadnum*/)
 {
     byte pvs[(MAX_MAP_LEAFS + 7) / 8];
 
-    while (1)
+    while (true)
     {
         //
         // build a minimal BSP tree that only

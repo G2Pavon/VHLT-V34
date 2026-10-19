@@ -589,7 +589,7 @@ void BasePortalVis(int /*threadnum*/)
     const int portalsize = (g_numportals * 2);
     std::vector<byte> portalsee(portalsize); // was byte[PORTALSEE_SIZE], cleared with portalsize unchecked
 
-    while (1)
+    while (true)
     {
         int i = GetThreadWork();
         if (i == -1)
@@ -895,7 +895,7 @@ void MaxDistVis(int /*threadnum*/)
     unsigned j;
     leaf_t *tl;
 
-    while (1)
+    while (true)
     {
         int i = GetThreadWork();
         if (i == -1)

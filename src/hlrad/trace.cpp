@@ -602,7 +602,7 @@ int TestPointOpaque_r(int nodenum, bool solid, const vec3_t point)
 {
     opaquenode_t *thisnode;
     vec_t dist;
-    while (1)
+    while (true)
     {
         if (nodenum < 0)
         {

@@ -520,7 +520,7 @@ static bool ParseMapEntity(Tokenizer &tokens)
     mapent->firstbrush = g_nummapbrushes;
     mapent->numbrushes = 0;
 
-    while (1)
+    while (true)
     {
         if (!tokens.Next(true))
             Error("ParseEntity: EOF without closing brace");

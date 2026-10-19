@@ -841,7 +841,7 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
                 }
             }
 
-            while (1)
+            while (true)
             {
                 for (vertex = vertexes.begin(); vertex != vertexes.end(); vertex++)
                 {
@@ -1306,7 +1306,7 @@ static bool CalculateCircle(bbrink_t *b, bcircle_t *c)
         c->wedges[side][0].nodenum = b->nodes[0].children[side];
         c->surfaces[side][0].nodenum = 0;
         c->surfaces[side][0].nodeside = !side;
-        while (1)
+        while (true)
         {
             int i;
             for (i = 0; i < c->numwedges[side]; i++)

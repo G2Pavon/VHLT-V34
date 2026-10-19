@@ -35,7 +35,7 @@ void RemovePortalFromNode(portal_t *portal, node_t *l)
 
     // remove reference to the current portal
     portal_t **pp = &l->portals;
-    while (1)
+    while (true)
     {
         portal_t *t = *pp;
         if (!t)

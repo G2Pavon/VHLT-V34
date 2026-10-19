@@ -1608,7 +1608,7 @@ static void GatherLight(int /*threadnum*/)
     vec3_t adds[ALLSTYLES];
     unsigned int fastfind_index;
 
-    while (1)
+    while (true)
     {
         int j = GetThreadWork();
         if (j == -1)
@@ -1745,7 +1745,7 @@ static void GatherRGBLight(int /*threadnum*/)
     vec3_t adds[ALLSTYLES];
     unsigned int fastfind_index;
 
-    while (1)
+    while (true)
     {
         int j = GetThreadWork();
         if (j == -1)

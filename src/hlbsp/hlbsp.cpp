@@ -732,7 +732,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
     int line = 0;
 
     // read in the polygons
-    while (1)
+    while (true)
     {
         if (file == polyfiles[2] && g_nohull2)
             break;
@@ -825,7 +825,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
 static brush_t *ReadBrushes(std::FILE *file)
 {
     brush_t *brushes = nullptr;
-    while (1)
+    while (true)
     {
         if (file == brushfiles[2] && g_nohull2)
             break;
@@ -850,7 +850,7 @@ static brush_t *ReadBrushes(std::FILE *file)
         b->next = brushes;
         brushes = b;
         side_t **psn = &b->sides;
-        while (1)
+        while (true)
         {
             int planenum;
             int numpoints;
