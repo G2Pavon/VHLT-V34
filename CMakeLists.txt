@@ -10,7 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
-    add_compile_options(/W4)
+    # MSVC warnings the sources were never written against (these were #pragma warning lines in
+    # common/cmdlib.h and common/boundingbox.h): deprecated CRT, constant conditions, type in
+    # parentheses, narrowing and double-to-float conversions, long identifiers, int-to-bool.
+    add_compile_options(/W4 /wd4996 /wd4127 /wd4115 /wd4244 /wd4786 /wd4305 /wd4800)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -37,7 +40,6 @@ if (MSVC)
 endif()
 
 set(COMMON_SOURCES
-    src/common/blockmem.cpp
     src/common/bspfile.cpp
     src/common/cmdlib.cpp
     src/common/cmdline.cpp

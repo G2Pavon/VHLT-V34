@@ -61,10 +61,9 @@ TEST_SUITE("winding")
         Winding c(w);
         c.m_Points[0][0] = 99;
         CHECK(w.m_Points[0][0] == 0);
-        Winding *p = w.Copy();
+        const std::unique_ptr<Winding> p = w.Copy();
         CHECK(p->m_NumPoints == 4);
         CHECK(p->m_Points != w.m_Points);
-        delete p;
         Winding a;
         a = w;
         CHECK(a.m_NumPoints == 4);

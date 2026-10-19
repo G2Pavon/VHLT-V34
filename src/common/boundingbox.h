@@ -3,10 +3,6 @@
 // (see LPGL.txt, or http://www.gnu.org/copyleft/lesser.txt)
 
 #pragma once
-// AJM:
-#ifdef _MSC_VER
-#pragma warning(disable : 4305) // truncation from 'const double' to 'float'
-#endif
 
 #include "common/mathlib.h"
 

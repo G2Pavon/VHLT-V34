@@ -21,7 +21,7 @@ bface_t *CopyFaceList(const bface_t *faces)
         n->plane = f->plane;
         if (f->w)
         {
-            n->w.reset(f->w->Copy());
+            n->w = f->w->Copy();
         }
         n->texinfo = f->texinfo;
         n->contents = f->contents;

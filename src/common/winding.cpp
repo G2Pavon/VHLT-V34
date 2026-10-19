@@ -122,9 +122,9 @@ void Winding::getCenter(vec3_t &center) const
     }
 }
 
-Winding *Winding::Copy() const
+std::unique_ptr<Winding> Winding::Copy() const
 {
-    return new Winding(*this);
+    return std::make_unique<Winding>(*this);
 }
 
 void Winding::Check(vec_t epsilon) const

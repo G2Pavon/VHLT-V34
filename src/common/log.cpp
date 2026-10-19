@@ -23,12 +23,12 @@ static thread_local LogCapture *t_capture = nullptr;
 
 void CaptureWriteLog(const char *message)
 {
-    t_capture->m_events.push_back({false, message});
+    t_capture->m_events.push_back({false, message, {}});
 }
 
 void CaptureLogError(const char *message)
 {
-    t_capture->m_events.push_back({true, message});
+    t_capture->m_events.push_back({true, message, {}});
 }
 
 ScopedLogCapture::ScopedLogCapture(LogCapture &capture) : m_previous(t_capture)

@@ -7,7 +7,6 @@
 
 #include "hlcsg/hlcsg.h"
 #include "hlcsg/planeindex.h"
-#include "common/blockmem.h"
 #include "common/threads.h"
 #include "common/bspfile.h"
 #include "common/mathtypes.h"

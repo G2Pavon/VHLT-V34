@@ -56,7 +56,7 @@ class Winding
     void getBounds(BoundingBox &bounds) const;
     void getBounds(vec3_t &mins, vec3_t &maxs) const;
     void getCenter(vec3_t &center) const;
-    Winding *Copy() const;
+    std::unique_ptr<Winding> Copy() const;
     void Check(vec_t epsilon = ON_EPSILON) const; // Developer check for validity
     bool Valid() const;                           // Runtime/user/normal check for validity
     void addPoint(const vec3_t newpoint);

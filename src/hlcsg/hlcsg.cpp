@@ -15,7 +15,6 @@
 #include <cmath>
 
 #include "hlcsg/ansitoutf8.h"
-#include "common/blockmem.h"
 #include "common/bspfile.h"
 #include "common/cmdlib.h"
 #include "common/cmdline.h"
@@ -381,7 +380,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
 static bface_t *CopyFace(const bface_t *const f)
 {
     bface_t *n = NewFaceFromFace(f);
-    n->w.reset(f->w->Copy());
+    n->w = f->w->Copy();
     n->bounds = f->bounds;
     return n;
 }

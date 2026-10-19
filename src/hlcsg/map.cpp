@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "common/cmdlib.h"
-#include "common/blockmem.h"
 #include "common/filelib.h"
 #include "common/bspfile.h"
 #include "common/log.h"

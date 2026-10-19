@@ -1,16 +1,5 @@
 #pragma once
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4996)
-#pragma warning(disable : 4127) // conditional expression is constant
-#pragma warning(disable : 4115) // named type definition in parentheses
-#pragma warning(disable : 4244) // conversion from 'type' to type', possible loss of data
-// AJM
-#pragma warning(disable : 4786) // identifier was truncated to '255' characters in the browser information
-#pragma warning(disable : 4305) // truncation from 'const double' to 'float'
-#pragma warning(disable : 4800) // forcing value to bool 'true' or 'false' (performance warning)
-#endif
-
 #include <cstddef>
 #include <string>
 #include <string_view>
