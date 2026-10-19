@@ -227,17 +227,20 @@ static void LoadTexture(radtexture_t *tex, const miptex_t &header, const byte *d
     {
         Error("Texture '%s': dimension (%dx%d) is not multiple of %d.", tex->name, tex->width, tex->height, 2 * (1 << (MIPLEVELS - 1)));
     }
-    int mipsize;
+    // 64-bit: the dimensions come from the file, and an int mipsize could overflow, wrap past the
+    // offset and size checks below and let the canvas copy run out of bounds. Once size covers
+    // mipsize, width * height fits in int.
+    long long mipsize;
     int i;
     for (mipsize = 0, i = 0; i < MIPLEVELS; i++)
     {
-        if ((int)mt->offsets[i] != (int)sizeof(miptex_t) + mipsize)
+        if ((long long)mt->offsets[i] != (long long)sizeof(miptex_t) + mipsize)
         {
             Error("Texture '%s': unexpected miptex offset.", tex->name);
         }
-        mipsize += (tex->width >> i) * (tex->height >> i);
+        mipsize += (long long)(tex->width >> i) * (tex->height >> i);
     }
-    if (size < (int)sizeof(miptex_t) + mipsize + 2 + 256 * 3)
+    if (size < (long long)sizeof(miptex_t) + mipsize + 2 + 256 * 3)
     {
         Error("Texture '%s': no enough data.", tex->name);
     }
