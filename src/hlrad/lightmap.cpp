@@ -1726,7 +1726,7 @@ void CreateDirectLights()
 
                 GetVectorForKey(e, "angles", vAngles);
 
-                float angle = (float)FloatForKey(e, "angle");
+                auto angle = (float)FloatForKey(e, "angle");
                 if (angle == ANGLE_UP)
                 {
                     dl->normal[0] = dl->normal[1] = 0;

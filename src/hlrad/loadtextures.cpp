@@ -48,8 +48,8 @@ bool g_wadfiles_opened;
 
 static int lump_sorter_by_name(const void *lump1, const void *lump2)
 {
-    lumpinfo_t *plump1 = (lumpinfo_t *)lump1;
-    lumpinfo_t *plump2 = (lumpinfo_t *)lump2;
+    auto *plump1 = (lumpinfo_t *)lump1;
+    auto *plump2 = (lumpinfo_t *)lump2;
     return strcasecmp(plump1->name, plump2->name);
 }
 
@@ -277,7 +277,7 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t &header)
     {
         lumpinfo_t temp;
         std::strcpy(temp.name, tex->name);
-        const lumpinfo_t *found = (const lumpinfo_t *)bsearch(&temp, wad->lumpinfos.data(), wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
+        const auto *found = (const lumpinfo_t *)bsearch(&temp, wad->lumpinfos.data(), wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
         if (found)
         {
             if (found->type != 67 || found->compression != 0)
@@ -823,7 +823,7 @@ static std::vector<std::vector<byte>> g_newtextures; // miptex records, at most 
 
 static int NewTextures_GetCurrentMiptexIndex()
 {
-    dmiptexlump_t *texdata = (dmiptexlump_t *)g_dtexdata;
+    auto *texdata = (dmiptexlump_t *)g_dtexdata;
     return texdata->nummiptex + (int)g_newtextures.size();
 }
 
@@ -845,7 +845,7 @@ static void NewTextures_Write()
         return;
     }
 
-    dmiptexlump_t *texdata = (dmiptexlump_t *)g_dtexdata;
+    auto *texdata = (dmiptexlump_t *)g_dtexdata;
 
     byte *dataaddr = (byte *)&texdata->dataofs[texdata->nummiptex];
     int datasize = (g_dtexdata + g_texdatasize) - dataaddr;
@@ -1318,7 +1318,7 @@ void EmbedLightmapInTextures()
         }
         miptexsize += 2 + 256 * 3 + 2;
         std::vector<byte> miptexstorage(miptexsize);
-        miptex_t *miptex = (miptex_t *)miptexstorage.data();
+        auto *miptex = (miptex_t *)miptexstorage.data();
 
         std::memset(miptex, 0, sizeof(miptex_t));
         miptex->width = texturesize[0];

@@ -376,7 +376,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         frontcount += surfacetree->result.frontsize;
         backcount += surfacetree->result.backsize;
         for (
-            std::vector<face_t *>::iterator it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
+            auto it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
         {
             face_t *f = *it;
             if (f->facestyle == face_discardable)
@@ -470,7 +470,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
         {
             frontcount += surfacetree->result.frontsize;
             backcount += surfacetree->result.backsize;
-            for (std::vector<face_t *>::iterator it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
+            for (auto it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
             {
                 face_t *f = *it;
                 if (f->planenum == p->planenum || f->planenum == (p->planenum ^ 1))

@@ -349,7 +349,7 @@ static void ValidateReferences()
 void LoadBSPFile(const char *const filename)
 {
     const std::vector<char> file = ReadFile(filename);
-    const long long filesize = static_cast<long long>(file.size());
+    const auto filesize = static_cast<long long>(file.size());
 
     if (file.size() < sizeof(dheader_t))
     {

@@ -357,7 +357,7 @@ using texlight_i = std::vector<texlight_t>::iterator;
 
 static void LightForTexture(const char *const name, vec3_t result)
 {
-    for (texlight_i it = s_texlights.begin(); it != s_texlights.end(); it++)
+    for (auto it = s_texlights.begin(); it != s_texlights.end(); it++)
     {
         if (!strcasecmp(name, it->name.c_str()))
         {
@@ -1499,8 +1499,8 @@ static void MakePatches()
 
 static int patch_sorter(const void *p1, const void *p2)
 {
-    patch_t *patch1 = (patch_t *)p1;
-    patch_t *patch2 = (patch_t *)p2;
+    auto *patch1 = (patch_t *)p1;
+    auto *patch2 = (patch_t *)p2;
 
     if (patch1->faceNumber < patch2->faceNumber)
     {

@@ -87,7 +87,7 @@ inline unsigned int float_istoosmall(unsigned int i)
 
 inline void float_compress(float_type t, void *s, const float *f)
 {
-    const unsigned int p = std::bit_cast<unsigned int>(*f);
+    const auto p = std::bit_cast<unsigned int>(*f);
     unsigned int m;
     switch (t)
     {
@@ -151,10 +151,10 @@ inline void float_decompress(float_type t, const void *s, float *f)
 
 inline void vector_compress(vector_type t, void *s, const float *f1, const float *f2, const float *f3)
 {
-    unsigned char *b = static_cast<unsigned char *>(s);
-    const unsigned int p1 = std::bit_cast<unsigned int>(*f1);
-    const unsigned int p2 = std::bit_cast<unsigned int>(*f2);
-    const unsigned int p3 = std::bit_cast<unsigned int>(*f3);
+    auto *b = static_cast<unsigned char *>(s);
+    const auto p1 = std::bit_cast<unsigned int>(*f1);
+    const auto p2 = std::bit_cast<unsigned int>(*f2);
+    const auto p3 = std::bit_cast<unsigned int>(*f3);
     unsigned int m0, m1, max, i1, i2, i3;
     switch (t)
     {
@@ -214,7 +214,7 @@ inline void vector_compress(vector_type t, void *s, const float *f1, const float
 
 inline void vector_decompress(vector_type t, const void *s, float *f1, float *f2, float *f3)
 {
-    const unsigned char *b = static_cast<const unsigned char *>(s);
+    const auto *b = static_cast<const unsigned char *>(s);
     const unsigned int m0 = load32(b);
     switch (t)
     {
@@ -249,7 +249,7 @@ inline void vector_decompress(vector_type t, const void *s, float *f1, float *f2
             p3 = bitput(1, 16) | bitput(bitget(m0, 12, 18), 17) | bitput(bitget(m0, 18, 23), 23) | bitput(3, 28);
             e = bitput(bitget(m0, 18, 23), 23) | bitput(3, 28);
         }
-        const float f = std::bit_cast<float>(e);
+        const auto f = std::bit_cast<float>(e);
         *f1 = (std::bit_cast<float>(p1) - f) * 2.f;
         *f2 = (std::bit_cast<float>(p2) - f) * 2.f;
         *f3 = (std::bit_cast<float>(p3) - f) * 2.f;

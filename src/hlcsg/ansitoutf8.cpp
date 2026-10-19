@@ -50,7 +50,7 @@ std::string ANSItoUTF8(const char *string)
 
     for (const char *p = string; *p; ++p)
     {
-        uint8_t c = static_cast<uint8_t>(*p);
+        auto c = static_cast<uint8_t>(*p);
 
         if (c < 0x80)
         {
@@ -74,7 +74,7 @@ bool IsValidUTF8(const char *string)
     if (!string)
         return true;
 
-    const unsigned char *bytes = reinterpret_cast<const unsigned char *>(string);
+    const auto *bytes = reinterpret_cast<const unsigned char *>(string);
     while (*bytes)
     {
         if (bytes[0] < 0x80) // ASCII 1-byte (0xxxxxxx)

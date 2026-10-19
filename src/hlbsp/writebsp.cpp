@@ -29,7 +29,7 @@ static int WritePlane(int planenum)
 {
     planenum = planenum & (~1);
 
-    PlaneMap::iterator item = gPlaneMap.find(planenum);
+    auto item = gPlaneMap.find(planenum);
     if (item != gPlaneMap.end())
     {
         return item->second;
@@ -49,7 +49,7 @@ static int WriteTexinfo(int texinfo)
         Error("Bad texinfo number %d.\n", texinfo);
     }
 
-    texinfomap_t::iterator it = g_texinfomap.find(texinfo);
+    auto it = g_texinfomap.find(texinfo);
     if (it != g_texinfomap.end())
     {
         return it->second;
@@ -448,7 +448,7 @@ void BeginBSPFile()
 // Drops textures no texinfo uses and renumbers the rest (part of FinishBSPFile).
 static void ReduceTexdata()
 {
-    dmiptexlump_t *l = (dmiptexlump_t *)g_dtexdata;
+    auto *l = (dmiptexlump_t *)g_dtexdata;
     int &g_nummiptex = l->nummiptex;
     // (were malloc'ed: malloc(0) for a map without textures could fail the out-of-memory check)
     std::vector<bool> Used(g_nummiptex);
@@ -502,7 +502,7 @@ static void ReduceTexdata()
             continue;
         if (Used[i] == true)
         {
-            miptex_t *m = (miptex_t *)((byte *)l + l->dataofs[i]);
+            auto *m = (miptex_t *)((byte *)l + l->dataofs[i]);
             if (m->name[0] != '+' && m->name[0] != '-')
                 continue;
             safe_strncpy(name, m->name, MAX_TEXTURE_NAME_LENGTH);
@@ -518,7 +518,7 @@ static void ReduceTexdata()
                 {
                     if (l->dataofs[k] < 0)
                         continue;
-                    miptex_t *m2 = (miptex_t *)((byte *)l + l->dataofs[k]);
+                    auto *m2 = (miptex_t *)((byte *)l + l->dataofs[k]);
                     if (!strcasecmp(name, m2->name))
                         Used[k] = true;
                 }

@@ -1198,7 +1198,7 @@ static void BoundWorld()
 static void DumpWadinclude()
 {
     Log("Wadinclude list :\n");
-    for (WadInclude_i it = g_WadInclude.begin(); it != g_WadInclude.end(); it++)
+    for (auto it = g_WadInclude.begin(); it != g_WadInclude.end(); it++)
     {
         Log("[%s]\n", it->c_str());
     }

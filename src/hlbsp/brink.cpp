@@ -83,7 +83,7 @@ struct bbrink_t
 
 static bbrink_t *CopyBrink(bbrink_t *other)
 {
-    bbrink_t *b = new bbrink_t{};
+    auto *b = new bbrink_t{};
     VectorCopy(other->direction, b->direction);
     VectorCopy(other->start, b->start);
     VectorCopy(other->stop, b->stop);
@@ -99,7 +99,7 @@ void DeleteBrink(bbrink_t *b)
 
 bbrink_t *CreateBrink(vec3_t start, vec3_t stop)
 {
-    bbrink_t *b = new bbrink_t{};
+    auto *b = new bbrink_t{};
 
     VectorCopy(start, b->start);
     VectorCopy(stop, b->stop);
@@ -296,7 +296,7 @@ struct BySerial
 static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreepoint_t *tp = new btreepoint_t{};
+    auto *tp = new btreepoint_t{};
     tp->infinite = infinite;
     tp->serial = s_treeserial++;
     return tp;
@@ -305,7 +305,7 @@ static btreepoint_t *AllocTreepoint(int &numobjects, bool infinite)
 static btreeedge_t *AllocTreeedge(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeedge_t *te = new btreeedge_t{};
+    auto *te = new btreeedge_t{};
     te->points[0].p = nullptr;
     te->points[0].side = false;
     te->points[1].p = nullptr;
@@ -345,7 +345,7 @@ static void SetEdgePoints(btreeedge_t *te, btreepoint_t *tp0, btreepoint_t *tp1)
 static btreeface_t *AllocTreeface(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeface_t *tf = new btreeface_t{};
+    auto *tf = new btreeface_t{};
     tf->leafs[0].l = nullptr;
     tf->leafs[0].side = false;
     tf->leafs[1].l = nullptr;
@@ -401,7 +401,7 @@ static void SetFaceLeafs(btreeface_t *tf, btreeleaf_t *tl0, btreeleaf_t *tl1)
 static btreeleaf_t *AllocTreeleaf(int &numobjects, bool infinite)
 {
     numobjects++;
-    btreeleaf_t *tl = new btreeleaf_t{};
+    auto *tl = new btreeleaf_t{};
     tl->infinite = infinite;
     return tl;
 }
@@ -500,7 +500,7 @@ static btreepoint_t *GetPointFromEdge(btreeedge_t *te, bool side)
 
 static void RemoveEdgeFromList(btreeedge_l &el, btreeedge_t *te, bool side)
 {
-    for (btreeedge_l::iterator ei = el.begin(); ei != el.end(); ei++)
+    for (auto ei = el.begin(); ei != el.end(); ei++)
     {
         if (ei->e == te && ei->side == side)
         {
@@ -537,7 +537,7 @@ static void DeletePoint(int &numobjects, btreepoint_t *tp)
 
 static void RemoveFaceFromList(btreeface_l &fl, btreeface_t *tf, bool side)
 {
-    for (btreeface_l::iterator fi = fl.begin(); fi != fl.end(); fi++)
+    for (auto fi = fl.begin(); fi != fl.end(); fi++)
     {
         if (fi->f == tf && fi->side == side)
         {
@@ -1181,9 +1181,9 @@ static void ClearMarks_r(bclipnode_t *node)
 {
     if (node->isleaf)
     {
-        for (btreeface_l::iterator fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
+        for (auto fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
         {
-            for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+            for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
             {
                 ei->e->tmp_tested = false;
             }
@@ -1200,9 +1200,9 @@ static void CollectBrinks_r(bclipnode_t *node, int &numbrinks, bbrink_t **brinks
 {
     if (node->isleaf)
     {
-        for (btreeface_l::iterator fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
+        for (auto fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
         {
-            for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+            for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
             {
                 if (ei->e->tmp_tested)
                 {
@@ -1394,9 +1394,9 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
         return false;
     }
     bool onback = false;
-    for (btreeface_l::iterator fi = clipnode->treeleaf->faces.begin(); fi != clipnode->treeleaf->faces.end(); fi++)
+    for (auto fi = clipnode->treeleaf->faces.begin(); fi != clipnode->treeleaf->faces.end(); fi++)
     {
-        for (btreeedge_l::iterator ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+        for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
         {
             for (int side = 0; side < 2; side++)
             {
@@ -1418,7 +1418,7 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
     {
         return false; // the whole leaf is on the plane, or the leaf doesn't consist of any vertex
     }
-    bpartition_t *p = new bpartition_t{};
+    auto *p = new bpartition_t{};
     p->next = clipnode->partitions;
     p->planenum = planenum;
     p->planeside = planeside;
@@ -1537,9 +1537,9 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 {
                     continue;
                 }
-                for (btreeedge_l::iterator ei = tp->edges.begin(); ei != tp->edges.end(); ei++)
+                for (auto ei = tp->edges.begin(); ei != tp->edges.end(); ei++)
                 {
-                    for (btreeface_l::iterator fi = ei->e->faces.begin(); fi != ei->e->faces.end(); fi++)
+                    for (auto fi = ei->e->faces.begin(); fi != ei->e->faces.end(); fi++)
                     {
                         if (fi->f->infinite || GetLeafFromFace(fi->f, false)->infinite || GetLeafFromFace(fi->f, true)->infinite)
                         {
@@ -1753,7 +1753,7 @@ static bool FixBrinks_r_r(const bclipnode_t *clipnode, const bpartition_t *p, bb
         return false;
     }
     cn->children[!p->planeside] = r;
-    clipnodemap_t::iterator output = outputmap->find(MakeKey(*cn));
+    auto output = outputmap->find(MakeKey(*cn));
     if (output == outputmap->end())
     {
         if (c >= end)
@@ -1799,7 +1799,7 @@ static bool FixBrinks_r(const bclipnode_t *clipnode, bbrinklevel_e level, int &h
             }
             cn->children[k] = r;
         }
-        clipnodemap_t::iterator output = outputmap->find(MakeKey(*cn));
+        auto output = outputmap->find(MakeKey(*cn));
         if (output == outputmap->end())
         {
             if (c >= end)

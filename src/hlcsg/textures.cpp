@@ -164,8 +164,8 @@ static void CleanupName(const char *const in, char *out)
 
 static int lump_sorter_by_wad_and_name(const void *lump1, const void *lump2)
 {
-    lumpinfo_t *plump1 = (lumpinfo_t *)lump1;
-    lumpinfo_t *plump2 = (lumpinfo_t *)lump2;
+    auto *plump1 = (lumpinfo_t *)lump1;
+    auto *plump2 = (lumpinfo_t *)lump2;
 
     if (plump1->iTexFile == plump2->iTexFile)
     {
@@ -179,8 +179,8 @@ static int lump_sorter_by_wad_and_name(const void *lump1, const void *lump2)
 
 static int lump_sorter_by_name(const void *lump1, const void *lump2)
 {
-    lumpinfo_t *plump1 = (lumpinfo_t *)lump1;
-    lumpinfo_t *plump2 = (lumpinfo_t *)lump2;
+    auto *plump1 = (lumpinfo_t *)lump1;
+    auto *plump2 = (lumpinfo_t *)lump2;
 
     return std::strcmp(plump1->name, plump2->name);
 }
@@ -244,7 +244,7 @@ static bool TEX_InitFromWad()
         {
             currentwad->usedbymap = false; // include this wad
         }
-        for (WadInclude_i it = g_WadInclude.begin(); it != g_WadInclude.end(); it++) // '-wadinclude xxx.wad'
+        for (auto it = g_WadInclude.begin(); it != g_WadInclude.end(); it++) // '-wadinclude xxx.wad'
         {
             if (stristr(currentwad->path.c_str(), it->c_str()))
             {
@@ -479,7 +479,7 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
         {
             // Just read the miptex header and zero out the data offsets.
             // We will load the entire texture from the WAD at engine runtime
-            miptex_t *miptex = (miptex_t *)dest;
+            auto *miptex = (miptex_t *)dest;
             hlassume((int)sizeof(miptex_t) <= dest_maxsize, assume_MAX_MAP_MIPTEX);
             SafeRead(texfile, dest, sizeof(miptex_t));
 
