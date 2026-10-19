@@ -2,11 +2,21 @@
 
 #include <utility>
 
+bface_t *NewFace()
+{
+    return new bface_t{};
+}
+
+void FreeFace(bface_t *f)
+{
+    delete f;
+}
+
 void FreeFaceList(bface_t *faces)
 {
     while (faces)
     {
-        delete std::exchange(faces, faces->next);
+        FreeFace(std::exchange(faces, faces->next));
     }
 }
 
@@ -16,7 +26,7 @@ bface_t *CopyFaceList(const bface_t *faces)
     bface_t **tail = &head;
     for (const bface_t *f = faces; f; f = f->next)
     {
-        bface_t *n = new bface_t{};
+        bface_t *n = NewFace();
         n->planenum = f->planenum;
         n->plane = f->plane;
         if (f->w)

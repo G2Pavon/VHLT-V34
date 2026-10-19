@@ -174,7 +174,7 @@ static void AddHullPlane(brushhull_t *hull, const vec_t *const normal, const vec
             } //don't add a plane twice
         }
     }
-    bface_t *new_face = new bface_t{};
+    bface_t *new_face = NewFace();
     new_face->planenum = planenum;
     new_face->plane = &g_csg_mapplanes[new_face->planenum];
     new_face->next = hull->faces;
@@ -292,7 +292,7 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
     // check for edge-edge type. edge-face type and face-edge type are excluded.
     for (bface_t *f = hull0->faces; f; f = f->next)
     {
-        for (int i = 0; i < f->w->m_NumPoints; i++) // for each edge in f
+        for (int i = 0; i < (int)f->w->m_NumPoints; i++) // for each edge in f
         {
             hullbrushedge_t brushedge;
             VectorCopy(f->plane->normal, brushedge.normals[0]);
@@ -305,7 +305,7 @@ static void ExpandBrushWithHullBrush(const brush_t *brush, const brushhull_t *hu
             int found = 0;
             for (bface_t *f2 = hull0->faces; f2; f2 = f2->next)
             {
-                for (int j = 0; j < f2->w->m_NumPoints; j++)
+                for (int j = 0; j < (int)f2->w->m_NumPoints; j++)
                 {
                     if (VectorCompare(f2->w->m_Points[(j + 1) % f2->w->m_NumPoints], brushedge.vertexes[1]) &&
                         VectorCompare(f2->w->m_Points[j], brushedge.vertexes[0]))
@@ -481,6 +481,8 @@ static void ExpandBrush(brush_t *brush, const int hullnum)
                     break;
                 case plane_z:
                     axialbevel[plane_z][(current_plane->normal[2] > 0 ? 1 : 0)] = true;
+                    break;
+                default: // non-axial bevels flag nothing
                     break;
                 }
             }
@@ -765,7 +767,7 @@ restart:
     // for each face in this brushes hull
     for (bface_t *f = h->faces; f; f = f->next)
     {
-        Winding *w = new Winding(f->plane->normal, f->plane->dist);
+        auto w = std::make_unique<Winding>(f->plane->normal, f->plane->dist);
         for (f2 = h->faces; f2; f2 = f2->next)
         {
             if (f == f2)
@@ -782,7 +784,6 @@ restart:
         w->RemoveColinearPoints(ON_EPSILON);
         if (w->getArea() < 0.1)
         {
-            delete w;
             if (h->faces == f)
             {
                 h->faces = f->next;
@@ -795,17 +796,17 @@ restart:
                 }
                 f2->next = f->next;
             }
-            delete f;
+            FreeFace(f);
             goto restart;
         }
         else
         {
-            f->w.reset(w); // after a restart, replaces the winding of the previous pass
-            f->contents = CONTENTS_EMPTY;
             for (unsigned int i = 0; i < w->m_NumPoints; i++)
             {
                 h->bounds.add(w->m_Points[i]);
             }
+            f->w = std::move(w); // after a restart, replaces the winding of the previous pass
+            f->contents = CONTENTS_EMPTY;
         }
     }
 
@@ -854,7 +855,7 @@ static bool MakeBrushPlanes(brush_t *b)
             }
         }
 
-        f = new bface_t{};
+        f = NewFace();
 
         f->planenum = planenum;
         f->plane = MapPlane(planenum);
@@ -1143,7 +1144,7 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
 
     hullbrush_t hb;
     faceplane_t planes[MAXSIZE];
-    Winding *w[MAXSIZE];
+    std::unique_ptr<Winding> w[MAXSIZE];
     hullbrushedge_t edges[MAXSIZE];
     hullbrushvertex_t vertexes[MAXSIZE];
     int j;
@@ -1215,7 +1216,7 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
 
     for (int i = 0; i < numplanes; i++)
     {
-        w[i] = new Winding(planes[i].normal, planes[i].dist);
+        w[i] = std::make_unique<Winding>(planes[i].normal, planes[i].dist);
         for (j = 0; j < numplanes; j++)
         {
             if (j == i)
@@ -1237,7 +1238,7 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
     int numedges = 0;
     for (int i = 0; i < numplanes; i++)
     {
-        for (int e = 0; e < w[i]->m_NumPoints; e++)
+        for (int e = 0; e < (int)w[i]->m_NumPoints; e++)
         {
             if (numedges >= MAXSIZE)
             {
@@ -1258,7 +1259,7 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
             int found = 0;
             for (int k = 0; k < numplanes; k++)
             {
-                for (int e2 = 0; e2 < w[k]->m_NumPoints; e2++)
+                for (int e2 = 0; e2 < (int)w[k]->m_NumPoints; e2++)
                 {
                     if (VectorCompare(w[k]->m_Points[(e2 + 1) % w[k]->m_NumPoints], edge->vertexes[1]) &&
                         VectorCompare(w[k]->m_Points[e2], edge->vertexes[0]))
@@ -1290,7 +1291,7 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
     int numvertexes = 0;
     for (int i = 0; i < numplanes; i++)
     {
-        for (int e = 0; e < w[i]->m_NumPoints; e++)
+        for (int e = 0; e < (int)w[i]->m_NumPoints; e++)
         {
             vec3_t v;
             VectorCopy(w[i]->m_Points[e], v);
@@ -1350,11 +1351,6 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
     {
         Error("Entity %i, Brush %i: invalid brush. This brush cannot be used for info_hullshape.",
               b->originalentitynum, b->originalbrushnum);
-    }
-
-    for (int i = 0; i < numplanes; i++)
-    {
-        delete w[i];
     }
 
     return hb;

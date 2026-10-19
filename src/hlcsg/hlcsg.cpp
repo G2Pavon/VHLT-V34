@@ -161,7 +161,7 @@ void GetParamsFromEnt(entity_t *mapent)
 // Duplicates the non point information of a face, used by SplitFace
 static bface_t *NewFaceFromFace(const bface_t *const in)
 {
-    bface_t *newf = new bface_t{};
+    bface_t *newf = NewFace();
 
     newf->contents = in->contents;
     newf->texinfo = in->texinfo;
@@ -170,11 +170,6 @@ static bface_t *NewFaceFromFace(const bface_t *const in)
     newf->backcontents = in->backcontents;
 
     return newf;
-}
-
-static void FreeFace(bface_t *f)
-{
-    delete f;
 }
 
 // Everything CSGBrush produces for one brush: its .p<hull> faces, .b<hull> detail brushes and log
@@ -332,7 +327,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
                 // check for "Bad surface extents"
 
                 bool bad = false;
-                for (int i = 0; i < f->w->m_NumPoints; i++)
+                for (int i = 0; i < (int)f->w->m_NumPoints; i++)
                 {
                     for (int j = 0; j < 2; j++)
                     {
@@ -363,7 +358,7 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
             f->texinfo = backnull ? -1 : texinfo;
 
             // swap point orders
-            for (int i = 0; i < f->w->m_NumPoints / 2; i++) // add points backwards
+            for (int i = 0; i < (int)f->w->m_NumPoints / 2; i++) // add points backwards
             {
                 VectorCopy(f->w->m_Points[i], temp);
                 VectorCopy(f->w->m_Points[f->w->m_NumPoints - 1 - i], f->w->m_Points[i]);
@@ -522,7 +517,7 @@ static void CSGBrush(int brushnum)
                 // throw pieces on the front sides of the planes
                 // into the outside list, return the remains on the inside
                 // find the fragment inside brush2
-                Winding *w = new Winding(*f->w);
+                auto w = std::make_unique<Winding>(*f->w);
                 for (bface_t *f2 = bh2->faces; f2; f2 = f2->next)
                 {
                     if (f->planenum == f2->planenum)
@@ -542,17 +537,10 @@ static void CSGBrush(int brushnum)
                     {
                         continue;
                     }
-                    Winding *fw;
-                    Winding *bw;
-                    w->Clip(f2->plane->normal, f2->plane->dist, &fw, &bw);
-                    if (fw)
+                    WindingSplit split = w->Split(f2->plane->normal, f2->plane->dist); // the front is dropped
+                    if (split.back)
                     {
-                        delete fw;
-                    }
-                    if (bw)
-                    {
-                        delete w;
-                        w = bw;
+                        w = std::move(split.back);
                     }
                     else
                     {
@@ -570,7 +558,7 @@ static void CSGBrush(int brushnum)
                             continue;
                         }
                         int valid = 0;
-                        for (int x = 0; x < w->m_NumPoints; x++)
+                        for (int x = 0; x < (int)w->m_NumPoints; x++)
                         {
                             vec_t dist = DotProduct(w->m_Points[x], f2->plane->normal) - f2->plane->dist;
                             if (dist >= -ON_EPSILON * 4) // only estimate
@@ -580,21 +568,19 @@ static void CSGBrush(int brushnum)
                         }
                         if (valid >= 2)
                         { // this splitplane forms an edge
-                            Winding *fw;
-                            Winding *bw;
-                            f->w->Clip(f2->plane->normal, f2->plane->dist, &fw, &bw);
-                            if (fw)
+                            WindingSplit split = f->w->Split(f2->plane->normal, f2->plane->dist);
+                            if (split.front)
                             {
                                 bface_t *front = NewFaceFromFace(f);
-                                front->w.reset(fw);
-                                fw->getBounds(front->bounds);
+                                split.front->getBounds(front->bounds);
+                                front->w = std::move(split.front);
                                 front->next = outside;
                                 outside = front;
                             }
-                            if (bw)
+                            if (split.back)
                             {
-                                f->w.reset(bw);
-                                bw->getBounds(f->bounds);
+                                split.back->getBounds(f->bounds);
+                                f->w = std::move(split.back);
                             }
                             else
                             {
@@ -611,7 +597,6 @@ static void CSGBrush(int brushnum)
                     outside = f;
                     f = nullptr;
                 }
-                delete w;
 
                 if (f)
                 {

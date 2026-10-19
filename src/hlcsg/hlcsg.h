@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma warning(disable : 4786) // identifier was truncated to '255' characters in the browser information
 #include <array>
 #include <deque>
 #include <memory>
@@ -71,6 +70,9 @@ struct bface_t
 };
 
 // Deletes every face of a list.
+// bface_t nodes are created and destroyed only here (faces.cpp); brushhull_t owns its list.
+bface_t *NewFace(); // zeroed
+void FreeFace(bface_t *f);
 void FreeFaceList(bface_t *faces);
 // A copy of a list, in the same order.
 bface_t *CopyFaceList(const bface_t *faces);
