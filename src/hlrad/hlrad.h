@@ -327,7 +327,7 @@ void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal); // adde
 typedef bool (*funcCheckVisBit)(unsigned, unsigned, vec3_t &, unsigned int &);
 extern funcCheckVisBit g_CheckVisBit;
 bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &backorigin, const vec3_t &backnormal, vec3_t &transparency_out);
-void MdlLightHack(void);
+void MdlLightHack();
 
 // hlradutil.c
 vec_t PatchPlaneDist(const patch_t *const patch);

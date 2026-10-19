@@ -31,7 +31,7 @@ static void ResetStatus(bool report_progress)
     g_numProcessed = g_numReported = 0;
 }
 
-static void UpdateStatus(void)
+static void UpdateStatus()
 {
     if (g_reportProgress)
     {
