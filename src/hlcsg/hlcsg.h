@@ -194,7 +194,7 @@ extern void LoadMapFile(const char *const filename);
 //=============================================================================
 // textures.c
 
-typedef std::deque<std::string>::iterator WadInclude_i;
+using WadInclude_i = std::deque<std::string>::iterator;
 extern std::deque<std::string> g_WadInclude; // List of substrings to wadinclude
 
 void WriteMiptex();

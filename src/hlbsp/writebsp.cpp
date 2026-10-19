@@ -12,12 +12,12 @@
 #include "common/log.h"
 #include "common/bspfile.h"
 
-typedef std::map<int, int> PlaneMap;
+using PlaneMap = std::map<int, int>;
 static PlaneMap gPlaneMap;
 static int gNumMappedPlanes;
 static plane_t gMappedPlanes[MAX_MAP_PLANES];
 
-typedef std::map<int, int> texinfomap_t;
+using texinfomap_t = std::map<int, int>;
 static int g_nummappedtexinfo;
 static texinfo_t g_mappedtexinfo[MAX_MAP_TEXINFO];
 static texinfomap_t g_texinfomap;

@@ -225,10 +225,10 @@ typedef struct
     bool side;
 } btreeleaf_r;
 
-typedef std::list<btreepoint_r> btreepoint_l;
-typedef std::list<btreeedge_r> btreeedge_l;
-typedef std::list<btreeface_r> btreeface_l;
-typedef std::list<btreeleaf_r> btreeleaf_l;
+using btreepoint_l = std::list<btreepoint_r>;
+using btreeedge_l = std::list<btreeedge_r>;
+using btreeface_l = std::list<btreeface_r>;
+using btreeleaf_l = std::list<btreeleaf_r>;
 
 typedef struct btreepoint_s
 {

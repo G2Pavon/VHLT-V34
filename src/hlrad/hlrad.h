@@ -99,10 +99,10 @@ struct transfer_index_t
     unsigned index : 20;
 };
 
-typedef unsigned transfer_raw_index_t;
-typedef unsigned char transfer_data_t;
+using transfer_raw_index_t = unsigned;
+using transfer_data_t = unsigned char;
 
-typedef unsigned char rgb_transfer_data_t;
+using rgb_transfer_data_t = unsigned char;
 
 constexpr int MAX_PATCHES = (65535 * 16); // limited by transfer_index_t
 constexpr int MAX_VISMATRIX_PATCHES = 65535;
@@ -324,7 +324,7 @@ void CreateDirectLights();
 void DeleteDirectLights();
 void GetPhongNormal(int facenum, const vec3_t spot, vec3_t phongnormal); // added "const" --vluzacn
 
-typedef bool (*funcCheckVisBit)(unsigned, unsigned, vec3_t &, unsigned int &);
+using funcCheckVisBit = bool (*)(unsigned, unsigned, vec3_t &, unsigned int &);
 extern funcCheckVisBit g_CheckVisBit;
 bool CheckVisBitBackwards(unsigned receiver, unsigned emitter, const vec3_t &backorigin, const vec3_t &backnormal, vec3_t &transparency_out);
 void MdlLightHack();

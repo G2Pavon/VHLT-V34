@@ -4,7 +4,7 @@
 
 static constexpr int DEFAULT_NUMTHREADS = -1;
 
-typedef void (*q_threadfunction)(int);
+using q_threadfunction = void (*)(int);
 
 extern int g_numthreads;
 

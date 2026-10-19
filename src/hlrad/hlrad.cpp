@@ -353,7 +353,7 @@ typedef struct
 } texlight_t;
 
 static std::vector<texlight_t> s_texlights;
-typedef std::vector<texlight_t>::iterator texlight_i;
+using texlight_i = std::vector<texlight_t>::iterator;
 
 static void LightForTexture(const char *const name, vec3_t result)
 {

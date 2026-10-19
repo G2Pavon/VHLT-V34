@@ -2075,7 +2075,7 @@ vec3_t *g_skynormals[SKYLEVELMAX + 1];   // views of s_skynormals
 vec_t *g_skynormalsizes[SKYLEVELMAX + 1]; // views of s_skynormalsizes
 static std::unique_ptr<vec3_t[]> s_skynormals[SKYLEVELMAX + 1];
 static std::unique_ptr<vec_t[]> s_skynormalsizes[SKYLEVELMAX + 1];
-typedef double point_t[3];
+using point_t = double[3];
 typedef struct
 {
     int point[2];
