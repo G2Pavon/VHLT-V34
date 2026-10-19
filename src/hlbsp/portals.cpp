@@ -89,7 +89,7 @@ void MakeHeadnodePortals(node_t *node, const vec3_t mins, const vec3_t maxs)
     }
 
     g_outside_node.contents = CONTENTS_SOLID;
-    g_outside_node.portals = NULL;
+    g_outside_node.portals = nullptr;
 
     for (int i = 0; i < 3; i++)
     {

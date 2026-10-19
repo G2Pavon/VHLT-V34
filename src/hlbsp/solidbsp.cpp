@@ -338,7 +338,7 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
     std::unique_ptr<surfacetree_t> surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;
-    surface_t *bestsurface = NULL;
+    surface_t *bestsurface = nullptr;
 
     for (surface_t *p = surfaces; p; p = p->next)
     {
@@ -436,7 +436,7 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
     std::unique_ptr<surfacetree_t> surfacetree = BuildSurfaceTree(surfaces, ON_EPSILON);
     // pick the plane that splits the least
     vec_t bestvalue = 9e30;
-    surface_t *bestsurface = NULL;
+    surface_t *bestsurface = nullptr;
 
     for (surface_t *p = surfaces; p; p = p->next)
     {

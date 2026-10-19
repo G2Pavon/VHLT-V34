@@ -252,14 +252,14 @@ void PairEdges()
             {
                 e = &g_edgeshare[-k];
 
-                hlassert(e->faces[1] == NULL);
+                hlassert(e->faces[1] == nullptr);
                 e->faces[1] = f;
             }
             else
             {
                 e = &g_edgeshare[k];
 
-                hlassert(e->faces[0] == NULL);
+                hlassert(e->faces[0] == nullptr);
                 e->faces[0] = f;
             }
 
