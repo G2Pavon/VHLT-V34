@@ -316,7 +316,7 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir
-python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad]  # oracle vs candidate on option-parsing command lines: output, files, exit code
+python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths]  # oracle vs candidate on option-parsing command lines and path handling: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
@@ -325,6 +325,19 @@ python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
 `cli` runs hlrad's 40 command lines on `fm_rad_point` (prepared by the oracle's hlcsg, hlbsp and
 hlvis). It compares `.bsp` files without their lump padding (`stagecache.bsp_canonical`): the
 oracle leaves stale bytes there, which `check --padding zero` already covers.
+
+`cli` also runs the path-handling cases (S4a, `PATH_CASES`), because the corpus never gives hlcsg a
+backslash path (MESS writes the `"wad"` key with forward slashes). There are 25 hlcsg setups:
+`"wad"` entries with backslashes, drive letters (`C:\...`, drive-relative `C:x.wad`), a leading
+backslash, `WADROOT` (relative, absolute, a backslash key), empty entries, a 300-character entry,
+no extension, a directory, `-wadinclude` patterns with either slash, and map arguments with
+backslashes, an extension, an absolute path, dotted directories, `.map` and a directory. Files whose
+names contain a backslash are created so that the lookups that keep the backslash on POSIX also
+succeed. One hlrad case (`PATH_RAD_CASES`) puts such a key straight into the entity lump. Each case
+runs the oracle and then the candidate in the same directory. Mutation check (2026-10-19): splitting
+only at `/` (what `std::filesystem::path` does on POSIX) fails 7 cases, normalizing `\` to `/` in the
+wad list without `-wadinclude` fails 9, and dropping hlrad's default `.wad` fails 1. The
+`wadpath.cpp` cut at `_MAX_PATH - 1` can't be reached off Windows (see the comment in `PATH_CASES`).
 
 ### Harness self-tests (done when the oracle was set up)
 

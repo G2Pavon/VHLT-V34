@@ -28,6 +28,7 @@ import os
 import re
 import shutil
 import statistics
+import struct
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,7 @@ import time
 from pathlib import Path
 
 import bspdiff
+import mkwad
 import stagecache
 
 REPO = Path(__file__).resolve().parents[2]
@@ -1511,6 +1513,149 @@ def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str, added: list[byte
             _drop_lines(normalize_log(proc.stderr), added), files)
 
 
+# Path handling (S4a): hlcsg on GoldSrc-style paths the corpus never has (the MESS conversion writes
+# the "wad" key with forward slashes): backslashes, drive letters, a leading backslash, WADROOT, empty
+# and over-long "wad" entries, -wadinclude patterns, and map arguments with backslashes, dots and
+# absolute paths. Files whose names contain a backslash exist so that the lookups that keep the
+# backslash on POSIX succeed too. Each case runs the oracle and then the candidate in the same
+# directory (absolute paths appear in the logs) and compares exit code, output and every file.
+PATH_MAP = """{
+"classname" "worldspawn"
+"mapversion" "220"
+"wad" "%s"
+{
+( 64 0 0 ) ( 64 0 64 ) ( 64 64 0 ) PATHTEX [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 0 0 0 ) ( 0 64 0 ) ( 0 0 64 ) PATHTEX [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 0 64 64 ) ( 0 64 0 ) ( 64 64 64 ) PATHTEX [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 64 0 64 ) ( 64 0 0 ) ( 0 0 64 ) PATHTEX [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 0 0 64 ) ( 0 64 64 ) ( 64 0 64 ) PATHTEX [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 0 64 0 ) ( 0 0 0 ) ( 64 64 0 ) PATHTEX [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+}
+}
+"""
+WAD_OK = "wads/sub/pathtex.wad"
+# name: wad key, wad files to create (other.wad holds OTHERTEX, every other file PATHTEX), and optionally
+# hlcsg options, the map argument, where the map is written, and environment ({cwd}: the case directory).
+PATH_CASES = {
+    "wad forward slashes": {"wad": WAD_OK, "files": [WAD_OK]},
+    "wad backslashes, file named with backslashes": {"wad": "wads\\sub\\pathtex.wad", "files": ["wads\\sub\\pathtex.wad"]},
+    "wad backslashes, only the forward-slash file": {"wad": "wads\\sub\\pathtex.wad", "files": [WAD_OK]},
+    "wad absolute": {"wad": "{cwd}/" + WAD_OK, "files": [WAD_OK]},
+    "wad drive letter, forward slashes": {"wad": "C:" + WAD_OK, "files": [WAD_OK]},
+    "wad drive letter, backslashes": {"wad": "C:\\wads\\pathtex.wad", "files": ["\\wads\\pathtex.wad"]},
+    "wad drive-relative": {"wad": "C:pathtex.wad", "files": ["pathtex.wad"]},
+    "wad leading backslash, found with a drive": {"wad": "\\wads\\pathtex.wad", "files": ["C:\\wads\\pathtex.wad"]},
+    "wad leading backslash, not found": {"wad": "\\wads\\pathtex.wad", "files": [WAD_OK]},
+    "WADROOT, forward slashes": {"wad": "/nonexistent/sub/pathtex.wad", "files": ["wadroot/sub/pathtex.wad"],
+                                 "env": {"WADROOT": "wadroot"}},
+    "WADROOT, backslash key": {"wad": "C:\\sierra\\half-life\\sub\\pathtex.wad", "files": ["wadroot/sub\\pathtex.wad"],
+                               "env": {"WADROOT": "wadroot"}},
+    # the "subdirectory" of D:\pathtex.wad is "\" (a path ending in a slash names a directory)
+    "WADROOT absolute, root-level wad": {"wad": "D:\\pathtex.wad", "files": ["wadroot/\\pathtex.wad"],
+                                          "env": {"WADROOT": "{cwd}/wadroot"}},
+    "wad list with empty entries": {"wad": ";other.wad;;" + WAD_OK + ";", "files": ["other.wad", WAD_OK]},
+    "wad list, -wadautodetect": {"wad": "other.wad;" + WAD_OK, "files": ["other.wad", WAD_OK], "argv": ["-wadautodetect"]},
+    # longer than Windows' _MAX_PATH (260), so not cut here. The compat cut at _MAX_PATH - 1
+    # (wadpath.cpp) can't be reached off Windows: _MAX_PATH is PATH_MAX (4096) and the tokenizer stops a
+    # "wad" value of 4095 characters first.
+    "wad entry of 300 characters": {"wad": "wads/sub/" + "x" * 300 + ".wad;" + WAD_OK, "files": [WAD_OK]},
+    "wad entry without extension": {"wad": "wads/sub/pathtex", "files": ["wads/sub/pathtex"]},
+    "wad directory as entry": {"wad": "wads/sub/;" + WAD_OK, "files": [WAD_OK]},
+    "-wadinclude backslash pattern": {"wad": "wads\\sub\\pathtex.wad;other.wad", "files": ["wads\\sub\\pathtex.wad", "other.wad"],
+                                      "argv": ["-wadinclude", "sub\\pathtex"]},
+    "-wadinclude forward pattern, backslash path": {"wad": "wads\\sub\\pathtex.wad;other.wad",
+                                                    "files": ["wads\\sub\\pathtex.wad", "other.wad"],
+                                                    "argv": ["-wadinclude", "sub/pathtex"]},
+    "map argument with backslashes": {"wad": WAD_OK, "files": [WAD_OK], "map": "maps\\pathmap", "map_at": "maps/pathmap.map"},
+    "map argument with extension": {"wad": WAD_OK, "files": [WAD_OK], "map": "maps/pathmap.map", "map_at": "maps/pathmap.map"},
+    "map argument absolute": {"wad": WAD_OK, "files": [WAD_OK], "map": "{cwd}/maps/pathmap", "map_at": "maps/pathmap.map"},
+    "map argument with a dot in a directory": {"wad": WAD_OK, "files": [WAD_OK], "map": "maps.v2\\sub.d/pathmap",
+                                               "map_at": "maps.v2/sub.d/pathmap.map"},
+    "map argument .map": {"wad": WAD_OK, "files": [WAD_OK], "map": ".map", "map_at": ".map"},
+    "map argument is a directory": {"wad": WAD_OK, "files": [WAD_OK], "map": "maps/", "map_at": "maps/pathmap.map"},
+}
+
+
+def _path_setup(case: dict, cwd: Path) -> tuple[list[str], dict]:
+    if cwd.exists():
+        shutil.rmtree(cwd)
+    cwd.mkdir(parents=True)
+    for rel in case["files"]:
+        f = cwd / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        mkwad.write_wad(str(f), ["OTHERTEX" if f.name == "other.wad" else "PATHTEX"], 16, (200, 200, 200))
+    map_at = cwd / case.get("map_at", "pathmap.map")
+    map_at.parent.mkdir(parents=True, exist_ok=True)
+    map_at.write_text(PATH_MAP % case["wad"].replace("{cwd}", str(cwd)))
+    env = {k: v for k, v in os.environ.items() if k != "WADROOT"}
+    env.update({k: v.replace("{cwd}", str(cwd)) for k, v in case.get("env", {}).items()})
+    argv = ["-threads", "1", *case.get("argv", []), case.get("map", "pathmap").replace("{cwd}", str(cwd))]
+    return argv, env
+
+
+def _path_run(exe: Path, case: dict, cwd: Path) -> tuple:
+    argv, env = _path_setup(case, cwd)
+    proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60, env=env)
+    files = {str(f.relative_to(cwd)): stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp"
+             else normalize_log(f.read_bytes()) for f in sorted(cwd.rglob("*")) if f.is_file()}
+    return proc.returncode, normalize_log(proc.stdout), normalize_log(proc.stderr), files
+
+
+# hlrad's own "wad" key loop (no .wa_, no -waddir: it names every wad it can't locate). hlcsg only
+# ever writes bare file names there, so the key is put into the entity lump directly. An entry can't
+# reach hlrad's MAX_VAL cut: the entity tokenizer stops at MAXTOKEN (same size) first.
+PATH_RAD_CASES = {
+    "hlrad wad key": "C:pathtex.wad;wads\\sub\\noext;" + "y" * 300 + ".wad;;/abs/dir/;C:\\hl\\valve\\halflife.wad",
+}
+
+
+def bsp_with_wad_key(data: bytes, key: str) -> bytes:
+    """data with worldspawn's "wad" value replaced; the new entity lump is appended at the end."""
+    ofs, length = struct.unpack_from("<ii", data, 4)  # lump 0: entities
+    ents = data[ofs:ofs + length].rstrip(b"\0").decode("latin-1")
+    ents = re.sub(r'"wad" "[^"]*"', lambda m: f'"wad" "{key}"', ents, count=1)
+    lump = ents.encode("latin-1") + b"\0"
+    out = bytearray(data) + lump
+    struct.pack_into("<ii", out, 4, len(data), len(lump))
+    return bytes(out)
+
+
+def _path_rad_run(exe: Path, template: Path, key: str, cwd: Path) -> tuple:
+    if cwd.exists():
+        shutil.rmtree(cwd)
+    shutil.copytree(template, cwd)
+    bsp = cwd / "tiny.bsp"
+    bsp.write_bytes(bsp_with_wad_key(bsp.read_bytes(), key))
+    proc = run([exe, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, timeout=60)
+    files = {f.name: stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp" else normalize_log(f.read_bytes())
+             for f in sorted(cwd.iterdir())}
+    return proc.returncode, normalize_log(proc.stdout), normalize_log(proc.stderr), files
+
+
+def cli_paths(cand: Path, oracle: Path, tmp: Path) -> list[str]:
+    failures = []
+
+    def compare(name, ref, new):
+        what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
+        if what:
+            failures.append(f"paths: {name}: {', '.join(what)} differ")
+
+    for i, (name, case) in enumerate(PATH_CASES.items()):
+        cwd = tmp / f"paths-{i}"
+        compare(name, _path_run(oracle / "hlcsg", case, cwd), _path_run(cand / "hlcsg", case, cwd))
+
+    template = tmp / "paths-rad-template"
+    template.mkdir()
+    shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS['hlrad']}.map", template / "tiny.map")
+    for tool in CLI_PREPARE["hlrad"]:
+        run([oracle / tool, "-threads", "1", "tiny"], cwd=template, capture_output=True, check=True)
+    (template / "tiny.wa_").unlink()
+    for i, (name, key) in enumerate(PATH_RAD_CASES.items()):
+        cwd = tmp / f"paths-rad-{i}"
+        compare(name, _path_rad_run(oracle / "hlrad", template, key, cwd), _path_rad_run(cand / "hlrad", template, key, cwd))
+    return failures
+
+
 def cmd_cli(args) -> int:
     cand = check_bin(Path(args.bin))
     oracle = DATA / "builds" / "oracle" / "bin"
@@ -1524,7 +1669,9 @@ def cmd_cli(args) -> int:
                 what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
                 if what:
                     failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")
-        n = sum(len(CLI_CASES[t]) for t in args.tools)
+        if args.paths:
+            failures += cli_paths(cand, oracle, Path(tmp))
+        n = sum(len(CLI_CASES[t]) for t in args.tools) + (len(PATH_CASES) + len(PATH_RAD_CASES) if args.paths else 0)
         log(f"  {'PASS' if not failures else 'FAIL'}: {n} command lines, {len(failures)} difference(s)")
         for f in failures:
             log(f"    {f}")
@@ -1713,6 +1860,7 @@ def main() -> int:
     p = sub.add_parser("cli", help="oracle vs candidate on option-parsing command lines (output, files, exit code)")
     p.add_argument("--bin", required=True)
     p.add_argument("--tools", nargs="+", default=list(CLI_CASES), choices=list(CLI_CASES))
+    p.add_argument("--no-paths", dest="paths", action="store_false", help="skip the path-handling cases (PATH_CASES, PATH_RAD_CASES)")
     p.set_defaults(func=cmd_cli)
 
     p = sub.add_parser("coverage", help="gcov line coverage of a tool over the quick tier (up to that tool) and its variant tiers")
