@@ -302,16 +302,16 @@ static void TestSurfaceTree_r(surfacetree_t *tree, const surfacetreenode_t *node
     }
     if (node->isleaf)
     {
-        for (auto i = node->leaffaces.begin(); i != node->leaffaces.end(); ++i)
+        for (auto leafface : node->leaffaces)
         {
-            tree->result.middle.push_back(*i);
+            tree->result.middle.push_back(leafface);
         }
     }
     else
     {
-        for (auto i = node->nodefaces.begin(); i != node->nodefaces.end(); ++i)
+        for (auto nodeface : node->nodefaces)
         {
-            tree->result.middle.push_back(*i);
+            tree->result.middle.push_back(nodeface);
         }
         TestSurfaceTree_r(tree, node->children[0].get(), split);
         TestSurfaceTree_r(tree, node->children[1].get(), split);
@@ -375,10 +375,8 @@ static surface_t *ChooseMidPlaneFromList(surface_t *surfaces, const vec3_t mins,
         TestSurfaceTree(surfacetree.get(), plane);
         frontcount += surfacetree->result.frontsize;
         backcount += surfacetree->result.backsize;
-        for (
-            auto it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
+        for (auto f : surfacetree->result.middle)
         {
-            face_t *f = *it;
             if (f->facestyle == face_discardable)
             {
                 continue;
@@ -470,9 +468,8 @@ static surface_t *ChoosePlaneFromList(surface_t *surfaces, int detaillevel)
         {
             frontcount += surfacetree->result.frontsize;
             backcount += surfacetree->result.backsize;
-            for (auto it = surfacetree->result.middle.begin(); it != surfacetree->result.middle.end(); ++it)
+            for (auto f : surfacetree->result.middle)
             {
-                face_t *f = *it;
                 if (f->planenum == p->planenum || f->planenum == (p->planenum ^ 1))
                 {
                     continue;

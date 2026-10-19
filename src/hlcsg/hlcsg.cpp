@@ -329,9 +329,9 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
                 bool bad = false;
                 for (int i = 0; i < (int)f->w->m_NumPoints; i++)
                 {
-                    for (int j = 0; j < 2; j++)
+                    for (auto vec : tex->vecs)
                     {
-                        vec_t val = DotProduct(f->w->m_Points[i], tex->vecs[j]) + tex->vecs[j][3];
+                        vec_t val = DotProduct(f->w->m_Points[i], vec) + vec[3];
                         if (val < -99999 || val > 999999)
                         {
                             bad = true;
@@ -898,11 +898,11 @@ static void SetLightStyles()
 static void ConvertHintToEmpty()
 {
     // Convert HINT brushes to EMPTY after they have been carved by csg
-    for (int i = 0; i < MAX_MAP_BRUSHES; i++)
+    for (brush_t &brush : g_mapbrushes)
     {
-        if (g_mapbrushes[i].contents == CONTENTS_HINT)
+        if (brush.contents == CONTENTS_HINT)
         {
-            g_mapbrushes[i].contents = CONTENTS_EMPTY;
+            brush.contents = CONTENTS_EMPTY;
         }
     }
 }
@@ -1198,9 +1198,9 @@ static void BoundWorld()
 static void DumpWadinclude()
 {
     Log("Wadinclude list :\n");
-    for (auto it = g_WadInclude.begin(); it != g_WadInclude.end(); it++)
+    for (const std::string &wad : g_WadInclude)
     {
-        Log("[%s]\n", it->c_str());
+        Log("[%s]\n", wad.c_str());
     }
 }
 
@@ -1427,14 +1427,14 @@ int main(const int argc, char **argv)
         UniqueFile hsz(std::fopen(name, "w"));
         if (!hsz)
             Error("Couldn't open %s", name);
-        for (int i = 0; i < NUM_HULLS; i++)
+        for (const auto &hullsize : g_hull_size)
         {
-            float x1 = g_hull_size[i][0][0];
-            float y1 = g_hull_size[i][0][1];
-            float z1 = g_hull_size[i][0][2];
-            float x2 = g_hull_size[i][1][0];
-            float y2 = g_hull_size[i][1][1];
-            float z2 = g_hull_size[i][1][2];
+            float x1 = hullsize[0][0];
+            float y1 = hullsize[0][1];
+            float z1 = hullsize[0][2];
+            float x2 = hullsize[1][0];
+            float y2 = hullsize[1][1];
+            float z2 = hullsize[1][2];
             std::fprintf(hsz.get(), "%g %g %g %g %g %g\n", x1, y1, z1, x2, y2, z2);
         }
     }

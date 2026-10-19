@@ -205,9 +205,9 @@ static void DefaultTexture(radtexture_t *tex, const char *name)
     tex->height = 16;
     SetTextureName(tex, name);
     tex->canvas = std::make_unique_for_overwrite<byte[]>(tex->width * tex->height);
-    for (int i = 0; i < 256; i++)
+    for (auto &color : tex->palette)
     {
-        VectorFill(tex->palette[i], 0x80);
+        VectorFill(color, 0x80);
     }
     for (int i = 0; i < tex->width * tex->height; i++)
     {
@@ -370,9 +370,9 @@ void LoadTextures()
                 else
                 {
                     VectorScale(tex->palette[tex->canvas[j]], 1.0 / 255.0, reflectivity);
-                    for (int k = 0; k < 3; k++)
+                    for (vec_t &component : reflectivity)
                     {
-                        reflectivity[k] = std::pow(reflectivity[k], g_texreflectgamma);
+                        component = std::pow(component, g_texreflectgamma);
                     }
                     VectorScale(reflectivity, g_texreflectscale, reflectivity);
                 }
@@ -632,7 +632,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
         }
 
         bestnode->isleafnode = false;
-        for (int k = 0; k < 2; k++)
+        for (auto &child : bestnode->childrennode)
         {
             n = &nodes[numnodes];
             numnodes++;
@@ -641,7 +641,7 @@ static void CQ_CreatePalette(int numpoints, const unsigned char (*points)[CQ_DIM
                 Error("CQ_CreatePalette: internal error");
             }
 
-            bestnode->childrennode[k] = n;
+            child = n;
             n->isleafnode = true;
             n->parentnode = bestnode;
             n->numpoints = 0;
@@ -1216,13 +1216,13 @@ void EmbedLightmapInTextures()
 
                     VectorClear(average);
                     average[3] = 0;
-                    for (int k = 0; k < 4; k++)
+                    for (const auto &texel : src)
                     {
                         for (int j = 0; j < 3; j++)
                         {
-                            average[j] += (*src[k])[3] * (*src[k])[j];
+                            average[j] += (*texel)[3] * (*texel)[j];
                         }
-                        average[3] += (*src[k])[3];
+                        average[3] += (*texel)[3];
                     }
 
                     if (average[3] / 4 <= 0.4 * 255)
@@ -1301,10 +1301,10 @@ void EmbedLightmapInTextures()
         if (resolution != 1)
         {
             // apply a scale and a shift over the original vectors
-            for (int k = 0; k < 2; k++)
+            for (auto &vec : info->vecs)
             {
-                VectorScale(info->vecs[k], 1.0 / resolution, info->vecs[k]);
-                info->vecs[k][3] = info->vecs[k][3] / resolution + 0.5;
+                VectorScale(vec, 1.0 / resolution, vec);
+                vec[3] = vec[3] / resolution + 0.5;
             }
         }
         info->miptex = NewTextures_GetCurrentMiptexIndex();

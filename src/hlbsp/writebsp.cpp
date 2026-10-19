@@ -355,9 +355,9 @@ static int OutputEdges_r(node_t *node, int detaillevel)
             OutputEdges_face(f);
         }
     }
-    for (int i = 0; i < 2; i++)
+    for (node_t *child : node->children)
     {
-        int r = OutputEdges_r(node->children[i], detaillevel);
+        int r = OutputEdges_r(child, detaillevel);
         if (r == -1 ? false : next == -1 ? true
                                          : r < next)
         {

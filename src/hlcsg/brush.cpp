@@ -834,9 +834,9 @@ static bool MakeBrushPlanes(brush_t *b)
     for (int i = 0; i < b->numsides; i++)
     {
         bside_t *s = &g_brushsides[b->firstside + i];
-        for (int j = 0; j < 3; j++)
+        for (auto &planept : s->planepts)
         {
-            VectorSubtract(s->planepts[j], origin, s->planepts[j]);
+            VectorSubtract(planept, origin, planept);
         }
         int planenum = PlaneFromPoints(s->planepts[0], s->planepts[1], s->planepts[2]);
         if (planenum == -1)
@@ -1186,11 +1186,11 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
             failed = true;
             continue;
         }
-        for (int k = 0; k < 3; k++)
+        for (vec_t &component : normal)
         {
-            if (std::abs(normal[k]) < NORMAL_EPSILON)
+            if (std::abs(component) < NORMAL_EPSILON)
             {
-                normal[k] = 0.0;
+                component = 0.0;
                 VectorNormalize(normal);
             }
         }
@@ -1358,9 +1358,9 @@ static hullbrush_t CreateHullBrush(const brush_t *b)
 
 void InitDefaultHulls()
 {
-    for (int h = 0; h < NUM_HULLS; h++)
+    for (hullshape_t &defaulthull : g_defaulthulls)
     {
-        hullshape_t *hs = &g_defaulthulls[h];
+        hullshape_t *hs = &defaulthull;
         hs->id.clear();
         hs->disabled = true;
         hs->brushes.clear();

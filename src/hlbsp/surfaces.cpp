@@ -49,7 +49,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
     if (f->facestyle == face_discardable)
         return;
 
-    for (int axis = 0; axis < 2; axis++)
+    for (auto vec : tex->vecs)
     {
         while (true)
         {
@@ -58,7 +58,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
 
             for (int i = 0; i < f->numpoints; i++)
             {
-                v = DotProduct(f->pts[i], tex->vecs[axis]);
+                v = DotProduct(f->pts[i], vec);
                 if (v < mins)
                 {
                     mins = v;
@@ -76,7 +76,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
 
             // split it
 
-            VectorCopy(tex->vecs[axis], temp);
+            VectorCopy(vec, temp);
             v = VectorNormalize(temp);
 
             VectorCopy(temp, plane.normal);

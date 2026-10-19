@@ -433,9 +433,9 @@ static btreeleaf_t *BuildBaseCell(int &numobjects, bclipnode_t *clipnode, vec_t 
             tp[i]->v[2] = -range;
     }
     btreeedge_t *te[12];
-    for (int i = 0; i < 12; i++)
+    for (auto &edge : te)
     {
-        te[i] = AllocTreeedge(numobjects, true);
+        edge = AllocTreeedge(numobjects, true);
     }
     SetEdgePoints(te[0], tp[1], tp[0]);
     SetEdgePoints(te[1], tp[3], tp[2]);
@@ -450,9 +450,9 @@ static btreeleaf_t *BuildBaseCell(int &numobjects, bclipnode_t *clipnode, vec_t 
     SetEdgePoints(te[10], tp[6], tp[2]);
     SetEdgePoints(te[11], tp[7], tp[3]);
     btreeface_t *tf[6];
-    for (int i = 0; i < 6; i++)
+    for (auto &face : tf)
     {
-        tf[i] = AllocTreeface(numobjects, true);
+        face = AllocTreeface(numobjects, true);
     }
     AttachEdgeToFace(tf[0], te[4], true);
     AttachEdgeToFace(tf[0], te[6], false);
@@ -480,9 +480,9 @@ static btreeleaf_t *BuildBaseCell(int &numobjects, bclipnode_t *clipnode, vec_t 
     AttachEdgeToFace(tf[5], te[7], false);
 
     btreeleaf_t *tl = AllocTreeleaf(numobjects, false);
-    for (int i = 0; i < 6; i++)
+    for (btreeface_t *face : tf)
     {
-        SetFaceLeafs(tf[i], tl, leaf_outside);
+        SetFaceLeafs(face, tl, leaf_outside);
     }
     tl->clipnode = clipnode;
     return tl;
@@ -614,9 +614,9 @@ static void DeleteFace(int &numobjects, btreeface_t *tf) // warning: edges in th
             DeleteEdge(numobjects, te);
         }
     }
-    for (int side = 0; side < 2; side++)
+    for (auto &leaf : tf->leafs)
     {
-        if (tf->leafs[side].l)
+        if (leaf.l)
         {
             PrintOnce("DeleteFace: internal error: face used by leaf.");
             hlassume(false, assume_first);
@@ -993,9 +993,9 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
         }
 
         btreeleaf_t *frontback[2] = {front, back};
-        for (int side = 0; side < 2; side++)
+        for (btreeleaf_t *leaf : frontback)
         {
-            for (fi = frontback[side]->faces.begin(); fi != frontback[side]->faces.end(); fi++)
+            for (fi = leaf->faces.begin(); fi != leaf->faces.end(); fi++)
             {
                 for (ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
                 {
@@ -1014,9 +1014,9 @@ static void SplitTreeLeaf(int &numobjects, btreeleaf_t *tl, const plane_t *plane
                 }
             }
         }
-        for (int side = 0; side < 2; side++)
+        for (btreeleaf_t *leaf : frontback)
         {
-            for (fi = frontback[side]->faces.begin(); fi != frontback[side]->faces.end(); fi++)
+            for (fi = leaf->faces.begin(); fi != leaf->faces.end(); fi++)
             {
                 for (ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
                 {
@@ -1127,9 +1127,9 @@ static void CountExpandedClipnodes_r(int &count, const dclipnode_t *clipnodes, i
     count++;
     if (headnode >= 0)
     {
-        for (int k = 0; k < 2; k++)
+        for (const int child : clipnodes[headnode].children)
         {
-            CountExpandedClipnodes_r(count, clipnodes, clipnodes[headnode].children[k]);
+            CountExpandedClipnodes_r(count, clipnodes, child);
         }
     }
 }
@@ -1181,9 +1181,9 @@ static void ClearMarks_r(bclipnode_t *node)
 {
     if (node->isleaf)
     {
-        for (auto fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
+        for (auto &face : node->treeleaf->faces)
         {
-            for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+            for (auto ei = face.f->edges.begin(); ei != face.f->edges.end(); ei++)
             {
                 ei->e->tmp_tested = false;
             }
@@ -1200,9 +1200,9 @@ static void CollectBrinks_r(bclipnode_t *node, int &numbrinks, bbrink_t **brinks
 {
     if (node->isleaf)
     {
-        for (auto fi = node->treeleaf->faces.begin(); fi != node->treeleaf->faces.end(); fi++)
+        for (auto &face : node->treeleaf->faces)
         {
-            for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+            for (auto ei = face.f->edges.begin(); ei != face.f->edges.end(); ei++)
             {
                 if (ei->e->tmp_tested)
                 {
@@ -1394,9 +1394,9 @@ static bool AddPartition(bclipnode_t *clipnode, int planenum, bool planeside, in
         return false;
     }
     bool onback = false;
-    for (auto fi = clipnode->treeleaf->faces.begin(); fi != clipnode->treeleaf->faces.end(); fi++)
+    for (auto &face : clipnode->treeleaf->faces)
     {
-        for (auto ei = fi->f->edges.begin(); ei != fi->f->edges.end(); ei++)
+        for (auto ei = face.f->edges.begin(); ei != face.f->edges.end(); ei++)
         {
             for (int side = 0; side < 2; side++)
             {
@@ -1537,9 +1537,9 @@ static void AnalyzeBrinks(bbrinkinfo_t *info)
                 {
                     continue;
                 }
-                for (auto ei = tp->edges.begin(); ei != tp->edges.end(); ei++)
+                for (auto &edge : tp->edges)
                 {
-                    for (auto fi = ei->e->faces.begin(); fi != ei->e->faces.end(); fi++)
+                    for (auto fi = edge.e->faces.begin(); fi != edge.e->faces.end(); fi++)
                     {
                         if (fi->f->infinite || GetLeafFromFace(fi->f, false)->infinite || GetLeafFromFace(fi->f, true)->infinite)
                         {

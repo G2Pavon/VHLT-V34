@@ -527,9 +527,9 @@ static void CalcSinglePosition(positionmap_t *map, int is, int it)
             const int numnudges = 12;
             vec3_t nudgelist[numnudges] = {{0.1, 0, 0}, {-0.1, 0, 0}, {0, 0.1, 0}, {0, -0.1, 0}, {0.3, 0, 0}, {-0.3, 0, 0}, {0, 0.3, 0}, {0, -0.3, 0}, {0.3, 0.3, 0}, {-0.3, 0.3, 0}, {-0.3, -0.3, 0}, {0.3, -0.3, 0}};
 
-            for (int i = 0; i < numnudges; i++)
+            for (const vec3_t &nudge : nudgelist)
             {
-                VectorMultiply(nudgelist[i], map->step, test_st);
+                VectorMultiply(nudge, map->step, test_st);
                 VectorAdd(test_st, original_st, test_st);
                 snap_to_winding(*zone, map->texplane, test_st);
 

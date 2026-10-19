@@ -244,9 +244,9 @@ static bool TEX_InitFromWad()
         {
             currentwad->usedbymap = false; // include this wad
         }
-        for (auto it = g_WadInclude.begin(); it != g_WadInclude.end(); it++) // '-wadinclude xxx.wad'
+        for (const std::string &wad : g_WadInclude) // '-wadinclude xxx.wad'
         {
-            if (stristr(currentwad->path.c_str(), it->c_str()))
+            if (stristr(currentwad->path.c_str(), wad.c_str()))
             {
                 currentwad->usedbymap = false; // include this wad
             }
@@ -483,8 +483,8 @@ static int LoadLump(const lumpinfo_t *const source, byte *dest, int *texsize, in
             hlassume((int)sizeof(miptex_t) <= dest_maxsize, assume_MAX_MAP_MIPTEX);
             SafeRead(texfile, dest, sizeof(miptex_t));
 
-            for (int i = 0; i < MIPLEVELS; i++)
-                miptex->offsets[i] = 0;
+            for (auto &offset : miptex->offsets)
+                offset = 0;
             if (std::fseek(texfile, source->filepos, SEEK_SET))
                 Error("File read failure");
             writewad_data.emplace(source->disksize); // compat: also for disksize 0 (an empty lump)

@@ -746,12 +746,12 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
         localinterps.resize(0);
         // radiosity interpolation
         {
-            for (int i = 0; i < (int)ft->neighbors.size(); i++) // for this face and each of its neighbors
+            for (int neighbor : ft->neighbors) // for this face and each of its neighbors
             {
-                const facetriangulation_t *ft2 = g_facetriangulations[ft->neighbors[i]].get();
-                for (int j = 0; j < (int)ft2->localtriangulations.size(); j++) // for each patch on that face
+                const facetriangulation_t *ft2 = g_facetriangulations[neighbor].get();
+                for (const auto &localtriangulation : ft2->localtriangulations) // for each patch on that face
                 {
-                    const localtriangulation_t *lt = ft2->localtriangulations[j].get();
+                    const localtriangulation_t *lt = localtriangulation.get();
                     if (!CalcAdaptedSpot(lt, position, surface, spot))
                     {
                         continue;
@@ -804,22 +804,22 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
             maininterp->isbiased = false;
             maininterp->totalweight = 0;
             maininterp->points.resize(0);
-            for (int i = 0; i < (int)localinterps.size(); i++)
+            for (const auto &localinterp : localinterps)
             {
-                if (localinterps[i]->isbiased)
+                if (localinterp->isbiased)
                 {
                     maininterp->isbiased = true;
                 }
-                for (int j = 0; j < (int)localinterps[i]->points.size(); j++)
+                for (int j = 0; j < (int)localinterp->points.size(); j++)
                 {
-                    weight = localinterps[i]->points[j].weight;
-                    if (g_patches[localinterps[i]->points[j].patchnum].flags == ePatchFlagOutside)
+                    weight = localinterp->points[j].weight;
+                    if (g_patches[localinterp->points[j].patchnum].flags == ePatchFlagOutside)
                     {
                         weight *= 0.01;
                     }
                     int n = (int)maininterp->points.size();
                     maininterp->points.resize(n + 1);
-                    maininterp->points[n].patchnum = localinterps[i]->points[j].patchnum;
+                    maininterp->points[n].patchnum = localinterp->points[j].patchnum;
                     maininterp->points[n].weight = weight;
                     maininterp->totalweight += weight;
                 }
@@ -833,9 +833,9 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
                 // worst case, simply use the nearest patch
 
                 const localtriangulation_t *best = nullptr;
-                for (int i = 0; i < (int)ft->localtriangulations.size(); i++)
+                for (const auto &localtriangulation : ft->localtriangulations)
                 {
-                    const localtriangulation_t *lt = ft->localtriangulations[i].get();
+                    const localtriangulation_t *lt = localtriangulation.get();
                     VectorCopy(position, v);
                     snap_to_winding(lt->winding, lt->plane, v);
                     VectorSubtract(v, position, v);
@@ -884,9 +884,9 @@ void InterpolateSampleLight(const vec3_t position, int surface, int numstyles, c
 
 static bool TestLineSegmentIntersectWall(const facetriangulation_t *facetrian, const vec3_t p1, const vec3_t p2)
 {
-    for (int i = 0; i < (int)facetrian->walls.size(); i++)
+    for (const facetriangulation_t::Wall &w : facetrian->walls)
     {
-        const facetriangulation_t::Wall *wall = &facetrian->walls[i];
+        const facetriangulation_t::Wall *wall = &w;
         vec_t bottom = DotProduct(wall->points[0], wall->direction);
         vec_t top = DotProduct(wall->points[1], wall->direction);
         vec_t front = DotProduct(p1, wall->normal) - DotProduct(wall->points[0], wall->normal);
@@ -1434,10 +1434,10 @@ static void FindNeighbors(facetriangulation_t *facetrian)
         {
             continue;
         }
-        for (int side = 0; side < 2; side++)
+        for (const auto &vertex_face : es->vertex_faces)
         {
             // newest first: the order of the linked list this used to be
-            for (auto it = es->vertex_faces[side].rbegin(); it != es->vertex_faces[side].rend(); ++it)
+            for (auto it = vertex_face.rbegin(); it != vertex_face.rend(); ++it)
             {
                 f2 = *it;
                 facenum2 = f2 - g_dfaces;
@@ -1525,9 +1525,9 @@ static void CollectUsedPatches(facetriangulation_t *facetrian)
             facetrian->usedpatches.push_back(patchnum);
         }
 
-        for (int j = 0; j < (int)lt->sortedwedges.size(); j++)
+        for (const auto &sortedwedge : lt->sortedwedges)
         {
-            const localtriangulation_t::Wedge *w = &lt->sortedwedges[j];
+            const localtriangulation_t::Wedge *w = &sortedwedge;
 
             patchnum = w->leftpatchnum;
             for (k = 0; k < (int)facetrian->usedpatches.size(); k++)

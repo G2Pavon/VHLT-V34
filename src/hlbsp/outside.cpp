@@ -103,11 +103,11 @@ static void FreeDetailNode_r(node_t *n)
         }
         return;
     }
-    for (int i = 0; i < 2; i++)
+    for (node_t *&child : n->children)
     {
-        FreeDetailNode_r(n->children[i]);
-        FreeNode(n->children[i]);
-        n->children[i] = nullptr;
+        FreeDetailNode_r(child);
+        FreeNode(child);
+        child = nullptr;
     }
     face_t *next;
     for (face_t *f = n->faces; f; f = next)

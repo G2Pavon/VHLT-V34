@@ -371,9 +371,8 @@ void PairEdges()
                     vec_t angles = 0;
                     VectorClear(normals);
 
-                    for (int d = 0; d < 2; d++)
+                    for (auto f : e->faces)
                     {
-                        dface_t *f = e->faces[d];
                         int count = 0;
                         dface_t *fnext = f;
                         int edgeabsnext = edgeabs;
@@ -888,10 +887,10 @@ static void ChopFrag(samplefrag_t *frag)
         // clip the edge
         vec_t frac1 = 0;
         vec_t frac2 = 1;
-        for (int x = 0; x < 4; x++)
+        for (const auto &plane : frag->rect.planes)
         {
-            vec_t dot1 = DotProduct(e->point1, frag->rect.planes[x].normal) - frag->rect.planes[x].dist;
-            vec_t dot2 = DotProduct(e->point2, frag->rect.planes[x].normal) - frag->rect.planes[x].dist;
+            vec_t dot1 = DotProduct(e->point1, plane.normal) - plane.dist;
+            vec_t dot2 = DotProduct(e->point2, plane.normal) - plane.dist;
             if (dot1 <= ON_EPSILON && dot2 <= ON_EPSILON)
             {
                 frac1 = 1;
@@ -3261,10 +3260,10 @@ void BuildFacelights(const int facenum)
     for (int i = 0; i < l.numsurfpt; i++, spot += 3)
     {
 
-        for (int k = 0; k < ALLSTYLES; k++)
+        for (sample_t *samples : fl_samples)
         {
-            VectorCopy(spot, fl_samples[k][i].pos);
-            fl_samples[k][i].surface = l.surfpt_surface[i];
+            VectorCopy(spot, samples[i].pos);
+            samples[i].surface = l.surfpt_surface[i];
         }
 
         vec3_t centernormal;
@@ -3874,9 +3873,9 @@ void ReduceLightmap()
         if (IntForKey(g_face_entity[facenum], "zhlt_striprad"))
         {
             f->lightofs = g_lightdatasize;
-            for (int k = 0; k < MAXLIGHTMAPS; k++)
+            for (auto &style : f->styles)
             {
-                f->styles[k] = 255;
+                style = 255;
             }
             continue;
         }
@@ -3966,9 +3965,9 @@ static int MLH_AddFace(mdllight_t *ml, int facenum)
     ml->facecount++;
     ml->face[i].num = facenum;
     ml->face[i].samplecount = 0;
-    for (int j = 0; j < ALLSTYLES; j++)
+    for (auto &style : ml->face[i].style)
     {
-        ml->face[i].style[j].exist = false;
+        style.exist = false;
     }
     for (int j = 0; j < MAXLIGHTMAPS && f->styles[j] != 255; j++)
     {
@@ -4339,11 +4338,11 @@ void FinalLightFace(const int facenum)
             // ------------------------------------------------------------------------
 
             // clip from the bottom first
-            for (int i = 0; i < 3; i++)
+            for (vec_t &component : lb)
             {
-                if (lb[i] < minlight)
+                if (component < minlight)
                 {
-                    lb[i] = minlight;
+                    component = minlight;
                 }
             }
 
@@ -4373,9 +4372,9 @@ void FinalLightFace(const int facenum)
                     VectorScale(lb, g_limitthreshold / max, lb);
                 }
             }
-            for (int i = 0; i < 3; ++i)
-                if (lb[i] < g_minlight)
-                    lb[i] = g_minlight;
+            for (vec_t &component : lb)
+                if (component < g_minlight)
+                    component = g_minlight;
 
             for (int i = 0; i < 3; ++i)
             {
@@ -4391,12 +4390,12 @@ void FinalLightFace(const int facenum)
             {
                 VectorSubtract(lbi, final_basiclight[j].data(), lbi);
             }
-            for (int i = 0; i < 3; ++i)
+            for (int &component : lbi)
             {
-                if (lbi[i] < 0)
-                    lbi[i] = 0;
-                if (lbi[i] > 255)
-                    lbi[i] = 255;
+                if (component < 0)
+                    component = 0;
+                if (component > 255)
+                    component = 255;
             }
             {
                 unsigned char *colors = &g_dlightdata[f->lightofs + k * fl->numsamples * 3 + j * 3];

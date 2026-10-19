@@ -329,9 +329,8 @@ static void MakeParents(const int nodenum, const int parent)
     nodeparents[nodenum] = parent;
     dnode_t *node = g_dnodes + nodenum;
 
-    for (int i = 0; i < 2; i++)
+    for (int j : node->children)
     {
-        int j = node->children[i];
         if (j < 0)
         {
             leafparents[-j - 1] = nodenum;
@@ -357,11 +356,11 @@ using texlight_i = std::vector<texlight_t>::iterator;
 
 static void LightForTexture(const char *const name, vec3_t result)
 {
-    for (auto it = s_texlights.begin(); it != s_texlights.end(); it++)
+    for (const texlight_t &texlight : s_texlights)
     {
-        if (!strcasecmp(name, it->name.c_str()))
+        if (!strcasecmp(name, texlight.name.c_str()))
         {
-            VectorCopy(it->value, result);
+            VectorCopy(texlight.value, result);
             return;
         }
     }
@@ -1021,9 +1020,9 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
             vec3_t texturecolor;
             vec3_t texturereflectivity;
             GetVectorForKey(g_face_texlights[fn], "_texcolor", texturecolor);
-            for (int k = 0; k < 3; k++)
+            for (vec_t &component : texturecolor)
             {
-                texturecolor[k] = std::floor(texturecolor[k] + 0.001);
+                component = std::floor(component + 0.001);
             }
             if (VectorMinimum(texturecolor) < -0.001 || VectorMaximum(texturecolor) > 255.001)
             {
@@ -1032,9 +1031,9 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
                 Error("light_surface entity at (%g,%g,%g): texture color (%g,%g,%g) must be numbers between 0 and 255.", origin[0], origin[1], origin[2], texturecolor[0], texturecolor[1], texturecolor[2]);
             }
             VectorScale(texturecolor, 1.0 / 255.0, texturereflectivity);
-            for (int k = 0; k < 3; k++)
+            for (vec_t &component : texturereflectivity)
             {
-                texturereflectivity[k] = std::pow(texturereflectivity[k], g_texreflectgamma);
+                component = std::pow(component, g_texreflectgamma);
             }
             VectorScale(texturereflectivity, g_texreflectscale, texturereflectivity);
             if (VectorMaximum(texturereflectivity) > 1.0 + NORMAL_EPSILON)

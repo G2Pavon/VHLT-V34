@@ -390,9 +390,9 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
         CreateBrush(mapent->firstbrush + b->brushnum); // to get sizes
         b->contents = contents;
 
-        for (int i = 0; i < NUM_HULLS; i++)
+        for (auto &hull : b->hulls)
         {
-            b->hulls[i].ClearFaces();
+            hull.ClearFaces();
         }
 
         if (b->entitynum != 0) // Ignore for WORLD (code elsewhere enforces no ORIGIN in world message)
@@ -438,9 +438,9 @@ static void ParseBrush(Tokenizer &tokens, entity_t *mapent)
         CreateBrush(mapent->firstbrush + b->brushnum); // to get sizes
         b->contents = contents;
 
-        for (int i = 0; i < NUM_HULLS; i++)
+        for (auto &hull : b->hulls)
         {
-            b->hulls[i].ClearFaces();
+            hull.ClearFaces();
         }
 
         if (b->entitynum != 0) // Ignore for WORLD (code elsewhere enforces no ORIGIN in world message)
@@ -602,9 +602,9 @@ static bool ParseMapEntity(Tokenizer &tokens)
             {
                 for (iside = 0, side = g_brushsides + brush->firstside; iside < brush->numsides; ++iside, ++side)
                 {
-                    for (int ipoint = 0; ipoint < 3; ++ipoint)
+                    for (auto &planept : side->planepts)
                     {
-                        point = side->planepts[ipoint];
+                        point = planept;
                         if (ent_scale_b)
                         {
                             VectorSubtract(point, ent_scale_origin, point);
@@ -720,9 +720,8 @@ static bool ParseMapEntity(Tokenizer &tokens)
                 double b[2][3];
                 if (std::sscanf(ValueForKey(mapent, "zhlt_minsmaxs"), "%lf %lf %lf %lf %lf %lf", &b[0][0], &b[0][1], &b[0][2], &b[1][0], &b[1][1], &b[1][2]) == 6)
                 {
-                    for (int i = 0; i < 2; i++)
+                    for (auto point : b)
                     {
-                        vec_t *point = b[i];
                         if (ent_scale_b)
                         {
                             VectorSubtract(point, ent_scale_origin, point);
