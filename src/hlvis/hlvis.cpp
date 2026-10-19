@@ -350,7 +350,8 @@ static void CalcVis()
         LeafFlow(i);
     }
 
-    Log("average leafs visible: %i\n", totalvis / g_portalleafs);
+    // A .prt and BSP that both declare 0 leafs are consistent; the average used to divide by zero (SIGFPE).
+    Log("average leafs visible: %i\n", g_portalleafs ? totalvis / g_portalleafs : 0u);
 
     if (g_maxdistance)
     {
@@ -375,7 +376,7 @@ static void CalcVis()
             LeafFlow(i);
         }
 
-        Log("average maxdistance leafs visible: %i\n", totalvis / g_portalleafs);
+        Log("average maxdistance leafs visible: %i\n", g_portalleafs ? totalvis / g_portalleafs : 0u);
     }
     //	}
 }
