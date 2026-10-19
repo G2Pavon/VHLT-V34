@@ -17,6 +17,12 @@ if(MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+# GCC compiles a std::string passed to a printf-style varargs function with no warning unless
+# -Wconditionally-supported is on (Clang rejects it outright via -Wnon-pod-varargs, and doesn't
+# know this flag).
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wconditionally-supported)
+endif()
 
 # Output must be bit-identical to the reference tools, so float evaluation is pinned:
 # no fused multiply-add contraction (Clang's default is on) and no fast-math.
