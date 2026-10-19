@@ -495,8 +495,8 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     }
     if (leakfile && !ret)
     {
-        unlink(g_linefilename.c_str());
-        unlink(g_pointfilename.c_str());
+        RemoveFile(g_linefilename);
+        RemoveFile(g_pointfilename);
     }
 
     // now go back and fill things in

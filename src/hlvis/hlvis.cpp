@@ -330,7 +330,7 @@ static void CalcVis()
     const std::string visdatafile = g_Mapname + ".vdt";
 
     // Remove this file
-    unlink(visdatafile.c_str());
+    RemoveFile(visdatafile);
 
     //		InitVisBlock();
     //		SetupVisBlockLeafs();

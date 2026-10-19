@@ -148,27 +148,20 @@ static void TryOpenWadFiles()
                 }
             }
             const char *value = ValueForKey(&g_entities[0], "wad");
-            char path[MAX_VAL];
-            std::size_t i;
-            int j;
-            for (i = 0, j = 0; i < std::strlen(value) + 1; i++)
+            std::string path;
+            for (std::size_t i = 0; i < std::strlen(value) + 1; i++)
             {
                 if (value[i] == ';' || value[i] == '\0')
                 {
-                    path[j] = '\0';
-                    if (path[0])
+                    if (!path.empty())
                     {
-                        char name[MAX_VAL];
-                        ExtractFile(path, name);
-                        DefaultExtension(name, ".wad");
-                        OpenWadFile(name);
+                        OpenWadFile(PathWithDefaultExtension(PathFile(path), ".wad").c_str());
                     }
-                    j = 0;
+                    path.clear();
                 }
-                else if (j < MAX_VAL - 1) // longer names are cut (they overflowed path)
+                else if (path.size() < MAX_VAL - 1) // compat: longer entries are cut (they were copied into a char[MAX_VAL])
                 {
-                    path[j] = value[i];
-                    j++;
+                    path += value[i];
                 }
             }
         }

@@ -56,7 +56,7 @@ static std::string AssumeMessage(assume_msgs msgid)
 
 static void DeleteMapFile(const char *const extension)
 {
-    std::remove((g_Mapname + extension).c_str());
+    RemoveFile(g_Mapname + extension);
 }
 
 void ResetTmpFiles()

@@ -57,4 +57,21 @@ TEST_SUITE("filelib")
         std::fclose(raw);
         fs::remove(path);
     }
+
+    TEST_CASE("RemoveFile deletes files, ignores missing ones and leaves directories")
+    {
+        const fs::path dir = fs::temp_directory_path() / ("vhlt_removefile_tests_" + std::to_string(getpid()));
+        fs::create_directories(dir / "empty.prt");
+        const fs::path file = dir / "map.pts";
+        std::ofstream(file) << "x";
+
+        RemoveFile(file.string());
+        CHECK(!fs::exists(file));
+        RemoveFile(file.string()); // already gone: no error
+        RemoveFile((dir / "never" / "there.lin").string());
+        RemoveFile((dir / "empty.prt").string());
+        CHECK(fs::is_directory(dir / "empty.prt")); // unlink() never removed directories
+
+        fs::remove_all(dir);
+    }
 }

@@ -44,6 +44,16 @@ bool q_exists(const char *const filename)
     return UniqueFile(std::fopen(filename, "rb")) != nullptr;
 }
 
+void RemoveFile(const std::string &filename)
+{
+    std::error_code error;
+    if (std::filesystem::symlink_status(filename, error).type() == std::filesystem::file_type::directory)
+    {
+        return;
+    }
+    std::filesystem::remove(filename, error);
+}
+
 void SafeRead(std::FILE *f, void *buffer, int count)
 {
     if (std::fread(buffer, 1, count, f) != (std::size_t)count)

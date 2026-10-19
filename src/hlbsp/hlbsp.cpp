@@ -1156,16 +1156,16 @@ static void ProcessFile(const std::string &filename)
 {
     // delete existing files
     g_portfilename = filename + ".prt";
-    unlink(g_portfilename.c_str());
+    RemoveFile(g_portfilename);
 
     g_pointfilename = filename + ".pts";
-    unlink(g_pointfilename.c_str());
+    RemoveFile(g_pointfilename);
 
     g_linefilename = filename + ".lin";
-    unlink(g_linefilename.c_str());
+    RemoveFile(g_linefilename);
 
     g_extentfilename = filename + ".ext";
-    unlink(g_extentfilename.c_str());
+    RemoveFile(g_extentfilename);
     // open the hull files
     for (int i = 0; i < NUM_HULLS; i++)
     {
@@ -1264,13 +1264,13 @@ static void ProcessFile(const std::string &filename)
     {
         std::fclose(polyfiles[i]);
         polyfiles[i] = nullptr;
-        unlink((filename + ".p" + std::to_string(i)).c_str());
+        RemoveFile(filename + ".p" + std::to_string(i));
         std::fclose(brushfiles[i]);
         brushfiles[i] = nullptr;
-        unlink((filename + ".b" + std::to_string(i)).c_str());
+        RemoveFile(filename + ".b" + std::to_string(i));
     }
-    unlink((filename + ".hsz").c_str());
-    unlink((filename + ".pln").c_str());
+    RemoveFile(filename + ".hsz");
+    RemoveFile(filename + ".pln");
 }
 
 int main(const int argc, char **argv)

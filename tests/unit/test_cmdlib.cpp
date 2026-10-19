@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include <unistd.h>
 
@@ -13,93 +14,60 @@
 #include "common/messages.h"
 #include "common/stringlib.h"
 
-namespace
-{
-std::string Default(std::string path, const char *ext)
-{
-    char buf[256];
-    std::strcpy(buf, path.c_str());
-    DefaultExtension(buf, ext);
-    return buf;
-}
-
-std::string Strip(std::string path)
-{
-    char buf[256];
-    std::strcpy(buf, path.c_str());
-    StripExtension(buf);
-    return buf;
-}
-
-std::string FilePath(const char *path)
-{
-    char buf[256];
-    ExtractFilePath(path, buf);
-    return buf;
-}
-
-std::string File(const char *path)
-{
-    char buf[256];
-    ExtractFile(path, buf);
-    return buf;
-}
-} // namespace
-
 TEST_SUITE("cmdlib")
 {
-    TEST_CASE("DefaultExtension appends only when there is no extension in the file name")
+    TEST_CASE("PathWithDefaultExtension appends only when there is no extension in the file name")
     {
-        CHECK(Default("maps/foo", ".bsp") == "maps/foo.bsp");
-        CHECK(Default("foo.map", ".bsp") == "foo.map");
-        CHECK(Default("dir.v2/foo", ".bsp") == "dir.v2/foo.bsp");
-        CHECK(Default("dir.v2\\foo", ".bsp") == "dir.v2\\foo.bsp");
+        CHECK(PathWithDefaultExtension("maps/foo", ".bsp") == "maps/foo.bsp");
+        CHECK(PathWithDefaultExtension("foo.map", ".bsp") == "foo.map");
+        CHECK(PathWithDefaultExtension("dir.v2/foo", ".bsp") == "dir.v2/foo.bsp");
+        CHECK(PathWithDefaultExtension("dir.v2\\foo", ".bsp") == "dir.v2\\foo.bsp");
     }
 
-    TEST_CASE("StripExtension removes the last extension of the file name")
+    TEST_CASE("PathWithoutExtension removes the last extension of the file name")
     {
-        CHECK(Strip("a/b.c.d") == "a/b.c");
-        CHECK(Strip("a.b/c") == "a.b/c");
-        CHECK(Strip("noext") == "noext");
-        CHECK(Strip(".hidden") == "");
+        CHECK(PathWithoutExtension("a/b.c.d") == "a/b.c");
+        CHECK(PathWithoutExtension("a.b/c") == "a.b/c");
+        CHECK(PathWithoutExtension("noext") == "noext");
+        CHECK(PathWithoutExtension(".hidden") == "");
     }
 
-    TEST_CASE("ExtractFilePath keeps the trailing slash; either slash counts")
+    TEST_CASE("PathDirectory keeps the trailing slash; either slash counts")
     {
-        CHECK(FilePath("a/b/c.map") == "a/b/");
-        CHECK(FilePath("c.map") == "");
-        CHECK(FilePath("a\\b/c") == "a\\b/");
-        CHECK(FilePath("a/b\\c") == "a/b\\");
-        CHECK(FilePath("/abs/x") == "/abs/");
+        CHECK(PathDirectory("a/b/c.map") == "a/b/");
+        CHECK(PathDirectory("c.map") == "");
+        CHECK(PathDirectory("a\\b/c") == "a\\b/");
+        CHECK(PathDirectory("a/b\\c") == "a/b\\");
+        CHECK(PathDirectory("/abs/x") == "/abs/");
     }
 
     TEST_CASE("compat: a path ending in a slash is treated as a directory name")
     {
-        CHECK(FilePath("a/b/") == "a/");
-        CHECK(File("a/b/") == "b/");
-        CHECK(FilePath("b/") == "");
-        CHECK(File("b/") == "b/");
+        CHECK(PathDirectory("a/b/") == "a/");
+        CHECK(PathFile("a/b/") == "b/");
+        CHECK(PathDirectory("b/") == "");
+        CHECK(PathFile("b/") == "b/");
     }
 
-    TEST_CASE("ExtractFile")
+    TEST_CASE("PathFile")
     {
-        CHECK(File("a/b/c.map") == "c.map");
-        CHECK(File("c.map") == "c.map");
-        CHECK(File("a\\c.map") == "c.map");
+        CHECK(PathFile("a/b/c.map") == "c.map");
+        CHECK(PathFile("c.map") == "c.map");
+        CHECK(PathFile("a\\c.map") == "c.map");
     }
 
-    TEST_CASE("FlipSlashes converts to the system slash")
+    TEST_CASE("PathWithSystemSlashes converts either slash to the system slash")
     {
-        char buf[] = "a\\b/c\\d";
-        FlipSlashes(buf);
         if (SYSTEM_SLASH_CHAR == '/')
         {
-            CHECK(std::string(buf) == "a/b/c/d");
+            CHECK(PathWithSystemSlashes("a\\b/c\\d") == "a/b/c/d");
         }
         else
         {
-            CHECK(std::string(buf) == "a\\b\\c\\d");
+            CHECK(PathWithSystemSlashes("a\\b/c\\d") == "a\\b\\c\\d");
         }
+        CHECK(PathWithSystemSlashes("no-slash") == "no-slash");
+        CHECK(PathWithSystemSlashes("") == "");
     }
 
     TEST_CASE("stristr returns a pointer into the original string")
@@ -145,26 +113,46 @@ TEST_SUITE("cmdlib")
         CHECK(guard[7] == 'X');
     }
 
-    TEST_CASE("string path API matches the char-buffer helpers")
+    TEST_CASE("path helpers: pinned results, including where std::filesystem::path differs")
     {
-        for (const char *p : {"maps/foo", "foo.map", "dir.v2/foo", "a/b/c.map", "c.map", "a\\b/c", "a/b/", "b/", ".hidden", "/abs/x", ""})
+        // input, PathWithDefaultExtension(".bsp"), PathWithoutExtension, PathDirectory, PathFile.
+        // On POSIX fs::path gets the backslash rows wrong (no directory; the whole input is the
+        // file name), keeps ".map" as a stem, gives "a/b/" an empty file name and drops the
+        // trailing slash from the directory.
+        struct Row
         {
-            CAPTURE(p);
-            CHECK(PathWithDefaultExtension(p, ".bsp") == Default(p, ".bsp"));
-            CHECK(PathWithoutExtension(p) == Strip(p));
-            CHECK(PathDirectory(p) == FilePath(p));
-            CHECK(PathFile(p) == File(p));
-        }
-    }
-
-    TEST_CASE("PathWithSystemSlashes matches FlipSlashes")
-    {
-        for (const char *p : {"a\\b/c\\d", "/abs/x", "no-slash", ""})
+            const char *path, *withdefault, *withoutext, *directory, *file;
+        };
+        const Row rows[] = {
+        {"maps/foo", "maps/foo.bsp", "maps/foo", "maps/", "foo"},
+        {"foo.map", "foo.map", "foo", "", "foo.map"},
+        {"dir.v2/foo", "dir.v2/foo.bsp", "dir.v2/foo", "dir.v2/", "foo"},
+        {"dir.v2\\foo", "dir.v2\\foo.bsp", "dir.v2\\foo", "dir.v2\\", "foo"},
+        {"a/b/c.map", "a/b/c.map", "a/b/c", "a/b/", "c.map"},
+        {"c.map", "c.map", "c", "", "c.map"},
+        {"a\\b/c", "a\\b/c.bsp", "a\\b/c", "a\\b/", "c"},
+        {"a/b\\c", "a/b\\c.bsp", "a/b\\c", "a/b\\", "c"},
+        {"a/b/", "a/b/.bsp", "a/b/", "a/", "b/"},
+        {"a/b.c/", "a/b.c/.bsp", "a/b.c/", "a/", "b.c/"},
+        {"b/", "b/.bsp", "b/", "", "b/"},
+        {".hidden", ".hidden", "", "", ".hidden"},
+        {".map", ".map", "", "", ".map"},
+        {"/abs/x", "/abs/x.bsp", "/abs/x", "/abs/", "x"},
+        {"", ".bsp", "", "", ""},
+        {"x.tar.gz", "x.tar.gz", "x.tar", "", "x.tar.gz"},
+        {"foo.", "foo.", "foo", "", "foo."},
+        {"maps\\de_dust2.map", "maps\\de_dust2.map", "maps\\de_dust2", "maps\\", "de_dust2.map"},
+        {"C:\\hl\\cstrike\\maps\\x.map", "C:\\hl\\cstrike\\maps\\x.map", "C:\\hl\\cstrike\\maps\\x", "C:\\hl\\cstrike\\maps\\", "x.map"},
+        {"valve\\halflife.wad", "valve\\halflife.wad", "valve\\halflife", "valve\\", "halflife.wad"},
+        {"C:halflife.wad", "C:halflife.wad", "C:halflife", "", "C:halflife.wad"},
+        };
+        for (const Row &r : rows)
         {
-            CAPTURE(p);
-            char buf[16];
-            std::strcpy(buf, p);
-            CHECK(PathWithSystemSlashes(p) == FlipSlashes(buf));
+            CAPTURE(r.path);
+            CHECK(PathWithDefaultExtension(r.path, ".bsp") == r.withdefault);
+            CHECK(PathWithoutExtension(r.path) == r.withoutext);
+            CHECK(PathDirectory(r.path) == r.directory);
+            CHECK(PathFile(r.path) == r.file);
         }
     }
 
@@ -178,19 +166,6 @@ TEST_SUITE("cmdlib")
         SetMapname((deep + "/m.map").c_str());
         CHECK(g_Mapname == PathWithSystemSlashes(deep + "/m"));
         g_Mapname = saved;
-    }
-
-    TEST_CASE("the fixed-size wrappers fill the whole array")
-    {
-        char exact[8] = "abc";
-        DefaultExtension(exact, ".bsp"); // 7 characters + NUL: fits exactly
-        CHECK(std::string(exact) == "abc.bsp");
-        char dir[5];
-        ExtractFilePath("abc/def", dir);
-        CHECK(std::string(dir) == "abc/");
-        char file[4];
-        ExtractFile("x/abc", file);
-        CHECK(std::string(file) == "abc");
     }
 
     TEST_CASE("I_FloatTime is monotonic seconds")

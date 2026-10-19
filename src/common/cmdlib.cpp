@@ -101,31 +101,6 @@ std::string PathWithSystemSlashes(std::string_view path)
     return out;
 }
 
-char *FlipSlashes(char *string)
-{
-    const char from = SYSTEM_SLASH_CHAR == '\\' ? '/' : '\\';
-    std::replace(string, string + std::strlen(string), from, SYSTEM_SLASH_CHAR);
-    return string;
-}
-
-void StripExtension(char *path)
-{
-    const std::ptrdiff_t extension = FilePositions(path).extension;
-    if (extension != -1)
-    {
-        path[extension] = 0;
-    }
-}
-
-void CopyPathResult(const std::string &value, char *dest, std::size_t size, const char *what)
-{
-    if (value.size() >= size)
-    {
-        Error("%s: \"%s\" does not fit in %d characters", what, value.c_str(), static_cast<int>(size) - 1);
-    }
-    std::memcpy(dest, value.c_str(), value.size() + 1);
-}
-
 std::string StringVPrintf(const char *const format, va_list args)
 {
     va_list measure;

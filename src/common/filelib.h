@@ -20,6 +20,9 @@ std::vector<char> ReadFile(const char *const filename);
 
 int q_filelength(std::FILE *f);
 bool q_exists(const char *const filename);
+// Deletes a file if it is there; errors (no such file, no permission) are ignored, as with the
+// unlink() calls this replaces. A directory, even an empty one, is left alone.
+void RemoveFile(const std::string &filename);
 
 void SafeRead(std::FILE *f, void *buffer, int count);
 void SafeWrite(std::FILE *f, const void *const buffer, int count);

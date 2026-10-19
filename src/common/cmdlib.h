@@ -33,35 +33,14 @@ const char *stristr(const char *const string, const char *const substring);
 // Path helpers. Either slash separates directories. compat: the extension is what follows the
 // last '.' of the file name, and a path that ends in a slash names a directory, so its "file" is
 // the last directory with the slash ("a/b/" -> path "a/", file "b/").
+// These stay plain string code rather than std::filesystem::path: on POSIX fs::path doesn't split
+// at '\' (so "valve\halflife.wad" would have no directory, and that file name is written into
+// the BSP's "wad" key), and it treats ".map", "a/b/" and the trailing slash differently.
 [[nodiscard]] std::string PathWithDefaultExtension(std::string_view path, std::string_view extension); // adds it only if there is none
 [[nodiscard]] std::string PathWithoutExtension(std::string_view path);
 [[nodiscard]] std::string PathDirectory(std::string_view path); // keeps the trailing slash; "" if there is none
 [[nodiscard]] std::string PathFile(std::string_view path);
 [[nodiscard]] std::string PathWithSystemSlashes(std::string_view path); // either slash -> SYSTEM_SLASH_CHAR
-
-// In-place and into-buffer versions for fixed-size char arrays. They exit with an error instead
-// of overflowing the array; passing a bare pointer does not compile.
-char *FlipSlashes(char *string); // to SYSTEM_SLASH_CHAR
-void StripExtension(char *path); // shrinks only
-void CopyPathResult(const std::string &value, char *dest, std::size_t size, const char *what);
-
-template <std::size_t N>
-void DefaultExtension(char (&path)[N], const char *extension)
-{
-    CopyPathResult(PathWithDefaultExtension(path, extension), path, N, "DefaultExtension");
-}
-
-template <std::size_t N>
-void ExtractFilePath(const char *const path, char (&dest)[N])
-{
-    CopyPathResult(PathDirectory(path), dest, N, "ExtractFilePath");
-}
-
-template <std::size_t N>
-void ExtractFile(const char *const path, char (&dest)[N])
-{
-    CopyPathResult(PathFile(path), dest, N, "ExtractFile");
-}
 
 // printf-style formatting into a std::string, without a length limit.
 std::string FORMAT_PRINTF(1, 2) StringPrintf(const char *const format, ...);
