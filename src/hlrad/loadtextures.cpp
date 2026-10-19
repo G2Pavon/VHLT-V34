@@ -856,7 +856,7 @@ static void NewTextures_Write()
     g_texdatasize += shift;
     for (int i = 0; i < nummiptex; i++)
     {
-        const int ofs = *lump.dataofs(i); // inside the old header
+        const int ofs = lump.dataofs(i).value_or(-1); // inside the old header, so never -1 here
         if (ofs < 0) // bad texture
         {
             continue;

@@ -457,11 +457,11 @@ static void ReduceTexdata()
         return;
     }
     // The offset table, copied out of the lump: it was indexed through dmiptexlump_t, whose
-    // dataofs is declared [4]. Every slot lies inside the header checked above.
+    // dataofs is declared [4]. Every slot lies inside the header checked above (-1 never applies).
     std::vector<int> dataofs(nummiptex);
     for (int i = 0; i < nummiptex; i++)
     {
-        dataofs[i] = *lump.dataofs(i);
+        dataofs[i] = lump.dataofs(i).value_or(-1);
     }
     // (were malloc'ed: malloc(0) for a map without textures could fail the out-of-memory check)
     std::vector<bool> Used(nummiptex);
