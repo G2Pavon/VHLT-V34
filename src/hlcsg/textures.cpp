@@ -276,27 +276,18 @@ static bool TEX_InitFromWad()
 
         if (!texfiles[nTexFiles] && pszWadroot)
         {
-            char szTmp[_MAX_PATH];
-            char szFile[_MAX_PATH];
-            char szSubdir[_MAX_PATH];
-
-            ExtractFile(pszWadFile, szFile);
-
-            ExtractFilePath(pszWadFile, szTmp);
-            ExtractFile(szTmp, szSubdir);
-
-            // szSubdir will have a trailing separator
-            safe_snprintf(szTmp, _MAX_PATH, "%s" SYSTEM_SLASH_STR "%s%s", pszWadroot, szSubdir, szFile);
-            texfiles[nTexFiles].reset(std::fopen(szTmp, "rb"));
+            // the subdirectory has a trailing separator
+            const std::string subdir = PathFile(PathDirectory(pszWadFile));
+            const std::string rooted = std::string(pszWadroot) + SYSTEM_SLASH_STR + subdir + PathFile(pszWadFile);
+            texfiles[nTexFiles].reset(std::fopen(rooted.c_str(), "rb"));
         }
 
         if (!texfiles[nTexFiles] && pszWadFile[0] == '\\')
         {
-            char tmp[_MAX_PATH];
-            for (int l = 'C'; l <= 'Z'; ++l)
+            for (char l = 'C'; l <= 'Z'; ++l)
             {
-                safe_snprintf(tmp, _MAX_PATH, "%c:%s", l, pszWadFile);
-                texfiles[nTexFiles].reset(std::fopen(tmp, "rb"));
+                const std::string withdrive = std::string{l, ':'} + pszWadFile;
+                texfiles[nTexFiles].reset(std::fopen(withdrive.c_str(), "rb"));
                 if (texfiles[nTexFiles])
                 {
                     break;
@@ -604,9 +595,7 @@ void WriteMiptex()
                 double percused = (double)currentwad->usedtextures / (double)nummiptex * 100;
                 Log(" - Contains %i used texture%s, %2.2f percent of map (%d textures in wad)\n",
                     currentwad->usedtextures, currentwad->usedtextures == 1 ? "" : "s", percused, currentwad->totaltextures);
-                char tmp[_MAX_PATH];
-                ExtractFile(currentwad->path.c_str(), tmp);
-                safe_strncat(szTmpWad, tmp, MAX_VAL);
+                safe_strncat(szTmpWad, PathFile(currentwad->path).c_str(), MAX_VAL);
                 safe_strncat(szTmpWad, ";", MAX_VAL);
             }
         }
@@ -647,7 +636,6 @@ void WriteMiptex()
         byte *data = g_dtexdata + headersize;
         lump.set_count(nummiptex);
         byte *const texdata_end = g_dtexdata + lump.capacity(); // was g_max_map_miptex, which could exceed the buffer
-        char writewad_name[_MAX_PATH];
         typedef struct
         {
             int filepos;
@@ -660,8 +648,7 @@ void WriteMiptex()
         } dlumpinfo_t;
 
         wadinfo_t writewad_header;
-        safe_snprintf(writewad_name, _MAX_PATH, "%s.wa_", g_Mapname);
-        UniqueFile writewad_file(SafeOpenWrite(writewad_name));
+        UniqueFile writewad_file(SafeOpenWrite((g_Mapname + ".wa_").c_str()));
         std::vector<dlumpinfo_t> writewad_lumpinfos(nummiptex);
         writewad_header.identification[0] = 'W';
         writewad_header.identification[1] = 'A';

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "common/bspfile.h"
@@ -326,12 +327,10 @@ static void SaveVisData(const char *filename)
 
 static void CalcVis()
 {
-    char visdatafile[_MAX_PATH];
-
-    safe_snprintf(visdatafile, _MAX_PATH, "%s.vdt", g_Mapname);
+    const std::string visdatafile = g_Mapname + ".vdt";
 
     // Remove this file
-    unlink(visdatafile);
+    unlink(visdatafile.c_str());
 
     //		InitVisBlock();
     //		SetupVisBlockLeafs();
@@ -357,8 +356,8 @@ static void CalcVis()
     {
         totalvis = 0;
 
-        Log("saving visdata to %s...\n", visdatafile);
-        SaveVisData(visdatafile);
+        Log("saving visdata to %s...\n", visdatafile.c_str());
+        SaveVisData(visdatafile.c_str());
 
         // We need to reset the uncompressed variable and portal visbits
         uncompressed.assign(uncompressed.size(), 0);
@@ -679,8 +678,6 @@ static int VisLeafnumForPoint(const vec3_t point)
 
 int main(const int argc, char **argv)
 {
-    char portalfile[_MAX_PATH];
-    char source[_MAX_PATH];
     const char *mapname_from_arg = nullptr;
 
     g_Program = "hlvis";
@@ -725,9 +722,7 @@ int main(const int argc, char **argv)
         Usage();
     }
 
-    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-    FlipSlashes(g_Mapname);
-    StripExtension(g_Mapname);
+    SetMapname(mapname_from_arg);
     OpenLog();
     std::atexit(CloseLog);
     ThreadSetDefault();
@@ -759,12 +754,10 @@ int main(const int argc, char **argv)
     // BEGIN VIS
     double start = I_FloatTime();
 
-    safe_strncpy(source, g_Mapname, _MAX_PATH);
-    safe_strncat(source, ".bsp", _MAX_PATH);
-    safe_strncpy(portalfile, g_Mapname, _MAX_PATH);
-    safe_strncat(portalfile, ".prt", _MAX_PATH);
+    const std::string source = g_Mapname + ".bsp";
+    const std::string portalfile = g_Mapname + ".prt";
 
-    LoadBSPFile(source);
+    LoadBSPFile(source.c_str());
     ParseEntities(GetParamsFromEnt);
     {
         for (int i = 0; i < g_numentities; i++)
@@ -783,7 +776,7 @@ int main(const int argc, char **argv)
             }
         }
     }
-    LoadPortalsByFilename(portalfile);
+    LoadPortalsByFilename(portalfile.c_str());
 
     Settings();
     uncompressed.assign(static_cast<std::size_t>(g_portalleafs) * g_bitbytes, 0);
@@ -797,7 +790,7 @@ int main(const int argc, char **argv)
         PrintBSPFileSizes();
     }
 
-    WriteBSPFile(source);
+    WriteBSPFile(source.c_str());
 
     double end = I_FloatTime();
     LogTimeElapsed(end - start);

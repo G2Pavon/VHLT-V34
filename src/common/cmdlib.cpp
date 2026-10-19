@@ -94,6 +94,13 @@ std::string PathFile(std::string_view path)
     return std::string(path.substr(FilePositions(path).directory + 1)); // exclude directory slash
 }
 
+std::string PathWithSystemSlashes(std::string_view path)
+{
+    std::string out(path);
+    std::replace(out.begin(), out.end(), SYSTEM_SLASH_CHAR == '\\' ? '/' : '\\', SYSTEM_SLASH_CHAR);
+    return out;
+}
+
 char *FlipSlashes(char *string)
 {
     const char from = SYSTEM_SLASH_CHAR == '\\' ? '/' : '\\';

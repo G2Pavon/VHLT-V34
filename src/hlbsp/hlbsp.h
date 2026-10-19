@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "common/bspfile.h"
@@ -260,11 +261,11 @@ extern bool g_bLeaked;
 extern bool g_nohull2;
 extern bool g_chart;
 
-extern char g_portfilename[_MAX_PATH];
-extern char g_pointfilename[_MAX_PATH];
-extern char g_linefilename[_MAX_PATH];
-extern char g_bspfilename[_MAX_PATH];
-extern char g_extentfilename[_MAX_PATH];
+extern std::string g_portfilename;
+extern std::string g_pointfilename;
+extern std::string g_linefilename;
+extern std::string g_bspfilename;
+extern std::string g_extentfilename;
 
 extern vec3_t g_hull_size[NUM_HULLS][2];
 

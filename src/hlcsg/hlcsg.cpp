@@ -745,11 +745,10 @@ static void EmitPlanes()
             r.dist = p.dist;
             r.type = p.type;
         }
-        char name[_MAX_PATH];
-        safe_snprintf(name, _MAX_PATH, "%s.pln", g_Mapname);
-        UniqueFile planeout(std::fopen(name, "wb"));
+        const std::string name = g_Mapname + ".pln";
+        UniqueFile planeout(std::fopen(name.c_str(), "wb"));
         if (!planeout)
-            Error("Couldn't open %s", name);
+            Error("Couldn't open %s", name.c_str());
         SafeWrite(planeout.get(), records.data(), static_cast<int>(records.size() * sizeof(PlaneFileRecord)));
     }
     for (int i = 0; i < g_nummapplanes; i++, mp++, dp++)
@@ -932,11 +931,9 @@ static void LoadWadValue()
     SetKeyValue(&g_entities[0], "wad", wadvalue.c_str());
 }
 
-static void WriteBSP(const char *const name)
+static void WriteBSP(const std::string &name)
 {
-    char path[_MAX_PATH];
-
-    safe_snprintf(path, _MAX_PATH, "%s.bsp", name);
+    const std::string path = name + ".bsp";
 
     SetModelNumbers();
     ReuseModel();
@@ -953,7 +950,7 @@ static void WriteBSP(const char *const name)
     ConvertHintToEmpty(); // this is ridiculous. --vluzacn
     if (g_chart)
         PrintBSPFileSizes();
-    WriteBSPFile(path);
+    WriteBSPFile(path.c_str());
 }
 
 //AJM: added in function
@@ -1238,7 +1235,6 @@ static void Settings()
 
 int main(const int argc, char **argv)
 {
-    char name[_MAX_PATH];                   // mapanme
     const char *mapname_from_arg = nullptr; // mapname path from passed argvar
 
     g_Program = "hlcsg";
@@ -1303,9 +1299,7 @@ int main(const int argc, char **argv)
     }
 
     // handle mapname
-    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-    FlipSlashes(g_Mapname);
-    StripExtension(g_Mapname);
+    SetMapname(mapname_from_arg);
 
     // onlyents
     if (!g_onlyents)
@@ -1345,11 +1339,8 @@ int main(const int argc, char **argv)
     //  entity can be dealt with effectively
     double start = I_FloatTime();
 
-    safe_strncpy(name, mapname_from_arg, _MAX_PATH); // make a copy of the nap name
-    FlipSlashes(name);
-    DefaultExtension(name, ".map"); // might be .reg
-
-    LoadMapFile(name);
+    const std::string mapfile = PathWithDefaultExtension(PathWithSystemSlashes(mapname_from_arg), ".map"); // might be .reg
+    LoadMapFile(mapfile.c_str());
     // info_compile_parameters may have raised the texture data limit after the buffer was
     // allocated; WriteMiptex used to write up to the new limit into the old buffer.
     dtexdata_grow();
@@ -1378,10 +1369,7 @@ int main(const int argc, char **argv)
     // if onlyents, just grab the entites and resave
     if (g_onlyents)
     {
-        char out[_MAX_PATH];
-
-        safe_snprintf(out, _MAX_PATH, "%s.bsp", g_Mapname);
-        LoadBSPFile(out);
+        LoadBSPFile((g_Mapname + ".bsp").c_str());
 
         // Write it all back out again.
         WriteBSP(g_Mapname);
@@ -1408,25 +1396,20 @@ int main(const int argc, char **argv)
     // open hull files
     for (int i = 0; i < NUM_HULLS; i++)
     {
-        char name[_MAX_PATH];
-
-        safe_snprintf(name, _MAX_PATH, "%s.p%i", g_Mapname, i);
-
-        out[i].reset(std::fopen(name, "w"));
-
+        const std::string polyname = g_Mapname + ".p" + std::to_string(i);
+        out[i].reset(std::fopen(polyname.c_str(), "w"));
         if (!out[i])
-            Error("Couldn't open %s", name);
-        safe_snprintf(name, _MAX_PATH, "%s.b%i", g_Mapname, i);
-        out_detailbrush[i].reset(std::fopen(name, "w"));
+            Error("Couldn't open %s", polyname.c_str());
+        const std::string brushname = g_Mapname + ".b" + std::to_string(i);
+        out_detailbrush[i].reset(std::fopen(brushname.c_str(), "w"));
         if (!out_detailbrush[i])
-            Error("Couldn't open %s", name);
+            Error("Couldn't open %s", brushname.c_str());
     }
     {
-        char name[_MAX_PATH];
-        safe_snprintf(name, _MAX_PATH, "%s.hsz", g_Mapname);
-        UniqueFile hsz(std::fopen(name, "w"));
+        const std::string name = g_Mapname + ".hsz";
+        UniqueFile hsz(std::fopen(name.c_str(), "w"));
         if (!hsz)
-            Error("Couldn't open %s", name);
+            Error("Couldn't open %s", name.c_str());
         for (const auto &hullsize : g_hull_size)
         {
             float x1 = hullsize[0][0];

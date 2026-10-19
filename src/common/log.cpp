@@ -12,7 +12,12 @@
 #include "common/messages.h"
 
 const char *g_Program = "Uninitialized variable ::g_Program";
-char g_Mapname[_MAX_PATH] = "Uninitialized variable ::g_Mapname";
+std::string g_Mapname = "Uninitialized variable ::g_Mapname";
+
+void SetMapname(const char *mapname_from_arg)
+{
+    g_Mapname = PathWithoutExtension(PathWithSystemSlashes(mapname_from_arg));
+}
 
 bool g_log = DEFAULT_LOG;
 
@@ -48,9 +53,7 @@ constexpr int MAX_MESSAGE = 2048;
 
 static void DeleteMapFile(const char *const extension)
 {
-    char filename[_MAX_PATH];
-    safe_snprintf(filename, _MAX_PATH, "%s%s", g_Mapname, extension);
-    std::remove(filename);
+    std::remove((g_Mapname + extension).c_str());
 }
 
 void ResetTmpFiles()
@@ -85,14 +88,11 @@ void CheckForErrorLog()
 {
     if (g_log)
     {
-        char logfilename[_MAX_PATH];
-
-        safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
-        if (q_exists(logfilename))
+        if (q_exists((g_Mapname + ".err").c_str()))
         {
             Log(">> There was a problem compiling the map.\n"
                 ">> Check the file %s.log for the cause.\n",
-                g_Mapname);
+                g_Mapname.c_str());
             std::exit(1);
         }
     }
@@ -107,10 +107,8 @@ void LogError(const char *const message)
     }
     if (g_log && CompileLog)
     {
-        char logfilename[_MAX_PATH];
-
-        safe_snprintf(logfilename, _MAX_PATH, "%s.err", g_Mapname);
-        UniqueFile ErrorLog(std::fopen(logfilename, "a"));
+        const std::string logfilename = g_Mapname + ".err";
+        UniqueFile ErrorLog(std::fopen(logfilename.c_str(), "a"));
 
         if (ErrorLog)
         {
@@ -118,7 +116,7 @@ void LogError(const char *const message)
         }
         else
         {
-            std::fprintf(stderr, "ERROR: Could not open error logfile %s", logfilename);
+            std::fprintf(stderr, "ERROR: Could not open error logfile %s", logfilename.c_str());
             std::fflush(stderr);
         }
     }
@@ -128,13 +126,12 @@ void OpenLog()
 {
     if (g_log)
     {
-        char logfilename[_MAX_PATH];
-        safe_snprintf(logfilename, _MAX_PATH, "%s.log", g_Mapname);
-        CompileLog.reset(std::fopen(logfilename, "a"));
+        const std::string logfilename = g_Mapname + ".log";
+        CompileLog.reset(std::fopen(logfilename.c_str(), "a"));
 
         if (!CompileLog)
         {
-            std::fprintf(stderr, "ERROR: Could not open logfile %s", logfilename);
+            std::fprintf(stderr, "ERROR: Could not open logfile %s", logfilename.c_str());
             std::fflush(stderr);
         }
     }

@@ -36,6 +36,7 @@ const char *stristr(const char *const string, const char *const substring);
 [[nodiscard]] std::string PathWithoutExtension(std::string_view path);
 [[nodiscard]] std::string PathDirectory(std::string_view path); // keeps the trailing slash; "" if there is none
 [[nodiscard]] std::string PathFile(std::string_view path);
+[[nodiscard]] std::string PathWithSystemSlashes(std::string_view path); // either slash -> SYSTEM_SLASH_CHAR
 
 // In-place and into-buffer versions for fixed-size char arrays. They exit with an error instead
 // of overflowing the array; passing a bare pointer does not compile.

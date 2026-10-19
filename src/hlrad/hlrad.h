@@ -7,6 +7,7 @@
 #include "common/winding.h"
 
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -239,7 +240,7 @@ extern float g_indirect_sun;
 extern float g_smoothing_threshold_2;
 extern vec_t *g_smoothvalues; //[nummiptex]
 extern bool g_estimate;
-extern char g_source[_MAX_PATH];
+extern std::string g_source;
 extern vec_t g_fade;
 extern bool g_circus;
 extern bool g_allow_spread;

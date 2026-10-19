@@ -4,6 +4,7 @@
 #include <string>
 
 #include "common/cmdlib.h"
+#include "common/log.h"
 #include "common/messages.h"
 #include "common/stringlib.h"
 
@@ -149,6 +150,29 @@ TEST_SUITE("cmdlib")
             CHECK(PathDirectory(p) == FilePath(p));
             CHECK(PathFile(p) == File(p));
         }
+    }
+
+    TEST_CASE("PathWithSystemSlashes matches FlipSlashes")
+    {
+        for (const char *p : {"a\\b/c\\d", "/abs/x", "no-slash", ""})
+        {
+            CAPTURE(p);
+            char buf[16];
+            std::strcpy(buf, p);
+            CHECK(PathWithSystemSlashes(p) == FlipSlashes(buf));
+        }
+    }
+
+    TEST_CASE("SetMapname: system slashes, no extension, no length limit")
+    {
+        const std::string saved = g_Mapname;
+        SetMapname("maps\\sub/de_dust.map");
+        CHECK(g_Mapname == PathWithSystemSlashes("maps/sub/de_dust"));
+        // was copied into a char[_MAX_PATH] (260 on Windows) and silently cut
+        const std::string deep(5000, 'd');
+        SetMapname((deep + "/m.map").c_str());
+        CHECK(g_Mapname == PathWithSystemSlashes(deep + "/m"));
+        g_Mapname = saved;
     }
 
     TEST_CASE("the fixed-size wrappers fill the whole array")

@@ -681,7 +681,7 @@ void FinishBSPFile()
 
     }
 
-    WriteExtentFile(g_extentfilename);
+    WriteExtentFile(g_extentfilename.c_str());
 
     if (g_chart)
     {
@@ -696,5 +696,5 @@ void FinishBSPFile()
         dp->dist = mp->dist;
         dp->type = mp->type;
     }
-    WriteBSPFile(g_bspfilename);
+    WriteBSPFile(g_bspfilename.c_str());
 }

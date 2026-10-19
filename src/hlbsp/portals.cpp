@@ -302,21 +302,20 @@ void WritePortalfile(node_t *headnode)
     NumberLeafs_r(headnode);
 
     // write the file
-    pf = std::fopen(g_portfilename, "w");
+    pf = std::fopen(g_portfilename.c_str(), "w");
     if (!pf)
     {
-        Error("Error writing portal file %s", g_portfilename);
+        Error("Error writing portal file %s", g_portfilename.c_str());
     }
     if (g_viewportal)
     {
-        char filename[_MAX_PATH];
-        safe_snprintf(filename, _MAX_PATH, "%s_portal.pts", g_Mapname);
-        pf_view = std::fopen(filename, "w");
+        const std::string filename = g_Mapname + "_portal.pts";
+        pf_view = std::fopen(filename.c_str(), "w");
         if (!pf_view)
         {
-            Error("Couldn't open %s", filename);
+            Error("Couldn't open %s", filename.c_str());
         }
-        Log("Writing '%s' ...\n", filename);
+        Log("Writing '%s' ...\n", filename.c_str());
     }
 
     std::fprintf(pf, "%i\n", num_visleafs);
@@ -329,7 +328,7 @@ void WritePortalfile(node_t *headnode)
     {
         std::fclose(pf_view);
     }
-    Log("BSP generation successful, writing portal file '%s'\n", g_portfilename);
+    Log("BSP generation successful, writing portal file '%s'\n", g_portfilename.c_str());
 }
 
 void FreePortals(node_t *node)

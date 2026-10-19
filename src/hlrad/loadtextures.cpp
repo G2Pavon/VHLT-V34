@@ -18,9 +18,7 @@ static std::vector<std::string> g_waddirs; // -waddir, in command line order
 
 void AddWadFolder(const char *path)
 {
-    char truncated[_MAX_PATH];
-    safe_snprintf(truncated, _MAX_PATH, "%s", path);
-    g_waddirs.emplace_back(truncated);
+    g_waddirs.emplace_back(path);
 }
 
 typedef struct
@@ -36,7 +34,7 @@ typedef struct
 
 struct wadfile_t
 {
-    char path[_MAX_PATH];
+    std::string path;
     UniqueFile file;
     int filesize;
     int numlumps;
@@ -59,11 +57,11 @@ static void OpenWadFile(const char *name, bool fullpath = false)
     wadfile_t *wad = g_wadfiles.emplace_back(std::make_unique<wadfile_t>()).get();
     if (fullpath)
     {
-        safe_snprintf(wad->path, _MAX_PATH, "%s", name);
-        wad->file.reset(std::fopen(wad->path, "rb"));
+        wad->path = name;
+        wad->file.reset(std::fopen(wad->path.c_str(), "rb"));
         if (!wad->file)
         {
-            Error("Couldn't open %s", wad->path);
+            Error("Couldn't open %s", wad->path.c_str());
         }
     }
     else
@@ -71,8 +69,8 @@ static void OpenWadFile(const char *name, bool fullpath = false)
         for (const std::string &dir : g_waddirs)
         {
             // the system's separator (this used to be a backslash on every system: -waddir never found a wad off Windows)
-            safe_snprintf(wad->path, _MAX_PATH, "%s" SYSTEM_SLASH_STR "%s", dir.c_str(), name);
-            wad->file.reset(std::fopen(wad->path, "rb"));
+            wad->path = dir + SYSTEM_SLASH_STR + name;
+            wad->file.reset(std::fopen(wad->path.c_str(), "rb"));
             if (wad->file.get())
             {
                 break;
@@ -84,7 +82,7 @@ static void OpenWadFile(const char *name, bool fullpath = false)
             return;
         }
     }
-    Log("Using Wadfile: %s\n", wad->path);
+    Log("Using Wadfile: %s\n", wad->path.c_str());
     wad->filesize = q_filelength(wad->file.get());
     struct
     {
@@ -94,28 +92,28 @@ static void OpenWadFile(const char *name, bool fullpath = false)
     } wadinfo;
     if (wad->filesize < (int)sizeof(wadinfo))
     {
-        Error("Invalid wad file '%s'.", wad->path);
+        Error("Invalid wad file '%s'.", wad->path.c_str());
     }
     SafeRead(wad->file.get(), &wadinfo, sizeof(wadinfo));
     wadinfo.numlumps = wadinfo.numlumps;
     wadinfo.infotableofs = wadinfo.infotableofs;
     if (std::strncmp(wadinfo.identification, "WAD3", 4))
-        Error("%s isn't a Wadfile!", wad->path);
+        Error("%s isn't a Wadfile!", wad->path.c_str());
     wad->numlumps = wadinfo.numlumps;
     if (wad->numlumps < 0 || wadinfo.infotableofs < 0 || wadinfo.infotableofs + wad->numlumps * (long long)sizeof(lumpinfo_t) > wad->filesize)
     {
-        Error("Invalid wad file '%s'.", wad->path);
+        Error("Invalid wad file '%s'.", wad->path.c_str());
     }
     wad->lumpinfos.resize(wad->numlumps);
     if (std::fseek(wad->file.get(), wadinfo.infotableofs, SEEK_SET))
-        Error("File read failure: %s", wad->path);
+        Error("File read failure: %s", wad->path.c_str());
     for (int i = 0; i < wad->numlumps; i++)
     {
         SafeRead(wad->file.get(), &wad->lumpinfos[i], sizeof(lumpinfo_t));
         if (!TerminatedString(wad->lumpinfos[i].name, MAX_TEXTURE_NAME_LENGTH))
         {
             wad->lumpinfos[i].name[MAX_TEXTURE_NAME_LENGTH - 1] = 0;
-            Warning("Unterminated texture name : wad[%s] texture[%d] name[%s]\n", wad->path, i, wad->lumpinfos[i].name);
+            Warning("Unterminated texture name : wad[%s] texture[%d] name[%s]\n", wad->path.c_str(), i, wad->lumpinfos[i].name);
         }
         wad->lumpinfos[i].filepos = wad->lumpinfos[i].filepos;
         wad->lumpinfos[i].disksize = wad->lumpinfos[i].disksize;
@@ -129,15 +127,14 @@ static void TryOpenWadFiles()
     if (!g_wadfiles_opened)
     {
         g_wadfiles_opened = true;
-        char filename[_MAX_PATH];
-        safe_snprintf(filename, _MAX_PATH, "%s.wa_", g_Mapname);
-        if (q_exists(filename))
+        const std::string filename = g_Mapname + ".wa_";
+        if (q_exists(filename.c_str()))
         {
-            OpenWadFile(filename, true);
+            OpenWadFile(filename.c_str(), true);
         }
         else
         {
-            Warning("Couldn't open %s", filename);
+            Warning("Couldn't open %s", filename.c_str());
             Log("Opening wad files from directories:\n");
             if (g_waddirs.empty())
             {
@@ -284,7 +281,7 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t &header)
                 continue;
             if (found->disksize < (int)sizeof(miptex_t) || found->filepos < 0 || (long long)found->filepos + found->disksize > wad->filesize)
             {
-                Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path);
+                Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path.c_str());
                 continue;
             }
             std::vector<byte> data(found->disksize);
@@ -295,12 +292,12 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t &header)
             std::memcpy(&mt, data.data(), sizeof(mt));
             if (!TerminatedString(mt.name, MAX_TEXTURE_NAME_LENGTH))
             {
-                Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path);
+                Warning("Texture '%s': invalid texture data in '%s'.", tex->name, wad->path.c_str());
                 continue;
             }
             if (strcasecmp(mt.name, tex->name))
             {
-                Warning("Texture '%s': texture name '%s' differs from its reference name '%s' in '%s'.", tex->name, mt.name, tex->name, wad->path);
+                Warning("Texture '%s': texture name '%s' differs from its reference name '%s' in '%s'.", tex->name, mt.name, tex->name, wad->path.c_str());
             }
             LoadTexture(tex, mt, data.data(), found->disksize);
             loaded = true;
@@ -325,7 +322,7 @@ void LoadTextures()
     g_numtextures = lump.count();
     if (g_numtextures < 0)
     {
-        Error("Invalid texture lump in '%s': %d textures.", g_source, g_numtextures);
+        Error("Invalid texture lump in '%s': %d textures.", g_source.c_str(), g_numtextures);
     }
     s_textures = std::vector<radtexture_t>(g_numtextures);
     g_textures = s_textures.data();
@@ -341,7 +338,7 @@ void LoadTextures()
         }
         else if (offset < 0 || size < (int)sizeof(miptex_t))
         {
-            Warning("Invalid texture data in '%s'.", g_source);
+            Warning("Invalid texture data in '%s'.", g_source.c_str());
             DefaultTexture(tex, "");
         }
         else

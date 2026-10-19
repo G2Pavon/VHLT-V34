@@ -109,7 +109,7 @@ vec_t g_fade = DEFAULT_FADE;
 vec_t g_direct_scale = DEFAULT_DLIGHT_SCALE;
 vec3_t g_ambient = {DEFAULT_AMBIENT_RED, DEFAULT_AMBIENT_GREEN, DEFAULT_AMBIENT_BLUE};
 vec_t g_limitthreshold = DEFAULT_LIMITTHRESHOLD;
-char g_source[_MAX_PATH] = "";
+std::string g_source;
 float g_indirect_sun = DEFAULT_INDIRECT_SUN;
 bool g_extra = DEFAULT_EXTRA;
 bool g_texscale = DEFAULT_TEXSCALE;
@@ -2466,9 +2466,7 @@ int main(const int argc, char **argv)
 
     g_smoothing_threshold = (float)std::cos(g_smoothing_value * (Q_PI / 180.0));
 
-    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-    FlipSlashes(g_Mapname);
-    StripExtension(g_Mapname);
+    SetMapname(mapname_from_arg);
     OpenLog();
     std::atexit(CloseLog);
     ThreadSetDefault();
@@ -2503,8 +2501,8 @@ int main(const int argc, char **argv)
 
     // normalise maxlight
 
-    safe_snprintf(g_source, _MAX_PATH, "%s.bsp", g_Mapname);
-    LoadBSPFile(g_source);
+    g_source = g_Mapname + ".bsp";
+    LoadBSPFile(g_source.c_str());
     ParseEntities(GetParamsFromEnt);
     dtexdata_grow(); // info_compile_parameters may have raised g_max_map_lightdata
     if (g_fastmode)
@@ -2557,7 +2555,7 @@ int main(const int argc, char **argv)
     if (g_chart)
         PrintBSPFileSizes();
 
-    WriteBSPFile(g_source);
+    WriteBSPFile(g_source.c_str());
 
     double end = I_FloatTime();
     LogTimeElapsed(end - start);

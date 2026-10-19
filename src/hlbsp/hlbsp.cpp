@@ -45,11 +45,11 @@ static std::FILE *polyfiles[NUM_HULLS];
 static std::FILE *brushfiles[NUM_HULLS];
 static face_t *validfaces[MAX_INTERNAL_MAP_PLANES];
 
-char g_bspfilename[_MAX_PATH];
-char g_pointfilename[_MAX_PATH];
-char g_linefilename[_MAX_PATH];
-char g_portfilename[_MAX_PATH];
-char g_extentfilename[_MAX_PATH];
+std::string g_bspfilename;
+std::string g_pointfilename;
+std::string g_linefilename;
+std::string g_portfilename;
+std::string g_extentfilename;
 
 // command line flags
 bool g_chart = DEFAULT_CHART;              // print out chart? "-chart"
@@ -1152,43 +1152,40 @@ static void Settings()
     Log("\n\n");
 }
 
-static void ProcessFile(const char *const filename)
+static void ProcessFile(const std::string &filename)
 {
-    char name[_MAX_PATH];
-
     // delete existing files
-    safe_snprintf(g_portfilename, _MAX_PATH, "%s.prt", filename);
-    unlink(g_portfilename);
+    g_portfilename = filename + ".prt";
+    unlink(g_portfilename.c_str());
 
-    safe_snprintf(g_pointfilename, _MAX_PATH, "%s.pts", filename);
-    unlink(g_pointfilename);
+    g_pointfilename = filename + ".pts";
+    unlink(g_pointfilename.c_str());
 
-    safe_snprintf(g_linefilename, _MAX_PATH, "%s.lin", filename);
-    unlink(g_linefilename);
+    g_linefilename = filename + ".lin";
+    unlink(g_linefilename.c_str());
 
-    safe_snprintf(g_extentfilename, _MAX_PATH, "%s.ext", filename);
-    unlink(g_extentfilename);
+    g_extentfilename = filename + ".ext";
+    unlink(g_extentfilename.c_str());
     // open the hull files
     for (int i = 0; i < NUM_HULLS; i++)
     {
         //mapname.p[0-3]
-        safe_snprintf(name, sizeof(name), "%s.p%i", filename, i);
-        polyfiles[i] = std::fopen(name, "r");
+        const std::string polyname = filename + ".p" + std::to_string(i);
+        polyfiles[i] = std::fopen(polyname.c_str(), "r");
 
         if (!polyfiles[i])
-            Error("Can't open %s", name);
-        safe_snprintf(name, sizeof(name), "%s.b%i", filename, i);
-        brushfiles[i] = std::fopen(name, "r");
+            Error("Can't open %s", polyname.c_str());
+        const std::string brushname = filename + ".b" + std::to_string(i);
+        brushfiles[i] = std::fopen(brushname.c_str(), "r");
         if (!brushfiles[i])
-            Error("Can't open %s", name);
+            Error("Can't open %s", brushname.c_str());
     }
     {
-        char name[_MAX_PATH];
-        safe_snprintf(name, _MAX_PATH, "%s.hsz", filename);
-        std::FILE *f = std::fopen(name, "r");
+        const std::string name = filename + ".hsz";
+        std::FILE *f = std::fopen(name.c_str(), "r");
         if (!f)
         {
-            Warning("Couldn't open %s", name);
+            Warning("Couldn't open %s", name.c_str());
         }
         else
         {
@@ -1213,19 +1210,18 @@ static void ProcessFile(const char *const filename)
     }
 
     // load the output of csg
-    safe_snprintf(g_bspfilename, _MAX_PATH, "%s.bsp", filename);
-    LoadBSPFile(g_bspfilename);
+    g_bspfilename = filename + ".bsp";
+    LoadBSPFile(g_bspfilename.c_str());
     ParseEntities(GetParamsFromEnt);
 
     Settings(); // AJM: moved here due to info_compile_parameters entity
 
     {
-        char name[_MAX_PATH];
-        safe_snprintf(name, _MAX_PATH, "%s.pln", filename);
-        UniqueFile planefile(std::fopen(name, "rb"));
+        const std::string name = filename + ".pln";
+        UniqueFile planefile(std::fopen(name.c_str(), "rb"));
         if (!planefile)
         {
-            Warning("Couldn't open %s", name);
+            Warning("Couldn't open %s", name.c_str());
             for (int i = 0; i < g_numplanes; i++)
             {
                 plane_t *mp = &g_mapplanes[i];
@@ -1266,19 +1262,15 @@ static void ProcessFile(const char *const filename)
     // Because the bsp file has been updated, these polyfiles are no longer valid.
     for (int i = 0; i < NUM_HULLS; i++)
     {
-        safe_snprintf(name, sizeof(name), "%s.p%i", filename, i);
         std::fclose(polyfiles[i]);
         polyfiles[i] = nullptr;
-        unlink(name);
-        safe_snprintf(name, sizeof(name), "%s.b%i", filename, i);
+        unlink((filename + ".p" + std::to_string(i)).c_str());
         std::fclose(brushfiles[i]);
         brushfiles[i] = nullptr;
-        unlink(name);
+        unlink((filename + ".b" + std::to_string(i)).c_str());
     }
-    safe_snprintf(name, _MAX_PATH, "%s.hsz", filename);
-    unlink(name);
-    safe_snprintf(name, _MAX_PATH, "%s.pln", filename);
-    unlink(name);
+    unlink((filename + ".hsz").c_str());
+    unlink((filename + ".pln").c_str());
 }
 
 int main(const int argc, char **argv)
@@ -1350,9 +1342,7 @@ int main(const int argc, char **argv)
         Usage();
     }
 
-    safe_strncpy(g_Mapname, mapname_from_arg, _MAX_PATH);
-    FlipSlashes(g_Mapname);
-    StripExtension(g_Mapname);
+    SetMapname(mapname_from_arg);
     OpenLog();
     std::atexit(CloseLog);
     ThreadSetDefault();
@@ -1384,25 +1374,21 @@ int main(const int argc, char **argv)
 
     // Load the .void files for allowable entities in the void
     {
-        char strSystemEntitiesVoidFile[_MAX_PATH];
-        char strMapEntitiesVoidFile[_MAX_PATH];
-
         // try looking in the current directory
-        safe_strncpy(strSystemEntitiesVoidFile, ENTITIES_VOID, _MAX_PATH);
-        if (!q_exists(strSystemEntitiesVoidFile))
+        std::string systemvoidfile = ENTITIES_VOID;
+        if (!q_exists(systemvoidfile.c_str()))
         {
             // try looking in the directory we were run from
-            ExtractFilePath(ExecutablePath().c_str(), strSystemEntitiesVoidFile);
-            safe_strncat(strSystemEntitiesVoidFile, ENTITIES_VOID, _MAX_PATH);
+            systemvoidfile = PathDirectory(ExecutablePath()) + ENTITIES_VOID;
         }
 
         // Set the optional level specific lights filename
-        safe_snprintf(strMapEntitiesVoidFile, _MAX_PATH, "%s%s", g_Mapname, ENTITIES_VOID_EXT);
+        const std::string mapvoidfile = g_Mapname + ENTITIES_VOID_EXT;
 
-        LoadAllowableOutsideList(strSystemEntitiesVoidFile); // default entities.void
-        if (*strMapEntitiesVoidFile)
+        LoadAllowableOutsideList(systemvoidfile.c_str()); // default entities.void
+        if (!mapvoidfile.empty())
         {
-            LoadAllowableOutsideList(strMapEntitiesVoidFile); // automatic mapname.void
+            LoadAllowableOutsideList(mapvoidfile.c_str()); // automatic mapname.void
         }
     }
 

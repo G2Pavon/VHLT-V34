@@ -8,7 +8,10 @@
 #include "common/messages.h"
 
 extern const char *g_Program;
-extern char g_Mapname[_MAX_PATH];
+extern std::string g_Mapname; // the map path without extension; output files are g_Mapname + extension
+
+// Sets g_Mapname from the command-line map argument: system slashes, extension removed.
+void SetMapname(const char *mapname_from_arg);
 
 #define DEFAULT_LOG true
 
