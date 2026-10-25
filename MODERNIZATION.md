@@ -344,11 +344,17 @@ fail them.
 
 Not done, on purpose: the path helpers in `cmdlib.h` (`PathDirectory`, `PathFile`, `PathWithoutExtension`,
 `PathWithSystemSlashes`, ...) stay string code (section 7, S4b-d: `fs::path` does not split at `\` on POSIX, and
-those names are written into the BSP). The 9 raw `FILE *` sites in `hlbsp` (polygon and brush files, portal, point and
-line files) are an ownership change, left for a later slice. The one risk this slice cannot test here is Windows: `path`
+those names are written into the BSP). The one risk this slice cannot test here is Windows: `path`
 converts a narrow name through the ANSI code page and `.string()` converts it back, which can differ from handing the
 bytes to `fopen` for a name with bytes that are not valid in that code page. Accepted by the owner. There is no directory
 traversal in the tools, so there was nothing to move there.
+
+Slice 2 (same day): the 9 raw `FILE *` handles of `hlbsp` are `UniqueFile`s opened with `OpenFile` and closed with
+`reset()`, in the order the `fclose` calls had: the four polygon and four brush hull files (`polyfiles`, `brushfiles`; `ReadSurfs` and
+`ReadBrushes` still take the `FILE *`), the `.hsz` reader, the leak trail's point and line files (`outside.cpp`) and the portal and
+viewportal files (`portals.cpp`). Ownership only: every output file is compared by the tiers (the leak trail by
+`fm_bsp_leak` and `regress leak-all-hulls`, the viewportal file by `bsp-viewportal`, the hull sizes by the hullshape maps,
+the `.pln` fallback by `cli hlbsp-nopln`). `hlbsp` has no `std::fopen`/`std::fclose` left.
 
 ## 6. What has been audited (and what was found)
 

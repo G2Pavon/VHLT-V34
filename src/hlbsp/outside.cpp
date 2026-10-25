@@ -17,8 +17,8 @@ static int c_falsenodes;
 static int c_free_faces;
 static int c_keep_faces;
 static portal_t *prevleaknode;
-static std::FILE *pointfile; // open only while FillOutside traces a leak with leakfile set
-static std::FILE *linefile;
+static UniqueFile pointfile; // open only while FillOutside traces a leak with leakfile set
+static UniqueFile linefile;
 static int hit_occupied;
 static int backdraw;
 
@@ -71,10 +71,10 @@ static void MarkLeakTrail(portal_t *n2)
     n2->winding->getCenter(p2);
 
     // Linefile
-    std::fprintf(linefile, "%f %f %f - %f %f %f\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
+    std::fprintf(linefile.get(), "%f %f %f - %f %f %f\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
 
     // Pointfile
-    std::fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
+    std::fprintf(pointfile.get(), "%f %f %f\n", p1[0], p1[1], p1[2]);
 
     VectorSubtract(p2, p1, dir);
     float len = VectorLength(dir);
@@ -82,7 +82,7 @@ static void MarkLeakTrail(portal_t *n2)
 
     while (len > 2)
     {
-        std::fprintf(pointfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
+        std::fprintf(pointfile.get(), "%f %f %f\n", p1[0], p1[1], p1[2]);
         for (int i = 0; i < 3; i++)
             p1[i] += dir[i] * 2;
         len -= 2;
@@ -387,13 +387,13 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
     if (leakfile)
     {
-        pointfile = std::fopen(g_pointfilename.c_str(), "w");
+        pointfile = OpenFile(g_pointfilename, "w");
         if (!pointfile)
         {
             Error("Couldn't open pointfile %s\n", g_pointfilename.c_str());
         }
 
-        linefile = std::fopen(g_linefilename.c_str(), "w");
+        linefile = OpenFile(g_linefilename, "w");
         if (!linefile)
         {
             Error("Couldn't open linefile %s\n", g_linefilename.c_str());
@@ -404,10 +404,8 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 
     if (leakfile)
     {
-        std::fclose(pointfile);
-        std::fclose(linefile);
-        pointfile = nullptr;
-        linefile = nullptr;
+        pointfile.reset();
+        linefile.reset();
     }
 
     if (ret)

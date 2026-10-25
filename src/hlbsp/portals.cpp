@@ -3,13 +3,14 @@
 
 #include "hlbsp/hlbsp.h"
 #include "common/cmdlib.h"
+#include "common/filelib.h"
 #include "common/log.h"
 
 node_t g_outside_node; // portals outside the world face this
 
 // PORTAL FILE GENERATION
-static std::FILE *pf;
-static std::FILE *pf_view;
+static UniqueFile pf;
+static UniqueFile pf_view;
 extern bool g_viewportal;
 static int num_visleafs; // leafs the player can be in
 static int num_visportals;
@@ -174,18 +175,18 @@ static void WritePortalFile_r(const node_t *const node)
                         Warning("Backward portal @");
                         w->Print();
                     }
-                    std::fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
+                    std::fprintf(pf.get(), "%u %i %i ", w->m_NumPoints, p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
                 }
                 else
                 {
-                    std::fprintf(pf, "%u %i %i ", w->m_NumPoints, p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
+                    std::fprintf(pf.get(), "%u %i %i ", w->m_NumPoints, p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
                 }
 
                 for (unsigned int i = 0; i < w->m_NumPoints; i++)
                 {
-                    std::fprintf(pf, "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
+                    std::fprintf(pf.get(), "(%f %f %f) ", w->m_Points[i][0], w->m_Points[i][1], w->m_Points[i][2]);
                 }
-                std::fprintf(pf, "\n");
+                std::fprintf(pf.get(), "\n");
                 if (g_viewportal)
                 {
                     vec3_t center, center1, center2;
@@ -193,16 +194,16 @@ static void WritePortalFile_r(const node_t *const node)
                     w->getCenter(center);
                     VectorMA(center, 0.5, p->plane.normal, center1);
                     VectorMA(center, -0.5, p->plane.normal, center2);
-                    std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
-                    std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                    std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", from[0], from[1], from[2]);
+                    std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
                     for (unsigned int i = 0; i < w->m_NumPoints; i++)
                     {
                         vec_t *p1 = w->m_Points[i];
                         vec_t *p2 = w->m_Points[(i + 1) % w->m_NumPoints];
-                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
-                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
-                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
-                        std::fprintf(pf_view, "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
+                        std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", p1[0], p1[1], p1[2]);
+                        std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", p2[0], p2[1], p2[2]);
+                        std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", center2[0], center2[1], center2[2]);
+                        std::fprintf(pf_view.get(), "%5.2f %5.2f %5.2f\n", center1[0], center1[1], center1[2]);
                     }
                 }
             }
@@ -290,7 +291,7 @@ static void WriteLeafCount_r(node_t *node)
             return;
         }
         int count = CountChildLeafs_r(node);
-        std::fprintf(pf, "%i\n", count);
+        std::fprintf(pf.get(), "%i\n", count);
     }
 }
 
@@ -302,7 +303,7 @@ void WritePortalfile(node_t *headnode)
     NumberLeafs_r(headnode);
 
     // write the file
-    pf = std::fopen(g_portfilename.c_str(), "w");
+    pf = OpenFile(g_portfilename, "w");
     if (!pf)
     {
         Error("Error writing portal file %s", g_portfilename.c_str());
@@ -310,7 +311,7 @@ void WritePortalfile(node_t *headnode)
     if (g_viewportal)
     {
         const std::string filename = g_Mapname + "_portal.pts";
-        pf_view = std::fopen(filename.c_str(), "w");
+        pf_view = OpenFile(filename, "w");
         if (!pf_view)
         {
             Error("Couldn't open %s", filename.c_str());
@@ -318,15 +319,15 @@ void WritePortalfile(node_t *headnode)
         Log("Writing '%s' ...\n", filename.c_str());
     }
 
-    std::fprintf(pf, "%i\n", num_visleafs);
-    std::fprintf(pf, "%i\n", num_visportals);
+    std::fprintf(pf.get(), "%i\n", num_visleafs);
+    std::fprintf(pf.get(), "%i\n", num_visportals);
 
     WriteLeafCount_r(headnode);
     WritePortalFile_r(headnode);
-    std::fclose(pf);
+    pf.reset();
     if (g_viewportal)
     {
-        std::fclose(pf_view);
+        pf_view.reset();
     }
     Log("BSP generation successful, writing portal file '%s'\n", g_portfilename.c_str());
 }

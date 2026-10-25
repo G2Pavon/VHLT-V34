@@ -39,8 +39,8 @@ vec3_t g_hull_size[NUM_HULLS][2] =
          {-16, -16, -18},
          {16, 16, 18}}};
 
-static std::FILE *polyfiles[NUM_HULLS];
-static std::FILE *brushfiles[NUM_HULLS];
+static UniqueFile polyfiles[NUM_HULLS];
+static UniqueFile brushfiles[NUM_HULLS];
 static face_t *validfaces[MAX_INTERNAL_MAP_PLANES];
 
 std::string g_bspfilename;
@@ -732,7 +732,7 @@ static std::unique_ptr<surfchain_t> ReadSurfs(std::FILE *file)
     // read in the polygons
     while (true)
     {
-        if (file == polyfiles[2] && g_nohull2)
+        if (file == polyfiles[2].get() && g_nohull2)
             break;
         line++;
         int r = std::fscanf(file, "%i %i %i %i %i\n", &detaillevel, &planenum, &texinfo, &contents, &numpoints);
@@ -825,7 +825,7 @@ static brush_t *ReadBrushes(std::FILE *file)
     brush_t *brushes = nullptr;
     while (true)
     {
-        if (file == brushfiles[2] && g_nohull2)
+        if (file == brushfiles[2].get() && g_nohull2)
             break;
         int brushinfo;
         int r = std::fscanf(file, "%i\n", &brushinfo);
@@ -888,11 +888,11 @@ static brush_t *ReadBrushes(std::FILE *file)
 
 static bool ProcessModel()
 {
-    std::unique_ptr<surfchain_t> surfs = ReadSurfs(polyfiles[0]);
+    std::unique_ptr<surfchain_t> surfs = ReadSurfs(polyfiles[0].get());
 
     if (!surfs)
         return false; // all models are done
-    brush_t *detailbrushes = ReadBrushes(brushfiles[0]);
+    brush_t *detailbrushes = ReadBrushes(brushfiles[0].get());
 
     hlassume(g_nummodels < MAX_MAP_MODELS, assume_MAX_MAP_MODELS);
 
@@ -999,12 +999,12 @@ static bool ProcessModel()
     // the clipping hulls are simpler
     for (g_hullnum = 1; g_hullnum < NUM_HULLS; g_hullnum++)
     {
-        surfs = ReadSurfs(polyfiles[g_hullnum]);
+        surfs = ReadSurfs(polyfiles[g_hullnum].get());
         if (!surfs) // was dereferenced below
         {
             Error("ReadSurfs: hull %i file ended before the hull 0 file", g_hullnum);
         }
-        detailbrushes = ReadBrushes(brushfiles[g_hullnum]);
+        detailbrushes = ReadBrushes(brushfiles[g_hullnum].get());
         {
             int hullnum = g_hullnum;
             if (surfs->mins[0] <= surfs->maxs[0])
@@ -1169,18 +1169,18 @@ static void ProcessFile(const std::string &filename)
     {
         //mapname.p[0-3]
         const std::string polyname = filename + ".p" + std::to_string(i);
-        polyfiles[i] = std::fopen(polyname.c_str(), "r");
+        polyfiles[i] = OpenFile(polyname, "r");
 
         if (!polyfiles[i])
             Error("Can't open %s", polyname.c_str());
         const std::string brushname = filename + ".b" + std::to_string(i);
-        brushfiles[i] = std::fopen(brushname.c_str(), "r");
+        brushfiles[i] = OpenFile(brushname, "r");
         if (!brushfiles[i])
             Error("Can't open %s", brushname.c_str());
     }
     {
         const std::string name = filename + ".hsz";
-        std::FILE *f = std::fopen(name.c_str(), "r");
+        UniqueFile f = OpenFile(name, "r");
         if (!f)
         {
             Warning("Couldn't open %s", name.c_str());
@@ -1191,7 +1191,7 @@ static void ProcessFile(const std::string &filename)
             float x2, y2, z2;
             for (int i = 0; i < NUM_HULLS; i++)
             {
-                int count = std::fscanf(f, "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
+                int count = std::fscanf(f.get(), "%f %f %f %f %f %f\n", &x1, &y1, &z1, &x2, &y2, &z2);
                 if (count != 6)
                 {
                     Error("Load hull size (line %i): scanf failure", i + 1);
@@ -1203,7 +1203,6 @@ static void ProcessFile(const std::string &filename)
                 g_hull_size[i][1][1] = y2;
                 g_hull_size[i][1][2] = z2;
             }
-            std::fclose(f);
         }
     }
 
@@ -1260,11 +1259,9 @@ static void ProcessFile(const std::string &filename)
     // Because the bsp file has been updated, these polyfiles are no longer valid.
     for (int i = 0; i < NUM_HULLS; i++)
     {
-        std::fclose(polyfiles[i]);
-        polyfiles[i] = nullptr;
+        polyfiles[i].reset();
         RemoveFile(filename + ".p" + std::to_string(i));
-        std::fclose(brushfiles[i]);
-        brushfiles[i] = nullptr;
+        brushfiles[i].reset();
         RemoveFile(filename + ".b" + std::to_string(i));
     }
     RemoveFile(filename + ".hsz");
