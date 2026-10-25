@@ -59,3 +59,15 @@ This is Vluzacn's (email: vluzacn@163.com) 34th custom build of ZHLT 3.4
 ---
 
 Credits to Solokiller from TWHL for the massive cleanup of the VHLT source code, removing all ifdef directives for features and all Xash-specific code. https://github.com/twhl-community/VHLT-V34
+
+## Bug-report contacts printed by earlier builds
+
+The banner of each build named the person to send bug reports to. The line moved here from `src/common/cmdlib.h`,
+where the earlier ones had been kept as commented-out `#define`s:
+
+| Build | Contact |
+| :--- | :--- |
+| ZHLT (Zoner) | zoner@gearboxsoftware.com |
+| Merl's tools | merlinis@bigpond.net.au |
+| ZHLT 3 series (amckern) | amckern@yahoo.com |
+| VHLT (Vluzacn), the current banner | vluzacn@163.com |
