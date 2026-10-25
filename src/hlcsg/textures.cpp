@@ -191,16 +191,6 @@ static int FindMiptex(const char *const name)
     ThreadLock();
     const auto found = s_miptex_index.find(name);
     i = found != s_miptex_index.end() ? found->second : nummiptex;
-#ifdef VHLT_VERIFY_INDEXES
-    {
-        int scanned;
-        for (scanned = 0; scanned < nummiptex && std::strcmp(name, miptex[scanned].name); scanned++)
-        {
-        }
-        if (scanned != i)
-            Error("miptex index mismatch for %s: index %d, linear scan %d", name, i, scanned);
-    }
-#endif
     if (i < nummiptex)
     {
         ThreadUnlock();
@@ -734,23 +724,6 @@ int TexinfoForBrushTexture(brush_texture_t *bt, const vec3_t origin)
             i = found->second;
         }
     }
-#ifdef VHLT_VERIFY_INDEXES
-    {
-        int scanned;
-        for (scanned = 0; scanned < g_numtexinfo; scanned++)
-        {
-            const texinfo_t *tc = &g_texinfo[scanned];
-            bool same = !std::strcmp(texmap_retrieve(tc->miptex), bt->name) && tc->flags == tx.flags;
-            for (int j = 0; j < 2 && same; j++)
-                for (int k = 0; k < 4 && same; k++)
-                    same = tc->vecs[j][k] == tx.vecs[j][k];
-            if (same)
-                break;
-        }
-        if (scanned != i)
-            Error("texinfo index mismatch for %s: index %d, linear scan %d", bt->name, i, scanned);
-    }
-#endif
     if (i < g_numtexinfo)
     {
         ThreadUnlock();

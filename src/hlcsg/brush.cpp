@@ -35,32 +35,10 @@ static std::shared_mutex g_mapplanes_mutex;
 
 static PlaneIndex g_planeindex; // guarded by g_mapplanes_mutex, like the table
 
-// First plane in [first, g_nummapplanes) accepted by PlaneMatches, or -1 (the old linear search).
-[[maybe_unused]] static int ScanMapPlanes(const vec_t *const normal, const vec_t *const origin, int first)
-{
-    for (int i = first; i < g_nummapplanes; i++)
-    {
-        if (PlaneMatches(normal, origin, g_csg_mapplanes[i]))
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
-// Same result as ScanMapPlanes(normal, origin, 0), through the index.
+// The first plane PlaneMatches accepts, or -1, through the index (tests/unit/test_planeindex.cpp checks it against a linear scan).
 static int LookupPlane(const vec_t *const normal, const vec_t *const origin)
 {
-    const int found = g_planeindex.Find(normal, origin, g_csg_mapplanes);
-#ifdef VHLT_VERIFY_INDEXES
-    const int scanned = ScanMapPlanes(normal, origin, 0);
-    if (found != scanned)
-    {
-        Error("plane index mismatch: index %d, linear scan %d (normal %.17g %.17g %.17g, origin %.17g %.17g %.17g)",
-              found, scanned, normal[0], normal[1], normal[2], origin[0], origin[1], origin[2]);
-    }
-#endif
-    return found;
+    return g_planeindex.Find(normal, origin, g_csg_mapplanes);
 }
 
 static int FindIntPlane(const vec_t *const normal, const vec_t *const origin)

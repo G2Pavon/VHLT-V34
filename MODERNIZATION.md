@@ -241,8 +241,10 @@ never reach (wad autodetect, noclip entities, `gscale`, contents from texture na
 hull expansions, hlvis's `info_compile_parameters` settings and its fast-threads branch), which is
 untested rather than dead. **That list was wrong, and is superseded by 5.4c:** it came from gcov counters read
 after a different tool's coverage run had deleted them (each `coverage` run starts by deleting every counter;
-read them before running the next tool). Left for the owner: the `VHLT_VERIFY_INDEXES` scaffolding in hlcsg
-(3 `#ifdef` blocks and `ScanMapPlanes`, the optional index verification build).
+read them before running the next tool). The `VHLT_VERIFY_INDEXES` scaffolding in hlcsg (3 `#ifdef` blocks and
+`ScanMapPlanes`, an optional build that also ran the old linear scans) was retired once the rest was done: the
+plane index stays guarded by `test_planeindex.cpp` (against a linear scan, at every epsilon boundary), and a wrong
+texinfo or miptex index would change the texinfo numbering, which the parity gate compares.
 
 `common/` (same day), no output change. Removed: `Winding::Check` and `Winding::CopyPoints`,
 `BoundingBox::testUnion` and `BASE_WINDING_DISTANCE` (nothing called them, tests included), and
