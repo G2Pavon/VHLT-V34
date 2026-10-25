@@ -39,13 +39,11 @@ static unsigned IsVisbitInArray(const unsigned x, const unsigned y)
     int first = 0;
     int last = column->count - 1;
 
-    //    Warning("Searching . . .");
     // binary search to find visbit
     while (true)
     {
         int current = (first + last) / 2;
         sparse_row_t *row = column->row.get() + current;
-        //        Warning("first %u, last %u, current %u, row %p, row->offset %u", first, last, current, row, row->offset);
         if ((row->offset) < y_byte)
         {
             first = current + 1;

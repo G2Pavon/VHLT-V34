@@ -713,8 +713,6 @@ typedef enum
     LightShifted,       // used HuntForWorld on 100% dark face
     LightShiftedInside, // moved to neighbhor on 2nd cleanup pass
     LightNormal,        // Normally lit with no movement
-    LightPulledInside,  // Pulled inside by bleed code adjustments
-    LightSimpleNudge,   // A simple nudge 1/3 or 2/3 towards center along S or T axist
 } light_flag_t;
 
 //  CalcPoints
@@ -1552,7 +1550,6 @@ void CreateDirectLights()
             }
         }
 
-        //LRC        VectorClear(p->totallight[0]);
     }
     // entities
     for (int i = 0; i < g_numentities; i++)
@@ -2456,8 +2453,6 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
                         }
                         float dist = VectorNormalize(delta);
                         float dot = DotProduct(delta, normal);
-                        //                        if (dot <= 0.0)
-                        //                            continue;
 
                         if (dist < 1.0)
                         {
@@ -3898,8 +3893,6 @@ void ReduceLightmap()
 
 const int MLH_MAXFACECOUNT = 16;
 const int MLH_MAXSAMPLECOUNT = 4;
-const vec_t MLH_LEFT = 0;
-const vec_t MLH_RIGHT = 1;
 
 typedef struct
 {

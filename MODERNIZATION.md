@@ -251,6 +251,21 @@ commented-out `MODIFICATIONS_STRING` lines, old maintainers' bug-report contacts
 use (the points constructor, `initFromPoints`, `addPoint`, `insertPoint`, `Valid`): the winding tests
 build their polygons with them, and rewriting those tests is not worth the 40 lines.
 
+hlrad (same day), no output change. About 115 lines in 5 files, in three groups.
+(1) `NoteDiscardedLight`: a diagnostic that tracked the largest brightness lost to "too many light
+styles on a face" (10 call sites, two statics, and a global lock taken on every new maximum). Nothing
+read the result; in the oracle the report was already only a comment. (2) Computations nothing read:
+`MakeParents` with the `nodeparents`/`leafparents` arrays (the loader already rejects out-of-range
+node children, so it could only have failed on a cyclic node graph, by recursing forever),
+`g_face_lightmode` (256 KB) with the `zhlt_lightflags` parse that filled it (the two reads of that key that
+matter are separate), and `patch_t::scale` with its assignment (`getScale` stays: `getChop` uses it).
+(3) Declarations defined nowhere (`MakeShadowSplits`, `intersect_line_plane`), the value-returning
+overloads of `MultiplyMatrix` and `MatrixForScale` nothing called, the constants `MLH_LEFT`/`MLH_RIGHT`, the
+enumerators `LightPulledInside`/`LightSimpleNudge`, and six commented-out statements. Kept: `g_lightscale`
+(a constant that only feeds the "global light scale" line of the settings table, which has to stay),
+`MakeScalesStub` (it does real work), `stylewarningcount`/`stylewarningnext` (a live warning throttle),
+and the `//LRC` attribution markers.
+
 How to audit for dead code in a shared library: **read the final binaries' symbol tables**, not the
 linker's `--print-gc-sections` log (it left out functions that were gone), and check every
 candidate's callers: the compiler inlines small functions into their callers, so the linker

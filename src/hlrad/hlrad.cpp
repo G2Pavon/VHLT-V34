@@ -969,7 +969,6 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
         totalarea += patch->area;
 
         BaseLightForFace(f, light);
-        //LRC        VectorCopy(light, patch->totallight);
         VectorCopy(light, patch->baselight);
 
         patch->emitstyle = style;

@@ -193,7 +193,6 @@ dleaf_t *HuntForWorld(vec_t *point, const vec_t *plane_offset, const dplane_t *p
                             {
                                 if (x || y || z)
                                 {
-                                    //dist = best_dist;
                                     best_dist = dist;
                                     best_leaf = leaf;
                                     VectorCopy(current_point, best_point);
@@ -260,14 +259,6 @@ void MultiplyMatrix(const matrix_t &m_left, const matrix_t &m_right, matrix_t &m
     }
 }
 
-matrix_t MultiplyMatrix(const matrix_t &m_left, const matrix_t &m_right)
-{
-    matrix_t m;
-
-    MultiplyMatrix(m_left, m_right, m);
-    return m;
-}
-
 void MatrixForScale(const vec3_t center, vec_t scale, matrix_t &m)
 {
     for (int i = 0; i < 3; i++)
@@ -276,14 +267,6 @@ void MatrixForScale(const vec3_t center, vec_t scale, matrix_t &m)
         m.v[i][i] = scale;
     }
     VectorScale(center, 1 - scale, m.v[3]);
-}
-
-matrix_t MatrixForScale(const vec3_t center, vec_t scale)
-{
-    matrix_t m;
-
-    MatrixForScale(center, scale, m);
-    return m;
 }
 
 vec_t CalcMatrixSign(const matrix_t &m)

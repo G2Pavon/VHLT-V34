@@ -226,7 +226,6 @@ extern entity_t *g_face_texlights[MAX_MAP_FACES];
 extern patch_t *g_patches; // shrinked to its real size, because 1048576 patches * 256 bytes = 256MB will be too big
 extern unsigned g_num_patches;
 
-void MakeShadowSplits();
 
 //==============================================
 
@@ -338,9 +337,7 @@ dleaf_t *HuntForWorld(vec_t *point, const vec_t *plane_offset, const dplane_t *p
 void ApplyMatrix(const matrix_t &m, const vec3_t in, vec3_t &out);
 void ApplyMatrixOnPlane(const matrix_t &m_inverse, const vec3_t in_normal, vec_t in_dist, vec3_t &out_normal, vec_t &out_dist);
 void MultiplyMatrix(const matrix_t &m_left, const matrix_t &m_right, matrix_t &m);
-matrix_t MultiplyMatrix(const matrix_t &m_left, const matrix_t &m_right);
 void MatrixForScale(const vec3_t center, vec_t scale, matrix_t &m);
-matrix_t MatrixForScale(const vec3_t center, vec_t scale);
 vec_t CalcMatrixSign(const matrix_t &m);
 void TranslateWorldToTex(int facenum, matrix_t &m);
 bool InvertMatrix(const matrix_t &m, matrix_t &m_inverse);
@@ -384,7 +381,6 @@ void FreeTriangulations();
 
 // mathutil.c
 bool TestSegmentAgainstOpaqueList(const vec_t *p1, const vec_t *p2, vec3_t &scaleout, int &opaquestyleout);
-bool intersect_line_plane(const dplane_t *const plane, const vec_t *const p1, const vec_t *const p2, vec3_t point);
 bool point_in_winding(const Winding &w, const dplane_t &plane, const vec_t *point, vec_t epsilon = 0.0);
 bool point_in_winding_noedge(const Winding &w, const dplane_t &plane, const vec_t *point, vec_t width);
 void snap_to_winding(const Winding &w, const dplane_t &plane, vec_t *point);
