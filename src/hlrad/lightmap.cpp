@@ -2680,10 +2680,6 @@ static void GatherSampleLight(const vec3_t pos, const byte *const pvs, const vec
 
             VectorAdd(sample[style_index], adds[style], sample[style_index]);
         }
-        else
-        {
-            NoteDiscardedLight(VectorMaximum(adds[style]), pos);
-        }
     }
 }
 
@@ -3587,7 +3583,6 @@ void BuildFacelights(const int facenum)
             }
             if (maxlights[j] <= g_corings[f_styles[j]] * 0.1) // light is too dim, discard this style to reduce RAM usage
             {
-                NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
                 maxlights[j] = 0;
             }
         }
@@ -3622,10 +3617,6 @@ void BuildFacelights(const int facenum)
                 f->styles[k] = 255;
                 fl->samples[k].reset();
             }
-        }
-        for (j = 1; j < ALLSTYLES && f_styles[j] != 255; j++)
-        {
-            NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
         }
     }
     // patches
@@ -3666,10 +3657,6 @@ void BuildFacelights(const int facenum)
                 patch->totalstyle[k] = 255;
             }
         }
-        for (j = 1; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
-        {
-            NoteDiscardedLight(maxlights[j], patch->origin);
-        }
         for (j = 0; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
         {
             maxlights[j] = VectorMaximum(patch->directlight_all[j]);
@@ -3703,10 +3690,6 @@ void BuildFacelights(const int facenum)
             {
                 patch->directstyle[k] = 255;
             }
-        }
-        for (j = 1; j < ALLSTYLES && patch->totalstyle_all[j] != 255; j++)
-        {
-            NoteDiscardedLight(maxlights[j], patch->origin);
         }
         patch->totalstyle_all = nullptr; // patchstyles goes away with this function
         patch->samplelight_all = nullptr;
@@ -3769,7 +3752,6 @@ void PrecompLightmapOffsets()
                     maxlights[j] = VectorMaximum(v);
                     if (maxlights[j] <= g_corings[j] * 0.01)
                     {
-                        NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
                         maxlights[j] = 0;
                     }
                 }
@@ -3830,10 +3812,6 @@ void PrecompLightmapOffsets()
                 {
                     f->styles[k] = 255;
                 }
-            }
-            for (int j = 1; j < ALLSTYLES; j++)
-            {
-                NoteDiscardedLight(maxlights[j], g_face_centroids[facenum]);
             }
         }
 
@@ -4259,10 +4237,6 @@ void AddPatchLights(int facenum)
                     if (VectorMaximum(v) >= g_corings[f_other->styles[k]])
                     {
                         VectorCopy(v, samp->light);
-                    }
-                    else
-                    {
-                        NoteDiscardedLight(VectorMaximum(v), samp->pos);
                     }
                 }
             } // loop samples

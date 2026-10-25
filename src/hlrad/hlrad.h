@@ -274,7 +274,6 @@ extern vec_t g_texreflectscale;
 extern vec_t g_blur;
 // Keeps the largest light lost to the light style limits (MAXLIGHTMAPS per face, ALLSTYLES per sample) and
 // where it was. Thread-safe. Not reported (the oracle never printed it either).
-void NoteDiscardedLight(vec_t light, const vec3_t pos);
 extern vec_t g_texlightgap;
 
 void MakeTnodes(dmodel_t *bm);

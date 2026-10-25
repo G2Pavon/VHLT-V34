@@ -146,23 +146,6 @@ vec_t g_texlightgap = DEFAULT_TEXLIGHTGAP;
 // Misc
 int leafparents[MAX_MAP_LEAFS];
 int nodeparents[MAX_MAP_NODES];
-static std::atomic<vec_t> s_maxdiscardedlight{0}; // see NoteDiscardedLight
-static vec3_t s_maxdiscardedpos = {0, 0, 0};
-
-void NoteDiscardedLight(vec_t light, const vec3_t pos)
-{
-    if (light > s_maxdiscardedlight.load(std::memory_order_relaxed) + NORMAL_EPSILON) // cheap test before the lock
-    {
-        ThreadLock();
-        if (light > s_maxdiscardedlight.load(std::memory_order_relaxed) + NORMAL_EPSILON)
-        {
-            s_maxdiscardedlight.store(light, std::memory_order_relaxed);
-            VectorCopy(pos, s_maxdiscardedpos);
-        }
-        ThreadUnlock();
-    }
-}
-
 static float totalarea = 0;
 
 //      this function is called from parseentity when it encounters the
@@ -1712,10 +1695,6 @@ static void GatherLight(int /*threadnum*/)
                 newstyles[j][m] = 255;
             }
         }
-        for (int style = 1; style < ALLSTYLES; style++)
-        {
-            NoteDiscardedLight(maxlights[style], patch->origin);
-        }
     }
 }
 
@@ -1847,10 +1826,6 @@ static void GatherRGBLight(int /*threadnum*/)
             {
                 newstyles[j][m] = 255;
             }
-        }
-        for (int style = 1; style < ALLSTYLES; style++)
-        {
-            NoteDiscardedLight(maxlights[style], patch->origin);
         }
     }
 }
@@ -2024,7 +1999,6 @@ static void RadWorld()
     FreeTriangulations();
 
     NamedRunThreadsOnIndividual(g_numfaces, g_estimate, FinalLightFace);
-    // s_maxdiscardedlight > 0.01 Maximum brightness loss (too many light styles on a face)
 
     MdlLightHack();
     ReduceLightmap();
