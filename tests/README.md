@@ -315,7 +315,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths] [--no-numbers]  # oracle vs candidate on option-parsing command lines, path handling and number spellings: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]

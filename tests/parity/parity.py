@@ -1404,9 +1404,55 @@ def regress_waddir(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_texdata_zero(bindir: Path, tmp: Path) -> list[str]:
+    """-texdata with no usable number gives a 0-byte texture buffer: the oracle wrote the first texture
+    into it (heap overflow). The candidate must stop with "Exceeded MAX_MAP_MIPTEX" and write no .bsp."""
+    problems = []
+    for value in ("x", "0"):
+        code, bsp, out = _hlcsg_bsp(bindir, "cs_assault", ["-texdata", value], tmp / value)
+        if code == 0:
+            problems.append(f"-texdata {value}: exit 0")
+        if b"Error: Exceeded MAX_MAP_MIPTEX" not in out:
+            problems.append(f"-texdata {value}: no 'Exceeded MAX_MAP_MIPTEX' error")
+        if b"ERROR: AddressSanitizer" in out or b"runtime error:" in out:
+            problems.append(f"-texdata {value}: sanitizer error")
+        if bsp:
+            problems.append(f"-texdata {value}: a .bsp was written")
+    return problems
+
+
+def regress_rad_bad_texture(bindir: Path, tmp: Path) -> list[str]:
+    """Every texinfo of fm_rad_texlights is pointed at texture 9999 (the map has 9): the oracle indexed
+    its per-texture tables with it (read outside them). hlrad must stop with an error naming the face."""
+    name = "fm_rad_texlights"
+    tmp.mkdir(parents=True)
+    for f in (DATA / "refs" / "full" / name / "vis").iterdir():
+        if f.is_file():
+            shutil.copy2(f, tmp / f.name)
+    bsp = tmp / f"{name}.bsp"
+    data = bytearray(bsp.read_bytes())
+    LUMP_TEXINFO, TEXINFO_SIZE, MIPTEX_OFFSET = 6, 40, 32
+    ofs, length = struct.unpack_from("<ii", data, 4 + LUMP_TEXINFO * 8)
+    for i in range(length // TEXINFO_SIZE):
+        struct.pack_into("<i", data, ofs + i * TEXINFO_SIZE + MIPTEX_OFFSET, 9999)
+    bsp.write_bytes(data)
+    proc = run([bindir / "hlrad", "-threads", "1", name], cwd=tmp, capture_output=True, env=env_for(bindir))
+    log_text = (tmp / f"{name}.log").read_bytes()
+    out = proc.stdout + proc.stderr + log_text
+    problems = []
+    if proc.returncode == 0:
+        problems.append("exit 0")
+    if b"Error: Face 0 refers to texture 9999, but there are only 9." not in log_text:
+        problems.append("no 'Face 0 refers to texture 9999' error in the .log")
+    if b"ERROR: AddressSanitizer" in out or b"runtime error:" in out:
+        problems.append("sanitizer error")
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
                "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
-               "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir}
+               "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir,
+               "texdata-zero": regress_texdata_zero, "rad-bad-texture": regress_rad_bad_texture}
 
 
 def cmd_regress(args) -> int:
