@@ -5,8 +5,10 @@ Workflow:
     parity.py build                       # oracle: git archive of tag oracle-base -> $DATA/builds/oracle
     parity.py corpus                      # .rmf/.map -> frozen corpus with canonical WAD lists
     parity.py ref --tier quick            # record oracle outputs after every stage
-    parity.py build --tree --name cand    # build the current working tree with the oracle's flags
-    parity.py check --bin $DATA/builds/cand/bin --tier quick
+    parity.py smoke                       # the edit-run loop: seconds (build/, unit tests, a few maps, cli subset, regress)
+    parity.py gate                        # the gate for a step: every tier in one queue + unit tests, regress, cli, sanitize
+    parity.py check --tier quick          # one tier; the candidate is the working tree's build/ unless --bin is given
+    parity.py build --tree --name cand    # a separate build of the working tree with the oracle's flags (same binaries)
     parity.py bench --bin ... --maps cs_assault de_dust2 --repeat 3
     parity.py sanitize --tree             # ASan/UBSan build of the working tree, run on the corpus
 
@@ -142,7 +144,10 @@ def tier_stages(tier: str) -> list[str]:
 
 def expand_tiers(tier: str) -> list[str]:
     return TIER_GROUPS.get(tier, [tier])
-STAGE_TIMEOUT = 4 * 3600
+STAGE_TIMEOUT = 4 * 3600  # the longest any run may take (no oracle time to scale from)
+MIN_STAGE_TIMEOUT = 300   # seconds; a hung tool is found after max(this, slowdown x the oracle's time)
+SLOWDOWN = 20.0           # for plain builds; sanitizer builds are 10 to 20 times slower than that: SANITIZER_SLOWDOWN
+SANITIZER_SLOWDOWN = 200.0
 CACHE_ROOT = DATA / "cache"  # stagecache.py: tool runs and comparisons, content-addressed
 DEFAULT_JOBS = max(1, os.cpu_count() or 1)  # tools run single-threaded; hlrad peaks at ~160 MB per map
 
@@ -171,6 +176,11 @@ CORE_MAPS = (
     "fm_err_coplanar", "fm_err_detail_water", "fm_err_entity_contents", "fm_err_hull_overflow",
     "fm_err_mixed", "fm_err_noplane", "fm_err_origin_world", "fm_err_two_origins",
 )
+# The smoke set: a seconds-long tripwire for the edit-run loop (`parity.py smoke`, `check --smoke`). One real
+# map plus a feature map per tool, an error map, and the two lighting maps: every stage runs, none for long.
+SMOKE_MAPS = ("cs_assault", "fm_specials", "fm_bsp_models", "fm_vis_overview", "fm_compileparams",
+              "fm_rad_texlights", "fm_rad_point", "fm_err_coplanar")
+SMOKE = False  # set by --smoke
 FULL_CORPUS = False  # set by --full (and always for ref)
 # The rad micro-corpus: the default map set for hlrad runs (rad tiers, --stages rad, coverage --tool
 # hlrad). Chosen in R0 by per-map hlrad line coverage over the quick, full and rad tiers: the
@@ -250,6 +260,8 @@ def corpus_maps(archived: bool | None = None) -> list[str]:
 def routine_maps() -> list[str]:
     """What a check runs by default: CORE_MAPS, or the corpus with --full (plus --archived maps)."""
     maps = corpus_maps()
+    if SMOKE:
+        return sorted(m for m in maps if m in SMOKE_MAPS)
     if RAD_TIER:  # rad tiers never leave their pool
         pool = [m for m in maps if m.startswith("fm_") or m in RAD_TIER_REAL_MAPS]
         if FULL_CORPUS or not RAD_CORE_MAPS:
@@ -286,6 +298,46 @@ def check_bin(bindir: Path) -> Path:
 # build
 
 
+DEV_BUILD = REPO / "build"  # the working tree, built the way parity needs; the default candidate
+
+
+def cmake_cache(build: Path) -> dict[str, str]:
+    out = {}
+    try:
+        for line in (build / "CMakeCache.txt").read_text().splitlines():
+            m = re.match(r"([A-Za-z0-9_]+):[A-Z]+=(.*)$", line)
+            if m:
+                out[m.group(1)] = m.group(2)
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def ensure_dev_build(quiet: bool = False) -> Path:
+    """Build the working tree in build/ as the oracle was built (Release, its build date; CMakeLists.txt pins
+    the float flags) and return its bin/. The tools of this directory are what check, cli and regress run by
+    default. A build/ configured otherwise (Debug, __DATE__) would differ from the oracle in the .bsp's
+    "compiler" key and in speed, so it is reconfigured."""
+    want = {"CMAKE_BUILD_TYPE": "Release", "VHLT_BUILD_DATE": oracle_build_date()}
+    have = cmake_cache(DEV_BUILD)
+    if any(have.get(k) != v for k, v in want.items()):
+        generator = ["-G", "Ninja"] if shutil.which("ninja") and not have else []
+        log(f"configuring {DEV_BUILD} as Release, build date {want['VHLT_BUILD_DATE']!r}")
+        run(["cmake", "--no-warn-unused-cli", "-S", REPO, "-B", DEV_BUILD, *generator, *[f"-D{k}={v}" for k, v in want.items()]],
+            check=True, stdout=subprocess.DEVNULL)
+    proc = run(["cmake", "--build", DEV_BUILD, "--parallel"], capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.exit(f"build of {DEV_BUILD} failed:\n{proc.stdout[-3000:]}{proc.stderr[-3000:]}")
+    if re.search(r"warning", proc.stdout + proc.stderr, re.I):
+        sys.exit(f"build of {DEV_BUILD} has warnings (the project builds without):\n{proc.stdout[-3000:]}{proc.stderr[-3000:]}")
+    return DEV_BUILD / "bin"
+
+
+def resolve_bin(args) -> Path:
+    """--bin, or the working tree's build."""
+    return check_bin(Path(args.bin) if args.bin else ensure_dev_build())
+
+
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
@@ -309,11 +361,13 @@ def cmd_build(args) -> int:
     if args.sanitize:
         flags = f"{flags} {SANITIZE_CXX_FLAGS}".strip()
     dest = DATA / "builds" / name
-    if dest.exists():
+    # --incremental: keep the build tree (a tree build keeps it) and let the compiler rebuild what changed
+    incremental = args.incremental and (dest / "build" / "CMakeCache.txt").exists()
+    if dest.exists() and not incremental:
         if not args.force:
             sys.exit(f"{dest} exists; pass --force to rebuild")
         shutil.rmtree(dest)
-    dest.mkdir(parents=True)
+    dest.mkdir(parents=True, exist_ok=True)
 
     if args.tree:
         src = REPO
@@ -346,7 +400,7 @@ def cmd_build(args) -> int:
         sys.exit(f"build failed, see {dest / 'build.log'}")
 
     bindir = dest / "bin"
-    bindir.mkdir()
+    bindir.mkdir(exist_ok=True)
     for _, tool in STAGES:
         shutil.copy2(build / "bin" / tool, bindir / tool)
 
@@ -526,10 +580,21 @@ def env_for(bindir: Path) -> dict:
     return env
 
 
-def run_stage(bindir: Path, tool: str, args: list[str], name: str, cwd: Path, logdir: Path, stage: str) -> dict:
+def stage_timeout(tier: str, name: str, stage: str, slowdown: float) -> float:
+    """How long a tool may run before it counts as hung: slowdown times the oracle's time for this stage (at least
+    MIN_STAGE_TIMEOUT s, so a loaded machine does not trip it), STAGE_TIMEOUT where there is no oracle time."""
+    try:
+        seconds = read_json(DATA / "refs" / tier / name / "result.json")[stage]["seconds"]
+    except (FileNotFoundError, KeyError, TypeError):
+        return STAGE_TIMEOUT
+    return min(STAGE_TIMEOUT, max(MIN_STAGE_TIMEOUT, slowdown * seconds))
+
+
+def run_stage(bindir: Path, tool: str, args: list[str], name: str, cwd: Path, logdir: Path, stage: str,
+              timeout: float = STAGE_TIMEOUT) -> dict:
     start = time.perf_counter()
     try:
-        proc = run([bindir / tool, *args, name], cwd=cwd, capture_output=True, env=env_for(bindir), timeout=STAGE_TIMEOUT)
+        proc = run([bindir / tool, *args, name], cwd=cwd, capture_output=True, env=env_for(bindir), timeout=timeout)
         code, out, err = proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired as e:
         code, out, err = "timeout", e.stdout or b"", e.stderr or b""
@@ -548,8 +613,9 @@ def harness_digest() -> str:
 
 @functools.lru_cache(maxsize=None)
 def tool_identity(bindir: Path, tool: str) -> str:
-    """The tool binary, plus every other file in its directory (hlbsp reads entities.void from there)."""
-    others = {f.name: sha256(f) for f in sorted(bindir.iterdir()) if f.is_file() and f.name not in STAGE_TOOL.values()}
+    """The tool binary, plus the one other file a tool reads from its directory (hlbsp's entities.void). Not the
+    directory's other files: the dev tree's bin/ also holds the unit tests, which change all the time."""
+    others = {n: sha256(bindir / n) for n in ("entities.void",) if (bindir / n).is_file()}
     return stagecache.digest({"tool": sha256(bindir / tool), "others": others})
 
 
@@ -560,10 +626,14 @@ def wads_digest() -> str:
 
 
 def run_key(bindir: Path, tool: str, args: list[str], name: str, inputs: dict) -> str:
-    return stagecache.digest({
+    key = {
         "v": stagecache.VERSION, "tool": tool_identity(bindir, tool), "args": args, "map": name,
         "input": stagecache.manifest_digest(inputs),
-        "wads": wads_digest() if tool == "hlcsg" else None, "WADROOT": os.environ.get("WADROOT")})
+        "wads": wads_digest() if tool == "hlcsg" else None, "WADROOT": os.environ.get("WADROOT")}
+    for var in ("ASAN_OPTIONS", "UBSAN_OPTIONS"):  # the output of a sanitizer build depends on them (leaks)
+        if var in os.environ:
+            key[var] = os.environ[var]
+    return stagecache.digest(key)
 
 
 def open_cache(root: Path | None) -> "stagecache.StageCache | None":
@@ -589,12 +659,14 @@ def cached_result(entry: dict) -> dict:
 
 
 def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, snapshots: bool = True,
-              last_stage: str = "rad", cache=None, audit: bool = False) -> dict:
+              last_stage: str = "rad", cache=None, audit: bool = False, map_text: str | None = None,
+              slowdown: float = SLOWDOWN) -> dict:
     """Run the stages up to last_stage in one directory; snapshot the directory after each into root/<stage>.
 
     With a cache, a stage whose key is known is not run; the directory is only rebuilt from the
     cache when a later stage has to run. Each result then carries "outputs", the manifest of the
-    directory after the stage (its snapshot is rebuilt on demand, see ensure_snapshot)."""
+    directory after the stage (its snapshot is rebuilt on demand, see ensure_snapshot).
+    map_text: run this text as the map instead of the corpus map of that name (cli's number spellings)."""
     work = root / "work"
     if root.exists():
         shutil.rmtree(root)
@@ -608,6 +680,8 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
         for f in pre.iterdir():
             if f.is_file():
                 shutil.copy2(f, work / f.name)
+    elif map_text is not None:
+        (work / f"{name}.map").write_text(map_text, encoding="latin-1")
     else:
         shutil.copy2(DATA / "corpus" / "maps" / f"{name}.map", work / f"{name}.map")
     state = cache.manifest(work) if cache else None  # what the directory holds now
@@ -629,7 +703,7 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
                 if not on_disk:
                     cache.materialize(state, work)
                     on_disk = True
-                r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+                r = run_stage(bindir, tool, args, name, work, root / "console", stage, stage_timeout(tier, name, stage, slowdown))
                 if snapshots:
                     snapshot(work, root / stage)
                 if cache:
@@ -647,7 +721,7 @@ def run_chain(bindir: Path, tier: str, name: str, root: Path, threads: int = 1, 
 
 
 def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path, cache=None, audit: bool = False,
-                 only: tuple | None = None) -> dict:
+                 only: tuple | None = None, slowdown: float = SLOWDOWN) -> dict:
     """Run each stage after the first on the oracle's output of the previous stage (only: just these)."""
     results = {}
     stages = tier_stages(tier)
@@ -674,7 +748,7 @@ def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path,
                 if work.exists():
                     shutil.rmtree(work)
                 shutil.copytree(prev, work)
-                r = run_stage(bindir, tool, args, name, work, root / "console", stage)
+                r = run_stage(bindir, tool, args, name, work, root / "console", stage, stage_timeout(tier, name, stage, slowdown))
                 snapshot(work, root / stage)
                 if cache:
                     r["outputs"] = record_run(cache, key, r, work, root / "console", stage, audit)
@@ -881,8 +955,22 @@ def for_each_tier(command):
     return run_all
 
 
-def cmd_check(args) -> int:
-    bindir = check_bin(Path(args.bin))
+def set_context(args) -> None:
+    """The module-level switches that decide which maps a run takes (routine_maps), from the arguments of a
+    command, or of one of the checks of a gate."""
+    global INCLUDE_ARCHIVED, FULL_CORPUS, RAD_ROUTINE, RAD_TIER, SMOKE
+    SMOKE = getattr(args, "smoke", False) and args.cmd == "check"
+    INCLUDE_ARCHIVED = getattr(args, "archived", False)
+    RAD_TIER = getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants")
+    RAD_ROUTINE = (getattr(args, "stages", None) == "rad" or getattr(args, "tool", None) == "hlrad"
+                   or getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants"))
+    FULL_CORPUS = getattr(args, "full", False) or args.cmd == "ref"  # references cover the whole corpus
+
+
+def plan_check(args, bindir: Path) -> argparse.Namespace:
+    """Everything a check of one tier decides before a job runs: the maps, the stages, the modes, the directory of
+    its reports, and its jobs (map, mode)."""
+    set_context(args)
     maps = select_maps(args.maps)
     if not (DATA / "refs" / args.tier / "manifest.json").exists():
         sys.exit(f"no oracle reference for tier {args.tier}; run 'parity.py ref --tier {args.tier}'")
@@ -915,25 +1003,61 @@ def cmd_check(args) -> int:
     only = None
     if args.stages == "rad":  # hlrad alone, on the oracle's VIS output of this tier (pre-baked input)
         modes, only = ["isolated"], ("rad",)
-    jobs = sorted(((n, m) for n in maps for m in modes), key=lambda j: -job_weight(args.tier, *j))
-    by_map = {n: {"map": n, "chain": {}, "isolated": {}} for n in maps}
-    pending = {n: len(modes) for n in maps}
-    with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-        futures = [pool.submit(_check_job, bindir, args.tier, n, run_root, m, args.padding, args.threads, last_stage,
-                               cache_root, args.no_cache, only) for n, m in jobs]
-        for fut in concurrent.futures.as_completed(futures):
-            r = fut.result()
-            by_map[r["map"]][r["mode"]] = r["stages"]
-            pending[r["map"]] -= 1
-            if pending[r["map"]] == 0:
-                cells = []
-                for mode in ("chain", "isolated"):
-                    for stage, s in by_map[r["map"]][mode].items():
-                        mark = "*" if (s["result"] or {}).get("cached") else ""
-                        cells.append(f"{mode[0]}:{stage}={'ok' if not s['problems'] else 'DIFF'}{mark}")
-                log(f"  {r['map']:24} {' '.join(cells)}")
+    return argparse.Namespace(
+        args=args, bindir=bindir, tier=args.tier, maps=maps, last_stage=last_stage, run_root=run_root,
+        cache_root=cache_root, modes=modes, only=only, jobs=[(n, m) for n in maps for m in modes],
+        by_map={n: {"map": n, "chain": {}, "isolated": {}} for n in maps},
+        pending={n: len(modes) for n in maps}, stopped=None)
 
-    results = [by_map[n] for n in sorted(maps)]
+
+def submit_check_job(pool, plan, name: str, mode: str):
+    a = plan.args
+    return pool.submit(_check_job, plan.bindir, plan.tier, name, plan.run_root, mode, a.padding, a.threads, plan.last_stage,
+                       plan.cache_root, a.no_cache, plan.only)
+
+
+def collect_check(plan, r: dict, verbose: bool = True) -> None:
+    """Record the result of one job; once a map has all its modes, say how it went (all of it, or only a difference)."""
+    plan.by_map[r["map"]][r["mode"]] = r["stages"]
+    plan.pending[r["map"]] -= 1
+    if plan.pending[r["map"]] == 0:
+        cells = []
+        differs = False
+        for mode in ("chain", "isolated"):
+            for stage, st in plan.by_map[r["map"]][mode].items():
+                mark = "*" if (st["result"] or {}).get("cached") else ""
+                differs |= bool(st["problems"])
+                cells.append(f"{mode[0]}:{stage}={'ok' if not st['problems'] else 'DIFF'}{mark}")
+        if verbose or differs:
+            prefix = "" if verbose else f"[{plan.tier}] "
+            log(f"  {prefix}{r['map']:24} {' '.join(cells)}")
+
+
+def run_plans(plans: list, jobs: int, fail_fast: bool = False, verbose: bool = True) -> None:
+    """Run the jobs of all plans in one pool, the longest first, whatever their tier: the pool never drains between
+    tiers, so a run of many tiers takes about the sum of their work over the cores, not the sum of their slowest jobs."""
+    work = sorted(((pl, n, m) for pl in plans for n, m in pl.jobs), key=lambda j: -job_weight(j[0].tier, j[1], j[2]))
+    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
+        futures = {submit_check_job(pool, pl, n, m): pl for pl, n, m in work}
+        for fut in concurrent.futures.as_completed(futures):
+            plan = futures[fut]
+            r = fut.result()
+            collect_check(plan, r, verbose)
+            if fail_fast and any(st["problems"] for st in r["stages"].values()):
+                plan.stopped = f"{r['map']} ({r['mode']}, tier {plan.tier})"
+                for f in futures:
+                    f.cancel()
+                for proc in list(getattr(pool, "_processes", {}).values()):  # jobs under way: a run's lock is taken over
+                    proc.kill()
+                break
+
+
+def finish_check(plan, verbose: bool = True) -> int:
+    """The report of a tier: summary, report files, and the record of a full pass. Exit status 1 on a difference."""
+    args, bindir, run_root, maps, last_stage = plan.args, plan.bindir, plan.run_root, plan.maps, plan.last_stage
+    results = [plan.by_map[n] for n in sorted(maps)]
+    if plan.stopped:
+        log(f"--fail-fast: stopped at the first difference, in {plan.stopped}; the other jobs were not finished")
     lines = []
     failures = 0
     for r in results:
@@ -946,15 +1070,19 @@ def cmd_check(args) -> int:
     scope = "csg only" if last_stage == "csg" else "all stages"
     runs = [s["result"] for r in results for mode in ("chain", "isolated") for s in r[mode].values() if s["result"]]
     reused = sum(1 for x in runs if x.get("cached"))
-    cache_note = "cache off" if cache_root is None else ("cache audit" if args.no_cache else f"{reused}/{len(runs)} tool runs from cache")
+    cache_note = ("cache off" if plan.cache_root is None else
+                  ("cache audit" if args.no_cache else f"{reused}/{len(runs)} tool runs from cache"))
     summary = (f"parity {'PASS' if not failures else 'FAIL'}: {len(results)} maps, tier {args.tier}, mode {args.mode}, "
                f"{scope}, threads {args.threads}, padding {args.padding}, {failures} differing stage(s), {cache_note}")
     report = "\n".join([summary, *lines]) + "\n"
     (run_root / "report.txt").write_text(report)
     write_json(run_root / "report.json", {"bin": str(bindir), "summary": summary, "results": results})
-    log("")
-    log(report if failures else summary)
-    log(f"report: {run_root / 'report.txt'}")
+    if verbose:
+        log("")
+        log(report if failures else summary)
+        log(f"report: {run_root / 'report.txt'}")
+    else:
+        log(report.rstrip() if failures else f"  {summary}")
     full_corpus = set(CORE_MAPS) & set(corpus_maps(archived=False)) <= set(maps)
     if not failures and last_stage == "rad" and tier_stages(args.tier)[-1] == "rad" and args.threads == 1 and args.mode in ("chain", "both") and full_corpus:
         # These downstream binaries are now known to match the oracle on this tier.
@@ -967,6 +1095,13 @@ def cmd_check(args) -> int:
         for mode in ("chain", "isolated"):
             shutil.rmtree(run_root / mode, ignore_errors=True)
     return 1 if failures else 0
+
+
+def cmd_check(args) -> int:
+    bindir = resolve_bin(args)
+    plan = plan_check(args, bindir)
+    run_plans([plan], args.jobs, args.fail_fast)
+    return finish_check(plan)
 
 
 def cmd_cache(args) -> int:
@@ -985,7 +1120,7 @@ def cmd_cache(args) -> int:
 
 
 def cmd_bench(args) -> int:
-    bindir = check_bin(Path(args.bin))
+    bindir = resolve_bin(args)
     maps = select_maps(args.maps)
     label = args.label or bindir.parent.name
     out = {"bin": str(bindir), "tier": args.tier, "threads": args.threads, "repeat": args.repeat, "maps": {}}
@@ -1039,11 +1174,16 @@ def summarize_sanitizer(stderr: bytes) -> list[str]:
     return found
 
 
+def _sanitize_job(bindir: Path, tier: str, name: str, root: Path) -> dict:
+    return run_chain(bindir, tier, name, root, 1, False, cache=open_cache(CACHE_ROOT), slowdown=SANITIZER_SLOWDOWN)
+
+
 def cmd_sanitize(args) -> int:
     if args.bin:
         bindir = check_bin(Path(args.bin))
     else:
-        build = argparse.Namespace(name="sanitize", tree=True, ref=None, cxx=args.cxx, cxx_flags=None, sanitize=True, force=True, build_date=None)
+        build = argparse.Namespace(name="sanitize", tree=True, ref=None, cxx=args.cxx, cxx_flags=None, sanitize=True, force=True,
+                                   build_date=None, incremental=True)
         cmd_build(build)
         bindir = DATA / "builds" / "sanitize" / "bin"
     maps = select_maps(args.maps)
@@ -1053,19 +1193,20 @@ def cmd_sanitize(args) -> int:
     findings: dict[str, set[str]] = {}
     leaks: dict[str, dict[str, int]] = {}  # tool -> map -> bytes
     tiers = expand_tiers(args.tier)
+    cache = open_cache(CACHE_ROOT)  # a run whose tool binary and input are unchanged is answered from the cache
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
             # a tier group runs each of its tiers; maps are then reported as tier/map
-            futs = {pool.submit(run_chain, bindir, t, n, Path(tmp) / t / n, 1, False): (t, n) for t in tiers for n in maps}
+            futs = {pool.submit(_sanitize_job, bindir, t, n, Path(tmp) / t / n): (t, n) for t in tiers for n in maps}
             for fut in concurrent.futures.as_completed(futs):
                 tier, map_name = futs[fut]
                 name = map_name if len(tiers) == 1 else f"{tier}/{map_name}"
-                fut.result()
+                results = fut.result()
                 for stage in tier_stages(tier):
                     tool = STAGE_TOOL[stage]
-                    err = Path(tmp) / tier / map_name / "console" / f"{stage}.stderr"
-                    if err.exists():
-                        data = err.read_bytes()
+                    stderr = (results.get(stage) or {}).get("console", {}).get(f"{stage}.stderr")
+                    if stderr:
+                        data = (cache.root / "blobs" / stderr[1][:2] / stderr[1]).read_bytes()
                         for f in summarize_sanitizer(data):
                             findings.setdefault(f"{tool}: {f}", set()).add(name)
                         if args.leaks:
@@ -1486,7 +1627,7 @@ REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regre
 
 
 def cmd_regress(args) -> int:
-    bindir = check_bin(Path(args.bin))
+    bindir = resolve_bin(args)
     failures = 0
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
         for name, test in REGRESSIONS.items():
@@ -1746,6 +1887,8 @@ CLI_CASES = {
 # "hlvis-empty" runs hlvis on the worldspawn-only map, whose .bsp has a dummy edge 0 referring to
 # vertex 0 of 0: the bounds-checked loader rejected it from Phase 2 to V1, where the oracle got as
 # far as the missing .prt. A case group "tool-suffix" runs that tool.
+CLI_SMOKE_STRIDE = 6  # `cli --smoke` runs every 6th option case of each tool
+NUMBER_SMOKE_MAPS = ("fm_specials", "fm_transform", "fm_rad_point")  # and these number maps (all mutations)
 CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview", "hlrad": "fm_rad_point"}
 # Usage lines the candidate adds on purpose (new options): removed from its output before comparing.
 CLI_ADDED_LINES = {
@@ -1761,20 +1904,50 @@ def _drop_lines(data: bytes, lines: list[bytes]) -> bytes:
     return data
 
 
-def _cli_run(exe: Path, argv: list[str], cwd: Path, group: str, added: list[bytes] = ()) -> tuple:
-    cwd.mkdir(parents=True)
-    if group in CLI_MAP_FROM_CORPUS:
-        shutil.copy2(DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[group]}.map", cwd / "tiny.map")
-    else:
-        (cwd / "tiny.map").write_text(CLI_MAP)
-    for tool in CLI_PREPARE.get(exe.name, []):
-        run([DATA / "builds" / "oracle" / "bin" / tool, "-threads", "1", "tiny"], cwd=cwd, capture_output=True, check=True)
-    proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
+def cli_template(group: str, exe: str, root: Path, cache) -> Path:
+    """The directory every case of this group starts from: tiny.map, and what the oracle's earlier tools write
+    for it (CLI_PREPARE). Made once per group, through the run cache."""
+    template = root / f"template-{group}"
+    template.mkdir(parents=True)
+    text = ((DATA / "corpus" / "maps" / f"{CLI_MAP_FROM_CORPUS[group]}.map").read_text(encoding="latin-1")
+            if group in CLI_MAP_FROM_CORPUS else CLI_MAP)
+    prepare = CLI_PREPARE.get(exe, [])
+    if not prepare:
+        (template / "tiny.map").write_text(text, encoding="latin-1")
+        return template
+    stage = {t: s for s, t in STAGES}[prepare[-1]]
+    results = run_chain(DATA / "builds" / "oracle" / "bin", "full", "tiny", root / f"chain-{group}", snapshots=False,
+                        last_stage=stage, cache=cache, map_text=text)
+    if any(r["exit"] != 0 for r in results.values()):
+        sys.exit(f"cli: the oracle's {', '.join(prepare)} failed on the {group} input")
+    cache.materialize(results[stage]["outputs"], template)
+    return template
+
+
+def _cli_run(exe: Path, argv: list[str], cwd: Path, added: list[bytes], template: Path, cache, template_manifest: dict) -> tuple:
+    """exe argv in a copy of template, through the run cache (same key as a stage: the tool, its arguments, and
+    what the directory holds): (exit code, stdout, stderr, {file: content}), normalized for comparison."""
+    key = run_key(exe.parent, exe.name, argv, "", template_manifest)
+    entry = cache.run_or_wait(key)
+    if entry is None:  # this process holds the key's lock
+        try:
+            shutil.copytree(template, cwd)
+            console = cwd.parent / f"{cwd.name}.console"
+            console.mkdir()
+            proc = run([exe, *argv], cwd=cwd, capture_output=True, timeout=60)
+            (console / "cli.stdout").write_bytes(proc.stdout)
+            (console / "cli.stderr").write_bytes(proc.stderr)
+            r = {"exit": proc.returncode, "seconds": 0}
+            outputs = record_run(cache, key, r, cwd, console, "cli", False)
+            entry = {"result": r, "outputs": outputs, "console": r["console"]}
+        finally:
+            cache.unlock(key)
+    blob = lambda e: (cache.root / "blobs" / e[1][:2] / e[1]).read_bytes()
     # .bsp files without lump padding: the oracle leaves stale bytes there (check verifies the padding)
-    files = {f.name: stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp"
-             else _drop_lines(normalize_log(f.read_bytes()), added) for f in sorted(cwd.iterdir())}
-    return (proc.returncode, _drop_lines(normalize_log(proc.stdout), added),
-            _drop_lines(normalize_log(proc.stderr), added), files)
+    files = {n: stagecache.bsp_canonical(blob(e)) if n.endswith(".bsp") else _drop_lines(normalize_log(blob(e)), added)
+             for n, e in sorted(entry["outputs"].items())}
+    return (entry["result"]["exit"], _drop_lines(normalize_log(blob(entry["console"]["cli.stdout"])), added),
+            _drop_lines(normalize_log(blob(entry["console"]["cli.stderr"])), added), files)
 
 
 # Path handling (S4a): hlcsg on GoldSrc-style paths the corpus never has (the MESS conversion writes
@@ -1991,35 +2164,34 @@ def respell_numbers(text: str, how: str) -> str:
 NUMBER_MUTATIONS = ("plus", "space", "exp", "hex", "junk", "edangle")
 
 
-def _number_run(bindir: Path, name: str, text: str, cwd: Path) -> tuple:
-    if cwd.exists():
-        shutil.rmtree(cwd)
-    cwd.mkdir(parents=True)
-    (cwd / f"{name}.map").write_text(text, encoding="latin-1")
-    codes, out = [], b""
-    for tool in ("hlcsg", "hlbsp", "hlvis", "hlrad"):
-        proc = run([bindir / tool, "-threads", "1", name], cwd=cwd, capture_output=True, timeout=600)
-        codes.append(proc.returncode)
-        out += normalize_log(proc.stdout + proc.stderr)
-        if proc.returncode:
+def _number_pipeline(bindir: Path, name: str, text: str, root: Path, cache) -> tuple:
+    """hlcsg to hlrad on the respelled map, through the run cache: (exit codes, normalized console output,
+    {file: key}), the key being what a comparison sees (a .bsp without its padding, a normalized .log)."""
+    results = run_chain(bindir, "full", name, root, snapshots=False, cache=cache, map_text=text)
+    blob = lambda entry: (cache.root / "blobs" / entry[1][:2] / entry[1]).read_bytes()
+    codes, out, last = [], b"", None
+    for stage in PIPELINE:
+        if stage not in results:
             break
-    files = {f.name: stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp" else normalize_log(f.read_bytes())
-             for f in sorted(cwd.iterdir())}
-    return codes, out, files
+        r = results[stage]
+        codes.append(r["exit"])
+        out += normalize_log(blob(r["console"][f"{stage}.stdout"]) + blob(r["console"][f"{stage}.stderr"]))
+        last = r
+    return codes, out, {n: e[0] for n, e in last["outputs"].items()}
 
 
-def _number_case(cand: Path, oracle: Path, name: str, how: str, root: Path) -> str | None:
+def _number_case(cand: Path, oracle: Path, name: str, how: str, root: Path, cache) -> str | None:
     text = respell_numbers((DATA / "corpus" / "maps" / f"{name}.map").read_text(encoding="latin-1"), how)
-    cwd = root / f"numbers-{name}-{how}"
-    ref = _number_run(oracle, name, text, cwd)
-    new = _number_run(cand, name, text, cwd)
+    ref = _number_pipeline(oracle, name, text, root / f"numbers-ref-{name}-{how}", cache)
+    new = _number_pipeline(cand, name, text, root / f"numbers-new-{name}-{how}", cache)
     what = [n for n, a, b in zip(("exit codes", "output", "files"), ref, new) if a != b]
     return f"numbers: {name} ({how}): {', '.join(what)} differ" if what else None
 
 
-def cli_numbers(cand: Path, oracle: Path, tmp: Path) -> list[str]:
+def cli_numbers(cand: Path, oracle: Path, tmp: Path, maps=NUMBER_MAPS) -> list[str]:
+    cache = open_cache(CACHE_ROOT)
     with concurrent.futures.ThreadPoolExecutor(DEFAULT_JOBS) as pool:
-        jobs = [pool.submit(_number_case, cand, oracle, m, how, tmp) for m in NUMBER_MAPS for how in NUMBER_MUTATIONS]
+        jobs = [pool.submit(_number_case, cand, oracle, m, how, tmp, cache) for m in maps for how in NUMBER_MUTATIONS]
         return [r for r in (j.result() for j in jobs) if r]
 
 
@@ -2028,28 +2200,150 @@ def cmd_cli(args) -> int:
     # change the exit code. Plain builds ignore both variables.
     os.environ.setdefault("ASAN_OPTIONS", "detect_leaks=0:halt_on_error=0:abort_on_error=0")
     os.environ.setdefault("UBSAN_OPTIONS", "print_stacktrace=1:halt_on_error=0")
-    cand = check_bin(Path(args.bin))
+    cand = resolve_bin(args)
     oracle = DATA / "builds" / "oracle" / "bin"
     failures = []
+    def option_case(tool: str, i: int, argv: list[str], tmp: str, template: Path, manifest: dict) -> str | None:
+        exe = tool.split("-")[0]
+        ref = _cli_run(oracle / exe, argv, Path(tmp) / f"{tool}-{i}-ref", [], template, cache, manifest)
+        new = _cli_run(cand / exe, argv, Path(tmp) / f"{tool}-{i}-new", CLI_ADDED_LINES.get(exe, []), template, cache, manifest)
+        what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
+        return f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ" if what else None
+
     with tempfile.TemporaryDirectory(dir=DATA) as tmp:
-        for tool in args.tools:
-            for i, argv in enumerate(CLI_CASES[tool]):
-                exe = tool.split("-")[0]
-                ref = _cli_run(oracle / exe, argv, Path(tmp) / f"{tool}-{i}-ref", tool)
-                new = _cli_run(cand / exe, argv, Path(tmp) / f"{tool}-{i}-new", tool, CLI_ADDED_LINES.get(exe, []))
-                what = [n for n, a, b in zip(("exit code", "stdout", "stderr", "files"), ref, new) if a != b]
-                if what:
-                    failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")
+        cache = open_cache(CACHE_ROOT)
+        templates = {tool: cli_template(tool, tool.split("-")[0], Path(tmp), cache) for tool in args.tools}
+        manifests = {tool: cache.manifest(t) for tool, t in templates.items()}
+        with concurrent.futures.ThreadPoolExecutor(DEFAULT_JOBS) as pool:  # a case's two runs are in their own directories
+            cases = [pool.submit(option_case, tool, i, argv, tmp, templates[tool], manifests[tool]) for tool in args.tools
+                     for i, argv in enumerate(CLI_CASES[tool]) if not (args.smoke and i % CLI_SMOKE_STRIDE)]
+            failures += [r for r in (c.result() for c in cases) if r]
         if args.paths:
             failures += cli_paths(cand, oracle, Path(tmp))
         if args.numbers:
-            failures += cli_numbers(cand, oracle, Path(tmp))
-        n = (sum(len(CLI_CASES[t]) for t in args.tools) + (len(PATH_CASES) + len(PATH_RAD_CASES) if args.paths else 0)
-             + (len(NUMBER_MAPS) * len(NUMBER_MUTATIONS) if args.numbers else 0))
+            failures += cli_numbers(cand, oracle, Path(tmp), NUMBER_SMOKE_MAPS if args.smoke else NUMBER_MAPS)
+        n = (sum(len(CLI_CASES[t][::CLI_SMOKE_STRIDE] if args.smoke else CLI_CASES[t]) for t in args.tools)
+             + (len(PATH_CASES) + len(PATH_RAD_CASES) if args.paths else 0)
+             + ((len(NUMBER_SMOKE_MAPS) if args.smoke else len(NUMBER_MAPS)) * len(NUMBER_MUTATIONS) if args.numbers else 0))
         log(f"  {'PASS' if not failures else 'FAIL'}: {n} command lines, {len(failures)} difference(s)")
         for f in failures:
             log(f"    {f}")
     return 1 if failures else 0
+
+
+# ---------------------------------------------------------------------------
+# command: smoke (the edit-run loop: seconds, not a gate)
+
+
+def run_steps(steps: dict[str, list]) -> int:
+    """Run the commands of steps at the same time; one line each (seconds, status), the output of those that
+    failed. Worst exit status."""
+    def one(name: str) -> tuple[str, float, subprocess.CompletedProcess]:
+        start = time.perf_counter()
+        proc = run(steps[name], capture_output=True, text=True, errors="replace")
+        return name, time.perf_counter() - start, proc
+
+    failed = 0
+    with concurrent.futures.ThreadPoolExecutor(len(steps)) as pool:
+        for name, seconds, proc in pool.map(one, steps):
+            ok = proc.returncode == 0
+            failed += not ok
+            log(f"  {name:14} {'ok' if ok else 'FAIL'}  {seconds:5.1f}s")
+            if not ok:
+                log("\n".join("      " + l for l in (proc.stdout + proc.stderr).strip().splitlines()[-25:]))
+    return failed
+
+
+def cmd_smoke(args) -> int:
+    """Build the working tree, then at the same time: the unit tests, check on the smoke maps (quick tier),
+    a subset of cli, and every regress scenario. Everything is cached, so what a change leaves alone costs
+    nothing. Meant for the loop of edit and run; the gate for a step is `gate`."""
+    start = time.perf_counter()
+    bindir = ensure_dev_build()
+    built = time.perf_counter() - start
+    me = [sys.executable, str(Path(__file__).resolve())]
+    steps = {
+        "unit tests": ["ctest", "--test-dir", str(DEV_BUILD), "--output-on-failure", "-j", "4"],
+        "check": [*me, "check", "--bin", str(bindir), "--smoke", "--fail-fast"],
+        "cli": [*me, "cli", "--bin", str(bindir), "--smoke"],
+        "regress": [*me, "regress", "--bin", str(bindir)],
+    }
+    log(f"smoke: built {DEV_BUILD} in {built:.1f}s")
+    failed = run_steps(steps)
+    log(f"smoke {'PASS' if not failed else 'FAIL'}: {time.perf_counter() - start:.1f}s")
+    return 1 if failed else 0
+
+
+# ---------------------------------------------------------------------------
+# command: gate (the gate for a step, and the milestone and release gates)
+
+GATE_DEFAULT_TIERS = ["quick", "full", *TIER_GROUPS]  # groups expand to their tiers
+GATE_STEPS = ("unit", "regress", "cli", "sanitize", "probe")
+
+
+def gate_check_args(args, tier: str, stages: str = "all", audit: bool = False) -> argparse.Namespace:
+    milestone = args.milestone
+    return argparse.Namespace(
+        cmd="check", bin=None, tier=tier, maps=None, jobs=args.jobs, archived=args.archived or milestone,
+        full=args.full or milestone, mode="both", padding="zero", label="gate", keep=False, stages=stages,
+        downstream_from=None, threads=1, no_cache=audit, smoke=False, fail_fast=args.fail_fast)
+
+
+def cmd_gate(args) -> int:
+    """Everything the gate of a step runs, with all the tiers' jobs in one queue and the other steps (unit tests,
+    regress, cli, sanitize) running at the same time:
+        step gate  - the routine map sets of every tier, once with the cache and once as an audit of the quick tier
+        --milestone - the whole corpus with the archived maps, LeakSanitizer, probe with corrupted BSPs
+        --release  - every tier is an audit: no run is taken from the cache (the cache is refreshed and must agree)"""
+    start = time.perf_counter()
+    bindir = resolve_bin(args)
+    tiers = [t for name in (args.tiers or GATE_DEFAULT_TIERS) for t in expand_tiers(name)]
+    specs = []  # (tier, stages, audit)
+    if "quick" in tiers and not args.release:
+        specs.append(("quick", "all", True))  # the audit of the cache, once
+    specs += [(t, "all", args.release) for t in tiers]
+    if "quick" in tiers:
+        specs.append(("quick", "rad", args.release))  # hlrad alone on its pre-baked inputs
+    plans = [plan_check(gate_check_args(args, t, stages, audit), bindir) for t, stages, audit in specs]
+    log(f"gate: {len(plans)} checks, {sum(len(pl.jobs) for pl in plans)} jobs, {bindir}")
+
+    baseline = DATA / "sanitize" / "baseline-v1-quick.txt"
+    me = [sys.executable, str(Path(__file__).resolve())]
+    steps = {}
+    if "unit" not in args.skip:
+        steps["unit tests"] = ["ctest", "--test-dir", str(DEV_BUILD), "--output-on-failure", "-j", "4"]
+    if "regress" not in args.skip:
+        steps["regress"] = [*me, "regress", "--bin", str(bindir)]
+    if "cli" not in args.skip:
+        steps["cli"] = [*me, "cli", "--bin", str(bindir)]
+    if "sanitize" not in args.skip:
+        steps["sanitize"] = [*me, "sanitize", "--baseline", str(baseline),
+                             *(["--full", "--archived", "--leaks"] if args.milestone else [])]
+    if args.milestone and "probe" not in args.skip:
+        steps["probe"] = [*me, "probe", "--mutations", "400", "--sanitize"]
+
+    def timed(cmd: list) -> tuple[float, subprocess.CompletedProcess]:
+        t0 = time.perf_counter()
+        proc = run(cmd, capture_output=True, text=True, errors="replace")
+        return time.perf_counter() - t0, proc
+
+    failed = []
+    with concurrent.futures.ThreadPoolExecutor(max(1, len(steps))) as side:
+        side_runs = {name: side.submit(timed, cmd) for name, cmd in steps.items()}
+        run_plans(plans, args.jobs, args.fail_fast, verbose=False)
+        checks_done = time.perf_counter() - start
+        for plan in plans:
+            if finish_check(plan, verbose=False):
+                failed.append(f"check {plan.tier}{' (' + plan.args.stages + ')' if plan.args.stages != 'all' else ''}")
+        for name, fut in side_runs.items():
+            seconds, proc = fut.result()
+            log(f"  {name:14} {'ok' if proc.returncode == 0 else 'FAIL'}  {seconds:6.1f}s")
+            if proc.returncode:
+                failed.append(name)
+                log("\n".join("      " + l for l in (proc.stdout + proc.stderr).strip().splitlines()[-30:]))
+    log(f"gate {'PASS' if not failed else 'FAIL'}: {time.perf_counter() - start:.1f}s "
+        f"({len(plans)} checks done after {checks_done:.1f}s)" + (f"; failed: {', '.join(failed)}" if failed else ""))
+    return 1 if failed else 0
 
 
 # ---------------------------------------------------------------------------
@@ -2162,14 +2456,16 @@ def main() -> int:
     p.add_argument("--sanitize", action="store_true", help="add ASan/UBSan instrumentation")
     p.add_argument("--build-date", help="VHLT_BUILD_DATE, \"Mmm dd yyyy\" (default: the oracle's date)")
     p.add_argument("--force", action="store_true")
+    p.add_argument("--incremental", action="store_true", help="with --tree: reuse the existing build tree of this name")
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("corpus", help="convert RMFs and copy maps into the frozen corpus")
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_corpus)
 
-    def common(p, bin_required=True):
-        p.add_argument("--bin", required=bin_required, help="directory with hlcsg/hlbsp/hlvis/hlrad")
+    def common(p, bin_required=True, dev_default=False):
+        p.add_argument("--bin", required=bin_required and not dev_default, help="directory with hlcsg/hlbsp/hlvis/hlrad"
+                       + (" (default: the working tree's build/, configured as the oracle was)" if dev_default else ""))
         p.add_argument("--tier", choices=[*TIERS, *TIER_GROUPS], default="quick",
                        help="csg-variants: every csg-only option tier")
         p.add_argument("--maps", nargs="+")
@@ -2182,7 +2478,9 @@ def main() -> int:
     p.set_defaults(func=for_each_tier(cmd_ref))
 
     p = sub.add_parser("check", help="run a candidate and compare every stage against the oracle")
-    common(p)
+    common(p, dev_default=True)
+    p.add_argument("--smoke", action="store_true", help=f"just the smoke maps ({', '.join(SMOKE_MAPS)}); a seconds-long tripwire, not a gate")
+    p.add_argument("--fail-fast", action="store_true", help="stop at the first stage that differs from the oracle")
     p.add_argument("--mode", choices=["chain", "isolated", "both"], default="both")
     # Since Phase 2 the writer zero-fills lump padding; the oracle leaks stale bytes there.
     p.add_argument("--padding", choices=["zero-or-equal", "zero", "strict", "ignore"], default="zero")
@@ -2205,7 +2503,7 @@ def main() -> int:
     p.set_defaults(func=cmd_cache)
 
     p = sub.add_parser("bench", help="time each stage (sequential, median of --repeat runs)")
-    common(p)
+    common(p, dev_default=True)
     p.add_argument("--repeat", type=int, default=3)
     p.add_argument("--threads", type=int, default=1)
     p.add_argument("--label")
@@ -2239,15 +2537,34 @@ def main() -> int:
     p.set_defaults(func=cmd_fuzz)
 
     p = sub.add_parser("regress", help="candidate-only regression scenarios (oracle behaviour undefined there)")
-    p.add_argument("--bin", required=True)
+    p.add_argument("--bin", help="default: the working tree's build/")
     p.set_defaults(func=cmd_regress)
 
     p = sub.add_parser("cli", help="oracle vs candidate on option-parsing command lines (output, files, exit code)")
-    p.add_argument("--bin", required=True)
+    p.add_argument("--bin", help="default: the working tree's build/")
+    p.add_argument("--smoke", action="store_true", help="every %dth option case and 3 number maps: a quick tripwire, not a gate" % CLI_SMOKE_STRIDE)
     p.add_argument("--tools", nargs="+", default=list(CLI_CASES), choices=list(CLI_CASES))
     p.add_argument("--no-paths", dest="paths", action="store_false", help="skip the path-handling cases (PATH_CASES, PATH_RAD_CASES)")
     p.add_argument("--no-numbers", dest="numbers", action="store_false", help="skip the number-spelling pipelines (NUMBER_MAPS)")
     p.set_defaults(func=cmd_cli)
+
+    p = sub.add_parser("gate", help="the gate of a step: every tier in one queue, plus unit tests, regress, cli and sanitize")
+    p.add_argument("--bin", help="default: the working tree's build/")
+    p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
+    p.add_argument("--tiers", nargs="+", choices=[*TIERS, *TIER_GROUPS],
+                   help="instead of quick, full and every group of variant tiers")
+    p.add_argument("--milestone", action="store_true",
+                   help="the whole corpus with the archived maps; sanitize with LeakSanitizer; probe with corrupted BSPs")
+    p.add_argument("--release", action="store_true", help="run every tool again (no run taken from the cache) and compare "
+                   "with the cache entries: the final audit")
+    p.add_argument("--full", action="store_true", help="the whole corpus (--milestone includes it)")
+    p.add_argument("--archived", action="store_true", help="also the archived maps (--milestone includes them)")
+    p.add_argument("--skip", nargs="+", default=[], choices=GATE_STEPS, help="leave these steps out")
+    p.add_argument("--fail-fast", action="store_true", help="stop the checks at the first difference")
+    p.set_defaults(func=cmd_gate)
+
+    p = sub.add_parser("smoke", help="seconds-long tripwire for the edit-run loop: build, unit tests, check on a few maps, a cli subset, regress")
+    p.set_defaults(func=cmd_smoke)
 
     p = sub.add_parser("coverage", help="gcov line coverage of a tool over the quick tier (up to that tool) and its variant tiers")
     p.add_argument("--tool", choices=list(COVERAGE_TOOLS), default="hlcsg")
@@ -2260,12 +2577,7 @@ def main() -> int:
     p.set_defaults(func=cmd_coverage)
 
     args = ap.parse_args()
-    global INCLUDE_ARCHIVED, FULL_CORPUS, RAD_ROUTINE, RAD_TIER
-    INCLUDE_ARCHIVED = getattr(args, "archived", False)
-    RAD_TIER = getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants")
-    RAD_ROUTINE = (getattr(args, "stages", None) == "rad" or getattr(args, "tool", None) == "hlrad"
-                   or getattr(args, "tier", "") in (*RAD_VARIANT_TIERS, "rad-variants"))
-    FULL_CORPUS = getattr(args, "full", False) or args.cmd == "ref"  # references cover the whole corpus
+    set_context(args)
     DATA.mkdir(parents=True, exist_ok=True)
     return args.func(args)
 

@@ -109,8 +109,8 @@ banner and into every `.bsp` (the worldspawn `compiler` key).
 ## Tests
 
 ```sh
-ctest --test-dir build --output-on-failure                    # unit tests
-python3 tests/parity/parity.py check --bin build/bin          # parity with the original tools
+python3 tests/parity/parity.py smoke                          # seconds: build, unit tests, a few maps, regress
+python3 tests/parity/parity.py gate                           # everything for a step: every tier, unit tests, cli, sanitize
 ```
 
 The parity harness needs the original tools built from the `oracle-base` tag (`07575e9`) and the

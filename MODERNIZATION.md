@@ -5,7 +5,7 @@ what the project is, what has changed, how the tests keep the code under control
 audited, and what is still open. `readme.md` is the user-facing summary, and `tests/README.md` is
 the full manual for the test harness.
 
-State as of 2026-10-25: branch `modernize`, after S6b (`eac7eea`) and this document.
+State as of 2026-10-25: branch `modernize` at `10804d9` (the `.map` fuzzer), plus the test-harness speedups (`smoke`, `gate`, section 4).
 
 ---
 
@@ -66,19 +66,18 @@ The tag `oracle-base` (`07575e9`, the first commit of `modernize`) is on origin 
 ## 3. Quick start
 
 ```sh
-# build and unit tests
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVHLT_BUILD_DATE="Oct 17 2026"
-cmake --build build -j
-ctest --test-dir build --output-on-failure
-
 # parity (one-time setup: tests/README.md, "One-time setup")
 P=tests/parity/parity.py
-B=../vhlt-parity/builds/cand/bin
-python3 $P build --tree --name cand --force       # candidate from the working tree
-python3 $P check --bin $B --maps cs_assault       # fast check while iterating
+python3 $P smoke        # while editing: build, unit tests, a few maps, a cli subset, regress. 4 s warm, ~20 s after a change
+python3 $P gate         # before committing a step: every tier, unit tests, regress, cli, sanitize. 11 s warm
 ```
 
-The full gate before committing a step is in section 4.3.
+The candidate is the working tree's `build/`. The harness configures it as the oracle was built
+(Release, the oracle's build date; `CMakeLists.txt` pins the float flags), rebuilds it, and fails
+on a compiler warning, so there is no separate `cand` build to make. A `build/` configured as
+Debug, or with `__DATE__`, is reconfigured: it would differ in the `.bsp` "compiler" key, and run
+the unit tests and the tools about 20 times slower. `--bin DIR` runs another build instead.
+Section 4.3 has the gate.
 
 ---
 
@@ -93,6 +92,8 @@ expectation that could drift.
 
 | Layer | Command | What it catches |
 |---|---|---|
+| Smoke | `parity.py smoke` | The edit-run loop, not a gate: builds `build/`, then at the same time the unit tests, `check --smoke` (8 maps, quick tier, `--fail-fast`), `cli --smoke` (every 6th option case, 3 number maps) and every `regress` scenario. 4 s with everything cached, about 20 s after a change to hlrad. Planted bugs in each tool and in `common/` all fail it. |
+| Gate | `parity.py gate [--milestone] [--release]` | Section 4.3. |
 | Unit tests (doctest, 127 cases) | `ctest --test-dir build` | `common/` behaviour pinned to the oracle (path helpers, tokenizer, BSP round-trip, compression tables generated from the oracle, cmdline parsing, `ParseInt`, `ProbeSearch` against glibc's `bsearch`, ...). Built twice, as `f64` (hlcsg/hlbsp) and `f32` (hlvis/hlrad). |
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
 | Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
@@ -107,7 +108,13 @@ expectation that could drift.
 
 Speed features that keep the gate short: a content-addressed **run cache** (`stagecache.py`) only
 reruns tools whose binary, arguments or inputs changed. If every run in a gate is a cache hit, the
-binaries produce identical output, which is itself a proof. **`CORE_MAPS`** (25 maps chosen by
+binaries produce identical output, which is itself a proof. The cache serves `check`, `cli` (the
+option cases, the prepared inputs and the number-spelling pipelines, for the oracle too) and
+`sanitize` (the sanitizer output of a run is stored with it). `gate` puts the jobs of all tiers in
+**one queue, longest first**, so the pool does not drain at the end of each tier: four uncached
+rad tiers took 78 s one after the other and 45 s together. A tool that runs longer than 20 times
+the oracle's time (200 times for a sanitizer build; at least 5 minutes) counts as hung, instead
+of waiting 4 hours. **`CORE_MAPS`** (25 maps chosen by
 coverage) is the routine set; `--full` runs the whole corpus. **`RAD_CORE_MAPS`** (13 maps) is
 the routine set for hlrad. `liminal_plaza` is archived (very slow) and only runs with
 `--archived` at the end of a milestone.
@@ -126,30 +133,34 @@ the routine set for hlrad. `liminal_plaza` is archived (very slow) and only runs
      `fm_rad_texlights`;
    - `from_chars` in `IntForKey`: 12 number pipelines fail;
    - `strtod` instead of `sscanf`: 12 fail (dangling-exponent spelling).
-3. **Iterate fast:** `check --maps cs_assault` (plus `--stages rad` on `RAD_CORE_MAPS` for hlrad)
-   and ctest. No sanitizers mid-step.
-4. **Gate before committing** (section 4.3).
-5. **At a milestone:** `check --full --archived` (every tier, whole corpus), `sanitize --full --leaks`,
-   `probe --sanitize`.
+3. **Iterate fast:** `parity.py smoke` after each edit. For one map, `check --maps cs_assault`
+   (plus `--stages rad` for hlrad). No sanitizers mid-step.
+4. **Gate before committing** (section 4.3): `parity.py gate`.
+5. **At a milestone:** `gate --milestone` (every tier on the whole corpus with the archived maps,
+   `sanitize --full --leaks`, `probe --sanitize`). **Before a release:** `gate --release` (every tool
+   run again, nothing taken from the cache, the cache refreshed and required to agree).
 
 Never revert a planted bug with `git checkout -- src` while `src/` has uncommitted work: it once
-wiped a whole step's edits. Restore the exact bytes instead.
+wiped a whole step's edits. Restore the exact bytes instead, and `touch` the file: a copy that keeps
+the old modification time (`cp -p`) makes ninja think the objects built from the planted version are
+still current.
 
 ### 4.3 The gate for a step
 
 ```sh
-cmake --build build -j 2>&1 | grep -iE "warning|error"     # must print nothing
-ctest --test-dir build
-python3 $P build --tree --name cand --force
-python3 $P check --bin $B                       # core set, quick tier
-python3 $P check --bin $B --no-cache            # audits the cache (once per step)
-python3 $P check --bin $B --tier full
-python3 $P check --bin $B --stages rad          # hlrad micro-corpus
-python3 $P cli --bin $B                         # about 2 min (--no-numbers / --no-paths while iterating)
-python3 $P regress --bin $B
-python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt
-# when the change touches widely shared code: check --full (whole corpus)
+python3 $P gate                       # builds build/ (fails on a warning), then:
+                                      #   check: quick (core set), an audit of quick (no cache), full, hlrad's
+                                      #          micro-corpus (--stages rad), every csg/bsp/vis/rad variant tier
+                                      #   at the same time: unit tests, regress, cli, sanitize (empty baseline)
+python3 $P gate --tiers quick full    # a subset;  --skip cli sanitize ...  leaves steps out;  --fail-fast
+python3 $P gate --milestone           # whole corpus + archived maps, sanitize --full --leaks, probe --sanitize
+python3 $P gate --release             # every tool run again; the cache must agree
 ```
+
+With the cache warm the gate takes about 11 s; a change to hlrad makes its 20 option tiers and the
+lighting runs of the other tiers run again, about 3 minutes. The old sequence of commands still
+works and does the same: `check` (`--no-cache` once per step, `--tier full`, `--stages rad`, tier
+groups), `cli`, `regress`, `sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt`.
 
 The warning set is `-Wall -Wextra -Wpedantic`, plus `-Wconditionally-supported` on GCC. That last
 flag catches a `std::string` passed to a printf-style function such as `Log`/`Error`, which GCC
@@ -336,8 +347,9 @@ points:
 - Before touching untested behaviour, add tests and mutation-check them (section 4.2).
 - Prefer keeping odd behaviour with a `// compat:` comment over silently "fixing" it. A real
   behaviour change needs a test that pins the new behaviour, and a row in section 5.5.
-- Parity needs `-threads 1` and the pinned build date. If every check suddenly fails after
-  midnight, the dev tree lost `VHLT_BUILD_DATE`.
+- Parity needs `-threads 1` and the pinned build date. The harness reconfigures `build/` when it
+  doesn't have the oracle's date (and Release); it did not have either until 2026-10-25, which is
+  why the unit tests took a minute.
 - `tests/parity/parity.py --help` lists every command. `check --stages csg` only reruns hlcsg
   when the downstream binaries are unchanged.
 - Keep this file up to date when a step lands: sections 5, 8 and the state line at the top.

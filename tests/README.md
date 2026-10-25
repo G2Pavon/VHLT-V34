@@ -64,10 +64,29 @@ embedded lightmaps.
 ### Checking a change
 
 ```sh
-python3 $P build --tree --name cand --force
-python3 $P check --bin ../vhlt-parity/builds/cand/bin              # quick tier, chain + isolated
-python3 $P check --bin ../vhlt-parity/builds/cand/bin --tier full
+python3 $P smoke                 # while editing: seconds
+python3 $P gate                  # before committing a step
+python3 $P check                 # quick tier, chain + isolated (one command of the gate)
+python3 $P check --tier full
 ```
+
+`check`, `cli`, `regress`, `bench`, `smoke` and `gate` run the working tree's `build/` unless given
+`--bin DIR`. `parity.py` builds it first (`cmake --build build`), stops on a compiler warning, and
+configures it as the oracle was built (Release, the oracle's build date) when it isn't: the build date
+is written into every `.bsp`, and a Debug build would be 20 times slower. The binaries are the same
+as `build --tree --name cand` makes (same compiler and flags), so both share the cache.
+
+- **`smoke`**: the build, then at the same time the unit tests, `check --smoke --fail-fast` (the
+  `SMOKE_MAPS`: cs_assault, a feature map for each tool, an error map and the two lighting maps),
+  `cli --smoke` (every 6th option case, 3 number maps) and all of `regress`. A tripwire, not a
+  gate: it fails on a planted bug in any tool, but a bug in an option or a map it skips needs `gate`.
+- **`gate`**: all of the following, with the jobs of every tier in one queue (longest first) and
+  the steps that aren't `check` running at the same time: `check` on quick, quick again with
+  `--no-cache` (the audit), full, `--stages rad`, and every group of variant tiers; unit tests; `regress`;
+  `cli`; `sanitize --baseline`. Options: `--tiers`, `--skip unit regress cli sanitize probe`,
+  `--fail-fast`, `--milestone` (whole corpus with the archived maps, `sanitize --full --archived
+  --leaks`, `probe --mutations 400 --sanitize`), `--release` (every check is an audit: nothing from
+  the cache; the cache is refreshed and must agree).
 
 - **chain**: the candidate runs all four tools; every stage's directory is compared with the oracle's.
 - **isolated**: each tool after hlcsg runs on the *oracle's* output of the previous stage, so a
@@ -111,6 +130,13 @@ normalized content: the tools only append to the log and delete the .err, never 
 Comparisons with the oracle are cached too, keyed by both sides' contents, the exit codes, the
 padding mode and the harness source.
 
+Besides `check`, the cache answers `cli` (an option case is keyed like a stage: tool, arguments,
+and the prepared directory; the number-spelling pipelines run through the same stage chain, for the oracle
+as well) and `sanitize` (the sanitizer's stderr is stored with the run). Keys include `ASAN_OPTIONS` /
+`UBSAN_OPTIONS` when they are set, because they change what a sanitizer build prints. A tool binary is identified
+by its own bytes, plus `entities.void` if one sits next to it; the other files of a directory are not part of a
+key, so `build/bin` can hold the unit tests.
+
 So only tools whose binary or input changed run. `.bsp` inputs are keyed without their lump
 padding (the oracle leaves stale bytes there, the tools zero them; LoadBSPFile never reads them), and
 a run that another job is already doing is waited for (lock files in `$DATA/cache/locks`), so a
@@ -129,7 +155,11 @@ candidate's, so isolated and chain hlbsp often have the same key.
   with `N/M tool runs from cache` (or `cache audit` / `cache off`).
 
 Each map's chain and isolated runs are separate jobs, started longest first (by the oracle's
-times), so one slow map no longer serializes its two halves at the end of a run.
+times), so one slow map no longer serializes its two halves at the end of a run. `gate` does the
+same across tiers: with one queue for all of them, four uncached rad tiers took 45 s instead of 78 s.
+Every run of a tool has a time limit of 20 times the oracle's time for that stage (200 times for a
+sanitizer build), at least 5 minutes: longer counts as a hang (`exit: timeout`) instead of stopping the run
+after 4 hours.
 
 ### Feature maps and csg option tiers
 
@@ -316,7 +346,10 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang
-python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths] [--no-numbers]  # oracle vs candidate on option-parsing command lines, path handling and number spellings: output, files, exit code. With the sanitize build (`build --tree --name sanitize --sanitize --cxx clang++`) it doubles as a sanitizer run over these inputs: findings appear as stderr differences
+python3 $P smoke                                 # build, unit tests, check --smoke, cli --smoke, regress: seconds
+python3 $P gate [--tiers T...] [--skip S...] [--milestone | --release] [--fail-fast]   # every tier in one queue + unit tests, regress, cli, sanitize
+python3 $P check [--smoke] [--fail-fast]         # --bin defaults to build/ (as do cli, regress, bench)
+python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--smoke] [--no-paths] [--no-numbers]  # oracle vs candidate on option-parsing command lines, path handling and number spellings: output, files, exit code. With the sanitize build (`build --tree --name sanitize --sanitize --cxx clang++`) it doubles as a sanitizer run over these inputs: findings appear as stderr differences
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 $P fuzz --bin SANITIZE_DIR --plain DIR [--seed 1 --count 600 --start 0 --maps fm_specials ...]   # corrupted .map files through all four tools, no oracle; findings = sanitizer reports, crashes, hangs (reproducers in $VHLT_PARITY_DATA/fuzz)
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
