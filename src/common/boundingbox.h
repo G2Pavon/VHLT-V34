@@ -52,24 +52,6 @@ class BoundingBox
         return other.testSubset(*this);
     }
     // returns true if this box partially intersects the other box
-    bool testUnion(const BoundingBox &other) const
-    {
-        BoundingBox tmpBox;
-        tmpBox.m_Mins[0] = qmax(m_Mins[0], other.m_Mins[0]);
-        tmpBox.m_Mins[1] = qmax(m_Mins[1], other.m_Mins[1]);
-        tmpBox.m_Mins[2] = qmax(m_Mins[2], other.m_Mins[2]);
-        tmpBox.m_Maxs[0] = qmin(m_Maxs[0], other.m_Maxs[0]);
-        tmpBox.m_Maxs[1] = qmin(m_Maxs[1], other.m_Maxs[1]);
-        tmpBox.m_Maxs[2] = qmin(m_Maxs[2], other.m_Maxs[2]);
-
-        if ((tmpBox.m_Mins[0] > tmpBox.m_Maxs[0]) ||
-            (tmpBox.m_Mins[1] > tmpBox.m_Maxs[1]) ||
-            (tmpBox.m_Mins[2] > tmpBox.m_Maxs[2]))
-        {
-            return false;
-        }
-        return true;
-    }
     eBoundingState test(const BoundingBox &other) const
     {
         eBoundingState rval;

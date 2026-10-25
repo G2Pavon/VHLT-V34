@@ -54,7 +54,6 @@ set(COMMON_SOURCES
     src/common/log.cpp
     src/common/messages.cpp
     src/common/tokenizer.cpp
-    src/common/stringlib.cpp
     src/common/threads.cpp
     src/common/winding.cpp
 )

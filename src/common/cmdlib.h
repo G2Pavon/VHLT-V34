@@ -83,7 +83,6 @@ std::string StringVPrintf(const char *const format, va_list args);
 // result is false if the text had to be cut.
 bool FORMAT_PRINTF(3, 4) safe_snprintf(char *const dest, const std::size_t count, const char *const args, ...);
 bool safe_strncpy(char *const dest, const char *const src, const std::size_t count);
-bool safe_strncat(char *const dest, const char *const src, const std::size_t count);
 
 // True if buffer[0..size) contains a NUL.
 bool TerminatedString(const char *buffer, const int size);

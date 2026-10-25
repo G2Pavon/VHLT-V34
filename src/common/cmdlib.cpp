@@ -145,27 +145,6 @@ bool safe_strncpy(char *const dest, const char *const src, const std::size_t cou
     return safe_snprintf(dest, count, "%s", src);
 }
 
-bool safe_strncat(char *const dest, const char *const src, const std::size_t count)
-{
-    if (!count)
-    {
-        Warning("safe_strncat passed empty count");
-        return false;
-    }
-
-    const std::size_t len = strnlen(dest, count);
-    if (len == count)
-    {
-        dest[count - 1] = 0; // dest was not terminated within count
-        return false;
-    }
-    const std::size_t srclen = std::strlen(src);
-    const std::size_t n = std::min(srclen, count - 1 - len);
-    std::memcpy(dest + len, src, n);
-    dest[len + n] = 0;
-    return n == srclen;
-}
-
 bool TerminatedString(const char *buffer, const int size)
 {
     return size > 0 && std::memchr(buffer, 0, size) != nullptr;

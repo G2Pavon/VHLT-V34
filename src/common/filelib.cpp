@@ -70,7 +70,3 @@ std::FILE *SafeOpenWrite(const char *const filename)
     return SafeOpen(filename, "wb").release();
 }
 
-std::FILE *SafeOpenRead(const char *const filename)
-{
-    return SafeOpen(filename, "rb").release();
-}

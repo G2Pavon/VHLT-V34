@@ -127,76 +127,6 @@ std::unique_ptr<Winding> Winding::Copy() const
     return std::make_unique<Winding>(*this);
 }
 
-void Winding::Check(vec_t epsilon) const
-{
-    unsigned int j;
-    vec3_t dir, edgenormal, facenormal;
-    vec_t facedist;
-
-    if (m_NumPoints < 3)
-    {
-        Error("Winding::Check : %i points", m_NumPoints);
-    }
-
-    vec_t area = getArea();
-    if (area < 1)
-    {
-        Error("Winding::Check : %f area", area);
-    }
-
-    getPlane(facenormal, facedist);
-
-    for (unsigned int i = 0; i < m_NumPoints; i++)
-    {
-        vec_t *p1 = m_Points[i];
-
-        for (j = 0; j < 3; j++)
-        {
-            if (p1[j] > WINDING_BOGUS_RANGE || p1[j] < -WINDING_BOGUS_RANGE)
-            {
-                Error("Winding::Check : BOGUS_RANGE: %f", p1[j]);
-            }
-        }
-
-        j = i + 1 == m_NumPoints ? 0 : i + 1;
-
-        // check the point is on the face plane
-        vec_t d = DotProduct(p1, facenormal) - facedist;
-        if (d < -epsilon || d > epsilon)
-        {
-            Error("Winding::Check : point off plane");
-        }
-
-        // check the edge isn't degenerate
-        vec_t *p2 = m_Points[j];
-        VectorSubtract(p2, p1, dir);
-
-        if (VectorLength(dir) < epsilon)
-        {
-            Error("Winding::Check : degenerate edge");
-        }
-
-        CrossProduct(facenormal, dir, edgenormal);
-        VectorNormalize(edgenormal);
-        vec_t edgedist = DotProduct(p1, edgenormal);
-        edgedist += epsilon;
-
-        // all other points must be on front side
-        for (j = 0; j < m_NumPoints; j++)
-        {
-            if (j == i)
-            {
-                continue;
-            }
-            d = DotProduct(m_Points[j], edgenormal);
-            if (d > edgedist)
-            {
-                Error("Winding::Check : non-convex");
-            }
-        }
-    }
-}
-
 bool Winding::Valid() const
 {
     // TODO: Check to ensure there are 3 non-colinear points
@@ -874,19 +804,6 @@ void Winding::resize(std::uint32_t newsize)
     }
     m_Points = std::move(newpoints);
     m_MaxPoints = newsize;
-}
-
-void Winding::CopyPoints(vec3_t *points, int &numpoints)
-{
-    if (!points)
-    {
-        numpoints = 0;
-        return;
-    }
-
-    std::memcpy(points, m_Points.get(), sizeof(vec3_t) * m_NumPoints);
-
-    numpoints = m_NumPoints;
 }
 
 void Winding::Reset()

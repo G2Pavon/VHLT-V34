@@ -240,10 +240,23 @@ doesn't compile: `CopyCurrentBrush` copies brushes; the corpus never does), and 
 never reach (wad autodetect, noclip entities, `gscale`, contents from texture names, the non-axial
 hull expansions, hlvis's `info_compile_parameters` settings and its fast-threads branch), which is
 untested rather than dead. Left for the owner: the `VHLT_VERIFY_INDEXES` scaffolding in hlcsg
-(3 `#ifdef` blocks and `ScanMapPlanes`, the optional index verification build), and about 15 dead
-functions in `common/` (`LogEnd`, `Tokenizer::EndOfStream`, `Winding::Reset`, `EntityKeys::Set` and
-`Find` are used by nothing; `safe_strncat`, `str_casecmp`, `str_ncasecmp`, `SafeOpenRead`,
-`Winding::Valid` only by the unit tests).
+(3 `#ifdef` blocks and `ScanMapPlanes`, the optional index verification build).
+
+`common/` (same day), no output change. Removed: `Winding::Check` and `Winding::CopyPoints`,
+`BoundingBox::testUnion` and `BASE_WINDING_DISTANCE` (nothing called them, tests included), and
+`safe_strncat`, `SafeOpenRead`, `str_casecmp` and `str_ncasecmp` (only their own unit tests did;
+`stringlib.cpp`/`.h` held nothing else, so they went too), with those tests. The three
+commented-out `MODIFICATIONS_STRING` lines, old maintainers' bug-report contacts, moved to
+`CREDITS.md`. About 200 lines in 12 files, two of them deleted. Kept on purpose: the `Winding` members that only the unit tests
+use (the points constructor, `initFromPoints`, `addPoint`, `insertPoint`, `Valid`): the winding tests
+build their polygons with them, and rewriting those tests is not worth the 40 lines.
+
+How to audit for dead code in a shared library: **read the final binaries' symbol tables**, not the
+linker's `--print-gc-sections` log (it left out functions that were gone), and check every
+candidate's callers: the compiler inlines small functions into their callers, so the linker
+reports them as unused (`LogEnd`, `EntityKeys::Set`/`Find`, `Tokenizer::EndOfStream`,
+`Winding::Reset`/`resize`/`allocate` and the `Winding` move assignment were all live). Header-only
+code never appears in the binaries: scan the headers for identifiers with no use.
 
 ### 5.5 Intended behaviour differences from the oracle
 
@@ -295,7 +308,7 @@ corresponding commit messages and `tests/README.md`. In summary:
   | Mutable globals | about 215 |
   | printf-style log calls | about 760 |
   | `atof` / `sscanf` | 22 / 30 |
-  | `safe_snprintf` / `safe_strncpy` / `safe_strncat` | 16 |
+  | `safe_snprintf` / `safe_strncpy` | 16 |
   | Fixed `char` arrays | 30, mostly on-disk formats: 16-byte texture names, WAD headers |
   | `calloc` | 1, on purpose: lazily zeroed BSP buffers |
 

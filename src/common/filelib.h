@@ -29,4 +29,3 @@ void SafeWrite(std::FILE *f, const void *const buffer, int count);
 
 // Raw-pointer versions for the tools that still manage FILE* themselves.
 std::FILE *SafeOpenWrite(const char *const filename);
-std::FILE *SafeOpenRead(const char *const filename);

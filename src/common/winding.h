@@ -11,7 +11,6 @@
 constexpr int MAX_POINTS_ON_WINDING = 128;
 // TODO: FIX THIS STUPID SHIT (MAX_POINTS_ON_WINDING)
 
-constexpr int BASE_WINDING_DISTANCE = 9000;
 
 constexpr int SIDE_FRONT = 0;
 constexpr int SIDE_ON = 2;
@@ -57,7 +56,6 @@ class Winding
     void getBounds(vec3_t &mins, vec3_t &maxs) const;
     void getCenter(vec3_t &center) const;
     std::unique_ptr<Winding> Copy() const;
-    void Check(vec_t epsilon = ON_EPSILON) const; // Developer check for validity
     bool Valid() const;                           // Runtime/user/normal check for validity
     void addPoint(const vec3_t newpoint);
     void insertPoint(const vec3_t newpoint, const unsigned int offset);
@@ -86,7 +84,6 @@ class Winding
     void Divide(const P &split, Winding **front, Winding **back, vec_t epsilon = ON_EPSILON);
     bool Chop(const vec3_t normal, const vec_t dist, vec_t epsilon = ON_EPSILON); // keeps the front, in place
     int WindingOnPlaneSide(const vec3_t normal, const vec_t dist, vec_t epsilon = ON_EPSILON);
-    void CopyPoints(vec3_t *points, int &numpoints);
 
     void initFromPoints(vec3_t *points, std::uint32_t numpoints);
     void Reset(); // Resets the structure

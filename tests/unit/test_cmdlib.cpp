@@ -16,7 +16,6 @@
 #include "common/cmdlib.h"
 #include "common/log.h"
 #include "common/messages.h"
-#include "common/stringlib.h"
 
 TEST_SUITE("cmdlib")
 {
@@ -97,26 +96,6 @@ TEST_SUITE("cmdlib")
         CHECK(!safe_snprintf(buf, 0, "%s", "x")); // nothing written
     }
 
-    TEST_CASE("safe_strncat result is cut at count - 1 characters")
-    {
-        // compat: same resulting string as before; it no longer writes past dest[count - 1]
-        // on the way, and returns false when it had to cut.
-        char buf[32] = "abc";
-        CHECK(!safe_strncat(buf, "defgh", 6));
-        CHECK(std::string(buf) == "abcde");
-        char buf2[32] = "ab";
-        CHECK(safe_strncat(buf2, "c", 6));
-        CHECK(std::string(buf2) == "abc");
-        char exact[6] = "abc";
-        CHECK(safe_strncat(exact, "de", sizeof(exact)));
-        CHECK(std::string(exact) == "abcde");
-        char guard[8] = {'a', 'b', 'c', 0, 'X', 'X', 'X', 'X'};
-        CHECK(!safe_strncat(guard, "defghij", 6));
-        CHECK(std::string(guard) == "abcde");
-        CHECK(guard[6] == 'X'); // nothing written past count
-        CHECK(guard[7] == 'X');
-    }
-
     TEST_CASE("path helpers: pinned results, including where std::filesystem::path differs")
     {
         // input, PathWithDefaultExtension(".bsp"), PathWithoutExtension, PathDirectory, PathFile.
@@ -187,15 +166,6 @@ TEST_SUITE("cmdlib")
         CHECK(TerminatedString(a, 4));
         CHECK(!TerminatedString(b, 3));
         CHECK(!TerminatedString(a, 2));
-    }
-
-    TEST_CASE("str_casecmp / str_ncasecmp")
-    {
-        CHECK(str_casecmp("AAAtrigger", "aaatrigger"));
-        CHECK(!str_casecmp("abc", "abcd"));
-        CHECK(str_ncasecmp("SKYbox", "sky", 3));
-        CHECK(!str_ncasecmp("ab", "abc", 3));
-        CHECK(str_ncasecmp("", "", 5));
     }
 
     TEST_CASE("GetAssume maps out-of-range ids to the first entry")

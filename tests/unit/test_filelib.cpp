@@ -50,7 +50,7 @@ TEST_SUITE("filelib")
             SafeWrite(f.get(), "xyz", 3);
         } // flushed and closed here
         CHECK(fs::file_size(path) == 3);
-        std::FILE *raw = SafeOpenRead(path.string().c_str());
+        std::FILE *raw = std::fopen(path.string().c_str(), "rb");
         char buf[3];
         SafeRead(raw, buf, 3);
         CHECK(std::memcmp(buf, "xyz", 3) == 0);
