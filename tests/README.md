@@ -108,7 +108,7 @@ of the same binary (plane numbering depends on scheduling), so it cannot be comp
 ### Map sets
 
 Routine runs (`check`, `sanitize`, `bench`, `coverage`) use the core set, `CORE_MAPS` in
-`parity.py`: 25 maps (the feature maps, plants_soc_final, unnamed-compile, cs_assault, cs_estate,
+`parity.py`: 33 maps (the feature maps, plants_soc_final, unnamed-compile, cs_assault, cs_estate,
 cs_militia, de_dust2). It was chosen from per-map line coverage of hlcsg, hlbsp and hlvis over the
 quick tier, every csg/bsp/vis tier and the full tier (greedy, cost-weighted), with the expensive
 tail replaced by `fm_clipeconomy`. It covers every line the whole corpus covers except three (a
@@ -177,6 +177,11 @@ corpus by `corpus`) cover the rest:
 | `fm_compileparams` | info_compile_parameters (including a larger texdata) |
 | `fm_lightstyles` | texlight styles -1/-2/-3 before named lights, zhlt_usestyle, duplicate light names |
 | `fm_usemodel`, `fm_transform`, `fm_gametext` | zhlt_usemodel, zhlt_transform, game_text Windows-1252 conversion |
+| `fm_contents` | `!lava`, `!slime` and the six `!cur_*` textures: contents from texture names (hlcsg) and their leaf contents (hlbsp) |
+| `fm_cp_clip0`, `fm_cp_clip1`, `fm_cp_clip2`, `fm_cp_clip9` | `info_compile_parameters` `cliptype` 0, 1, 2 and an unknown value (legacy), with `hlvis` 2 (normal) or 3 (full) |
+| `fm_hullshape_edges` | custom hull shapes (a sphere, a triangular prism) on slanted and rounded brushes: edge-edge planes of the hull-brush expansion |
+| `fm_gametext_utf8` | `game_text` that is nearly UTF-8: valid 3- and 4-byte sequences, and bad continuation bytes |
+| `fm_small_models` | a tiny custom hull shape on a tiny brush (hull bounds collapse); solid entities with only CLIP, NULL, SKIP or HINT brushes ("Empty solid entity") |
 | `fm_err_*` | hlcsg's error paths (exit 1, log compared); `fm_err_hull_overflow` reaches the CreateHullBrush stack overflow |
 | `fm_bsp_leak` | a 16-unit hole only hull 0 leaks through: hlbsp's leak trail (`.pts`/`.lin`, no `.prt`; hlvis then stops) |
 | `fm_bsp_models` | brush models without visible faces (head node split on an arbitrary plane), without clip hulls, several brushes, origin brush |
@@ -193,6 +198,15 @@ corpus by `corpus`) cover the rest:
 
 The `fm_rad_*` maps (except the error maps) are scaled to half size by the generator: a full-tier
 hlrad run takes 1-2 s each instead of 8-15 s.
+
+The eight maps from `fm_contents` to `fm_small_models` are not in the rad tiers' pool (`RAD_TIER_EXCLUDED_MAPS` in `parity.py`): they say nothing about lighting, and
+a full-size room costs 7-8 s of hlrad per tier. The quick and full tiers still light them. `cli` has a matching group,
+`hlbsp-nopln`: hlbsp run without `<map>.pln` (it takes the planes from the `.bsp`).
+
+New maps need their references recorded, tier by tier, without touching the existing ones:
+`python3 $P ref --tier <tier> --maps <new maps>` (and `corpus --force` first; it reports any existing map whose content
+changed). The corpus reads every `*.map` of the game's `cstrike/maps` folder: a map of your own that lives there goes in
+`EXCLUDED_MAPS`.
 
 A leak in more than one hull is undefined behaviour in the oracle: after hull 0, hlbsp writes the
 next hull's leak trail to the point file it has already closed (it crashes or not, from run to
@@ -224,7 +238,10 @@ python3 $P coverage [--tool hlbsp]               # gcov of a tool over the quick
 
 Coverage of `src/hlcsg` at H1: 88.0% of lines (brush.cpp 88.7%, hlcsg.cpp 89.1%, map.cpp 87.8%,
 textures.cpp 85.8%), up from 46-67% with the Valve maps alone. `corpus` refuses to change the
-content of an existing map silently: it reports maps whose references are now stale.
+content of an existing map silently: it reports maps whose references are now stale. After the maps of 2026-10-25
+(`fm_contents` ... `fm_small_models`, the `hlbsp-nopln` case): hlcsg 88.7%, hlbsp 91.6%, hlvis 91.5% (87.1, 90.4 and 90.7
+before). Each `coverage` run deletes every coverage counter when it starts: run `gcov` on a tool's objects before running
+`coverage` for the next tool, or the counters you read belong to the wrong run.
 
 Coverage of `src/hlbsp` before any hlbsp change: 86.9% with the Valve and hlcsg feature maps on the
 quick tier, 89.9% with the `fm_bsp_*` maps and bsp tiers (MarkLeakTrail 0% -> covered, outside.cpp

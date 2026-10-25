@@ -688,6 +688,89 @@ def fm_err_hull_overflow():
                                 [sphere(200, 256, "NULL"), origin_brush(0, 0, 0)])])
 
 
+def fm_contents():
+    """Liquid contents from texture names: lava, slime and the six currents (!cur_0 ... !cur_dwn), one box each. hlcsg
+    gives each its contents and hlbsp turns them into leaf contents."""
+    names = ["!lava1", "!slime1", "!cur_0", "!cur_90", "!cur_180", "!cur_270", "!cur_up", "!cur_dwn"]
+    boxes = [box((-800 + 200 * i, -700, -256), (-700 + 200 * i, -600, -150), n) for i, n in enumerate(names)]
+    return [world(*boxes), *start_and_light()]
+
+
+def compile_params_map(cliptype, hlvis):
+    """A map whose info_compile_parameters picks the clip hull type and the vis mode (hlvis: 1 fast, 2 normal, 3 full).
+    The shapes are the ones whose hulls differ between clip types."""
+    return [
+        world(wedge((0, -300, -256), (300, -100, -200), "GENERIC015"),
+              prism((-500, 300), 120, 6, -256, -100, "CRATE01"),
+              sphere(100, 12, "CRATE01")),
+        entity([("classname", "info_compile_parameters"), ("hlcsg", "1"), ("hlbsp", "1"), ("hlvis", str(hlvis)),
+                ("hlrad", "1"), ("cliptype", str(cliptype))]),
+        *start_and_light(),
+    ]
+
+
+def fm_cp_clip0():
+    """info_compile_parameters cliptype 0 (smallest) and hlvis 2 (normal vis)."""
+    return compile_params_map(0, 2)
+
+
+def fm_cp_clip1():
+    """cliptype 1 (normalized) and hlvis 3 (full vis)."""
+    return compile_params_map(1, 3)
+
+
+def fm_cp_clip2():
+    """cliptype 2 (simple) and hlvis 2."""
+    return compile_params_map(2, 2)
+
+
+def fm_cp_clip9():
+    """A cliptype that is none of the known ones: hlcsg falls back to legacy. hlvis 3."""
+    return compile_params_map(9, 3)
+
+
+def fm_gametext_utf8():
+    """game_text that is nearly UTF-8: valid 3- and 4-byte sequences, and 2-, 3- and 4-byte sequences whose
+    continuation bytes are wrong (those are converted from Windows-1252 as a whole)."""
+    msgs = ["\xe2\x82\xac euro, valid 3-byte", "\xf0\x9f\x98\x80 grin, valid 4-byte",
+            "\xc3 A bad 2-byte", "\xe2\x82 A bad 3-byte (second)", "\xe2A\x82 A bad 3-byte (first)",
+            "\xf0\x9f\x98 A bad 4-byte (third)", "\xf0\x9fAA bad 4-byte (second)", "\xf0A\x98\x80 bad 4-byte (first)",
+            "\xff\xfe not UTF-8 at all"]
+    return [
+        world(box((-900, 0, -256), (-700, 200, -100), "CRATE01")),
+        *[entity([("classname", "game_text"), ("origin", "0 0 0"), ("message", m)]) for m in msgs],
+        *start_and_light(),
+    ]
+
+
+def fm_small_models():
+    """Brush models hlbsp has to treat specially: a cube much smaller than its clip hulls (a tiny custom hull shape on it
+    makes the hull bounds collapse to a point), and solid entities with nothing to draw (CLIP, NULL, SKIP and HINT
+    brushes only: "Empty solid entity")."""
+    tiny = entity([("classname", "info_hullshape"), ("targetname", "tiny")],
+                  [box((-2, -2, -2), (2, 2, 2), "NULL"), origin_brush(0, 0, 0)])
+    cube = entity([("classname", "func_wall"), ("zhlt_hull1", "tiny"), ("zhlt_hull2", "tiny"), ("zhlt_hull3", "tiny")],
+                  [box((-600, -600, -250), (-592, -592, -242), "CRATE01")])
+    empty = [entity([("classname", "func_wall")], [box((x, -600, -250), (x + 100, -500, -150), tex)])
+             for x, tex in ((-400, "CLIP"), (-200, "NULL"), (0, "SKIP"), (200, "HINT"))]
+    return [world(), tiny, cube, *empty, *start_and_light()]
+
+
+def fm_hullshape_edges():
+    """Custom hull shapes (a sphere and a triangular prism) on slanted and rounded brushes: the expansion by a hull brush
+    then adds edge-edge planes, which axis-aligned boxes never need."""
+    def shape(name, brushes):
+        return entity([("classname", "info_hullshape"), ("targetname", name)], [*brushes, origin_brush(0, 0, 0)])
+    walls = [[wedge((-300, -300, -256), (-100, -100, -150), "CRATE01")],
+             [sphere(60, 10, "CRATE01")],
+             [prism((300, -300), 64, 5, -256, -100, "CRATE01")],
+             [box((-300, 200, -256), (-100, 400, -150), "CRATE01"), prism((300, 300), 50, 7, -256, -100, "CRATE01", rotation=0.3)]]
+    ents = [world(), shape("ball", [sphere(24, 14, "NULL")]), shape("tri", [prism((0, 0), 20, 3, -30, 30, "NULL")])]
+    for i, brushes in enumerate(walls):
+        ents.append(entity([("classname", "func_wall"), ("zhlt_hull1", "ball"), ("zhlt_hull2", "tri")], brushes))
+    return [*ents, *start_and_light()]
+
+
 MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_lightstyles, fm_usemodel,
                                  fm_transform, fm_gametext, fm_err_coplanar, fm_err_mixed, fm_err_origin_world,
                                  fm_err_outside, fm_err_noplane, fm_err_two_origins, fm_err_detail_water,
@@ -695,7 +778,8 @@ MAPS = {f.__name__: f for f in [fm_specials, fm_hullshape, fm_compileparams, fm_
                                  fm_bsp_leak, fm_bsp_models, fm_bsp_geometry, fm_vis_overview, fm_clipeconomy,
                                  fm_rad_point, fm_rad_spot, fm_rad_sky, fm_rad_texlights, fm_rad_styles, fm_rad_opaque,
                                  fm_rad_infoents, fm_rad_brushkeys, fm_rad_compileparams, fm_rad_err_spread,
-                                 fm_rad_err_ambient]}
+                                 fm_rad_err_ambient, fm_contents, fm_cp_clip0, fm_cp_clip1, fm_cp_clip2, fm_cp_clip9,
+                                 fm_gametext_utf8, fm_small_models, fm_hullshape_edges]}
 
 
 def main() -> int:

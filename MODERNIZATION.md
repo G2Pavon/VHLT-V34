@@ -43,14 +43,14 @@ CHLT/
     src/hlcsg src/hlbsp src/hlvis src/hlrad
     tests/unit/                   doctest unit tests (common_tests_f64 / common_tests_f32)
     tests/parity/                 parity.py harness, bspdiff.py, stagecache.py, mkwad.py
-    tests/parity/featuremaps/     make_feature_maps.py + 32 synthetic fm_* maps
+    tests/parity/featuremaps/     make_feature_maps.py + 40 synthetic fm_* maps
     tests/probe/                  bsp_probe.cpp (BSP loader comparison and corruption smoke test)
     tests/README.md               harness manual
     readme.md                     user-facing summary
     MODERNIZATION.md              this file
   vhlt-parity/                    harness data, not in git ($VHLT_PARITY_DATA)
     builds/oracle/ builds/cand/   oracle and candidate binaries
-    corpus/maps, corpus/wads      55 maps and frozen WAD copies
+    corpus/maps, corpus/wads      63 maps and frozen WAD copies
     refs/<tier>/<map>/            oracle outputs per stage
     cache/                        content-addressed cache of tool runs
     runs/ sanitize/ bench/ coverage/
@@ -96,8 +96,8 @@ expectation that could drift.
 | Gate | `parity.py gate [--milestone] [--release]` | Section 4.3. |
 | Unit tests (doctest, 127 cases) | `ctest --test-dir build` | `common/` behaviour pinned to the oracle (path helpers, tokenizer, BSP round-trip, compression tables generated from the oracle, cmdline parsing, `ParseInt`, `ProbeSearch` against glibc's `bsearch`, ...). Built twice, as `f64` (hlcsg/hlbsp) and `f32` (hlvis/hlrad). |
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
-| Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
-| `cli` | `parity.py cli --bin $B` | 255 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
+| Corpus | 63 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 40 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
+| `cli` | `parity.py cli --bin $B` | 256 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
 | `regress` | `parity.py regress --bin $B` | 11 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
 | `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. The `cli` cases run under the sanitizers too, with `cli --bin` pointing at the sanitize build (about 6 min): findings show up as stderr differences. First run (2026-10-25): one finding, a `memcpy` of a null source with size 0 in hlbsp `writebsp.cpp` (maps with no textures), fixed with a guard. |
 | `probe` | `parity.py probe [--mutations 400 --sanitize]` | `common/` BSP loader/writer against the oracle's on 58 BSPs, plus a seeded corruption smoke test. |
@@ -114,8 +114,8 @@ option cases, the prepared inputs and the number-spelling pipelines, for the ora
 **one queue, longest first**, so the pool does not drain at the end of each tier: four uncached
 rad tiers took 78 s one after the other and 45 s together. A tool that runs longer than 20 times
 the oracle's time (200 times for a sanitizer build; at least 5 minutes) counts as hung, instead
-of waiting 4 hours. **`CORE_MAPS`** (25 maps chosen by
-coverage) is the routine set; `--full` runs the whole corpus. **`RAD_CORE_MAPS`** (13 maps) is
+of waiting 4 hours. **`CORE_MAPS`** (33 maps: 25 chosen by coverage, 8 added for the code those
+missed, see 5.4c) is the routine set; `--full` runs the whole corpus. **`RAD_CORE_MAPS`** (13 maps) is
 the routine set for hlrad. `liminal_plaza` is archived (very slow) and only runs with
 `--archived` at the end of a milestone.
 
@@ -239,7 +239,9 @@ out-of-line copy of a function the compiler inlined), `brushhull_t`'s copy opera
 doesn't compile: `CopyCurrentBrush` copies brushes; the corpus never does), and the code the tiers
 never reach (wad autodetect, noclip entities, `gscale`, contents from texture names, the non-axial
 hull expansions, hlvis's `info_compile_parameters` settings and its fast-threads branch), which is
-untested rather than dead. Left for the owner: the `VHLT_VERIFY_INDEXES` scaffolding in hlcsg
+untested rather than dead. **That list was wrong, and is superseded by 5.4c:** it came from gcov counters read
+after a different tool's coverage run had deleted them (each `coverage` run starts by deleting every counter;
+read them before running the next tool). Left for the owner: the `VHLT_VERIFY_INDEXES` scaffolding in hlcsg
 (3 `#ifdef` blocks and `ScanMapPlanes`, the optional index verification build).
 
 `common/` (same day), no output change. Removed: `Winding::Check` and `Winding::CopyPoints`,
@@ -272,6 +274,32 @@ candidate's callers: the compiler inlines small functions into their callers, so
 reports them as unused (`LogEnd`, `EntityKeys::Set`/`Find`, `Tokenizer::EndOfStream`,
 `Winding::Reset`/`resize`/`allocate` and the `Winding` move assignment were all live). Header-only
 code never appears in the binaries: scan the headers for identifiers with no use.
+
+### 5.4c Tests for the code the corpus did not reach (2026-10-25)
+
+Coverage over every csg/bsp/vis tier, with each tool's counters read straight after its own run: hlcsg 87.1%,
+hlbsp 90.4%, hlvis 90.7%. Most of the rest was error handling and diagnostics; the reachable feature code was
+small, and 8 feature maps plus 1 `cli` case reach it (hlcsg 88.7%, hlbsp 91.6%, hlvis 91.5% after):
+
+| New test | Reaches |
+|---|---|
+| `fm_contents` | `!lava`, `!slime` and the six `!cur_*` textures: hlcsg's contents from texture names and hlbsp's contents-to-rank mapping |
+| `fm_cp_clip0`, `1`, `2`, `9` | `info_compile_parameters` `cliptype` 0, 1, 2 and an unknown value (legacy); hlvis modes 2 (normal) and 3 (full) |
+| `fm_hullshape_edges` | edge-edge planes of the hull-brush expansion: a sphere and a triangular prism hull on slanted and rounded brushes |
+| `fm_gametext_utf8` | `game_text` with valid 3- and 4-byte UTF-8 and with bad continuation bytes (`IsValidUTF8`) |
+| `fm_small_models` | a tiny custom hull shape on a tiny brush (hlbsp collapses the hull bounds), and solid entities with nothing to draw (CLIP, NULL, SKIP, HINT: "Empty solid entity") |
+| `cli hlbsp-nopln` | hlbsp without `<map>.pln`: the planes come from the `.bsp` |
+
+Each new block was mutation-checked: a planted bug in it fails the matching map (cliptype 0 and legacy, the
+edge-plane normal, current contents in hlcsg and in hlbsp, the 3-byte UTF-8 check, the hull collapse, the empty
+model bounds, vis modes 2 and 3, and the `.pln` fallback). The new maps are in `CORE_MAPS` and have references for
+every tier except the 20 rad tiers (`RAD_TIER_EXCLUDED_MAPS`: they test nothing about lighting, and a full-size
+room costs 7-8 s of hlrad per tier). Dead code found on the way, and removed: hlcsg's `ent_gscale_b`
+(initialized `false`, never assigned: five blocks in `map.cpp` that could not run), and the 4-byte branch of
+`push_utf8` (its input never exceeds `0x20AC`). Not reached, left alone: error handling for malformed data (bad
+texture lump, limit overflows), the "ambiguous leaf contents" warning, hull-0 bounds collapse (zero hull size:
+it cannot invert), and the deep copy in `CopyFaceList` (`CopyCurrentBrush` runs, but never on a brush with faces).
+`particles`, the owner's work-in-progress map in `cstrike/maps`, is excluded from the corpus (`EXCLUDED_MAPS`).
 
 ### 5.5 Intended behaviour differences from the oracle
 

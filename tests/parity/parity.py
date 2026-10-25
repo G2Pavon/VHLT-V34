@@ -156,6 +156,8 @@ DEFAULT_JOBS = max(1, os.cpu_count() or 1)  # tools run single-threaded; hlrad p
 # The stock dm_stalkfire_f1.bsp is still used by probe and the unit tests: it is the only BSP with
 # embedded lightmaps, and loading it takes well under a second.
 EXCLUDED_MAPS = ("dm_*",)
+# particles is the owner's own work-in-progress map, kept in the same cstrike/maps folder the corpus reads the stock maps from
+EXCLUDED_MAPS = (*EXCLUDED_MAPS, "particles")
 # Maps kept in the corpus (with their oracle references) but left out of every routine run: they cost
 # far more than they cover. They run only with --archived, or when named in --maps (e.g. for a final
 # wrap-up). liminal_plaza (archived 2026-10-18): about 70% of all vis time and the slowest hlrad map.
@@ -175,6 +177,9 @@ CORE_MAPS = (
     "fm_lightstyles", "fm_specials", "fm_transform", "fm_usemodel", "fm_vis_overview",
     "fm_err_coplanar", "fm_err_detail_water", "fm_err_entity_contents", "fm_err_hull_overflow",
     "fm_err_mixed", "fm_err_noplane", "fm_err_origin_world", "fm_err_two_origins",
+    # added 2026-10-25 for the code the maps above never reached (see tests/README.md, "Feature maps")
+    "fm_contents", "fm_cp_clip0", "fm_cp_clip1", "fm_cp_clip2", "fm_cp_clip9", "fm_gametext_utf8",
+    "fm_hullshape_edges", "fm_small_models",
 )
 # The smoke set: a seconds-long tripwire for the edit-run loop (`parity.py smoke`, `check --smoke`). One real
 # map plus a feature map per tool, an error map, and the two lighting maps: every stage runs, none for long.
@@ -199,6 +204,10 @@ RAD_ROUTINE = False  # set when the run is about hlrad
 RAD_TIER_REAL_MAPS = ("unnamed", "unnamed-compile", "de_train", "cs_estate", "cs_747", "cs_militia", "cs_assault",
                       "de_vertigo", "cs_siege", "de_aztec", "de_dust2")
 RAD_TIER = False  # set when the tier is a rad tier
+# Feature maps for hlcsg/hlbsp/hlvis code: they say nothing new about lighting, and a full-size room costs 7-8 s of
+# hlrad per tier, so the 20 rad tiers leave them out (the quick and full tiers light them).
+RAD_TIER_EXCLUDED_MAPS = ("fm_contents", "fm_cp_clip0", "fm_cp_clip1", "fm_cp_clip2", "fm_cp_clip9", "fm_gametext_utf8",
+                          "fm_hullshape_edges", "fm_small_models")
 
 MISSING_TEXTURE_RE = re.compile(r"::FindTexture\(\) texture (\S+) not found!")
 
@@ -263,7 +272,7 @@ def routine_maps() -> list[str]:
     if SMOKE:
         return sorted(m for m in maps if m in SMOKE_MAPS)
     if RAD_TIER:  # rad tiers never leave their pool
-        pool = [m for m in maps if m.startswith("fm_") or m in RAD_TIER_REAL_MAPS]
+        pool = [m for m in maps if (m.startswith("fm_") and m not in RAD_TIER_EXCLUDED_MAPS) or m in RAD_TIER_REAL_MAPS]
         if FULL_CORPUS or not RAD_CORE_MAPS:
             return pool
         return sorted(m for m in pool if m in RAD_CORE_MAPS)
@@ -1934,6 +1943,8 @@ CLI_CASES = {
         ["-maxdistance", "4294967808", "tiny"], ["-maxdistance", " +512", "tiny"],
     ],
     "hlvis-empty": [["tiny"], ["-full", "tiny"]],
+    # hlbsp without the <map>.pln hlcsg writes: it takes the planes from the .bsp (CLI_REMOVE)
+    "hlbsp-nopln": [["tiny"]],
     "hlrad": [
         [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "3", "tiny"], ["tiny", "-threads"],
         ["-bounce"], ["-bounce", "abc", "tiny"], ["-bounce", "2000", "tiny"], ["-bounce", "2", "tiny"],
@@ -1964,7 +1975,8 @@ CLI_CASES = {
 # far as the missing .prt. A case group "tool-suffix" runs that tool.
 CLI_SMOKE_STRIDE = 6  # `cli --smoke` runs every 6th option case of each tool
 NUMBER_SMOKE_MAPS = ("fm_specials", "fm_transform", "fm_rad_point")  # and these number maps (all mutations)
-CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview", "hlrad": "fm_rad_point"}
+CLI_MAP_FROM_CORPUS = {"hlvis": "fm_vis_overview", "hlrad": "fm_rad_point", "hlbsp-nopln": "fm_bsp_geometry"}
+CLI_REMOVE = {"hlbsp-nopln": ["tiny.pln"]}  # prepared files a group does without
 # Usage lines the candidate adds on purpose (new options): removed from its output before comparing.
 CLI_ADDED_LINES = {
     "hlvis": [b"    -fastthreads    : Faster with many threads, but the result can differ from run to run\n"],  # V3
@@ -1996,6 +2008,8 @@ def cli_template(group: str, exe: str, root: Path, cache) -> Path:
     if any(r["exit"] != 0 for r in results.values()):
         sys.exit(f"cli: the oracle's {', '.join(prepare)} failed on the {group} input")
     cache.materialize(results[stage]["outputs"], template)
+    for name in CLI_REMOVE.get(group, []):
+        (template / name).unlink()
     return template
 
 
