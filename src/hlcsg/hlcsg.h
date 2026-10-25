@@ -191,7 +191,6 @@ extern void LoadMapFile(const char *const filename);
 //=============================================================================
 // textures.c
 
-using WadInclude_i = std::deque<std::string>::iterator;
 extern std::deque<std::string> g_WadInclude; // List of substrings to wadinclude
 
 void WriteMiptex();
@@ -201,7 +200,6 @@ const char *GetTextureByNumber_CSG(int texturenumber);
 //=============================================================================
 // brush.c
 
-brush_t *Brush_LoadEntity(entity_t *ent, int hullnum);
 contents_t CheckBrushContents(const brush_t *const b);
 
 void CreateBrush(int brushnum);

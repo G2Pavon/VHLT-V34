@@ -24,30 +24,8 @@ brush_t g_mapbrushes[MAX_MAP_BRUSHES];
 static int g_numbrushsides;
 bside_t g_brushsides[MAX_MAP_SIDES];
 
-static int g_nMapFileVersion; // map file version 220
 static int g_numparsedentities;
 static int g_numparsedbrushes;
-
-static const vec3_t s_baseaxis[18] = {
-    {0, 0, 1},
-    {1, 0, 0},
-    {0, -1, 0}, // floor
-    {0, 0, -1},
-    {1, 0, 0},
-    {0, -1, 0}, // ceiling
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, -1}, // west wall
-    {-1, 0, 0},
-    {0, 1, 0},
-    {0, 0, -1}, // east wall
-    {0, 1, 0},
-    {1, 0, 0},
-    {0, 0, -1}, // south wall
-    {0, -1, 0},
-    {1, 0, 0},
-    {0, 0, -1}, // north wall
-};
 
 static brush_t *CopyCurrentBrush(entity_t *entity, const brush_t *brush)
 {
@@ -535,11 +513,6 @@ static bool ParseMapEntity(Tokenizer &tokens)
             EntityKeyValue e = ParseEpair(tokens);
             if (mapent->numbrushes > 0)
                 Warning("Error: ParseEntity: Keyvalue comes after brushes."); //--vluzacn
-
-            if (!std::strcmp(e.key.c_str(), "mapversion"))
-            {
-                g_nMapFileVersion = ParseInt(e.value.c_str());
-            }
 
             SetKeyValue(mapent, e.key.c_str(), e.value.c_str());
         }

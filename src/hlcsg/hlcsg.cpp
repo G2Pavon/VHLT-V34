@@ -347,7 +347,6 @@ static void SaveOutside(const brush_t *const b, const int hull, bface_t *outside
         WriteFace(hull, f,
                   (hull ? b->clipnodedetaillevel : b->detaillevel));
 
-        //              if (mirrorcontents != CONTENTS_SOLID)
         {
             f->planenum ^= 1;
             f->plane = &g_csg_mapplanes[f->planenum];
