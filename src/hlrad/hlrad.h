@@ -124,7 +124,6 @@ struct patch_t
     vec_t emitter_range;  // Range from patch origin (cached info calculated from winding)
     int emitter_skylevel; // The "skylevel" used for sampling of normals, when the receiver patch is within the range of ACCURATEBOUNCE_THRESHOLD * this->radius. (cached info calculated from winding)
     Winding *winding;     // Winding (patches are triangles, so its easy); owned by MakePatches' winding store
-    vec_t scale;          // Texture scale for this face (blend of S and T scale)
     vec_t chop;           // Texture chop for this face factoring in S and T scale
 
     int faceNumber;
@@ -222,7 +221,6 @@ void EmbedLightmapInTextures();
 extern patch_t *g_face_patches[MAX_MAP_FACES];
 extern entity_t *g_face_entity[MAX_MAP_FACES];
 extern vec3_t g_face_offset[MAX_MAP_FACES]; // for models with origins
-extern eModelLightmodes g_face_lightmode[MAX_MAP_FACES];
 extern vec3_t g_face_centroids[MAX_MAP_EDGES];
 extern entity_t *g_face_texlights[MAX_MAP_FACES];
 extern patch_t *g_patches; // shrinked to its real size, because 1048576 patches * 256 bytes = 256MB will be too big

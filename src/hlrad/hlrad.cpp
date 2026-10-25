@@ -93,7 +93,6 @@ static float g_smoothing_threshold;
 
 patch_t *g_face_patches[MAX_MAP_FACES];
 entity_t *g_face_entity[MAX_MAP_FACES];
-eModelLightmodes g_face_lightmode[MAX_MAP_FACES];
 patch_t *g_patches; // s_patches.data()
 // Owners of the patches and of their windings (patch_t only points to its winding: see hlrad.h).
 static std::vector<patch_t> s_patches;
@@ -144,8 +143,6 @@ vec_t g_translucentdepth = DEFAULT_TRANSLUCENTDEPTH;
 vec_t g_blur = DEFAULT_BLUR;
 vec_t g_texlightgap = DEFAULT_TEXLIGHTGAP;
 // Misc
-int leafparents[MAX_MAP_LEAFS];
-int nodeparents[MAX_MAP_NODES];
 static float totalarea = 0;
 
 //      this function is called from parseentity when it encounters the
@@ -303,24 +300,6 @@ void GetParamsFromEnt(entity_t *mapent)
     Log("%30s [ %-9s ]\n", "Circus Lighting Mode", g_circus ? "on" : "off");
 
     Log("\n");
-}
-
-static void MakeParents(const int nodenum, const int parent)
-{
-    nodeparents[nodenum] = parent;
-    dnode_t *node = g_dnodes + nodenum;
-
-    for (int j : node->children)
-    {
-        if (j < 0)
-        {
-            leafparents[-j - 1] = nodenum;
-        }
-        else
-        {
-            MakeParents(j, nodenum);
-        }
-    }
 }
 
 // TEXTURE LIGHT VALUES
@@ -1070,7 +1049,6 @@ static void MakePatchForFace(const int fn, std::unique_ptr<Winding> w, int style
             patch->bouncestyle = -1; // reflects light normally
         }
         patch->emitmode = getEmitMode(patch);
-        patch->scale = getScale(patch);
         patch->chop = getChop(patch);
         VectorCopy(g_translucenttextures[g_texinfo[f->texinfo].miptex], patch->translucent_v);
         patch->translucent_b = !VectorCompare(patch->translucent_v, vec3_origin);
@@ -1350,16 +1328,10 @@ static void MakePatches()
     {
         bool b_light_origin = false;
         bool b_model_center = false;
-        eModelLightmodes lightmode = eModelLightmodeNull;
 
         dmodel_t *mod = g_dmodels + i;
         entity_t *ent = EntityForModel(i);
         VectorCopy(vec3_origin, origin);
-
-        if (*(s = ValueForKey(ent, "zhlt_lightflags")))
-        {
-            lightmode = (eModelLightmodes)ParseInt(s);
-        }
 
         // models with origin brushes need to be offset into their in-use position
         if (*(s = ValueForKey(ent, "origin")))
@@ -1461,7 +1433,6 @@ static void MakePatches()
             g_face_entity[fn] = ent;
             VectorCopy(origin, g_face_offset[fn]);
             g_face_texlights[fn] = FindTexlightEntity(fn);
-            g_face_lightmode[fn] = lightmode;
             dface_t *f = g_dfaces + fn;
             auto w = std::make_unique<Winding>(*f);
             for (unsigned int k = 0; k < w->m_NumPoints; k++)
@@ -1932,7 +1903,6 @@ static void ExtendLightmapBuffer()
 static void RadWorld()
 {
     MakeBackplanes();
-    MakeParents(0, -1);
     MakeTnodes(&g_dmodels[0]);
     CreateOpaqueNodes();
     LoadOpaqueEntities();
