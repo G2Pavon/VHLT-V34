@@ -194,8 +194,6 @@ void FinishBSPFile();
 //=============================================================================
 // outside.c
 node_t *FillOutside(node_t *node, bool leakfile, unsigned hullnum);
-void LoadAllowableOutsideList(const char *const filename);
-void FreeAllowableOutsideList();
 void FillInside(node_t *node);
 
 //=============================================================================

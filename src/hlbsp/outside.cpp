@@ -2,7 +2,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "hlbsp/hlbsp.h"
@@ -22,10 +21,6 @@ static std::FILE *pointfile; // open only while FillOutside traces a leak with l
 static std::FILE *linefile;
 static int hit_occupied;
 static int backdraw;
-
-// Classnames from the .void files that may lie outside the world. compat: a later file with content
-// replaces the list (mapname.void replaces entities.void), and a last line without a line break is ignored.
-static std::vector<std::string> s_allowableoutside;
 
 static node_t *PointInLeaf(node_t *node, const vec3_t point)
 {
@@ -317,53 +312,6 @@ static node_t *ClearOutFaces_r(node_t *node)
     return node;
 }
 
-static bool isClassnameAllowableOutside(const char *const classname)
-{
-    for (const std::string &allowed : s_allowableoutside)
-    {
-        if (!strcasecmp(classname, allowed.c_str()))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-void FreeAllowableOutsideList()
-{
-    s_allowableoutside = {};
-}
-
-void LoadAllowableOutsideList(const char *const filename)
-{
-    if (!filename || !q_exists(filename))
-    {
-        return;
-    }
-    const std::vector<char> data = ReadFile(filename);
-    if (data.empty()) // compat: an empty file keeps the previous list
-    {
-        return;
-    }
-    Log("Reading allowable void entities from file '%s'\n", filename);
-    s_allowableoutside.clear();
-    const std::string_view text(data.data(), data.size());
-    std::size_t start = 0;
-    for (std::size_t x = 0; x < text.size(); x++)
-    {
-        if (text[x] == '\n' || text[x] == '\r')
-        {
-            std::string_view line = text.substr(start, x - start);
-            line = line.substr(0, line.find('\0')); // compat: a line was a C string
-            if (!line.empty())
-            {
-                s_allowableoutside.emplace_back(line);
-            }
-            start = x + 1;
-        }
-    }
-}
-
 node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
 {
     vec3_t origin;
@@ -379,43 +327,40 @@ node_t *FillOutside(node_t *node, const bool leakfile, const unsigned hullnum)
     {
         GetVectorForKey(&g_entities[i], "origin", origin);
         const char *cl = ValueForKey(&g_entities[i], "classname");
-        if (!isClassnameAllowableOutside(cl))
+        if (*ValueForKey(&g_entities[i], "origin")) //--vluzacn
         {
-            if (*ValueForKey(&g_entities[i], "origin")) //--vluzacn
-            {
-                origin[2] += 1; // so objects on floor are ok
+            origin[2] += 1; // so objects on floor are ok
 
-                // nudge playerstart around if needed so clipping hulls allways
-                // have a vlaid point
-                if (!std::strcmp(cl, "info_player_start"))
-                {
-                    const auto nudge = [&] {
-                        for (int x = -16; x <= 16; x += 16)
-                        {
-                            for (int y = -16; y <= 16; y += 16)
-                            {
-                                origin[0] += x;
-                                origin[1] += y;
-                                if (PlaceOccupant(i, origin, node))
-                                {
-                                    return true;
-                                }
-                                origin[0] -= x;
-                                origin[1] -= y;
-                            }
-                        }
-                        return false;
-                    };
-                    if (nudge())
+            // nudge playerstart around if needed so clipping hulls allways
+            // have a vlaid point
+            if (!std::strcmp(cl, "info_player_start"))
+            {
+                const auto nudge = [&] {
+                    for (int x = -16; x <= 16; x += 16)
                     {
-                        inside = true;
+                        for (int y = -16; y <= 16; y += 16)
+                        {
+                            origin[0] += x;
+                            origin[1] += y;
+                            if (PlaceOccupant(i, origin, node))
+                            {
+                                return true;
+                            }
+                            origin[0] -= x;
+                            origin[1] -= y;
+                        }
                     }
-                }
-                else
+                    return false;
+                };
+                if (nudge())
                 {
-                    if (PlaceOccupant(i, origin, node))
-                        inside = true;
+                    inside = true;
                 }
+            }
+            else
+            {
+                if (PlaceOccupant(i, origin, node))
+                    inside = true;
             }
         }
     }

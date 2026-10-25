@@ -7,7 +7,6 @@
 
 #include "common/log.h"
 #include "common/messages.h"
-#include "common/win32fix.h" // GetModuleFileNameA (Windows)
 
 UniqueFile SafeOpen(const char *const filename, const char *const mode)
 {
@@ -74,29 +73,4 @@ std::FILE *SafeOpenWrite(const char *const filename)
 std::FILE *SafeOpenRead(const char *const filename)
 {
     return SafeOpen(filename, "rb").release();
-}
-
-std::string ExecutablePath()
-{
-#if defined(_WIN32)
-    std::string buffer(_MAX_PATH, '\0');
-    for (;;)
-    {
-        const DWORD length = GetModuleFileNameA(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
-        if (length == 0)
-        {
-            return {};
-        }
-        if (length < buffer.size()) // a result that fills the buffer was cut: retry with more room
-        {
-            buffer.resize(length);
-            return buffer;
-        }
-        buffer.resize(buffer.size() * 2);
-    }
-#else
-    std::error_code error;
-    const std::filesystem::path path = std::filesystem::read_symlink("/proc/self/exe", error);
-    return error ? std::string() : path.string();
-#endif
 }

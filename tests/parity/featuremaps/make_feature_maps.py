@@ -398,6 +398,13 @@ def leak_all_hulls():
     return [worldspawn, *start_and_light()]
 
 
+def void_entity():
+    """Not in the corpus: a sealed room and an info_target out in the void, which makes hlbsp report a leak. The
+    oracle skipped an entity whose classname a `<map>.void` or `entities.void` file listed (hlbsp no longer reads
+    them). Used by parity.py regress."""
+    return [world(), *start_and_light(), entity([("classname", "info_target"), ("origin", "3000 0 64")])]
+
+
 def fm_bsp_models():
     """Brush models hlbsp special-cases: no visible faces (the head node becomes a leaf and is split
     on an arbitrary plane), no faces at all ("Empty solid entity"), and empty clip hulls."""

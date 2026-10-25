@@ -134,7 +134,7 @@ Besides `check`, the cache answers `cli` (an option case is keyed like a stage: 
 and the prepared directory; the number-spelling pipelines run through the same stage chain, for the oracle
 as well) and `sanitize` (the sanitizer's stderr is stored with the run). Keys include `ASAN_OPTIONS` /
 `UBSAN_OPTIONS` when they are set, because they change what a sanitizer build prints. A tool binary is identified
-by its own bytes, plus `entities.void` if one sits next to it; the other files of a directory are not part of a
+by its own bytes, plus `entities.void` if one sits next to it (the oracle and older builds read it); the other files of a directory are not part of a
 key, so `build/bin` can hold the unit tests.
 
 So only tools whose binary or input changed run. `.bsp` inputs are keyed without their lump
@@ -226,7 +226,7 @@ content of an existing map silently: it reports maps whose references are now st
 Coverage of `src/hlbsp` before any hlbsp change: 86.9% with the Valve and hlcsg feature maps on the
 quick tier, 89.9% with the `fm_bsp_*` maps and bsp tiers (MarkLeakTrail 0% -> covered, outside.cpp
 75.0 -> 87.5%, portals.cpp 82.4 -> 93.3%). The rest is mostly error-message helpers, `Usage()`
-(covered by `cli`) and the `.void` loader, which is to be dropped rather than tested.
+(covered by `cli`). (The `.void` loader was in this list until it was removed.)
 
 Coverage of `src/hlvis` before any hlvis change: 61.0% on the quick and full tiers (MaxDistVis,
 WindingDist, BestNormalFromWinding, SaveVisData, VisLeafnumForPoint never ran), 90.9% with the vis
@@ -345,7 +345,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang, void-ignored
 python3 $P smoke                                 # build, unit tests, check --smoke, cli --smoke, regress: seconds
 python3 $P gate [--tiers T...] [--skip S...] [--milestone | --release] [--fail-fast]   # every tier in one queue + unit tests, regress, cli, sanitize
 python3 $P check [--smoke] [--fail-fast]         # --bin defaults to build/ (as do cli, regress, bench)

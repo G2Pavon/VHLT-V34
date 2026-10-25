@@ -26,7 +26,7 @@ Ground rules in force:
 | Rule | Meaning |
 |---|---|
 | Byte-identical output | `.bsp`, `.log`, `.err` and intermediate files match the oracle. The one deliberate exception is the padding between BSP lumps, which the oracle filled with stale memory. The candidate writes zeros. |
-| `// compat:` comments | Where the original behaviour is odd but reaches the output (truncation, a quirky parse, a wrap-around), it is kept and marked `// compat:` with the reason. There are about 46 of them in `src/`. Don't "fix" one without making the change on purpose and testing it. |
+| `// compat:` comments | Where the original behaviour is odd but reaches the output (truncation, a quirky parse, a wrap-around), it is kept and marked `// compat:` with the reason. There are about 45 of them in `src/`. Don't "fix" one without making the change on purpose and testing it. |
 | Single-threaded reference | Parity runs use `-threads 1`. Multi-threaded output is required to equal `-threads 1` (section 4). |
 | Reproducible build date | The build date is written into every `.bsp` (worldspawn `"compiler"` key). Builds compared against the oracle must set `-DVHLT_BUILD_DATE="Oct 17 2026"`. `parity.py build` does it automatically, and the dev tree `build/` is configured with it. |
 | Platform | Developed and verified on Linux (Fedora, GCC 16, glibc 2.43). Little-endian only. The Windows/MSVC build has **not** been tested since the modernization started. |
@@ -98,7 +98,7 @@ expectation that could drift.
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
 | Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
 | `cli` | `parity.py cli --bin $B` | 255 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
-| `regress` | `parity.py regress --bin $B` | 9 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
+| `regress` | `parity.py regress --bin $B` | 10 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
 | `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. The `cli` cases run under the sanitizers too, with `cli --bin` pointing at the sanitize build (about 6 min): findings show up as stderr differences. First run (2026-10-25): one finding, a `memcpy` of a null source with size 0 in hlbsp `writebsp.cpp` (maps with no textures), fixed with a guard. |
 | `probe` | `parity.py probe [--mutations 400 --sanitize]` | `common/` BSP loader/writer against the oracle's on 58 BSPs, plus a seeded corruption smoke test. |
 | `fuzz` | `parity.py fuzz --bin ../vhlt-parity/builds/sanitize/bin --plain $B [--seed N --count 600]` | Seeded corruptions of the `fm_*` maps (syntax damage, entity key/value edits, number respellings, plane nudges) through hlcsg → hlbsp → hlvis → hlrad on the sanitize build. No oracle: a finding is a sanitizer report, a crash by signal, or a tool that does not stop (rechecked with the plain build, since the sanitizers slow the tools 10 to 20 times). Reproducers are kept in `fuzz/`; `--start N --count 1` repeats a case. About 15 min per 600 cases, roughly 45% of them get through all four tools. |
@@ -216,7 +216,7 @@ before it was committed.
 |---|---|---|
 | `123581d` | S1 | Every `char[_MAX_PATH]` path buffer → `std::string` (`SetMapname`, `PathWithSystemSlashes`). |
 | `027b624` | flag | `-Wconditionally-supported` on GCC. |
-| `55499ad` | S2 | `StringPrintf`/`StringVPrintf`; log messages no longer cut at 2047 bytes; simple text buffers → `std::string`; latent format-string bug in `Fatal`/`HlassumeFailed` fixed; Win32 `ExecutablePath` grows its buffer. |
+| `55499ad` | S2 | `StringPrintf`/`StringVPrintf`; log messages no longer cut at 2047 bytes; simple text buffers → `std::string`; latent format-string bug in `Fatal`/`HlassumeFailed` fixed; Win32 `ExecutablePath` grows its buffer (the function went with `.void`, see 5.5). |
 | `e4bd67f` | S3 | Char-buffer path wrappers deleted; `RemoveFile()` via `std::filesystem::remove` (never removes directories); string path helpers documented and pinned by a 21-row doctest table. |
 | `ac8ee64` | S4a | 26 path-handling `cli` cases (section 4.1). |
 | `e251912` | S5 | `qsort` → `std::stable_sort` (glibc's `qsort` is a stable merge sort; MSVC's isn't), hlcsg `FindTexture` → `std::equal_range`, hlrad texture lookup → `ProbeSearch` (probes exactly like glibc's `bsearch`). Output no longer depends on the C library. 3 duplicate-texture cases. |
@@ -238,11 +238,12 @@ covered:
 | hlvis deterministic by default; `-fastthreads` added | `regress hlvis-fastthreads`, `cli` (usage line) |
 | An out-of-range face texture index in hlrad is an error (oracle read outside the tables) | `regress rad-bad-texture` (R1; the corpus never has one, so the scenario patches every texinfo of fm_rad_texlights to texture 9999) |
 | `-texdata x` (0-byte buffer) is an error (oracle overflowed it) | `regress texdata-zero` (candidate-only: the oracle's result is undefined, so it is not in `cli`) |
+| hlbsp no longer reads `<map>.void` or `entities.void` (classnames allowed to lie outside the world): an entity in the void leaks as it does without the file. The corpus never had one; hlbsp's output without a .void file is unchanged. `ExecutablePath()` went with it | `regress void-ignored` (the oracle with the file does not leak; the candidate leaks with or without it) |
 | A worldspawn-only `.bsp` loads again (Phase 2 regression, fixed in V1) | `cli hlvis-empty` |
 | hlbsp stops with an error where the oracle never finished: a texture vector of `-1e400` (error "not finite") or `-99999999999` ("Exceeded MAX_MAP_FACES" once a face needs that many splits) made `SubdivideFace` split forever | `regress bsp-texvec-hang` (the oracle times out on both) |
 | Log/console messages longer than 2047 bytes are no longer cut | unit test |
 | `RemoveFile` doesn't delete an empty directory named like a temp file (old `std::remove` did on POSIX) | unit test |
-| Windows: `ParseInt` wraps like glibc (32-bit `long` clamped), `std::stable_sort` matches glibc order, `ExecutablePath` longer than 260 characters | tested on Linux only; never built or run on Windows |
+| Windows: `ParseInt` wraps like glibc (32-bit `long` clamped), `std::stable_sort` matches glibc order | tested on Linux only; never built or run on Windows |
 
 ---
 
@@ -295,7 +296,7 @@ Don't reopen these without new information:
 
 | Idea | Why not |
 |---|---|
-| Path helpers on `std::filesystem::path`, plus normalizing `\` → `/` where paths come in (S4b–S4d) | Needs about 6 compat special cases (`.map`, trailing slash, trailing separator, drive-relative names on Windows), an untestable Windows branch that decides BSP content, extra state for log spelling, and normalizing `-wadinclude` and the drive-letter fallbacks too. No behaviour gain on Linux. `std::filesystem` is used for disk operations (`RemoveFile`, `ExecutablePath`). |
+| Path helpers on `std::filesystem::path`, plus normalizing `\` → `/` where paths come in (S4b–S4d) | Needs about 6 compat special cases (`.map`, trailing slash, trailing separator, drive-relative names on Windows), an untestable Windows branch that decides BSP content, extra state for log spelling, and normalizing `-wadinclude` and the drive-letter fallbacks too. No behaviour gain on Linux. `std::filesystem` is used for disk operations (`RemoveFile`). |
 | `std::from_chars` for `atof`/`sscanf` (full S6b) | Needs reimplementing `strtod`/`strtol`/`scanf` quirks to stay identical; locale independence is moot. Only `atoi`'s undefined behaviour was worth fixing (`ParseInt`). |
 | `std::sort` instead of `std::stable_sort` | Changes output (proved by mutation). |
 | hlbsp graph nodes (tree, portals, surfaces, brushes, brink tree) as individually owned objects | Shared membership (a portal belongs to two nodes) and arena-like peak memory; they stay behind one allocate and one free function per type. |
@@ -303,7 +304,6 @@ Don't reopen these without new information:
 | `using x_t = struct x_s {...}` for the 49 `typedef struct` definitions | Worse to read; kept as typedefs. |
 | clang-tidy `trailing-return-type`, `avoid-c-arrays`, `nodiscard`, `integer-sign-comparison`, `use-ranges` | Churn without value; `integer-sign-comparison` would undo compat casts. |
 | `use-std-numbers` | 8 sites, all bit-identical, no value; the trap is `log2`/`pi_v<float>`. |
-| A permanent `.void` test | The `.void` feature is going to be removed (section 8). |
 
 ---
 
@@ -313,8 +313,7 @@ Don't reopen these without new information:
 |---|---|
 | `std::format` for the ~760 log calls | Proposed, **not decided**. I recommended skipping it: a lot of churn, and `std::format` doesn't format floats exactly like `printf` (`%g` especially); type safety is already covered by `FORMAT_PRINTF` plus `-Wconditionally-supported`. |
 | Tier 3: a `Vec3` value type replacing `vec3_t` C arrays | Proposed as the only Tier 3 item worth considering; **not designed**. It's the biggest remaining job (620 uses), with float-evaluation risks: evaluation order and precision must stay identical. Would need a design and a test step first. |
-| Remove `.void` support from hlbsp | Owner's intent; **not scheduled**. Until then the loader keeps its legacy code (only safety fixes were made). |
-| Verify the Windows/MSVC build | **Not done** since the modernization started. Several fixes target Windows behaviour (`ParseInt`, `stable_sort`, `ExecutablePath`, the `_MAX_PATH` cut) but were only compiled on Linux. |
+| Verify the Windows/MSVC build | **Not done** since the modernization started. Several fixes target Windows behaviour (`ParseInt`, `stable_sort`, the `_MAX_PATH` cut) but were only compiled on Linux. |
 
 ## 9. Possible future work, not designed or planned
 

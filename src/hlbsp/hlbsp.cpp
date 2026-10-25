@@ -14,8 +14,6 @@
 #include "common/threads.h"
 
 
-static constexpr const char *ENTITIES_VOID = "entities.void";
-static constexpr const char *ENTITIES_VOID_EXT = ".void";
 static constexpr int MIN_SUBDIVIDE_SIZE = 64;
 static constexpr int MAX_SUBDIVIDE_SIZE = 512;
 
@@ -1372,26 +1370,6 @@ int main(const int argc, char **argv)
     //Settings();
     // END INIT
 
-    // Load the .void files for allowable entities in the void
-    {
-        // try looking in the current directory
-        std::string systemvoidfile = ENTITIES_VOID;
-        if (!q_exists(systemvoidfile.c_str()))
-        {
-            // try looking in the directory we were run from
-            systemvoidfile = PathDirectory(ExecutablePath()) + ENTITIES_VOID;
-        }
-
-        // Set the optional level specific lights filename
-        const std::string mapvoidfile = g_Mapname + ENTITIES_VOID_EXT;
-
-        LoadAllowableOutsideList(systemvoidfile.c_str()); // default entities.void
-        if (!mapvoidfile.empty())
-        {
-            LoadAllowableOutsideList(mapvoidfile.c_str()); // automatic mapname.void
-        }
-    }
-
     // BEGIN BSP
     double start = I_FloatTime();
 
@@ -1401,7 +1379,6 @@ int main(const int argc, char **argv)
     LogTimeElapsed(end - start);
     // END BSP
 
-    FreeAllowableOutsideList();
 
     return 0;
 }

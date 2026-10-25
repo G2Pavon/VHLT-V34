@@ -9,7 +9,7 @@ modernized tools write zeros. The test harness (`tests/`) compares every stage a
 original tools built with the same compiler. The last run of every option tier on the whole corpus
 passed on 55 maps (46 tiers). Every change since then has passed the routine gates: the core map
 set, the whole corpus at the quick tier, 255 command lines (option parsing, path handling, number
-spellings) and 9 regression scenarios.
+spellings) and 10 regression scenarios.
 
 `MODERNIZATION.md` has the full context for contributors: what changed, what was audited, how the
 tests keep the output identical, and what is still open.
@@ -21,8 +21,8 @@ tests keep the output identical, and what is still open.
 - All of common/ and all four tools build as C++20 with CMake.
 - Every allocation has an owner: `std::vector`, `std::unique_ptr`, or a store that owns a set of
   objects. There is no stray `new`/`delete`.
-  - `malloc`/`free` remain in two places only: hlbsp's `.void` loader, kept as it was, and the BSP
-    data buffers, which use `calloc` for lazily zeroed pages and are owned by a `unique_ptr`.
+  - `calloc`/`free` remain in one place only: the BSP data buffers, which use `calloc` for lazily
+    zeroed pages and are owned by a `unique_ptr`.
   - hlbsp's BSP tree, portals, surfaces and brushes, and its brink tree, are linked structures
     that several lists share (a portal belongs to two nodes). They are created and destroyed only
     through one allocation function and one free function per type.

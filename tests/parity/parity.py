@@ -288,7 +288,7 @@ def check_bin(bindir: Path) -> Path:
     for _, tool in STAGES:
         if not (bindir / tool).is_file():
             sys.exit(f"{bindir}: missing {tool}")
-    # hlbsp falls back to <exe dir>/entities.void; a stray one would make runs incomparable.
+    # The oracle's hlbsp (and older builds) fall back to <exe dir>/entities.void; a stray one would make runs incomparable.
     if (bindir / "entities.void").exists():
         sys.exit(f"{bindir}: contains entities.void, which changes hlbsp output; remove it")
     return bindir
@@ -613,7 +613,7 @@ def harness_digest() -> str:
 
 @functools.lru_cache(maxsize=None)
 def tool_identity(bindir: Path, tool: str) -> str:
-    """The tool binary, plus the one other file a tool reads from its directory (hlbsp's entities.void). Not the
+    """The tool binary, plus the one other file a tool read from its directory (the oracle's hlbsp: entities.void). Not the
     directory's other files: the dev tree's bin/ also holds the unit tests, which change all the time."""
     others = {n: sha256(bindir / n) for n in ("entities.void",) if (bindir / n).is_file()}
     return stagecache.digest({"tool": sha256(bindir / tool), "others": others})
@@ -1619,11 +1619,54 @@ def regress_bsp_texvec_hang(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_void_ignored(bindir: Path, tmp: Path) -> list[str]:
+    """hlbsp no longer reads `<map>.void` / `entities.void` (lists of classnames allowed to lie outside the world).
+    A sealed room with an info_target in the void leaks; the oracle, given a .void file naming info_target, did not.
+    The candidate must leak, and write the same files, whether or not a .void file is there. (The oracle without the
+    file is no reference: a leak in every hull crashes it at random, see leak-all-hulls.)"""
+    sys.path.insert(0, str(FEATURE_MAP_DIR.parent))
+    import make_feature_maps
+    base = tmp / "base"
+    base.mkdir(parents=True)
+    mapfile = base / "voidmap.map"
+    make_feature_maps.write_map(mapfile, make_feature_maps.void_entity())
+    canon = read_json(DATA / "corpus" / "manifest.json")["canonical_wads"]
+    mapfile.write_text(set_wad_key(mapfile.read_text(encoding="latin-1"), [str(DATA / "corpus" / w) for w in canon]),
+                       encoding="latin-1")
+    oracle = DATA / "builds" / "oracle" / "bin"
+    run([oracle / "hlcsg", "-threads", "1", "voidmap"], cwd=base, capture_output=True, check=True)
+
+    def hlbsp(tool_dir: Path, label: str, void_file: str | None) -> tuple[Path, int]:
+        work = tmp / label
+        shutil.copytree(base, work)
+        if void_file:
+            (work / void_file).write_text("info_target\n")
+        proc = run([tool_dir / "hlbsp", "-threads", "1", "voidmap"], cwd=work, capture_output=True, env=env_for(tool_dir))
+        if void_file:
+            (work / void_file).unlink()
+        return work, proc.returncode
+
+    honored, honored_code = hlbsp(oracle, "oracle-void", "voidmap.void")
+    plain, plain_code = hlbsp(bindir, "cand-plain", None)
+    problems = []
+    if honored_code != 0 or (honored / "voidmap.pts").exists():
+        problems.append("the oracle leaks even with the .void file: this scenario no longer exercises it")
+    if not (plain / "voidmap.pts").exists():
+        problems.append("the candidate does not leak on a map with an entity in the void")
+    for label, void_file in (("map.void", "voidmap.void"), ("entities.void", "entities.void")):
+        work, code = hlbsp(bindir, "cand-" + label.replace(".", "-"), void_file)
+        if code != plain_code:
+            problems.append(f"{label}: hlbsp exit {code}, without the file {plain_code}")
+        problems += [f"{label}: {p}" for p in compare_dirs(plain, work, "zero")]
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
                "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
                "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir,
                "texdata-zero": regress_texdata_zero, "rad-bad-texture": regress_rad_bad_texture,
-               "bsp-texvec-hang": regress_bsp_texvec_hang}
+               "bsp-texvec-hang": regress_bsp_texvec_hang,
+               "void-ignored": regress_void_ignored}
 
 
 def cmd_regress(args) -> int:
