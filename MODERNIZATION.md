@@ -94,7 +94,7 @@ expectation that could drift.
 |---|---|---|
 | Smoke | `parity.py smoke` | The edit-run loop, not a gate: builds `build/`, then at the same time the unit tests, `check --smoke` (8 maps, quick tier, `--fail-fast`), `cli --smoke` (every 6th option case, 3 number maps) and every `regress` scenario. 4 s with everything cached, about 20 s after a change to hlrad. Planted bugs in each tool and in `common/` all fail it. |
 | Gate | `parity.py gate [--milestone] [--release]` | Section 4.3. |
-| Unit tests (doctest, 127 cases) | `ctest --test-dir build` | `common/` behaviour pinned to the oracle (path helpers, tokenizer, BSP round-trip, compression tables generated from the oracle, cmdline parsing, `ParseInt`, `ProbeSearch` against glibc's `bsearch`, ...). Built twice, as `f64` (hlcsg/hlbsp) and `f32` (hlvis/hlrad). |
+| Unit tests (doctest, 128 cases) | `ctest --test-dir build` | `common/` behaviour pinned to the oracle (path helpers, tokenizer, BSP round-trip, compression tables generated from the oracle, cmdline parsing, `ParseInt`, `ProbeSearch` against glibc's `bsearch`, ...). Built twice, as `f64` (hlcsg/hlbsp) and `f32` (hlvis/hlrad). |
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
 | Corpus | 63 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 40 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
 | `cli` | `parity.py cli --bin $B` | 256 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
@@ -328,6 +328,28 @@ covered:
 
 ---
 
+### 5.6 std::filesystem: file names as paths at the file-access boundary (2026-10-25)
+
+Slice 1 of a track to use `std::filesystem` where it fits (C++20 is set and enforced by `CMakeLists.txt`:
+`CMAKE_CXX_STANDARD 20`, required, no extensions). `common/filelib` takes `std::filesystem::path` in
+`OpenFile` (new: a non-fatal open that returns null), `SafeOpen`, `SafeOpenWrite`, `ReadFile`, `q_exists` and
+`RemoveFile`. The bodies are the ones they had: a name is opened as written (`path::string()`, byte for byte on
+POSIX; backslashes are characters, not separators), `Error opening <name>: <reason>` is unchanged, and `q_exists` is
+still "can be opened for reading" (a directory counts; an unreadable file does not, where `fs::exists` would say yes
+and a wad search would stop instead of going on to the next candidate). The 13 `UniqueFile(std::fopen(x.c_str(), mode))`
+sites in `log.cpp`, `textures.cpp`, `loadtextures.cpp`, `hlcsg.cpp` and `hlbsp.cpp` use `OpenFile`, and about 20 callers
+lost a `.c_str()`. New unit tests pin all of this (including the error text, which no test covered), and each was
+mutation-checked: `q_exists` through `fs::exists`, backslashes turned into `/`, and a base-name-only error message all
+fail them.
+
+Not done, on purpose: the path helpers in `cmdlib.h` (`PathDirectory`, `PathFile`, `PathWithoutExtension`,
+`PathWithSystemSlashes`, ...) stay string code (section 7, S4b-d: `fs::path` does not split at `\` on POSIX, and
+those names are written into the BSP). The 9 raw `FILE *` sites in `hlbsp` (polygon and brush files, portal, point and
+line files) are an ownership change, left for a later slice. The one risk this slice cannot test here is Windows: `path`
+converts a narrow name through the ANSI code page and `.string()` converts it back, which can differ from handing the
+bytes to `fopen` for a name with bytes that are not valid in that code page. Accepted by the owner. There is no directory
+traversal in the tools, so there was nothing to move there.
+
 ## 6. What has been audited (and what was found)
 
 Each tool was analysed before any change to it. Detailed notes on each audit are kept with the
@@ -377,7 +399,7 @@ Don't reopen these without new information:
 
 | Idea | Why not |
 |---|---|
-| Path helpers on `std::filesystem::path`, plus normalizing `\` → `/` where paths come in (S4b–S4d) | Needs about 6 compat special cases (`.map`, trailing slash, trailing separator, drive-relative names on Windows), an untestable Windows branch that decides BSP content, extra state for log spelling, and normalizing `-wadinclude` and the drive-letter fallbacks too. No behaviour gain on Linux. `std::filesystem` is used for disk operations (`RemoveFile`). |
+| Path helpers on `std::filesystem::path`, plus normalizing `\` → `/` where paths come in (S4b–S4d) | Needs about 6 compat special cases (`.map`, trailing slash, trailing separator, drive-relative names on Windows), an untestable Windows branch that decides BSP content, extra state for log spelling, and normalizing `-wadinclude` and the drive-letter fallbacks too. No behaviour gain on Linux. `std::filesystem::path` is the type of a file name where a file is opened (5.6), and `std::filesystem` does the disk operations (`RemoveFile`). |
 | `std::from_chars` for `atof`/`sscanf` (full S6b) | Needs reimplementing `strtod`/`strtol`/`scanf` quirks to stay identical; locale independence is moot. Only `atoi`'s undefined behaviour was worth fixing (`ParseInt`). |
 | `std::sort` instead of `std::stable_sort` | Changes output (proved by mutation). |
 | hlbsp graph nodes (tree, portals, surfaces, brushes, brink tree) as individually owned objects | Shared membership (a portal belongs to two nodes) and arena-like peak memory; they stay behind one allocate and one free function per type. |

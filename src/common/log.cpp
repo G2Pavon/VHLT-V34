@@ -91,7 +91,7 @@ void CheckForErrorLog()
 {
     if (g_log)
     {
-        if (q_exists((g_Mapname + ".err").c_str()))
+        if (q_exists(g_Mapname + ".err"))
         {
             Log(">> There was a problem compiling the map.\n"
                 ">> Check the file %s.log for the cause.\n",
@@ -111,7 +111,7 @@ void LogError(const char *const message)
     if (g_log && CompileLog)
     {
         const std::string logfilename = g_Mapname + ".err";
-        UniqueFile ErrorLog(std::fopen(logfilename.c_str(), "a"));
+        UniqueFile ErrorLog = OpenFile(logfilename, "a");
 
         if (ErrorLog)
         {
@@ -130,7 +130,7 @@ void OpenLog()
     if (g_log)
     {
         const std::string logfilename = g_Mapname + ".log";
-        CompileLog.reset(std::fopen(logfilename.c_str(), "a"));
+        CompileLog = OpenFile(logfilename, "a");
 
         if (!CompileLog)
         {

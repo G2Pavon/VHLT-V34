@@ -246,7 +246,7 @@ static bool TEX_InitFromWad()
         const char *pszWadFile = currentwad->path.c_str();
 
         texwadpathes[nTexFiles] = currentwad;
-        texfiles[nTexFiles].reset(std::fopen(pszWadFile, "rb"));
+        texfiles[nTexFiles] = OpenFile(pszWadFile, "rb");
 
         if (!texfiles[nTexFiles])
         {
@@ -254,7 +254,7 @@ static bool TEX_InitFromWad()
             if (pszWadFile[1] == ':')
             {
                 pszWadFile += 2; // skip past the drive
-                texfiles[nTexFiles].reset(std::fopen(pszWadFile, "rb"));
+                texfiles[nTexFiles] = OpenFile(pszWadFile, "rb");
             }
         }
 
@@ -263,7 +263,7 @@ static bool TEX_InitFromWad()
             // the subdirectory has a trailing separator
             const std::string subdir = PathFile(PathDirectory(pszWadFile));
             const std::string rooted = std::string(pszWadroot) + SYSTEM_SLASH_STR + subdir + PathFile(pszWadFile);
-            texfiles[nTexFiles].reset(std::fopen(rooted.c_str(), "rb"));
+            texfiles[nTexFiles] = OpenFile(rooted, "rb");
         }
 
         if (!texfiles[nTexFiles] && pszWadFile[0] == '\\')
@@ -271,7 +271,7 @@ static bool TEX_InitFromWad()
             for (char l = 'C'; l <= 'Z'; ++l)
             {
                 const std::string withdrive = std::string{l, ':'} + pszWadFile;
-                texfiles[nTexFiles].reset(std::fopen(withdrive.c_str(), "rb"));
+                texfiles[nTexFiles] = OpenFile(withdrive, "rb");
                 if (texfiles[nTexFiles])
                 {
                     break;
@@ -618,7 +618,7 @@ void WriteMiptex()
         } dlumpinfo_t;
 
         wadinfo_t writewad_header;
-        UniqueFile writewad_file(SafeOpenWrite((g_Mapname + ".wa_").c_str()));
+        UniqueFile writewad_file(SafeOpenWrite(g_Mapname + ".wa_"));
         std::vector<dlumpinfo_t> writewad_lumpinfos(nummiptex);
         writewad_header.identification[0] = 'W';
         writewad_header.identification[1] = 'A';

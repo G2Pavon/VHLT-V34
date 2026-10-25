@@ -58,7 +58,7 @@ static void OpenWadFile(const char *name, bool fullpath = false)
     if (fullpath)
     {
         wad->path = name;
-        wad->file.reset(std::fopen(wad->path.c_str(), "rb"));
+        wad->file = OpenFile(wad->path, "rb");
         if (!wad->file)
         {
             Error("Couldn't open %s", wad->path.c_str());
@@ -70,7 +70,7 @@ static void OpenWadFile(const char *name, bool fullpath = false)
         {
             // the system's separator (this used to be a backslash on every system: -waddir never found a wad off Windows)
             wad->path = dir + SYSTEM_SLASH_STR + name;
-            wad->file.reset(std::fopen(wad->path.c_str(), "rb"));
+            wad->file = OpenFile(wad->path, "rb");
             if (wad->file.get())
             {
                 break;
@@ -128,7 +128,7 @@ static void TryOpenWadFiles()
     {
         g_wadfiles_opened = true;
         const std::string filename = g_Mapname + ".wa_";
-        if (q_exists(filename.c_str()))
+        if (q_exists(filename))
         {
             OpenWadFile(filename.c_str(), true);
         }

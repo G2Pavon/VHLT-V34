@@ -1216,7 +1216,7 @@ static void ProcessFile(const std::string &filename)
 
     {
         const std::string name = filename + ".pln";
-        UniqueFile planefile(std::fopen(name.c_str(), "rb"));
+        UniqueFile planefile = OpenFile(name, "rb");
         if (!planefile)
         {
             Warning("Couldn't open %s", name.c_str());

@@ -102,6 +102,15 @@ void CheckRejected(const Image &img, const std::string &name, const std::string 
 
 TEST_SUITE("loader")
 {
+    TEST_CASE("a file that cannot be opened is reported with its name and the reason")
+    {
+        const fs::path missing = fs::temp_directory_path() / ("vhlt_loader_missing_" + std::to_string(getpid()) + ".bsp");
+        const ProbeResult r = Probe(missing);
+        CAPTURE(r.output);
+        CHECK(r.exit_code == 1);
+        CHECK(r.output.find("Error opening " + missing.string() + ": No such file or directory") != std::string::npos);
+    }
+
     TEST_CASE("an empty but well-formed BSP is accepted")
     {
         Image img;

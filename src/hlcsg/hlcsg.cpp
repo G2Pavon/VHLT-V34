@@ -742,7 +742,7 @@ static void EmitPlanes()
             r.type = p.type;
         }
         const std::string name = g_Mapname + ".pln";
-        UniqueFile planeout(std::fopen(name.c_str(), "wb"));
+        UniqueFile planeout = OpenFile(name, "wb");
         if (!planeout)
             Error("Couldn't open %s", name.c_str());
         SafeWrite(planeout.get(), records.data(), static_cast<int>(records.size() * sizeof(PlaneFileRecord)));
@@ -1386,17 +1386,17 @@ int main(const int argc, char **argv)
     for (int i = 0; i < NUM_HULLS; i++)
     {
         const std::string polyname = g_Mapname + ".p" + std::to_string(i);
-        out[i].reset(std::fopen(polyname.c_str(), "w"));
+        out[i] = OpenFile(polyname, "w");
         if (!out[i])
             Error("Couldn't open %s", polyname.c_str());
         const std::string brushname = g_Mapname + ".b" + std::to_string(i);
-        out_detailbrush[i].reset(std::fopen(brushname.c_str(), "w"));
+        out_detailbrush[i] = OpenFile(brushname, "w");
         if (!out_detailbrush[i])
             Error("Couldn't open %s", brushname.c_str());
     }
     {
         const std::string name = g_Mapname + ".hsz";
-        UniqueFile hsz(std::fopen(name.c_str(), "w"));
+        UniqueFile hsz = OpenFile(name, "w");
         if (!hsz)
             Error("Couldn't open %s", name.c_str());
         for (const auto &hullsize : g_hull_size)

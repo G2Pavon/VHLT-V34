@@ -3,22 +3,29 @@
 #include <cerrno>
 #include <cstring>
 #include <filesystem>
+#include <string>
 #include <system_error>
 
 #include "common/log.h"
 #include "common/messages.h"
 
-UniqueFile SafeOpen(const char *const filename, const char *const mode)
+UniqueFile OpenFile(const std::filesystem::path &filename, const char *const mode)
 {
-    UniqueFile f(std::fopen(filename, mode));
+    return UniqueFile(std::fopen(filename.string().c_str(), mode));
+}
+
+UniqueFile SafeOpen(const std::filesystem::path &filename, const char *const mode)
+{
+    const std::string name = filename.string(); // lives across the fopen, so nothing runs between it and strerror(errno)
+    UniqueFile f(std::fopen(name.c_str(), mode));
 
     if (!f)
-        Error("Error opening %s: %s", filename, std::strerror(errno));
+        Error("Error opening %s: %s", name.c_str(), std::strerror(errno));
 
     return f;
 }
 
-std::vector<char> ReadFile(const char *const filename)
+std::vector<char> ReadFile(const std::filesystem::path &filename)
 {
     UniqueFile f = SafeOpen(filename, "rb");
     const int length = q_filelength(f.get());
@@ -37,13 +44,13 @@ int q_filelength(std::FILE *f)
     return static_cast<int>(end);
 }
 
-bool q_exists(const char *const filename)
+bool q_exists(const std::filesystem::path &filename)
 {
     // compat: "can be opened for reading", which on POSIX is also true for a directory
-    return UniqueFile(std::fopen(filename, "rb")) != nullptr;
+    return OpenFile(filename, "rb") != nullptr;
 }
 
-void RemoveFile(const std::string &filename)
+void RemoveFile(const std::filesystem::path &filename)
 {
     std::error_code error;
     if (std::filesystem::symlink_status(filename, error).type() == std::filesystem::file_type::directory)
@@ -65,7 +72,7 @@ void SafeWrite(std::FILE *f, const void *const buffer, int count)
         Error("File write failure"); //Error("File read failure"); //--vluzacn
 }
 
-std::FILE *SafeOpenWrite(const char *const filename)
+std::FILE *SafeOpenWrite(const std::filesystem::path &filename)
 {
     return SafeOpen(filename, "wb").release();
 }
