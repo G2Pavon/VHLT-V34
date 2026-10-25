@@ -6,8 +6,13 @@ rewritten in modern C++20.
 The modernized tools write the same `.bsp` files as the original v34 tools, byte for byte. The
 only exception is the padding between lumps: the original left stale memory there, and the
 modernized tools write zeros. The test harness (`tests/`) compares every stage against the
-original tools built with the same compiler. The last full run passed on 55 maps (46 option tiers,
-132 command lines, 6 regression scenarios).
+original tools built with the same compiler. The last run of every option tier on the whole corpus
+passed on 55 maps (46 tiers). Every change since then has passed the routine gates: the core map
+set, the whole corpus at the quick tier, 255 command lines (option parsing, path handling, number
+spellings) and 6 regression scenarios.
+
+`MODERNIZATION.md` has the full context for contributors: what changed, what was audited, how the
+tests keep the output identical, and what is still open.
 
 ## What changed
 
@@ -108,6 +113,7 @@ ctest --test-dir build --output-on-failure                    # unit tests
 python3 tests/parity/parity.py check --bin build/bin          # parity with the original tools
 ```
 
-The parity harness needs the original tools built from the `oracle-base` tag and the test corpus.
+The parity harness needs the original tools built from the `oracle-base` tag (`07575e9`) and the
+test corpus.
 `tests/README.md` covers its setup, the map sets, the option tiers, the sanitizer runs and the
 other commands.
