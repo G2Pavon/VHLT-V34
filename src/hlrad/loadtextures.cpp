@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -44,11 +45,10 @@ struct wadfile_t
 static std::vector<std::unique_ptr<wadfile_t>> g_wadfiles; // in the order they are searched
 bool g_wadfiles_opened;
 
-static int lump_sorter_by_name(const void *lump1, const void *lump2)
+// compat: stable, as glibc's qsort (a merge sort) was, so lumps with the same name keep their order
+static bool LumpLessByName(const lumpinfo_t &a, const lumpinfo_t &b)
 {
-    auto *plump1 = (lumpinfo_t *)lump1;
-    auto *plump2 = (lumpinfo_t *)lump2;
-    return strcasecmp(plump1->name, plump2->name);
+    return strcasecmp(a.name, b.name) < 0;
 }
 
 static void OpenWadFile(const char *name, bool fullpath = false)
@@ -119,7 +119,7 @@ static void OpenWadFile(const char *name, bool fullpath = false)
         wad->lumpinfos[i].disksize = wad->lumpinfos[i].disksize;
         wad->lumpinfos[i].size = wad->lumpinfos[i].size;
     }
-    qsort(wad->lumpinfos.data(), wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
+    std::stable_sort(wad->lumpinfos.begin(), wad->lumpinfos.begin() + wad->numlumps, LumpLessByName);
 }
 
 static void TryOpenWadFiles()
@@ -265,9 +265,8 @@ static void LoadTextureFromWad(radtexture_t *tex, const miptex_t &header)
     bool loaded = false;
     for (const std::unique_ptr<wadfile_t> &wad : g_wadfiles)
     {
-        lumpinfo_t temp;
-        std::strcpy(temp.name, tex->name);
-        const auto *found = (const lumpinfo_t *)bsearch(&temp, wad->lumpinfos.data(), wad->numlumps, sizeof(lumpinfo_t), lump_sorter_by_name);
+        const lumpinfo_t *found = ProbeSearch(wad->lumpinfos.data(), wad->numlumps,
+                                              [tex](const lumpinfo_t &lump) { return strcasecmp(tex->name, lump.name); });
         if (found)
         {
             if (found->type != 67 || found->compression != 0)

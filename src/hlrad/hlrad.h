@@ -151,7 +151,7 @@ struct patch_t
     vec3_t *directlight_all;       // NULL, or [ALLSTYLES] during BuildFacelights
     int leafnum;
 };
-// SortPatches moves patches with qsort (which must keep the oracle's order) and SubdividePatch copies
+// SortPatches moves patches with std::stable_sort (which keeps the oracle's order) and SubdividePatch copies
 // them with memcpy: patch_t holds no owning members.
 static_assert(std::is_trivially_copyable_v<patch_t>);
 

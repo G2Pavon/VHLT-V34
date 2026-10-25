@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <deque>
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
@@ -162,27 +163,20 @@ static void CleanupName(const char *const in, char *out)
     }
 }
 
-static int lump_sorter_by_wad_and_name(const void *lump1, const void *lump2)
+// compat: the sorts below are stable, as glibc's qsort (a merge sort) was: lumps with the same name
+// (the same texture in several wads) keep their wad order.
+static bool LumpLessByWadAndName(const lumpinfo_t &a, const lumpinfo_t &b)
 {
-    auto *plump1 = (lumpinfo_t *)lump1;
-    auto *plump2 = (lumpinfo_t *)lump2;
-
-    if (plump1->iTexFile == plump2->iTexFile)
+    if (a.iTexFile != b.iTexFile)
     {
-        return std::strcmp(plump1->name, plump2->name);
+        return a.iTexFile < b.iTexFile;
     }
-    else
-    {
-        return plump1->iTexFile - plump2->iTexFile;
-    }
+    return std::strcmp(a.name, b.name) < 0;
 }
 
-static int lump_sorter_by_name(const void *lump1, const void *lump2)
+static bool LumpLessByName(const lumpinfo_t &a, const lumpinfo_t &b)
 {
-    auto *plump1 = (lumpinfo_t *)lump1;
-    auto *plump2 = (lumpinfo_t *)lump2;
-
-    return std::strcmp(plump1->name, plump2->name);
+    return std::strcmp(a.name, b.name) < 0;
 }
 
 // Find and allocate a texture into the lump data
@@ -377,7 +371,7 @@ static bool TEX_InitFromWad()
     }
 
     // sort texlumps in memory by name
-    qsort(lumpinfo.data(), (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
+    std::stable_sort(lumpinfo.begin(), lumpinfo.begin() + nTexLumps, LumpLessByName);
 
     CheckFatal();
     return true;
@@ -385,10 +379,10 @@ static bool TEX_InitFromWad()
 
 static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
 {
+    // every lump with this name; which one the search lands on doesn't matter, the best one is picked below
+    const auto [first, last] = std::equal_range(lumpinfo.begin(), lumpinfo.begin() + nTexLumps, *source, LumpLessByName);
     lumpinfo_t *found = nullptr;
-
-    found = (lumpinfo_t *)bsearch(source, lumpinfo.data(), (std::size_t)nTexLumps, sizeof(lumpinfo[0]), lump_sorter_by_name);
-    if (!found)
+    if (first == last)
     {
         Warning("::FindTexture() texture %s not found!", source->name);
         if (!std::strcmp(source->name, "NULL") || !std::strcmp(source->name, "SKIP"))
@@ -396,26 +390,13 @@ static lumpinfo_t *FindTexture(const lumpinfo_t *const source)
             Log("Are you sure you included zhlt.wad in your wadpath list?\n");
         }
     }
-
-    if (found)
+    else
     {
-        // get the first and last matching lump (by index: first - 1 could point before the array)
-        std::ptrdiff_t firstindex = found - lumpinfo.data();
-        std::ptrdiff_t lastindex = firstindex;
-        while (firstindex > 0 && lump_sorter_by_name(&lumpinfo[firstindex - 1], source) == 0)
-        {
-            firstindex--;
-        }
-        while (lastindex + 1 < nTexLumps && lump_sorter_by_name(&lumpinfo[lastindex + 1], source) == 0)
-        {
-            lastindex++;
-        }
-        lumpinfo_t *first = &lumpinfo[firstindex];
-        lumpinfo_t *last = &lumpinfo[lastindex];
         // find the best matching lump
         lumpinfo_t *best = nullptr;
-        for (found = first; found < last + 1; found++)
+        for (auto it = first; it != last; ++it)
         {
+            found = &*it;
             bool better = false;
             if (best == nullptr)
             {
@@ -572,9 +553,9 @@ void WriteMiptex()
 
     // Now we have filled lumpinfo for each miptex and the number of used textures for each wad.
     {
-        char szTmpWad[MAX_VAL];
-
-        szTmpWad[0] = 0;
+        // Was a char[MAX_VAL] filled with safe_strncat, but it could never be cut: the list holds only
+        // the file names from the "wad" key, which the tokenizer keeps under MAX_VAL characters.
+        std::string wadlist;
         for (int i = 0; i < nTexFiles; i++)
         {
             wadpath_t *currentwad = texwadpathes[i];
@@ -595,28 +576,27 @@ void WriteMiptex()
                 double percused = (double)currentwad->usedtextures / (double)nummiptex * 100;
                 Log(" - Contains %i used texture%s, %2.2f percent of map (%d textures in wad)\n",
                     currentwad->usedtextures, currentwad->usedtextures == 1 ? "" : "s", percused, currentwad->totaltextures);
-                safe_strncat(szTmpWad, PathFile(currentwad->path).c_str(), MAX_VAL);
-                safe_strncat(szTmpWad, ";", MAX_VAL);
+                wadlist += PathFile(currentwad->path) + ";";
             }
         }
 
         Log("\n");
-        if (*szTmpWad)
+        if (!wadlist.empty())
         {
-            Log("Wad files required to run the map: \"%s\"\n", szTmpWad);
+            Log("Wad files required to run the map: \"%s\"\n", wadlist.c_str());
         }
         else
         {
             Log("Wad files required to run the map: (None)\n");
         }
-        SetKeyValue(&g_entities[0], "wad", szTmpWad);
+        SetKeyValue(&g_entities[0], "wad", wadlist.c_str());
     }
 
     {
         texinfo_t *tx = g_texinfo;
 
         // Sort them FIRST by wadfile and THEN by name for most efficient loading in the engine.
-        qsort((void *)miptex, (std::size_t)nummiptex, sizeof(miptex[0]), lump_sorter_by_wad_and_name);
+        std::stable_sort(miptex, miptex + nummiptex, LumpLessByWadAndName);
         RebuildMiptexIndex();
 
         // Sleazy Hack 104 Pt 2 - After sorting the miptex array, reset the texinfos to point to the right miptexs

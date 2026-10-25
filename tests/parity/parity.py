@@ -1573,7 +1573,16 @@ PATH_CASES = {
                                                "map_at": "maps.v2/sub.d/pathmap.map"},
     "map argument .map": {"wad": WAD_OK, "files": [WAD_OK], "map": ".map", "map_at": ".map"},
     "map argument is a directory": {"wad": WAD_OK, "files": [WAD_OK], "map": "maps/", "map_at": "maps/pathmap.map"},
+    # S5: the same texture name more than once (dup.wad: PATHTEX twice, red then blue; red.wad: one red
+    # PATHTEX). Embedded with -wadinclude, the copy hlcsg picks ends up in the BSP's texture lump.
+    "duplicate texture in one wad": {"wad": "dup.wad", "files": ["dup.wad"], "argv": ["-wadinclude", "dup"]},
+    "duplicate texture across wads": {"wad": WAD_OK + ";red.wad", "files": [WAD_OK, "red.wad"],
+                                      "argv": ["-wadinclude", "pathtex", "-wadinclude", "red"]},
+    "duplicate texture, later wad included": {"wad": WAD_OK + ";red.wad;dup.wad", "files": [WAD_OK, "red.wad", "dup.wad"],
+                                              "argv": ["-wadinclude", "dup"]},
 }
+# colours of the PATHTEX copies in the S5 wads above (every other file holds one grey PATHTEX)
+DUP_WADS = {"dup.wad": [(255, 0, 0), (0, 0, 255)], "red.wad": [(255, 0, 0)]}
 
 
 def _path_setup(case: dict, cwd: Path) -> tuple[list[str], dict]:
@@ -1583,7 +1592,10 @@ def _path_setup(case: dict, cwd: Path) -> tuple[list[str], dict]:
     for rel in case["files"]:
         f = cwd / rel
         f.parent.mkdir(parents=True, exist_ok=True)
-        mkwad.write_wad(str(f), ["OTHERTEX" if f.name == "other.wad" else "PATHTEX"], 16, (200, 200, 200))
+        if f.name in DUP_WADS:
+            mkwad.write_wad_lumps(str(f), [("PATHTEX", mkwad.miptex("PATHTEX", 16, rgb)) for rgb in DUP_WADS[f.name]])
+        else:
+            mkwad.write_wad(str(f), ["OTHERTEX" if f.name == "other.wad" else "PATHTEX"], 16, (200, 200, 200))
     map_at = cwd / case.get("map_at", "pathmap.map")
     map_at.parent.mkdir(parents=True, exist_ok=True)
     map_at.write_text(PATH_MAP % case["wad"].replace("{cwd}", str(cwd)))

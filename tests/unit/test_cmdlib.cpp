@@ -1,11 +1,15 @@
 #include "doctest/doctest.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <random>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <unistd.h>
 
@@ -236,5 +240,32 @@ TEST_SUITE("cmdlib")
 
         g_Mapname = saved;
         fs::remove_all(dir);
+    }
+
+    TEST_CASE("ProbeSearch lands on the same element as glibc's bsearch, duplicates included")
+    {
+        std::mt19937 rng(7);
+        for (int n : {0, 1, 2, 3, 10, 100, 1000})
+        {
+            for (int keys : {1, 2, 5, 1000})
+            {
+                std::vector<int> v(n);
+                for (int &x : v)
+                {
+                    x = static_cast<int>(rng() % keys);
+                }
+                std::sort(v.begin(), v.end());
+                for (int key = -1; key <= keys; key++)
+                {
+                    CAPTURE(n);
+                    CAPTURE(keys);
+                    CAPTURE(key);
+                    const auto cmp = [](const void *a, const void *b) { return *(const int *)a - *(const int *)b; };
+                    const int *expected = static_cast<const int *>(std::bsearch(&key, v.data(), v.size(), sizeof(int), cmp));
+                    const int *got = ProbeSearch(v.data(), v.size(), [key](const int &x) { return key - x; });
+                    CHECK(got == expected);
+                }
+            }
+        }
     }
 }

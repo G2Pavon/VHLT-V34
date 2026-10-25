@@ -1,5 +1,6 @@
 #include "hlrad/hlrad.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
 #include <cstdio>
@@ -1492,24 +1493,6 @@ static void MakePatches()
     Log("%i square feet [%.2f square inches]\n", (int)(totalarea / 144), totalarea);
 }
 
-static int patch_sorter(const void *p1, const void *p2)
-{
-    auto *patch1 = (patch_t *)p1;
-    auto *patch2 = (patch_t *)p2;
-
-    if (patch1->faceNumber < patch2->faceNumber)
-    {
-        return -1;
-    }
-    else if (patch1->faceNumber > patch2->faceNumber)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
 
 // This sorts the patches by facenumber, which makes their runs compress even better
 static void SortPatches()
@@ -1519,7 +1502,10 @@ static void SortPatches()
     sorted.emplace_back(); // one extra (zeroed) slot considering how terribly the code were written
     s_patches = std::move(sorted); // also gives back the MAX_PATCHES reservation
     g_patches = s_patches.data();
-    qsort((void *)g_patches, (std::size_t)g_num_patches, sizeof(patch_t), patch_sorter);
+    // compat: stable, as glibc's qsort (a merge sort) was: a face's patches keep their creation order,
+    // which is their numbering in everything hlrad computes afterwards
+    std::stable_sort(g_patches, g_patches + g_num_patches,
+                     [](const patch_t &a, const patch_t &b) { return a.faceNumber < b.faceNumber; });
 
     // Fixup g_face_patches & Fixup patch->next
     std::memset(g_face_patches, 0, sizeof(g_face_patches));

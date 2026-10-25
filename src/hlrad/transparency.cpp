@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <tuple>
 
 // compat: the arrays grow as they did with realloc (by 1.41, at least 64 entries, new entries zeroed),
 // because the logs report their capacity.
@@ -103,19 +104,10 @@ void AddTransparencyToRawArray(const unsigned p1, const unsigned p2, const vec3_
     ThreadUnlock();
 }
 
-static int SortList(const void *a, const void *b)
+// compat: stable, as glibc's qsort (a merge sort) was
+static bool TransLess(const transList_t &a, const transList_t &b)
 {
-    const transList_t *item1 = (transList_t *)a;
-    const transList_t *item2 = (transList_t *)b;
-
-    if (item1->p1 == item2->p1)
-    {
-        return item1->p2 - item2->p2;
-    }
-    else
-    {
-        return item1->p1 - item2->p1;
-    }
+    return std::tie(a.p1, a.p2) < std::tie(b.p1, b.p2);
 }
 
 void CreateFinalTransparencyArrays(const char *print_name)
@@ -146,7 +138,7 @@ void CreateFinalTransparencyArrays(const char *print_name)
     s_raw_count = s_max_raw_count = 0;
 
     //need to sorted for fast search function
-    qsort(s_sorted_list.get(), s_sorted_count, sizeof(transList_t), SortList);
+    std::stable_sort(s_sorted_list.get(), s_sorted_list.get() + s_sorted_count, TransLess);
 
     std::size_t size = s_sorted_count * sizeof(transList_t) + s_max_trans_count * sizeof(vec3_t);
     if (size > 1024 * 1024)
@@ -248,19 +240,10 @@ void AddStyleToStyleArray(const unsigned p1, const unsigned p2, const int style)
     ThreadUnlock();
 }
 
-static int SortStyleList(const void *a, const void *b)
+// compat: stable, as glibc's qsort (a merge sort) was
+static bool StyleLess(const styleList_t &a, const styleList_t &b)
 {
-    const styleList_t *item1 = (styleList_t *)a;
-    const styleList_t *item2 = (styleList_t *)b;
-
-    if (item1->p1 == item2->p1)
-    {
-        return item1->p2 - item2->p2;
-    }
-    else
-    {
-        return item1->p1 - item2->p1;
-    }
+    return std::tie(a.p1, a.p2) < std::tie(b.p1, b.p2);
 }
 
 void CreateFinalStyleArrays(const char *print_name)
@@ -270,7 +253,7 @@ void CreateFinalStyleArrays(const char *print_name)
         return;
     }
     //need to sorted for fast search function
-    qsort(s_style_list.get(), s_style_count, sizeof(styleList_t), SortStyleList);
+    std::stable_sort(s_style_list.get(), s_style_list.get() + s_style_count, StyleLess);
 
     std::size_t size = s_max_style_count * sizeof(styleList_t);
     if (size > 1024 * 1024)

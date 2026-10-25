@@ -41,11 +41,15 @@ def miptex(name: str, size: int, rgb: tuple[int, int, int]) -> bytes:
 
 
 def write_wad(path: str, names: list[str], size: int, rgb: tuple[int, int, int]) -> None:
+    write_wad_lumps(path, [(name, miptex(name, size, rgb)) for name in names])
+
+
+def write_wad_lumps(path: str, entries: list[tuple[str, bytes]]) -> None:
+    """A WAD3 of the given (name, miptex data) lumps, in that order (names may repeat)."""
     lumps = []
     body = b""
     ofs = 12
-    for name in names:
-        data = miptex(name, size, rgb)
+    for name, data in entries:
         lumps.append((ofs, len(data), name))
         body += data
         ofs += len(data)

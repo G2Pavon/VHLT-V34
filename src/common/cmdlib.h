@@ -42,6 +42,31 @@ const char *stristr(const char *const string, const char *const substring);
 [[nodiscard]] std::string PathFile(std::string_view path);
 [[nodiscard]] std::string PathWithSystemSlashes(std::string_view path); // either slash -> SYSTEM_SLASH_CHAR
 
+// Binary search returning the element glibc's bsearch() returns: it probes (lo + hi) / 2 and stops
+// at the first equal element it lands on, which among equal elements isn't necessarily the first.
+// compare(element) is < 0, 0 or > 0 as the key sorts before, equal to or after element.
+// compat: when a wad holds the same texture name twice, the probe order picks the copy hlrad loads,
+// so it is written out here rather than left to the C library (other bsearch implementations probe
+// differently).
+template <typename T, typename Compare>
+T *ProbeSearch(T *first, std::size_t count, Compare compare)
+{
+    std::size_t lo = 0;
+    std::size_t hi = count;
+    while (lo < hi)
+    {
+        const std::size_t mid = (lo + hi) / 2;
+        const int c = compare(first[mid]);
+        if (c < 0)
+            hi = mid;
+        else if (c > 0)
+            lo = mid + 1;
+        else
+            return first + mid;
+    }
+    return nullptr;
+}
+
 // printf-style formatting into a std::string, without a length limit.
 std::string FORMAT_PRINTF(1, 2) StringPrintf(const char *const format, ...);
 std::string StringVPrintf(const char *const format, va_list args);
