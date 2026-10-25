@@ -97,9 +97,10 @@ expectation that could drift.
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
 | Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
 | `cli` | `parity.py cli --bin $B` | 255 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
-| `regress` | `parity.py regress --bin $B` | 8 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
+| `regress` | `parity.py regress --bin $B` | 9 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
 | `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. The `cli` cases run under the sanitizers too, with `cli --bin` pointing at the sanitize build (about 6 min): findings show up as stderr differences. First run (2026-10-25): one finding, a `memcpy` of a null source with size 0 in hlbsp `writebsp.cpp` (maps with no textures), fixed with a guard. |
 | `probe` | `parity.py probe [--mutations 400 --sanitize]` | `common/` BSP loader/writer against the oracle's on 58 BSPs, plus a seeded corruption smoke test. |
+| `fuzz` | `parity.py fuzz --bin ../vhlt-parity/builds/sanitize/bin --plain $B [--seed N --count 600]` | Seeded corruptions of the `fm_*` maps (syntax damage, entity key/value edits, number respellings, plane nudges) through hlcsg → hlbsp → hlvis → hlrad on the sanitize build. No oracle: a finding is a sanitizer report, a crash by signal, or a tool that does not stop (rechecked with the plain build, since the sanitizers slow the tools 10 to 20 times). Reproducers are kept in `fuzz/`; `--start N --count 1` repeats a case. About 15 min per 600 cases, roughly 45% of them get through all four tools. |
 | `coverage` | `parity.py coverage --tool hlcsg` | gcov line coverage per tool over its tiers; used to choose feature maps and the core map set. |
 | `bench` | `parity.py bench --bin $B` | Timing against `bench/oracle-quick-t1.json`. |
 | ThreadSanitizer | manual | 0 data races in hlcsg/hlvis/hlrad at 16 threads (the oracle had hundreds). |
@@ -227,6 +228,7 @@ covered:
 | An out-of-range face texture index in hlrad is an error (oracle read outside the tables) | `regress rad-bad-texture` (R1; the corpus never has one, so the scenario patches every texinfo of fm_rad_texlights to texture 9999) |
 | `-texdata x` (0-byte buffer) is an error (oracle overflowed it) | `regress texdata-zero` (candidate-only: the oracle's result is undefined, so it is not in `cli`) |
 | A worldspawn-only `.bsp` loads again (Phase 2 regression, fixed in V1) | `cli hlvis-empty` |
+| hlbsp stops with an error where the oracle never finished: a texture vector of `-1e400` (error "not finite") or `-99999999999` ("Exceeded MAX_MAP_FACES" once a face needs that many splits) made `SubdivideFace` split forever | `regress bsp-texvec-hang` (the oracle times out on both) |
 | Log/console messages longer than 2047 bytes are no longer cut | unit test |
 | `RemoveFile` doesn't delete an empty directory named like a temp file (old `std::remove` did on POSIX) | unit test |
 | Windows: `ParseInt` wraps like glibc (32-bit `long` clamped), `std::stable_sort` matches glibc order, `ExecutablePath` longer than 260 characters | tested on Linux only; never built or run on Windows |
@@ -316,7 +318,6 @@ points:
 - **Better wad lookup on Linux:** treating `\` in `"wad"` keys as a separator would find wads that
   are never found today. That would be a deliberate feature with new expected results, not a
   refactor (section 7).
-- **Fuzzing the `.map` parser and entity values**, as `probe` already does for BSP input.
 - **hlrad performance:** about 74% of total pipeline time. hlvis `-fastthreads` shows the room
   between deterministic and nondeterministic scheduling; a faster deterministic scheduler is
   unexplored.

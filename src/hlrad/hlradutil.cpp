@@ -633,8 +633,8 @@ void FindFacePositions(int facenum)
     map->step[2] = 1.0;
     for (int k = 0; k < 2; k++)
     {
-        imins[k] = (int)std::floor(texmins[k] / map->step[k] + 0.5 - ON_EPSILON);
-        imaxs[k] = (int)std::ceil(texmaxs[k] / map->step[k] - 0.5 + ON_EPSILON);
+        imins[k] = TruncateToInt<int>(std::floor(texmins[k] / map->step[k] + 0.5 - ON_EPSILON));
+        imaxs[k] = TruncateToInt<int>(std::ceil(texmaxs[k] / map->step[k] - 0.5 + ON_EPSILON));
     }
     map->start[0] = (imins[0] - 0.5) * map->step[0];
     map->start[1] = (imins[1] - 0.5) * map->step[1];

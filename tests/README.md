@@ -315,9 +315,10 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang
 python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths] [--no-numbers]  # oracle vs candidate on option-parsing command lines, path handling and number spellings: output, files, exit code. With the sanitize build (`build --tree --name sanitize --sanitize --cxx clang++`) it doubles as a sanitizer run over these inputs: findings appear as stderr differences
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
+python3 $P fuzz --bin SANITIZE_DIR --plain DIR [--seed 1 --count 600 --start 0 --maps fm_specials ...]   # corrupted .map files through all four tools, no oracle; findings = sanitizer reports, crashes, hangs (reproducers in $VHLT_PARITY_DATA/fuzz)
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
 ```

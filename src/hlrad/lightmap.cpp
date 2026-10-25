@@ -565,7 +565,8 @@ static void CalcFaceExtents(lightinfo_t *l)
         mins[i] = bmins[i];
         maxs[i] = bmaxs[i];
         l->texmins[i] = bmins[i];
-        l->texsize[i] = bmaxs[i] - bmins[i];
+        // compat: wraps (bmaxs can be INT_MIN for coordinates that are not finite); "Bad surface extents" follows
+        l->texsize[i] = static_cast<int>(static_cast<unsigned>(bmaxs[i]) - static_cast<unsigned>(bmins[i]));
     }
 
     if (!(tex->flags & TEX_SPECIAL))

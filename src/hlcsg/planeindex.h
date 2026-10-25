@@ -101,7 +101,7 @@ class PlaneIndex
   private:
     static std::int64_t CellOf(double component)
     {
-        return static_cast<std::int64_t>(std::floor(component / (2.0 * DIR_EPSILON)));
+        return TruncateToInt<std::int64_t>(std::floor(component / (2.0 * DIR_EPSILON)));
     }
 
     struct Key

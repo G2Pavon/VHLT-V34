@@ -1,6 +1,8 @@
 #include "doctest/doctest.h"
 
+#include <climits>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -235,5 +237,27 @@ TEST_SUITE("math")
         CHECK(box.test(BoundingBox(e, f)) != BoundingBox::eDisjoint);
         vec3_t g = {10.05, 0, 0};
         CHECK(box.test(BoundingBox(g, f)) == BoundingBox::eDisjoint);
+    }
+
+    TEST_CASE("compat: TruncateToInt is the x86 conversion, the smallest Int for NaN and out-of-range values")
+    {
+        const double inf = std::numeric_limits<double>::infinity();
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        CHECK(TruncateToInt<int>(0.0) == 0);
+        CHECK(TruncateToInt<int>(2.9) == 2);
+        CHECK(TruncateToInt<int>(-2.9) == -2);
+        CHECK(TruncateToInt<int>(2147483647.0) == 2147483647);
+        CHECK(TruncateToInt<int>(2147483647.9) == 2147483647);
+        CHECK(TruncateToInt<int>(-2147483648.0) == INT_MIN);
+        CHECK(TruncateToInt<int>(2147483648.0) == INT_MIN);
+        CHECK(TruncateToInt<int>(-2147483649.0) == INT_MIN);
+        CHECK(TruncateToInt<int>(inf) == INT_MIN);
+        CHECK(TruncateToInt<int>(-inf) == INT_MIN);
+        CHECK(TruncateToInt<int>(nan) == INT_MIN);
+        CHECK(TruncateToInt<std::int64_t>(4294967296.5) == 4294967296LL);
+        CHECK(TruncateToInt<std::int64_t>(9.3e18) == INT64_MIN);
+        CHECK(TruncateToInt<std::int64_t>(-9.3e18) == INT64_MIN);
+        CHECK(TruncateToInt<std::int64_t>(-inf) == INT64_MIN);
+        CHECK(TruncateToInt<std::int64_t>(nan) == INT64_MIN);
     }
 }

@@ -1449,10 +1449,40 @@ def regress_rad_bad_texture(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_bsp_texvec_hang(bindir: Path, tmp: Path) -> list[str]:
+    """A texture vector of -1e400 (= -inf) or of -99999999999 gives a face an infinite or huge extent: hlbsp's
+    SubdivideFace kept splitting it (the oracle runs for hours on both maps). It must stop with an error: the
+    "not finite" one for -inf, "Exceeded MAX_MAP_FACES" for the huge one."""
+    problems = []
+    for value, expected in (("-1e400", b"not finite"), ("-99999999999", b"MAX_MAP_FACES")):
+        work = tmp / value
+        work.mkdir(parents=True)
+        text = (DATA / "corpus" / "maps" / "fm_bsp_geometry.map").read_text(encoding="latin-1")
+        text, n = re.subn(r"\[ 1 0 0 0 \]", f"[ {value} 0 0 0 ]", text, count=1)
+        if not n:
+            return ["fm_bsp_geometry has no texture vector to corrupt"]
+        (work / "tv.map").write_bytes(text.encode("latin-1"))
+        run([DATA / "builds" / "oracle" / "bin" / "hlcsg", "-threads", "1", "tv"], cwd=work, capture_output=True, check=True)
+        try:
+            proc = run([bindir / "hlbsp", "-threads", "1", "tv"], cwd=work, capture_output=True, env=env_for(bindir), timeout=120)
+        except subprocess.TimeoutExpired:
+            problems.append(f"{value}: hlbsp did not stop within 120 s")
+            continue
+        out = proc.stdout + proc.stderr
+        if proc.returncode == 0:
+            problems.append(f"{value}: exit 0")
+        if b"Error:" not in out or expected not in out:
+            problems.append(f"{value}: no error mentioning {expected.decode()!r}")
+        if b"ERROR: AddressSanitizer" in out or b"runtime error:" in out:
+            problems.append(f"{value}: sanitizer error")
+    return problems
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
                "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
                "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir,
-               "texdata-zero": regress_texdata_zero, "rad-bad-texture": regress_rad_bad_texture}
+               "texdata-zero": regress_texdata_zero, "rad-bad-texture": regress_rad_bad_texture,
+               "bsp-texvec-hang": regress_bsp_texvec_hang}
 
 
 def cmd_regress(args) -> int:
@@ -1464,6 +1494,183 @@ def cmd_regress(args) -> int:
             failures += bool(problems)
             log(f"  {name:20} {'ok' if not problems else 'FAIL: ' + '; '.join(problems)}")
     return 1 if failures else 0
+
+
+# ---------------------------------------------------------------------------
+# command: fuzz (corrupted .map files through the whole pipeline; no oracle, only crashes count)
+
+FUZZ_TIMEOUT = 120  # seconds per tool: a tool that does not stop on a small map is a finding
+FUZZ_STAGES = (("hlcsg", ["-threads", "1"]), ("hlbsp", ["-threads", "1"]), ("hlvis", ["-threads", "1", "-fast"]),
+               ("hlrad", ["-threads", "1"]))
+FUZZ_NUMBERS = ["", "-1", "0", "1", "99999999999", "-99999999999", "2147483648", "-2147483649", "1e400", "-1e400",
+                "1e-400", "nan", "inf", "0x7fffffff", "0x", "1e", ".", "-", "+", "9" * 400]
+FUZZ_CHARS = list('{}()[]"\\;-+0123456789eEx. \n\t/')
+FUZZ_KEYS = ["origin", "angles", "angle", "_light", "light", "style", "_fade", "_falloff", "_diffuse_light", "_sun",
+             "_spread", "target", "targetname", "spawnflags", "model", "renderamt", "rendermode", "rendercolor", "texdata",
+             "lightdata", "hlcsg", "hlbsp", "hlvis", "hlrad", "sky", "gamma", "smooth", "chop", "ambient", "bounce",
+             "extra", "zhlt_lightflags", "zhlt_usemodel", "zhlt_copylight", "zhlt_noclip", "zhlt_embedlightmap",
+             "zhlt_invisible", "zhlt_hull1", "zhlt_hull2", "zhlt_hull3", "zhlt_minlight", "_cone", "_cone2", "pitch",
+             "wad", "mapversion", "classname", "message", "skyname", "_incfile", "customshift", "zhlt_chopdown"]
+KV_LINE_RE = re.compile(r'^"([^"\n]*)" "([^"\n]*)"$', re.M)
+
+
+def fuzz_mutate(text: str, rng) -> tuple[str, str]:
+    """One random corruption of a .map; returns (text, description)."""
+    lines = text.split("\n")
+    # Most corruptions of a brush or of the syntax stop hlcsg at once, which is fine but shallow: the entity-level
+    # kinds (kv*) and plane nudges are weighted up because they get through to the later tools.
+    kind = rng.choice(["truncate", "delline", "dupline", "swaplines", "char", "number", "string", "brace", "extrabrace",
+                       "wadkey", "classname"] + ["kvnumber", "kvswap", "kvkey", "kvdel", "kvvalue", "nudge"] * 3)
+    kvs = list(KV_LINE_RE.finditer(text))
+    if kind == "kvnumber" and kvs:
+        m = rng.choice(kvs)
+        nums = list(re.finditer(r"-?\d+(\.\d+)?", m.group(2)))
+        if nums:
+            n = rng.choice(nums)
+            v = rng.choice(FUZZ_NUMBERS)
+            a = m.start(2) + n.start()
+            return text[:a] + v + text[m.start(2) + n.end():], f"key {m.group(1)!r} number -> {v[:12]!r}"
+    if kind == "kvswap" and len(kvs) > 1:
+        m1, m2 = sorted(rng.sample(kvs, 2), key=lambda m: m.start())
+        t = (text[:m1.start(2)] + m2.group(2) + text[m1.end(2):m2.start(2)] + m1.group(2) + text[m2.end(2):])
+        return t, f"swap values of {m1.group(1)!r} and {m2.group(1)!r}"
+    if kind == "kvkey" and kvs:
+        m = rng.choice(kvs)
+        k = rng.choice(FUZZ_KEYS)
+        return text[:m.start(1)] + k + text[m.end(1):], f"key {m.group(1)!r} -> {k!r}"
+    if kind == "kvdel" and kvs:
+        m = rng.choice(kvs)
+        return text[:m.start()] + text[m.end() + 1:], f"delete key {m.group(1)!r}"
+    if kind == "kvvalue" and kvs:
+        m = rng.choice(kvs)
+        v = rng.choice(["", "0", "-1", "1", "255 255 255 -1", "1 2 3", "x", "1e400", "99999999", "0 0 0", "30 -90 0",
+                        "-90 0 0", "1000000 0 0", "1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"])
+        return text[:m.start(2)] + v + text[m.end(2):], f"key {m.group(1)!r} value -> {v[:12]!r}"
+    if kind == "nudge":
+        spans = [m.span() for m in re.finditer(r"(?<=\( )-?\d+(?= )|(?<= )-?\d+(?= \))|(?<= )-?\d+(?= -?\d+ \))", text)]
+        if spans:
+            a, b = rng.choice(spans)
+            d = rng.choice([-16, -3, -2, -1, 1, 2, 3, 16, 64])
+            return text[:a] + str(int(text[a:b]) + d) + text[b:], f"plane number at {a} {d:+d}"
+    if kind == "truncate":
+        at = rng.randrange(len(text) + 1)
+        return text[:at], f"truncate at {at}"
+    if kind == "delline":
+        i = rng.randrange(len(lines))
+        return "\n".join(lines[:i] + lines[i + 1:]), f"delete line {i + 1}"
+    if kind == "dupline":
+        i = rng.randrange(len(lines))
+        return "\n".join(lines[:i + 1] + lines[i:]), f"duplicate line {i + 1}"
+    if kind == "swaplines":
+        i, j = rng.randrange(len(lines)), rng.randrange(len(lines))
+        lines[i], lines[j] = lines[j], lines[i]
+        return "\n".join(lines), f"swap lines {i + 1} and {j + 1}"
+    if kind == "char":
+        i = rng.randrange(len(text))
+        c = rng.choice(FUZZ_CHARS)
+        return text[:i] + c + text[i + 1:], f"char {i} -> {c!r}"
+    if kind == "number":
+        spans = [m.span() for m in re.finditer(r"-?\d+(\.\d+)?", text)]
+        if spans:
+            a, b = rng.choice(spans)
+            v = rng.choice(FUZZ_NUMBERS)
+            return text[:a] + v + text[b:], f"number at {a} -> {v[:12]!r}"
+    if kind == "string":
+        spans = [m.span(1) for m in re.finditer(r'"([^"\n]*)"', text)]
+        if spans:
+            a, b = rng.choice(spans)
+            v = rng.choice(["", "x" * 127, "x" * 128, "x" * 1000, "x" * 5000, "x" * 70000, "a;b;;c", "\\", "%s%n", "-1"])
+            return text[:a] + v + text[b:], f"quoted string at {a} -> {len(v)} chars"
+    if kind == "brace":
+        idx = [i for i, l in enumerate(lines) if l.strip() in ("{", "}")]
+        if idx:
+            i = rng.choice(idx)
+            return "\n".join(lines[:i] + lines[i + 1:]), f"remove brace line {i + 1}"
+    if kind == "extrabrace":
+        i = rng.randrange(len(lines) + 1)
+        b = rng.choice(["{", "}"])
+        return "\n".join(lines[:i] + [b] + lines[i:]), f"insert {b!r} before line {i + 1}"
+    if kind == "wadkey":
+        v = rng.choice(["", ";", ";;", "nonexistent.wad", "/", "C:\\", "x" * 5000, "\\\\\\"])
+        return re.sub(r'("wad" ")[^"\n]*(")', lambda m: m.group(1) + v + m.group(2), text, count=1), f"wad key -> {v[:12]!r}"
+    if kind == "classname":
+        v = rng.choice(["worldspawn", "func_wall", "info_player_start", "light", "light_environment", "func_door",
+                        "info_compile_parameters", "info_portal", "info_leaf", "", "x" * 300])
+        return re.sub(r'("classname" ")[^"\n]*(")', lambda m: m.group(1) + v + m.group(2), text, count=1), f"classname -> {v[:20]!r}"
+    return text, "no-op"
+
+
+def fuzz_case(bindir: Path, plain_bindir: Path | None, seed_map: Path, seed: int, index: int, work: Path) -> tuple[str, str, list[str], int]:
+    """Mutate seed_map (1-3 corruptions), run the pipeline on it; (description, text, findings, tools that exited 0)."""
+    import random
+    rng = random.Random(f"{seed}-{index}")
+    text = seed_map.read_text(encoding="latin-1")
+    descs = []
+    for _ in range(rng.randint(1, 3)):
+        text, d = fuzz_mutate(text, rng)
+        descs.append(d)
+    desc = f"{seed_map.stem}: " + "; ".join(descs)
+    work.mkdir(parents=True)
+    (work / "fz.map").write_bytes(text.encode("latin-1"))
+    findings = []
+    passed = 0
+    env = env_for(bindir)
+    for tool, extra in FUZZ_STAGES:
+        try:
+            proc = run([bindir / tool, *extra, "fz"], cwd=work, capture_output=True, env=env, timeout=FUZZ_TIMEOUT)
+            findings += [f"{tool}: {f}" for f in summarize_sanitizer(proc.stderr)]
+        except subprocess.TimeoutExpired:
+            # The sanitizers slow the tools down 10 to 20 times: only a plain build that does not stop either is a hang.
+            try:
+                if plain_bindir is None:
+                    raise
+                proc = run([plain_bindir / tool, *extra, "fz"], cwd=work, capture_output=True, env=env, timeout=FUZZ_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                findings.append(f"{tool}: no exit after {FUZZ_TIMEOUT} s" + (" (plain build too)" if plain_bindir else ""))
+                break
+        if proc.returncode < 0:
+            findings.append(f"{tool}: killed by signal {-proc.returncode}")
+        elif proc.returncode not in (0, 1):
+            findings.append(f"{tool}: exit code {proc.returncode}")
+        if proc.returncode != 0:
+            break  # a tool that rejected the map leaves nothing for the next one
+        passed += 1
+    shutil.rmtree(work, ignore_errors=True)
+    return desc, text, findings, passed
+
+
+def cmd_fuzz(args) -> int:
+    bindir = check_bin(Path(args.bin))
+    seeds = [DATA / "corpus" / "maps" / f"{m}.map" for m in args.maps] if args.maps else \
+        [f for f in sorted((DATA / "corpus" / "maps").glob("fm_*.map")) if "_err_" not in f.name]  # those fail on purpose
+    plain = Path(args.plain) if args.plain else None
+    if plain:
+        check_bin(plain)
+    out = DATA / "fuzz"
+    found: dict[str, tuple[str, int]] = {}
+    ran = 0
+    depth = [0] * (len(FUZZ_STAGES) + 1)  # cases by number of tools that exited 0
+    with tempfile.TemporaryDirectory(dir=DATA) as tmp:
+        with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
+            futs = {pool.submit(fuzz_case, bindir, plain, seeds[i % len(seeds)], args.seed, i, Path(tmp) / str(i)): i
+                    for i in range(args.start, args.start + args.count)}
+            for fut in concurrent.futures.as_completed(futs):
+                i = futs[fut]
+                desc, text, findings, passed = fut.result()
+                ran += 1
+                depth[passed] += 1
+                for f in findings:
+                    if f not in found:
+                        out.mkdir(parents=True, exist_ok=True)
+                        repro = out / f"seed{args.seed}-case{i}.map"
+                        repro.write_bytes(text.encode("latin-1"))
+                        found[f] = (f"case {i} ({desc}) -> {repro}", 0)
+                    found[f] = (found[f][0], found[f][1] + 1)
+    log(f"fuzz: seed {args.seed}, cases {args.start}..{args.start + args.count - 1}, {ran} run, {len(found)} distinct finding(s)")
+    log("  tools that accepted the map: " + ", ".join(f"{n} tools: {c}" for n, c in enumerate(depth)))
+    for f, (first, n) in sorted(found.items()):
+        log(f"  [{n}x] {f}\n        first: {first}")
+    return 1 if found else 0
 
 
 # ---------------------------------------------------------------------------
@@ -2019,6 +2226,17 @@ def main() -> int:
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--sanitize", action="store_true", help="run the mutations against an ASan/UBSan build")
     p.set_defaults(func=cmd_probe)
+
+    p = sub.add_parser("fuzz", help="corrupted .map files through the pipeline; only sanitizer findings, crashes and hangs count")
+    p.add_argument("--bin", required=True, help="a sanitize build (build --tree --name sanitize --sanitize --cxx clang++)")
+    p.add_argument("--plain", help="a normal build (build --tree --name cand): a tool that times out under the sanitizers "
+                                  "is rerun with it, and only counts as a hang if it does not stop either")
+    p.add_argument("--count", type=int, default=300)
+    p.add_argument("--start", type=int, default=0, help="first case index (a finding names its case: --start N --count 1 repeats it)")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--maps", nargs="+", help="seed maps (default: every fm_* except the fm_*err_* ones)")
+    p.add_argument("--jobs", type=int, default=DEFAULT_JOBS)
+    p.set_defaults(func=cmd_fuzz)
 
     p = sub.add_parser("regress", help="candidate-only regression scenarios (oracle behaviour undefined there)")
     p.add_argument("--bin", required=True)

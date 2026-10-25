@@ -4,9 +4,21 @@
 
 #include <cmath>
 #include <cfloat>
+#include <concepts>
 #include <cstdint>
+#include <limits>
 
 constexpr double Q_PI = 3.14159265358979323846;
+
+// compat: (Int)value as x86 computes it. Truncation when value fits; NaN and out-of-range values give the
+// smallest Int ("integer indefinite"), where the C++ conversion is undefined. Maps with a texture vector or
+// coordinate such as 1e400 reach this, and the original tools' output on them is what x86 produced.
+template <std::signed_integral Int>
+inline Int TruncateToInt(const double value)
+{
+    constexpr double lowest = static_cast<double>(std::numeric_limits<Int>::min());
+    return (value >= lowest && value < -lowest) ? static_cast<Int>(value) : std::numeric_limits<Int>::min();
+}
 
 // HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
 constexpr float NORMAL_EPSILON = 0.00001;

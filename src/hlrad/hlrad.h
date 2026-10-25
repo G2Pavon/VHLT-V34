@@ -183,8 +183,9 @@ struct edgeshare_t
 
 extern edgeshare_t g_edgeshare[MAX_MAP_EDGES];
 // lerp.c stuff
-// These are bitflags for lighting adjustments for special cases
-typedef enum
+// These are bitflags for lighting adjustments for special cases.
+// Fixed underlying type: the value comes from the zhlt_lightflags key as any int, which an enum without one can't hold.
+typedef enum : int
 {
     eModelLightmodeNull = 0,
     eModelLightmodeOpaque = 0x02,

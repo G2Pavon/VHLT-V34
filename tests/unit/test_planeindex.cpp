@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <array>
+#include <limits>
 #include <random>
 #include <vector>
 
@@ -111,5 +112,25 @@ TEST_SUITE("planeindex")
         CHECK(index.Find(normal, far_origin, planes) == 1);
         const vec_t none[3] = {0, 0, 200};
         CHECK(index.Find(normal, none, planes) == -1);
+    }
+
+    TEST_CASE("PlaneIndex copes with normals that are not finite (a 1e400 coordinate in a .map)")
+    {
+        const vec_t inf = std::numeric_limits<vec_t>::infinity();
+        const vec_t nan = std::numeric_limits<vec_t>::quiet_NaN();
+        const vec_t origin[3] = {0, 0, 0};
+        std::vector<TestPlane> planes;
+        PlaneIndex index;
+        for (const vec_t bad : {inf, -inf, nan, vec_t(1e300), vec_t(-1e300)})
+        {
+            const TestPlane p{{bad, 0, 1}, 0};
+            index.Insert(static_cast<int>(planes.size()), p.normal, p.dist);
+            planes.push_back(p);
+        }
+        for (const TestPlane &p : planes)
+        {
+            // Same answer as the linear scan: nothing is "the same plane" as a NaN or an infinity.
+            CHECK(index.Find(p.normal, origin, planes) == LinearFind(p.normal, origin, planes));
+        }
     }
 }

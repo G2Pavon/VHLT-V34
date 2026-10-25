@@ -49,6 +49,9 @@ void SubdivideFace(face_t *f, face_t **prevptr)
     if (f->facestyle == face_discardable)
         return;
 
+    // Every split makes one more face, and a map holds at most MAX_MAP_FACES. A huge texture vector (1e11) asks
+    // for billions of splits, so the original ran for hours and never got to its "Exceeded MAX_MAP_FACES".
+    int splits = 0;
     for (auto vec : tex->vecs)
     {
         while (true)
@@ -73,6 +76,12 @@ void SubdivideFace(face_t *f, face_t **prevptr)
             {
                 break;
             }
+            // An infinite or NaN extent (a texture vector such as 1e400) never gets under the size: the
+            // original split the face forever.
+            if (!std::isfinite(maxs - mins))
+            {
+                Error("Face with texinfo %d has a texture extent that is not finite; cannot subdivide it.", f->texturenum);
+            }
 
             // split it
 
@@ -83,6 +92,7 @@ void SubdivideFace(face_t *f, face_t **prevptr)
             plane.dist = (mins + g_subdivide_size - TEXTURE_STEP) / v; //plane.dist = (mins + g_subdivide_size - 16) / v; //--vluzacn
             face_t *next = f->next;
             SplitFace(f, &plane, &front, &back);
+            hlassume(++splits < MAX_MAP_FACES, assume_MAX_MAP_FACES);
 
             f = next;
             if (front)
