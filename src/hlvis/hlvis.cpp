@@ -689,7 +689,7 @@ int main(const int argc, char **argv)
 
     const CommandLineOption options[] = {
         {"-threads", [](const char *value) {
-             g_numthreads = std::atoi(value);
+             g_numthreads = ParseInt(value);
              if (g_numthreads < 1)
              {
                  Log("Expected value of at least 1 for '-threads'\n");
@@ -709,7 +709,7 @@ int main(const int argc, char **argv)
         {"-lightdata", [](const char *value) { g_max_map_lightdata = KilobytesToBytes(value); }, true},
         {"-maxdistance", [](const char *value) {
              // compat: abs of the int (std::abs(INT_MIN) was undefined; it gave 2^31 in practice)
-             g_maxdistance = static_cast<unsigned int>(std::llabs(std::atoi(value)));
+             g_maxdistance = static_cast<unsigned int>(std::llabs(ParseInt(value)));
          },
          true},
     };

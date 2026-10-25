@@ -1287,7 +1287,7 @@ int main(const int argc, char **argv)
         {"-threads", [](const char *value) {
              // B4: sets the thread count (it went into a local that shadowed it, and was dropped);
              // hlbsp itself runs on one thread
-             g_numthreads = std::atoi(value);
+             g_numthreads = ParseInt(value);
              if (g_numthreads < 1)
              {
                  Log("Expected value of at least 1 for '-threads'\n");
@@ -1299,7 +1299,7 @@ int main(const int argc, char **argv)
         CommandLineFlag("-chart", g_chart, true),
         CommandLineFlag("-nohull2", g_nohull2, true),
         {"-subdivide", [](const char *value) {
-             g_subdivide_size = std::atoi(value);
+             g_subdivide_size = ParseInt(value);
              if (g_subdivide_size > MAX_SUBDIVIDE_SIZE) // compat: the warnings say "ignored", the value is clamped
              {
                  Warning("Maximum value for subdivide size is %i, '-subdivide %i' ignored",
@@ -1315,7 +1315,7 @@ int main(const int argc, char **argv)
          },
          true},
         {"-maxnodesize", [](const char *value) {
-             g_maxnode_size = std::atoi(value);
+             g_maxnode_size = ParseInt(value);
              if (g_maxnode_size > MAX_MAXNODE_SIZE)
              {
                  Warning("Maximum value for max node size is %i, '-maxnodesize %i' ignored",

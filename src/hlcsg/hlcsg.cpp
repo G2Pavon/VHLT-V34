@@ -836,7 +836,7 @@ static void SetLightStyles()
             //LRC:
             // if it's not a normal light entity, allocate it a new style if necessary.
             t = ValueForKey(e, "style");
-            switch (std::atoi(t))
+            switch (ParseInt(t))
             {
             case 0: // not a light, no style, generally pretty boring
                 continue;
@@ -974,7 +974,7 @@ static void CheckForNoClip()
         entity_t *ent = &g_entities[i];
 
         const char *entclassname = ValueForKey(ent, "classname"); // was copied, truncated to MAX_KEY - 1: no effect on these names
-        int spawnflags = std::atoi(ValueForKey(ent, "spawnflags"));
+        int spawnflags = ParseInt(ValueForKey(ent, "spawnflags"));
         int skin = IntForKey(ent, "skin"); //vluzacn
 
         if ((skin != -16) &&
@@ -1242,7 +1242,7 @@ int main(const int argc, char **argv)
     // detect argv
     const CommandLineOption options[] = {
         {"-threads", [](const char *value) {
-             g_numthreads = std::atoi(value);
+             g_numthreads = ParseInt(value);
              if (g_numthreads < 1)
              {
                  Log("Expected value of at least 1 for '-threads'\n");

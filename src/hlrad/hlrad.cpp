@@ -1375,7 +1375,7 @@ static void MakePatches()
 
         if (*(s = ValueForKey(ent, "zhlt_lightflags")))
         {
-            lightmode = (eModelLightmodes)std::atoi(s);
+            lightmode = (eModelLightmodes)ParseInt(s);
         }
 
         // models with origin brushes need to be offset into their in-use position
@@ -1438,7 +1438,7 @@ static void MakePatches()
         //LRC:
         if (*(s = ValueForKey(ent, "style")))
         {
-            style = std::atoi(s);
+            style = ParseInt(s);
             if (style < 0)
                 style = -style;
         }
@@ -2305,7 +2305,7 @@ int main(const int argc, char **argv)
     };
     const CommandLineOption options[] = {
         {"-bounce", [](const char *value) {
-             g_numbounce = std::atoi(value);
+             g_numbounce = ParseInt(value);
              if (g_numbounce > 1000)
              {
                  Log("Unexpectedly large value (>1000) for '-bounce'\n");
@@ -2314,7 +2314,7 @@ int main(const int argc, char **argv)
          },
          true},
         {"-threads", [](const char *value) {
-             g_numthreads = std::atoi(value);
+             g_numthreads = ParseInt(value);
              if (g_numthreads < 1)
              {
                  Log("Expected value of at least 1 for '-threads'\n");
@@ -2410,24 +2410,24 @@ int main(const int argc, char **argv)
         colour("-colourscale", g_colour_lightscale, 1),
         CommandLineFlag("-customshadowwithbounce", g_customshadow_with_bouncelight, true),
         CommandLineFlag("-rgbtransfers", g_rgb_transfers, true),
-        {"-minlight", [](const char *value) { g_minlight = (unsigned char)qmax(0, qmin(std::atoi(value), 255)); }, true},
-        {"-softsky", [](const char *value) { g_softsky = (bool)std::atoi(value); }, true},
+        {"-minlight", [](const char *value) { g_minlight = (unsigned char)qmax(0, qmin(ParseInt(value), 255)); }, true},
+        {"-softsky", [](const char *value) { g_softsky = (bool)ParseInt(value); }, true},
         {"-compress", [](const char *value) {
-             const int type = std::atoi(value); // checked before the cast: an enum cannot hold any int
+             const int type = ParseInt(value); // checked before the cast: an enum cannot hold any int
              if (type < 0 || type >= float_type_count)
                  Usage();
              g_transfer_compress_type = (float_type)type;
          },
          true},
         {"-rgbcompress", [](const char *value) {
-             const int type = std::atoi(value);
+             const int type = ParseInt(value);
              if (type < 0 || type >= vector_type_count)
                  Usage();
              g_rgbtransfer_compress_type = (vector_type)type;
          },
          true},
         number("-depth", g_translucentdepth),
-        {"-blockopaque", [](const char *value) { g_blockopaque = std::atoi(value); }, true},
+        {"-blockopaque", [](const char *value) { g_blockopaque = ParseInt(value); }, true},
         {"-waddir", [](const char *value) { AddWadFolder(value); }, true},
         CommandLineFlag("-notextures", g_notextures, true),
         number("-texreflectgamma", g_texreflectgamma),

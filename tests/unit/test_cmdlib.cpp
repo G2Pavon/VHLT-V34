@@ -268,4 +268,31 @@ TEST_SUITE("cmdlib")
             }
         }
     }
+
+    TEST_CASE("ParseInt is glibc's atoi, overflow included")
+    {
+        // literal values, so this means the same on a platform whose atoi differs
+        CHECK(ParseInt("12") == 12);
+        CHECK(ParseInt(" \t+12") == 12);
+        CHECK(ParseInt("-12abc") == -12);
+        CHECK(ParseInt("abc") == 0);
+        CHECK(ParseInt("") == 0);
+        CHECK(ParseInt("0x10") == 0);
+        CHECK(ParseInt("12.9") == 12);
+        CHECK(ParseInt("2147483647") == 2147483647);
+        CHECK(ParseInt("2147483648") == -2147483647 - 1);
+        CHECK(ParseInt("4294967298") == 2);
+        CHECK(ParseInt("99999999999") == 1215752191);
+        CHECK(ParseInt("-99999999999") == -1215752191);
+        CHECK(ParseInt("99999999999999999999999") == -1); // strtoll clamps to LLONG_MAX
+        CHECK(ParseInt("-99999999999999999999999") == 0); // LLONG_MIN
+#if defined(__GLIBC__)
+        for (const char *s : {"12", " +12", "-12abc", "abc", "2147483648", "4294967298", "99999999999", "-99999999999",
+                              "99999999999999999999999", "-99999999999999999999999"})
+        {
+            CAPTURE(s);
+            CHECK(ParseInt(s) == std::atoi(s));
+        }
+#endif
+    }
 }

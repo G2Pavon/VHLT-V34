@@ -6,6 +6,8 @@
 #include <functional>
 #include <span>
 
+#include "common/cmdlib.h"
+
 struct CommandLineOption
 {
     const char *name; // e.g. "-threads"; matched case-insensitively
@@ -34,7 +36,7 @@ inline int KilobytesToBytes(int kilobytes)
 }
 inline int KilobytesToBytes(const char *value)
 {
-    return KilobytesToBytes(std::atoi(value));
+    return KilobytesToBytes(ParseInt(value));
 }
 
 // Applies argv[1..argc-1] in order and returns the one argument that is not an option (the map

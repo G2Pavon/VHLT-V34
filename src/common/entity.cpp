@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "common/cmdlib.h"
+
 EntityKeys::Storage::iterator EntityKeys::FindEntry(std::string_view key)
 {
     for (auto it = m_entries.end(); it != m_entries.begin();)
@@ -80,7 +82,7 @@ const char *ValueForKey(const entity_t *const ent, const char *const key)
 
 int IntForKey(const entity_t *const ent, const char *const key)
 {
-    return std::atoi(ValueForKey(ent, key));
+    return ParseInt(ValueForKey(ent, key));
 }
 
 vec_t FloatForKey(const entity_t *const ent, const char *const key)

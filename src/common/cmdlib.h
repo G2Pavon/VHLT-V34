@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <cstdlib>
 #include <string>
 #include <string_view>
 
@@ -65,6 +66,16 @@ T *ProbeSearch(T *first, std::size_t count, Compare compare)
             return first + mid;
     }
     return nullptr;
+}
+
+// atoi, the way glibc does it: blanks, a sign and decimal digits, stopping at anything else; 0 if
+// there are none. compat: atoi is undefined past INT_MAX. glibc computes it as (int)strtol, which
+// on 64-bit Linux keeps the low 32 bits ("4294967298" is 2), while a 32-bit long (Windows) clamped to
+// INT_MAX. strtoll plus the C++20 int conversion (defined, modulo 2^32) gives glibc's result
+// everywhere.
+inline int ParseInt(const char *const text)
+{
+    return static_cast<int>(std::strtoll(text, nullptr, 10));
 }
 
 // printf-style formatting into a std::string, without a length limit.
