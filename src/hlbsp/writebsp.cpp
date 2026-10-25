@@ -573,7 +573,10 @@ static void ReduceTexdata()
             }
         }
     }
-    std::memcpy(g_dtexdata + MiptexLumpView::DataofsPosition(Num), newdata.data(), newdatasize);
+    if (newdatasize > 0) // newdata.data() is null when no texture is kept: memcpy must not get it
+    {
+        std::memcpy(g_dtexdata + MiptexLumpView::DataofsPosition(Num), newdata.data(), newdatasize);
+    }
     Log("Reduced %d texdatas to %d (%d bytes to %d)\n", nummiptex, Num, g_texdatasize, Size);
     lump.set_count(Num);
     g_texdatasize = Size;

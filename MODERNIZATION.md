@@ -98,7 +98,7 @@ expectation that could drift.
 | Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
 | `cli` | `parity.py cli --bin $B` | 255 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
 | `regress` | `parity.py regress --bin $B` | 8 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
-| `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. |
+| `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. The `cli` cases run under the sanitizers too, with `cli --bin` pointing at the sanitize build (about 6 min): findings show up as stderr differences. First run (2026-10-25): one finding, a `memcpy` of a null source with size 0 in hlbsp `writebsp.cpp` (maps with no textures), fixed with a guard. |
 | `probe` | `parity.py probe [--mutations 400 --sanitize]` | `common/` BSP loader/writer against the oracle's on 58 BSPs, plus a seeded corruption smoke test. |
 | `coverage` | `parity.py coverage --tool hlcsg` | gcov line coverage per tool over its tiers; used to choose feature maps and the core map set. |
 | `bench` | `parity.py bench --bin $B` | Timing against `bench/oracle-quick-t1.json`. |
@@ -317,7 +317,6 @@ points:
   are never found today. That would be a deliberate feature with new expected results, not a
   refactor (section 7).
 - **Fuzzing the `.map` parser and entity values**, as `probe` already does for BSP input.
-- **Sanitizers over the `cli` cases** (today `sanitize` runs the tiers only).
 - **hlrad performance:** about 74% of total pipeline time. hlvis `-fastthreads` shows the room
   between deterministic and nondeterministic scheduling; a faster deterministic scheduler is
   unexplored.

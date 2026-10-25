@@ -1817,6 +1817,10 @@ def cli_numbers(cand: Path, oracle: Path, tmp: Path) -> list[str]:
 
 
 def cmd_cli(args) -> int:
+    # Lets `cli --bin <sanitize build>` run: findings show up as stderr differences, and leaks (by design) must not
+    # change the exit code. Plain builds ignore both variables.
+    os.environ.setdefault("ASAN_OPTIONS", "detect_leaks=0:halt_on_error=0:abort_on_error=0")
+    os.environ.setdefault("UBSAN_OPTIONS", "print_stacktrace=1:halt_on_error=0")
     cand = check_bin(Path(args.bin))
     oracle = DATA / "builds" / "oracle" / "bin"
     failures = []
