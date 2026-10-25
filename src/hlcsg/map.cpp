@@ -529,11 +529,9 @@ static bool ParseMapEntity(Tokenizer &tokens)
     {
         bool ent_move_b = false;
         bool ent_scale_b = false;
-        bool ent_gscale_b = false;
         vec3_t ent_move = {0, 0, 0};
         vec3_t ent_scale_origin = {0, 0, 0};
         vec_t ent_scale = 1;
-        vec_t ent_gscale = 1;
 
         double v[4] = {0, 0, 0, 0};
         if (*ValueForKey(mapent, "zhlt_transform"))
@@ -561,7 +559,7 @@ static bool ParseMapEntity(Tokenizer &tokens)
         }
         GetVectorForKey(mapent, "origin", ent_scale_origin);
 
-        if (ent_move_b || ent_scale_b || ent_gscale_b)
+        if (ent_move_b || ent_scale_b)
         {
 
             int ibrush, iside;
@@ -584,10 +582,6 @@ static bool ParseMapEntity(Tokenizer &tokens)
                         if (ent_move_b)
                         {
                             VectorAdd(point, ent_move, point);
-                        }
-                        if (ent_gscale_b)
-                        {
-                            VectorScale(point, ent_gscale, point);
                         }
                     }
                     // note that  tex->vecs = td.vects.valve.Axis / td.vects.valve.scale
@@ -659,29 +653,11 @@ static bool ParseMapEntity(Tokenizer &tokens)
                             zeroscale = true;
                         }
                     }
-                    if (ent_gscale_b)
-                    {
-                        side->td.vects.scale[0] *= ent_gscale;
-                        side->td.vects.scale[1] *= ent_gscale;
-                    }
                     if (zeroscale)
                     {
                         Error("Entity %i, Brush %i: invalid texture scale.\n",
                               brush->originalentitynum, brush->originalbrushnum);
                     }
-                }
-            }
-            if (ent_gscale_b)
-            {
-                if (*ValueForKey(mapent, "origin"))
-                {
-                    double v[3];
-                    int origin[3];
-                    GetVectorForKey(mapent, "origin", v);
-                    VectorScale(v, ent_gscale, v);
-                    for (int i = 0; i < 3; ++i)
-                        origin[i] = (int)(v[i] >= 0 ? v[i] + 0.5 : v[i] - 0.5);
-                    SetKeyValue(mapent, "origin", StringPrintf("%d %d %d", origin[0], origin[1], origin[2]).c_str());
                 }
             }
             {
@@ -699,10 +675,6 @@ static bool ParseMapEntity(Tokenizer &tokens)
                         if (ent_move_b)
                         {
                             VectorAdd(point, ent_move, point);
-                        }
-                        if (ent_gscale_b)
-                        {
-                            VectorScale(point, ent_gscale, point);
                         }
                     }
                     SetKeyValue(mapent, "zhlt_minsmaxs",

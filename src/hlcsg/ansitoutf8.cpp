@@ -25,16 +25,9 @@ static void push_utf8(std::string &s, uint32_t cp)
         s.push_back(static_cast<char>(0xC0 | (cp >> 6)));
         s.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
     }
-    else if (cp < 0x10000)
+    else // cp is at most 0x20AC here (a Windows-1252 table entry): no 4-byte sequences
     {
         s.push_back(static_cast<char>(0xE0 | (cp >> 12)));
-        s.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
-        s.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
-    }
-    else
-    {
-        s.push_back(static_cast<char>(0xF0 | (cp >> 18)));
-        s.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
         s.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
         s.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
     }
