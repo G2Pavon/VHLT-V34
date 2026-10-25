@@ -764,6 +764,11 @@ def run_isolated(bindir: Path, tier: str, name: str, ref_root: Path, root: Path,
 # comparing
 
 
+# Differences from the oracle that are on purpose (MODERNIZATION.md 5.5), allowed in every comparison: files the
+# candidate no longer writes, and the log lines that announced them. hlvis -maxdistance wrote <map>.vdt, a dump of the
+# visdata that nothing reads ("saving visdata to ...").
+INTENDED_MISSING_SUFFIXES = (".vdt",)
+
 LOG_RULES = [
     # check --threads: the thread count shows up in the command line, the settings table and RunThreadsOn
     (re.compile(rb"^Running with \d+ threads", re.M), b"Running with <n> threads"),
@@ -774,6 +779,7 @@ LOG_RULES = [
     (re.compile(rb"\(\d+\.\d+ seconds\)"), b"(<t> seconds)"),                  # RunThreadsOn
     (re.compile(rb"\d+\.\d+ seconds elapsed( \[[\dhms ]+\])?"), b"<t> seconds elapsed"),
     (re.compile(rb"(\(\d+%: est\. time )[^)]*\)"), rb"\1<t>)"),         # -estimate progress (console only)
+    (re.compile(rb"^saving visdata to [^\n]*\n", re.M), b""),                # the .vdt dump, see INTENDED_MISSING_SUFFIXES
 ]
 
 
@@ -788,7 +794,8 @@ def compare_dirs(ref: Path, cand: Path, padding: str) -> list[str]:
     ref_files = {f.name for f in ref.iterdir()}
     cand_files = {f.name for f in cand.iterdir()}
     for f in sorted(ref_files - cand_files):
-        problems.append(f"missing {f}")
+        if not f.endswith(INTENDED_MISSING_SUFFIXES):
+            problems.append(f"missing {f}")
     for f in sorted(cand_files - ref_files):
         problems.append(f"unexpected {f}")
     for f in sorted(ref_files & cand_files):
@@ -1661,12 +1668,37 @@ def regress_void_ignored(bindir: Path, tmp: Path) -> list[str]:
     return problems
 
 
+def regress_vis_no_vdt(bindir: Path, tmp: Path) -> list[str]:
+    """hlvis -maxdistance wrote <map>.vdt, a dump of the visdata that no tool reads, and logged "saving visdata to".
+    Neither may appear now; the .bsp is the oracle's."""
+    name = "fm_vis_overview"
+    oracle = DATA / "builds" / "oracle" / "bin"
+    dirs = {}
+    for label, tool_dir in (("oracle", oracle), ("cand", bindir)):
+        work = tmp / label
+        shutil.copytree(DATA / "refs" / "full" / name / "bsp", work)
+        proc = run([tool_dir / "hlvis", "-threads", "1", "-maxdistance", "512", name], cwd=work, capture_output=True,
+                   env=env_for(tool_dir))
+        dirs[label] = (work, proc)
+    problems = []
+    if not (dirs["oracle"][0] / f"{name}.vdt").exists():
+        problems.append("the oracle does not write the .vdt: this scenario no longer exercises it")
+    cand, proc = dirs["cand"]
+    if proc.returncode != 0:
+        problems.append(f"hlvis exit {proc.returncode}")
+    if (cand / f"{name}.vdt").exists():
+        problems.append("the .vdt is written")
+    if b"saving visdata" in proc.stdout + proc.stderr + (cand / f"{name}.log").read_bytes():
+        problems.append("the log announces a .vdt")
+    return problems + compare_dirs(dirs["oracle"][0], cand, "zero")
+
+
 REGRESSIONS = {"texdata-growth": regress_texdata_growth, "leak-all-hulls": regress_leak_all_hulls,
                "hlbsp-threads": regress_hlbsp_threads, "hlvis-fastthreads": regress_hlvis_fastthreads,
                "lightdata-growth": regress_lightdata_growth, "waddir": regress_waddir,
                "texdata-zero": regress_texdata_zero, "rad-bad-texture": regress_rad_bad_texture,
                "bsp-texvec-hang": regress_bsp_texvec_hang,
-               "void-ignored": regress_void_ignored}
+               "void-ignored": regress_void_ignored, "vis-no-vdt": regress_vis_no_vdt}
 
 
 def cmd_regress(args) -> int:
@@ -1988,7 +2020,7 @@ def _cli_run(exe: Path, argv: list[str], cwd: Path, added: list[bytes], template
     blob = lambda e: (cache.root / "blobs" / e[1][:2] / e[1]).read_bytes()
     # .bsp files without lump padding: the oracle leaves stale bytes there (check verifies the padding)
     files = {n: stagecache.bsp_canonical(blob(e)) if n.endswith(".bsp") else _drop_lines(normalize_log(blob(e)), added)
-             for n, e in sorted(entry["outputs"].items())}
+             for n, e in sorted(entry["outputs"].items()) if not n.endswith(INTENDED_MISSING_SUFFIXES)}
     return (entry["result"]["exit"], _drop_lines(normalize_log(blob(entry["console"]["cli.stdout"])), added),
             _drop_lines(normalize_log(blob(entry["console"]["cli.stderr"])), added), files)
 
@@ -2220,7 +2252,7 @@ def _number_pipeline(bindir: Path, name: str, text: str, root: Path, cache) -> t
         codes.append(r["exit"])
         out += normalize_log(blob(r["console"][f"{stage}.stdout"]) + blob(r["console"][f"{stage}.stderr"]))
         last = r
-    return codes, out, {n: e[0] for n, e in last["outputs"].items()}
+    return codes, out, {n: e[0] for n, e in last["outputs"].items() if not n.endswith(INTENDED_MISSING_SUFFIXES)}
 
 
 def _number_case(cand: Path, oracle: Path, name: str, how: str, root: Path, cache) -> str | None:

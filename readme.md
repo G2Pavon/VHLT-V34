@@ -9,7 +9,7 @@ modernized tools write zeros. The test harness (`tests/`) compares every stage a
 original tools built with the same compiler. The last run of every option tier on the whole corpus
 passed on 55 maps (46 tiers). Every change since then has passed the routine gates: the core map
 set, the whole corpus at the quick tier, 255 command lines (option parsing, path handling, number
-spellings) and 10 regression scenarios.
+spellings) and 11 regression scenarios.
 
 `MODERNIZATION.md` has the full context for contributors: what changed, what was audited, how the
 tests keep the output identical, and what is still open.

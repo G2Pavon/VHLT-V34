@@ -93,6 +93,9 @@ as `build --tree --name cand` makes (same compiler and flags), so both share the
   difference is attributed to the tool that caused it.
 - Files are compared byte for byte, `.bsp` structurally with `bspdiff.py` (record-level report),
   `.log`/`.err` after normalizing build date, argv[0] path and elapsed times.
+- Differences that are on purpose (MODERNIZATION.md 5.5) are allowed in every comparison by
+  `INTENDED_MISSING_SUFFIXES` (files the candidate no longer writes: `.vdt`) and by `LOG_RULES` (log lines
+  it no longer prints). The oracle's references are never touched.
 - Exit codes must match too. `plants_soc_final` is a Quake-3-format map that hlcsg rejects; it
   checks that the error path is unchanged.
 - `--padding`: the 0–3 bytes after each lump. The oracle leaks stale buffer bytes there; since
@@ -345,7 +348,7 @@ python3 $P check --bin ../vhlt-parity/builds/verify/bin --stages csg && python3 
 python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--baseline ../vhlt-parity/bench/oracle-quick-t1.json]
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
-python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang, void-ignored
+python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir, texdata-zero, rad-bad-texture, bsp-texvec-hang, void-ignored, vis-no-vdt
 python3 $P smoke                                 # build, unit tests, check --smoke, cli --smoke, regress: seconds
 python3 $P gate [--tiers T...] [--skip S...] [--milestone | --release] [--fail-fast]   # every tier in one queue + unit tests, regress, cli, sanitize
 python3 $P check [--smoke] [--fail-fast]         # --bin defaults to build/ (as do cli, regress, bench)

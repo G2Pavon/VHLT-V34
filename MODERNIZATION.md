@@ -98,7 +98,7 @@ expectation that could drift.
 | Parity `check` | `parity.py check --bin $B [--tier T] [--stages rad] [--full]` | Every stage's files against the oracle's reference outputs: 46 tiers (`quick`, `full`, 12 csg, 8 bsp, 4 vis and 20 rad option tiers) on the corpus. |
 | Corpus | 55 maps | 18 converted Valve/community maps, stock `cstrike` maps, and 32 synthetic feature maps (`fm_*`) generated so that hlcsg/hlbsp/hlvis/hlrad features the real maps never use get exercised, including error paths (`fm_err_*`). |
 | `cli` | `parity.py cli --bin $B` | 255 command lines, oracle vs candidate, live (exit code, stdout, stderr, every file): option parsing; **path handling** (S4a: backslashes, drive letters, `WADROOT`, `-wadinclude`, duplicate texture names); **number spellings** (S6a: 78 full pipelines with `+N`, blanks, exponents, hex, trailing junk; overflow cases). |
-| `regress` | `parity.py regress --bin $B` | 10 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
+| `regress` | `parity.py regress --bin $B` | 11 candidate-only scenarios where the oracle crashed or behaved differently on purpose (heap overflows, bad texture index, endless face subdivision, multi-hull leak trail, `-waddir`, honest `-threads`, `-fastthreads`). |
 | `sanitize` | `parity.py sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt [--leaks]` | ASan + UBSan (clang build) over the tiers; fails on any finding not in the baseline (the baseline is empty). `--leaks` adds LeakSanitizer. The `cli` cases run under the sanitizers too, with `cli --bin` pointing at the sanitize build (about 6 min): findings show up as stderr differences. First run (2026-10-25): one finding, a `memcpy` of a null source with size 0 in hlbsp `writebsp.cpp` (maps with no textures), fixed with a guard. |
 | `probe` | `parity.py probe [--mutations 400 --sanitize]` | `common/` BSP loader/writer against the oracle's on 58 BSPs, plus a seeded corruption smoke test. |
 | `fuzz` | `parity.py fuzz --bin ../vhlt-parity/builds/sanitize/bin --plain $B [--seed N --count 600]` | Seeded corruptions of the `fm_*` maps (syntax damage, entity key/value edits, number respellings, plane nudges) through hlcsg → hlbsp → hlvis → hlrad on the sanitize build. No oracle: a finding is a sanitizer report, a crash by signal, or a tool that does not stop (rechecked with the plain build, since the sanitizers slow the tools 10 to 20 times). Reproducers are kept in `fuzz/`; `--start N --count 1` repeats a case. About 15 min per 600 cases, roughly 45% of them get through all four tools. |
@@ -223,6 +223,28 @@ before it was committed.
 | `a559a9d` | S6a | Number-spelling pipelines and overflow cases in `cli`. |
 | `eac7eea` | S6b | All `atoi` → `ParseInt` (`strtoll` + C++20 int conversion): glibc's result, with no undefined behaviour, the same on Windows. |
 
+### 5.4b Dead-code cleanup of hlcsg and hlvis (2026-10-25)
+
+Found with four kinds of evidence: the linker's own list of unreferenced symbols (`--gc-sections
+--print-gc-sections` on a build with function and data sections), identifiers that occur once or
+are only written, gcov line coverage over every tier, and a scratch build with the candidate code
+deleted. Removed (no output change): hlcsg's `Brush_LoadEntity` declaration (defined nowhere),
+`WadInclude_i`, the write-only `g_nMapFileVersion` and its `mapversion` branch, the unused
+`s_baseaxis` table and a stale comment; hlvis's `CalcAmbientSounds` declaration (defined nowhere),
+`PORTALFILE`, the write-only `portal_t::numcansee` and its increment, and the commented-out
+`visblock`/`postcompile` code. The `.vdt` dump (5.5) went with it. 43 lines in 6 files, plus the dump.
+
+What looked dead and wasn't: `LumpLessByName`/`LumpLessByWadAndName` (the linker reports an
+out-of-line copy of a function the compiler inlined), `brushhull_t`'s copy operations (`= delete`
+doesn't compile: `CopyCurrentBrush` copies brushes; the corpus never does), and the code the tiers
+never reach (wad autodetect, noclip entities, `gscale`, contents from texture names, the non-axial
+hull expansions, hlvis's `info_compile_parameters` settings and its fast-threads branch), which is
+untested rather than dead. Left for the owner: the `VHLT_VERIFY_INDEXES` scaffolding in hlcsg
+(3 `#ifdef` blocks and `ScanMapPlanes`, the optional index verification build), and about 15 dead
+functions in `common/` (`LogEnd`, `Tokenizer::EndOfStream`, `Winding::Reset`, `EntityKeys::Set` and
+`Find` are used by nothing; `safe_strncat`, `str_casecmp`, `str_ncasecmp`, `SafeOpenRead`,
+`Winding::Valid` only by the unit tests).
+
 ### 5.5 Intended behaviour differences from the oracle
 
 Everything else is byte-identical. These are deliberate; the right column says how each is
@@ -239,6 +261,7 @@ covered:
 | An out-of-range face texture index in hlrad is an error (oracle read outside the tables) | `regress rad-bad-texture` (R1; the corpus never has one, so the scenario patches every texinfo of fm_rad_texlights to texture 9999) |
 | `-texdata x` (0-byte buffer) is an error (oracle overflowed it) | `regress texdata-zero` (candidate-only: the oracle's result is undefined, so it is not in `cli`) |
 | hlbsp no longer reads `<map>.void` or `entities.void` (classnames allowed to lie outside the world): an entity in the void leaks as it does without the file. The corpus never had one; hlbsp's output without a .void file is unchanged. `ExecutablePath()` went with it | `regress void-ignored` (the oracle with the file does not leak; the candidate leaks with or without it) |
+| hlvis `-maxdistance` no longer writes `<map>.vdt` (a dump of the visdata that no tool read; its own comment said "BUG BUG BUG") nor logs `saving visdata to ...`. The `.bsp` is unchanged | `regress vis-no-vdt` (the oracle writes the file, the candidate doesn't); the harness allows the oracle's `.vdt` (`INTENDED_MISSING_SUFFIXES`) and drops the log line (`LOG_RULES`) in every comparison |
 | A worldspawn-only `.bsp` loads again (Phase 2 regression, fixed in V1) | `cli hlvis-empty` |
 | hlbsp stops with an error where the oracle never finished: a texture vector of `-1e400` (error "not finite") or `-99999999999` ("Exceeded MAX_MAP_FACES" once a face needs that many splits) made `SubdivideFace` split forever | `regress bsp-texvec-hang` (the oracle times out on both) |
 | Log/console messages longer than 2047 bytes are no longer cut | unit test |

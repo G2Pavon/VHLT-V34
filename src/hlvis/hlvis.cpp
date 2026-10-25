@@ -306,34 +306,11 @@ static void CalcPortalVis()
     NamedRunThreadsOn(g_numportals * 2, g_estimate, LeafThread);
 }
 
-static void SaveVisData(const char *filename)
-{
-    UniqueFile file(std::fopen(filename, "wb"));
-    std::FILE *fp = file.get();
-
-    if (!fp)
-        return;
-
-    SafeWrite(fp, g_dvisdata, (vismap_p - g_dvisdata));
-
-    // BUG BUG BUG!
-    // Leaf offsets need to be saved too!!!!
-    for (int i = 0; i < g_numleafs; i++)
-    {
-        SafeWrite(fp, &g_dleafs[i].visofs, sizeof(int));
-    }
-}
-
 static void CalcVis()
 {
-    const std::string visdatafile = g_Mapname + ".vdt";
-
-    // Remove this file
-    RemoveFile(visdatafile);
-
     NamedRunThreadsOn(g_numportals * 2, g_estimate, BasePortalVis);
 
-    // First do a normal VIS, save to file, then redo MaxDistVis
+    // First do a normal VIS, then redo MaxDistVis
 
     CalcPortalVis();
     // assemble the leaf vis lists by oring and compressing the portal lists
@@ -348,9 +325,6 @@ static void CalcVis()
     if (g_maxdistance)
     {
         totalvis = 0;
-
-        Log("saving visdata to %s...\n", visdatafile.c_str());
-        SaveVisData(visdatafile.c_str());
 
         // We need to reset the uncompressed variable and portal visbits
         uncompressed.assign(uncompressed.size(), 0);
