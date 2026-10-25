@@ -59,7 +59,6 @@ struct portal_t
     std::vector<bitword_t> visbits;  // g_bitlongs words once computed
     std::vector<bitword_t> mightsee; // g_bitlongs words once computed
     unsigned nummightsee = 0;
-    int numcansee = 0;
 };
 
 constexpr int MAX_PORTALS_ON_LEAF = 256;
@@ -106,7 +105,6 @@ extern int g_numportals;
 extern unsigned g_portalleafs;
 
 extern unsigned int g_maxdistance;
-//extern bool		g_postcompile;
 struct overview_t
 {
     vec3_t origin;
@@ -132,7 +130,5 @@ std::vector<bitword_t> NewBitString();
 void BasePortalVis(int /*threadnum*/);
 
 void MaxDistVis(int /*threadnum*/);
-//extern void		PostMaxDistVis(int threadnum);
 
 void PortalFlow(portal_t *p);
-void CalcAmbientSounds();

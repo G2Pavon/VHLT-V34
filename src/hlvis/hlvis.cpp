@@ -20,7 +20,6 @@
 #include "common/winding.h"
 
 
-static constexpr const char *PORTALFILE = "PRT1"; // .prt file header
 static constexpr bool DEFAULT_FASTVIS = false;
 static constexpr bool DEFAULT_ESTIMATE = false;
 static constexpr bool DEFAULT_FULLVIS = false;
@@ -332,13 +331,7 @@ static void CalcVis()
     // Remove this file
     RemoveFile(visdatafile);
 
-    //		InitVisBlock();
-    //		SetupVisBlockLeafs();
-
     NamedRunThreadsOn(g_numportals * 2, g_estimate, BasePortalVis);
-
-    //		if(g_numvisblockers)
-    //			NamedRunThreadsOn(g_numvisblockers, g_estimate, BlockVis);
 
     // First do a normal VIS, save to file, then redo MaxDistVis
 
@@ -377,7 +370,6 @@ static void CalcVis()
 
         Log("average maxdistance leafs visible: %i\n", g_portalleafs ? totalvis / g_portalleafs : 0u);
     }
-    //	}
 }
 
 // The next token of the .prt text (separators " ()\r\n\t", as strtok used them), or nullptr.

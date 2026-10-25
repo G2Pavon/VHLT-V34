@@ -352,7 +352,6 @@ static inline void RecursiveLeafFlow(const int leafnum, const threaddata_t *cons
         if (!(BitBytes(thread->leafvis)[offset] & bit))
         {
             BitBytes(thread->leafvis)[offset] |= bit;
-            thread->base->numcansee++;
         }
     }
 
