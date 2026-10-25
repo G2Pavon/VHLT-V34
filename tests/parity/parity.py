@@ -699,6 +699,7 @@ LOG_RULES = [
     (re.compile(rb"^(Command line: )\S*/(hl\w+)", re.M), rb"\1\2"),            # argv[0] path
     (re.compile(rb"\(\d+\.\d+ seconds\)"), b"(<t> seconds)"),                  # RunThreadsOn
     (re.compile(rb"\d+\.\d+ seconds elapsed( \[[\dhms ]+\])?"), b"<t> seconds elapsed"),
+    (re.compile(rb"(\(\d+%: est\. time )[^)]*\)"), rb"\1<t>)"),         # -estimate progress (console only)
 ]
 
 
@@ -1440,6 +1441,8 @@ CLI_CASES = {
         # not "-texdata x": a 0-byte texture buffer, which the oracle overflowed (fixed in H2: an error)
         ["-lightdata"], ["-lightdata", "1024", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+        # S6a: how atoi reads option values (blanks, '+', a value past INT_MAX that glibc's atoi wraps)
+        ["-texdata", "+8192", "tiny"], ["-texdata", " 8192", "tiny"], ["-threads", "4294967297", "tiny"],
     ],
     "hlbsp": [
         [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "abc", "tiny"], ["-threads", "3", "tiny"],
@@ -1449,6 +1452,8 @@ CLI_CASES = {
         ["-maxnodesize"], ["-maxnodesize", "32", "tiny"], ["-maxnodesize", "4096", "tiny"], ["-maxnodesize", "100000", "tiny"],
         ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-high", "tiny"], ["-", "tiny"],
+        # S6a
+        ["-subdivide", "+64", "tiny"], ["-subdivide", "0x40", "tiny"], ["-maxnodesize", "4294968320", "tiny"],
     ],
     "hlvis": [
         [], ["tiny"], ["-threads"], ["-threads", "0", "tiny"], ["-threads", "abc", "tiny"], ["-threads", "3", "tiny"],
@@ -1456,6 +1461,8 @@ CLI_CASES = {
         ["-maxdistance"], ["-maxdistance", "512", "tiny"], ["-maxdistance", "-512", "tiny"], ["-maxdistance", "x", "tiny"],
         ["-texdata"], ["-texdata", "65536", "tiny"], ["-lightdata"], ["-lightdata", "65536", "tiny"],
         ["-unknown", "tiny"], ["tiny", "extra"], ["-low", "tiny"], ["-", "tiny"],
+        # S6a: 4294967808 wraps to 512 in glibc's atoi
+        ["-maxdistance", "4294967808", "tiny"], ["-maxdistance", " +512", "tiny"],
     ],
     "hlvis-empty": [["tiny"], ["-full", "tiny"]],
     "hlrad": [
@@ -1476,6 +1483,10 @@ CLI_CASES = {
         ["-dlight", "5", "-sky", "0.5", "-smooth2", "20", "-coring", "0.1", "-depth", "4", "-blockopaque", "0",
          "-texreflectgamma", "1.5", "-texreflectscale", "0.9", "-rgbcompress", "1", "-texdata", "8192", "tiny"],
         ["tiny", "-scale"], ["tiny", "-vismatrix"], ["-FAST", "-Extra", "tiny"],
+        # S6a: atof reads blanks, '+', exponents and hex floats; atoi wraps past INT_MAX (4294967298 -> 2)
+        ["-bounce", "4294967298", "tiny"], ["-bounce", " +2", "tiny"], ["-chop", "0x40", "tiny"],
+        ["-texchop", " 3.2e1", "tiny"], ["-ambient", "0x1p-3", "+0.1", " 1e-1", "tiny"], ["-fade", "1e400", "tiny"],
+        ["-minlight", "4294967306", "tiny"], ["-dscale", "2abc", "tiny"],
     ],
 }
 # hlvis needs a map with portals: its cases run on this corpus map (copied as tiny.map).
@@ -1668,6 +1679,97 @@ def cli_paths(cand: Path, oracle: Path, tmp: Path) -> list[str]:
     return failures
 
 
+# Number parsing (S6a): the tools read numbers with atoi/atof/sscanf, which skip leading blanks, take a
+# '+', read hex floats (atof/%f) and ignore trailing junk. Each mutation below respells the numbers of a
+# feature map, and the whole pipeline runs, oracle vs candidate, so a parser that treats a spelling
+# differently changes the result. plus/space/exp/hex keep the value for every parser the tools use.
+# junk and edangle (the last number of each numeric value gets "x" or "e") don't for sscanf: glibc's %lf
+# fails on "0x" and on "3e" and leaves the variable as it was, where atof/strtod/from_chars read 0 and 3.
+# That is on purpose: those two are what tells sscanf apart from its replacements.
+NUMBER_MAPS = ("fm_specials", "fm_transform", "fm_hullshape", "fm_lightstyles", "fm_compileparams", "fm_usemodel",
+               "fm_rad_point", "fm_rad_spot", "fm_rad_sky", "fm_rad_texlights", "fm_rad_styles", "fm_rad_infoents",
+               "fm_rad_brushkeys")
+NUMBER_RE = re.compile(r"-?\d+(\.\d+)?")
+KEYVALUE_RE = re.compile(r'^"([^"]*)" "([^"]*)"$')
+
+
+def _respell(tok: str, how: str, brush: bool) -> str:
+    if not NUMBER_RE.fullmatch(tok):
+        return tok
+    if how == "plus":
+        return tok if tok.startswith("-") else "+" + tok
+    if how == "exp" and (brush or "." in tok):  # atoi would stop at the 'e': only where atof/%f reads it
+        sign, digits = ("-", tok[1:]) if tok.startswith("-") else ("", tok)
+        whole, _, frac = digits.partition(".")
+        return f"{sign}{whole}{frac}e-{len(frac)}" if frac else f"{sign}{whole}e0"
+    if how == "hex" and brush and "." not in tok:  # brush numbers go through atof, which reads hex
+        return f"-0x{-int(tok):x}" if tok.startswith("-") else f"0x{int(tok):x}"
+    return tok
+
+
+def respell_numbers(text: str, how: str) -> str:
+    out = []
+    for line in text.split("\n"):
+        m = KEYVALUE_RE.match(line)
+        if m:
+            key, value = m.groups()
+            toks = value.split(" ")
+            if value and all(NUMBER_RE.fullmatch(t) for t in toks):
+                if how == "space":
+                    value = " " + value
+                elif how == "junk":
+                    value = value + "x"
+                elif how == "edangle":
+                    value = value + "e"
+                else:
+                    value = " ".join(_respell(t, how, False) for t in toks)
+            line = f'"{key}" "{value}"'
+        elif line.startswith("("):
+            toks = line.split(" ")
+            if how in ("junk", "edangle"):
+                toks = [t + ("x" if how == "junk" else "e") if NUMBER_RE.fullmatch(t) else t for t in toks]
+            else:
+                toks = [_respell(t, how, True) for t in toks]
+            line = " ".join(toks)
+        out.append(line)
+    return "\n".join(out)
+
+
+NUMBER_MUTATIONS = ("plus", "space", "exp", "hex", "junk", "edangle")
+
+
+def _number_run(bindir: Path, name: str, text: str, cwd: Path) -> tuple:
+    if cwd.exists():
+        shutil.rmtree(cwd)
+    cwd.mkdir(parents=True)
+    (cwd / f"{name}.map").write_text(text, encoding="latin-1")
+    codes, out = [], b""
+    for tool in ("hlcsg", "hlbsp", "hlvis", "hlrad"):
+        proc = run([bindir / tool, "-threads", "1", name], cwd=cwd, capture_output=True, timeout=600)
+        codes.append(proc.returncode)
+        out += normalize_log(proc.stdout + proc.stderr)
+        if proc.returncode:
+            break
+    files = {f.name: stagecache.bsp_canonical(f.read_bytes()) if f.suffix == ".bsp" else normalize_log(f.read_bytes())
+             for f in sorted(cwd.iterdir())}
+    return codes, out, files
+
+
+def _number_case(cand: Path, oracle: Path, name: str, how: str, root: Path) -> str | None:
+    text = respell_numbers((DATA / "corpus" / "maps" / f"{name}.map").read_text(encoding="latin-1"), how)
+    cwd = root / f"numbers-{name}-{how}"
+    ref = _number_run(oracle, name, text, cwd)
+    new = _number_run(cand, name, text, cwd)
+    what = [n for n, a, b in zip(("exit codes", "output", "files"), ref, new) if a != b]
+    return f"numbers: {name} ({how}): {', '.join(what)} differ" if what else None
+
+
+def cli_numbers(cand: Path, oracle: Path, tmp: Path) -> list[str]:
+    with concurrent.futures.ThreadPoolExecutor(DEFAULT_JOBS) as pool:
+        jobs = [pool.submit(_number_case, cand, oracle, m, how, tmp) for m in NUMBER_MAPS for how in NUMBER_MUTATIONS]
+        return [r for r in (j.result() for j in jobs) if r]
+
+
 def cmd_cli(args) -> int:
     cand = check_bin(Path(args.bin))
     oracle = DATA / "builds" / "oracle" / "bin"
@@ -1683,7 +1785,10 @@ def cmd_cli(args) -> int:
                     failures.append(f"{tool} {' '.join(argv) or '(no arguments)'}: {', '.join(what)} differ")
         if args.paths:
             failures += cli_paths(cand, oracle, Path(tmp))
-        n = sum(len(CLI_CASES[t]) for t in args.tools) + (len(PATH_CASES) + len(PATH_RAD_CASES) if args.paths else 0)
+        if args.numbers:
+            failures += cli_numbers(cand, oracle, Path(tmp))
+        n = (sum(len(CLI_CASES[t]) for t in args.tools) + (len(PATH_CASES) + len(PATH_RAD_CASES) if args.paths else 0)
+             + (len(NUMBER_MAPS) * len(NUMBER_MUTATIONS) if args.numbers else 0))
         log(f"  {'PASS' if not failures else 'FAIL'}: {n} command lines, {len(failures)} difference(s)")
         for f in failures:
             log(f"    {f}")
@@ -1873,6 +1978,7 @@ def main() -> int:
     p.add_argument("--bin", required=True)
     p.add_argument("--tools", nargs="+", default=list(CLI_CASES), choices=list(CLI_CASES))
     p.add_argument("--no-paths", dest="paths", action="store_false", help="skip the path-handling cases (PATH_CASES, PATH_RAD_CASES)")
+    p.add_argument("--no-numbers", dest="numbers", action="store_false", help="skip the number-spelling pipelines (NUMBER_MAPS)")
     p.set_defaults(func=cmd_cli)
 
     p = sub.add_parser("coverage", help="gcov line coverage of a tool over the quick tier (up to that tool) and its variant tiers")

@@ -316,7 +316,7 @@ python3 $P bench --bin DIR --repeat 3 [--maps cs_assault ...] [--threads N] [--b
 python3 $P sanitize --baseline ../vhlt-parity/sanitize/baseline-v1-quick.txt   # ASan+UBSan (clang++) build of the tree; fails on new findings
 python3 $P sanitize --leaks [--bin DIR]          # also LeakSanitizer: leaked bytes per tool (reported, not compared)
 python3 $P regress --bin DIR                     # candidate-only scenarios (oracle undefined or deliberately changed): texdata-growth, leak-all-hulls, hlbsp-threads, hlvis-fastthreads, lightdata-growth, waddir
-python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths]  # oracle vs candidate on option-parsing command lines and path handling: output, files, exit code
+python3 $P cli --bin DIR [--tools hlcsg hlbsp hlvis hlrad] [--no-paths] [--no-numbers]  # oracle vs candidate on option-parsing command lines, path handling and number spellings: output, files, exit code
 python3 $P probe [--mutations 400 --sanitize]   # common/ BSP I/O, oracle vs tree, on stock + corpus BSPs; corruption smoke test
 python3 tests/parity/bspdiff.py a.bsp b.bsp [--padding strict]
 python3 tests/parity/mkwad.py out.wad NAME... [--size 64] [--rgb 255,255,255]
@@ -338,6 +338,19 @@ runs the oracle and then the candidate in the same directory. Mutation check (20
 only at `/` (what `std::filesystem::path` does on POSIX) fails 7 cases, normalizing `\` to `/` in the
 wad list without `-wadinclude` fails 9, and dropping hlrad's default `.wad` fails 1. The
 `wadpath.cpp` cut at `_MAX_PATH - 1` can't be reached off Windows (see the comment in `PATH_CASES`).
+
+`cli` also runs the number-spelling pipelines (S6a, `NUMBER_MAPS` × `NUMBER_MUTATIONS`, 78
+pipelines, about 70 s of the gate). 13 feature maps go through the whole pipeline, oracle vs
+candidate, with every number respelled: `+N`, a leading blank on numeric values, exponent form, hex
+in brush coordinates (atof reads it), and trailing `x` or `e` on the last number. The first four keep
+the value for every parser the tools use: 52 of 52 compile to the same lumps apart from the entity
+text. `junk` and `edangle` don't for `sscanf`, on purpose: glibc's `%lf` fails on `0x` and on `3e`
+(where atof/strtod/from_chars read 0 and 3), so `"zhlt_transform" "0 32 0x"` takes a different
+branch. Option values get explicit cases: blanks, `+`, hex floats, `1e400`, and values past `INT_MAX`
+that glibc's `atoi` wraps (`-bounce 4294967298` is 2 bounces). Mutation check (2026-10-25):
+`from_chars` in `IntForKey` fails 12 pipelines, in the brush plane numbers 26, and three `strtod`
+calls instead of `sscanf` in `GetVectorForKey` fail 12 (`edangle`). The `-estimate` progress
+estimates are timing noise and are normalized (`LOG_RULES`).
 
 ### Harness self-tests (done when the oracle was set up)
 
